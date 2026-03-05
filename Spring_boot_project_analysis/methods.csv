@@ -1,0 +1,223 @@
+Method Name,Class Name,Layer,Purpose,Internal Working,Real-Time Usage Scenario,Example Code
+saveAgencyAcctRouting,AgencyAcctRoutingController,Controller,Handles POST request to create new AgencyAcctRouting,"1. Receives HTTP POST with JSON body
+2. @RequestBody deserializes JSON to DTO
+3. Calls service layer
+4. Returns ResponseEntity with status",Create new agency account routing mapping for a user,"@PostMapping
+public ResponseEntity<AgencyAcctRoutingDTO> saveAgencyAcctRouting(@RequestBody AgencyAcctRoutingDTO dto) {
+    return new ResponseEntity<>(service.save(dto), HttpStatus.CREATED);
+}"
+updateAgencyAcctRouting,AgencyAcctRoutingController,Controller,Handles PUT request to update existing AgencyAcctRouting,"1. Receives HTTP PUT with JSON body
+2. Calls service.saveAgentAcctRouting()
+3. Returns updated DTO with OK status",Update existing agency account routing information,"@PutMapping
+public ResponseEntity<AgencyAcctRoutingDTO> updateAgencyAcctRouting(@RequestBody AgencyAcctRoutingDTO dto) {
+    return new ResponseEntity<>(service.save(dto), HttpStatus.OK);
+}"
+retrieveAgencyAcctRouting,AgencyAcctRoutingController,Controller,Handles GET request with search parameters,"1. Extracts query params: agntNbr, entpsId, userId
+2. Handles 'null' string values
+3. Calls service with parameters
+4. Returns list of matching records",Search agency routings by agent number or enterprise ID,"@GetMapping(""/search"")
+public ResponseEntity<List<DTO>> retrieve(@RequestParam String agntNbr) {
+    return new ResponseEntity<>(service.retrieve(agntNbr), HttpStatus.OK);
+}"
+retrieveAllAgencyAcctRouting,AgencyAcctRoutingController,Controller,Handles GET request to retrieve all records,"1. Calls service.retrieveAllAgencyAcctRouting()
+2. Returns list with OK status",Fetch all agency account routings for admin view,"@GetMapping
+public ResponseEntity<List<DTO>> retrieveAll() {
+    return new ResponseEntity<>(service.retrieveAll(), HttpStatus.OK);
+}"
+deleteAllAgencyAcctRoutingDetails,AgencyAcctRoutingController,Controller,Handles DELETE request with list of IDs,"1. Receives list of IDs from path variable
+2. Calls service to delete
+3. Returns success message",Bulk delete agency account routings,"@DeleteMapping(""/{id}"")
+public ResponseEntity<String> delete(@PathVariable List<Long> id) {
+    service.deleteAll(id);
+    return ResponseEntity.ok(""Deleted"");
+}"
+saveR2BContractAgent,R2BContractAgentController,Controller,Handles POST request for R2B contract agent,"1. Receives DTO from request body
+2. Handles ObjectOptimisticLockingFailureException
+3. Returns created status",Create new R2B contract agent mapping,"@PostMapping
+public ResponseEntity<DTO> save(@RequestBody DTO dto) {
+    return new ResponseEntity<>(service.save(dto), HttpStatus.CREATED);
+}"
+retrieveR2BContractAgents,R2BContractAgentController,Controller,Handles search for R2B contract agents,"1. Extracts contractAgentNumber, brokerAgentNumber, agentName
+2. Calls service with parameters
+3. Returns list of matching agents",Search contract agents by multiple criteria,"@GetMapping(""/search"")
+public List<DTO> retrieve(@RequestParam String contractAgentNumber) {
+    return service.retrieve(contractAgentNumber);
+}"
+saveAgentAcctRouting,AgencyAcctRoutingServiceImpl,Service,Business logic to save agency account routing,"1. Validates user exists in Users table
+2. Checks for duplicate agntNbr + entpsId
+3. Maps DTO to Entity using ModelMapper
+4. Calls repository.save()
+5. Maps Entity back to DTO",Create new routing with validation and duplicate check,"@Override
+public DTO save(DTO dto) {
+    if(usersRepo.existsByUserId(dto.getUserId())) {
+        Entity entity = mapper.map(dto, Entity.class);
+        return mapper.map(repo.save(entity), DTO.class);
+    }
+}"
+retrieveAgencyAcctRouting,AgencyAcctRoutingServiceImpl,Service,Business logic to search agency routings,"1. Checks which parameters are present
+2. Handles wildcard (*) search patterns
+3. Calls appropriate repository method
+4. Maps entities to DTOs
+5. Sorts results by agent number",Dynamic search based on available parameters,"public List<DTO> retrieve(String agntNbr, String entpsId) {
+    boolean hasAgntNbr = StringUtils.hasText(agntNbr);
+    if(hasAgntNbr && agntNbr.contains(""*"")) {
+        return repo.findByAgntNbrLike(agntNbr.replace(""*"", ""%""));
+    }
+}"
+retrieveAllAgencyAcctRouting,AgencyAcctRoutingServiceImpl,Service,Retrieves all agency account routings,"1. Calls repository.findAll()
+2. Maps list of entities to DTOs
+3. Sorts by agent number ascending",Fetch complete list for admin dashboard,"public List<DTO> retrieveAll() {
+    List<Entity> list = repo.findAll();
+    return mapper.map(list, new TypeToken<List<DTO>>(){}.getType());
+}"
+deleteAllAgencyAcctRoutingDetails,AgencyAcctRoutingServiceImpl,Service,Deletes multiple records by IDs,"1. @Transactional ensures atomicity
+2. Iterates through IDs
+3. Deletes each by ID",Bulk delete operation with transaction,"@Transactional
+public void deleteAll(List<Long> ids) {
+    ids.forEach(id -> repo.deleteById(id));
+}"
+saveR2BContractAgent,R2BContractAgentServiceImpl,Service,Business logic to save R2B contract agent,"1. Checks for existing record with same keys
+2. Throws exception if duplicate
+3. Maps DTO to Entity
+4. Saves and returns mapped DTO",Create R2B contract agent with duplicate validation,"public DTO save(DTO dto) {
+    if(!repo.findByKeys(dto.getContractAgentNumber()).isEmpty()) {
+        throw new R2BContractAgentException(""Already exists"");
+    }
+    return mapper.map(repo.save(mapper.map(dto, Entity.class)), DTO.class);
+}"
+getUserById,UserService,Service,Retrieves user by user ID for authentication,"1. Calls applicationUsersRepo.findByUserId()
+2. Returns user if found
+3. Calls clearUser() and returns null if not found",Validate user during authentication filter,"public ApplicationUsers getUserById(String userId) {
+    return applicationUsersRepo.findByUserId(userId).orElse(null);
+}"
+findUserApplications,UserService,Service,Retrieves applications associated with user,"1. Calls repository with custom query
+2. Returns list of UserApplication entities",Get all applications a user has access to,"public List<UserApplication> findUserApplications(String userId) {
+    return applicationUsersRepo.findUserApplicationsByUserId(userId);
+}"
+findByAgntNbrAndEntpsIdAndUserId,AgencyAcctRoutingRepo,Repository,Query method for three-parameter search,"Spring Data JPA generates:
+SELECT * FROM AGENCY_ACCT_ROUTING 
+WHERE AGNT_NBR = ? AND ENTPS_ID = ? AND USER_ID = ?",Search with all three criteria,"List<AgencyAcctRouting> findByAgntNbrAndEntpsIdAndUserId(
+    String agntNbr, String entpsId, String userId);"
+findByAgntNbrAndEntpsId,AgencyAcctRoutingRepo,Repository,Query method for two-parameter search,"Spring Data JPA generates:
+SELECT * FROM AGENCY_ACCT_ROUTING 
+WHERE AGNT_NBR = ? AND ENTPS_ID = ?",Check for duplicate before insert,"List<AgencyAcctRouting> findByAgntNbrAndEntpsId(
+    String agntNbr, String entpsId);"
+findByAgntNbrLike,AgencyAcctRoutingRepo,Repository,Custom JPQL query for wildcard search,"@Query annotation defines JPQL:
+SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr LIKE :agntNbr",Wildcard search like 'ABC*' for agent numbers,"@Query(""SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr LIKE :agntNbr"")
+List<AgencyAcctRouting> findByAgntNbrLike(@Param(""agntNbr"") String agntNbr);"
+existsByUserId,UsersRepo,Repository,Checks if user exists in database,"Spring Data JPA generates:
+SELECT CASE WHEN COUNT(*) > 0 THEN true ELSE false END
+FROM USERS WHERE USER_ID = ?",Validate user exists before creating routing,"boolean existsByUserId(String userId);"
+findByUserId,ApplicationUsersRepo,Repository,Find user by user ID,"Spring Data JPA generates:
+SELECT * FROM OV_APPLICATION_USERS WHERE USER_ID = ?
+Returns Optional<ApplicationUsers>",Authentication - lookup user details,"Optional<ApplicationUsers> findByUserId(String userId);"
+findUserApplicationsByUserId,ApplicationUsersRepo,Repository,Custom query to find user's applications,"@Query annotation defines JPQL:
+SELECT ua FROM UserApplication ua WHERE ua.userId = :userId",Get applications accessible by user,"@Query(""SELECT ua FROM UserApplication ua WHERE ua.userId = :userId"")
+List<UserApplication> findUserApplicationsByUserId(@Param(""userId"") String userId);"
+doFilterInternal,UserFilter,Security Filter,Main authentication filter logic,"1. Checks if URL is unprotected (actuator/health)
+2. Extracts X-User-Id header
+3. Validates user via UserService
+4. Creates UsernamePasswordAuthenticationToken
+5. Sets SecurityContext
+6. Handles UnauthorizedException",Every incoming request passes through for auth,"@Override
+protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
+    String userId = request.getHeader(""X-User-Id"");
+    if(userId != null) {
+        ApplicationUsers user = userService.getUserById(userId);
+        // Set authentication...
+    }
+}"
+setDetails,UserFilter,Security Filter,Sets authentication details in SecurityContext,"1. Sets request details on authentication token
+2. Gets SecurityContext from ThreadLocal
+3. Sets authentication in context
+4. Creates session and saves context",Persist authentication for request lifecycle,"private void setDetails(HttpServletRequest request, HttpServletResponse response, UsernamePasswordAuthenticationToken auth) {
+    auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    SecurityContextHolder.getContext().setAuthentication(auth);
+}"
+doFilter,CorsFilter,Configuration Filter,Handles CORS headers for cross-origin requests,"1. Sets Access-Control-Allow-Origin: *
+2. Sets allowed methods: POST, PUT, GET, DELETE
+3. Sets allowed headers including X-User-Id
+4. For OPTIONS request returns 200 OK
+5. For other requests continues filter chain",Enable frontend to call backend from different domain,"@Override
+public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) {
+    response.setHeader(""Access-Control-Allow-Origin"", ""*"");
+    if(""OPTIONS"".equals(request.getMethod())) {
+        response.setStatus(200);
+    } else {
+        chain.doFilter(req, res);
+    }
+}"
+filterChain,SecurityConfig,Security Configuration,Configures Spring Security filter chain,"1. Sets session management to STATELESS
+2. Disables CSRF (not needed for REST)
+3. Requires authentication for all requests
+4. Adds UserFilter before UsernamePasswordAuthenticationFilter
+5. Returns configured HttpSecurity","Define security rules for the application","@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    return http.sessionManagement(s -> s.sessionCreationPolicy(STATELESS))
+        .csrf(AbstractHttpConfigurer::disable)
+        .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+        .addFilterBefore(userFilter(), UsernamePasswordAuthenticationFilter.class)
+        .build();
+}"
+passwordEncoder,SecurityConfig,Security Configuration,Creates BCrypt password encoder bean,"BCryptPasswordEncoder uses bcrypt hashing algorithm.
+Creates bean for password encoding/verification.",Encode passwords before storing in database,"@Bean
+public PasswordEncoder passwordEncoder() {
+    return new BCryptPasswordEncoder();
+}"
+mapper,ModelMapperConfig,Configuration,Creates ModelMapper bean for DTO-Entity conversion,"Creates singleton ModelMapper instance.
+Used throughout application for object mapping.",Convert between Entity and DTO objects,"@Bean
+ModelMapper mapper() {
+    return new ModelMapper();
+}"
+handleAlreadyExists,GlobalExceptionHandler,Exception Handler,Handles AlreadyExistException globally,"1. Creates ErrorResponseDTO with timestamp
+2. Returns ResponseEntity with CONFLICT status (409)
+3. Includes exception message and details",When trying to create duplicate record,"@ExceptionHandler(AlreadyExistException.class)
+public ResponseEntity<ErrorResponseDTO> handleAlreadyExists(AlreadyExistException e) {
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponseDTO(LocalDateTime.now(), e.getMessage(), ""Already Exists""));
+}"
+handleNotFound,GlobalExceptionHandler,Exception Handler,Handles NotFoundException globally,"1. Creates ErrorResponseDTO with timestamp
+2. Returns ResponseEntity with NOT_FOUND status (404)
+3. Includes exception message and details",When requested resource doesn't exist,"@ExceptionHandler(NotFoundException.class)
+public ResponseEntity<ErrorResponseDTO> handleNotFound(NotFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponseDTO(LocalDateTime.now(), e.getMessage(), ""Not Found""));
+}"
+handleNoResourceFoundException,GlobalExceptionHandler,Exception Handler,Handles Spring's NoResourceFoundException,"1. Catches when URL path not mapped
+2. Returns 404 with descriptive message",When client calls non-existent endpoint,"@ExceptionHandler(NoResourceFoundException.class)
+public ResponseEntity<ErrorResponseDTO> handleNoResource(NoResourceFoundException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponseDTO(LocalDateTime.now(), e.getMessage(), ""URL not found""));
+}"
+handleGenericException,GlobalExceptionHandler,Exception Handler,Catches all unhandled exceptions,"1. Acts as fallback exception handler
+2. Returns 500 Internal Server Error
+3. Logs exception for debugging",Catch unexpected runtime exceptions,"@ExceptionHandler(Exception.class)
+public ResponseEntity<ErrorResponseDTO> handleException(Exception e) {
+    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ErrorResponseDTO(LocalDateTime.now(), e.getMessage(), ""Internal Error""));
+}"
+main,EssOdadminServiceApplication,Main,Application entry point,"1. JVM calls main() method
+2. SpringApplication.run() creates ApplicationContext
+3. Component scanning finds all beans
+4. Auto-configuration creates infrastructure beans
+5. Embedded Tomcat starts on port 8080",Start the Spring Boot application,"public static void main(String[] args) {
+    SpringApplication.run(EssOdadminServiceApplication.class, args);
+}"
+save (JpaRepository),JpaRepository,Repository,Saves or updates an entity,"1. Checks if entity is new (ID null/0)
+2. If new: persist() - generates INSERT
+3. If existing: merge() - generates UPDATE
+4. Returns managed entity with generated ID",Create or update any entity,"Entity saved = repository.save(entity);
+// INSERT INTO table (col1, col2) VALUES (?, ?)"
+findAll (JpaRepository),JpaRepository,Repository,Retrieves all entities from table,"1. Generates SELECT * FROM table
+2. Maps ResultSet to List<Entity>
+3. Returns all rows",Get all records for admin listing,"List<Entity> all = repository.findAll();
+// SELECT * FROM AGENCY_ACCT_ROUTING"
+findById (JpaRepository),JpaRepository,Repository,Retrieves entity by primary key,"1. Generates SELECT * WHERE id = ?
+2. Returns Optional.empty() if not found
+3. Returns Optional.of(entity) if found",Get single record by ID,"Optional<Entity> entity = repository.findById(1L);
+// SELECT * FROM table WHERE id = ?"
+deleteById (JpaRepository),JpaRepository,Repository,Deletes entity by primary key,"1. Generates DELETE FROM table WHERE id = ?
+2. Throws EmptyResultDataAccessException if not found",Remove single record by ID,"repository.deleteById(1L);
+// DELETE FROM AGENCY_ACCT_ROUTING WHERE id = ?"
+count (JpaRepository),JpaRepository,Repository,Counts total entities,"1. Generates SELECT COUNT(*) FROM table
+2. Returns long value",Dashboard statistics,"long total = repository.count();
+// SELECT COUNT(*) FROM AGENCY_ACCT_ROUTING"
+existsById (JpaRepository),JpaRepository,Repository,Checks if entity exists,"1. Generates efficient EXISTS query
+2. Returns boolean",Validation before operations,"boolean exists = repository.existsById(1L);
+// SELECT EXISTS(SELECT 1 FROM table WHERE id = ?)"

@@ -1,0 +1,646 @@
+================================================================================
+GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
+================================================================================
+Generated on: November 21, 2025
+
+================================================================================
+1. PROJECT SETUP AND INITIALIZATION
+================================================================================
+
+INITIAL REPOSITORY SETUP:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git init
+│ Description: Initialize a new Git repository in the current directory
+│ Usage: Use when starting a new project or converting existing project to Git
+│ Example: git init
+│ When to use: First-time setup of version control for the project
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git clone <repository-url>
+│ Description: Clone an existing repository from remote location
+│ Usage: Use to download the project from a remote Git repository
+│ Example: git clone https://github.com/............................
+│ When to use: When starting to work on an existing project
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git remote add origin <repository-url>
+│ Description: Add a remote repository as 'origin'
+│ Usage: Connect local repository to remote repository for pushing/pulling
+│ Example: git remote add origin https://github.com/...............
+│ When to use: After git init, to connect to remote repository
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+2. DAILY WORKFLOW COMMANDS
+================================================================================
+
+STATUS AND INFORMATION:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git status
+│ Description: Show the working tree status and staged changes
+│ Usage: Check current state of files, what's staged, modified, or untracked
+│ Example: git status
+│ When to use: Before committing, to see what changes will be included
+│ Output: Shows modified files in red, staged files in green
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git log
+│ Description: Show commit history
+│ Usage: View previous commits, authors, dates, and commit messages
+│ Example: git log --oneline --graph --decorate
+│ When to use: To review project history or find specific commits
+│ Variations:
+│   git log --oneline          (condensed one-line format)
+│   git log --graph            (show branch structure)
+│   git log -p                 (show diffs in commits)
+│   git log --since="2 weeks ago"  (filter by date)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git diff
+│ Description: Show changes between working directory and staging area
+│ Usage: Review modifications before staging them
+│ Example: git diff src/app/core/services/agency-discrepancy.service.ts
+│ When to use: Before adding files to staging, to review changes
+│ Variations:
+│   git diff --staged          (show staged changes)
+│   git diff HEAD              (show all changes since last commit)
+│   git diff branch1..branch2  (compare branches)
+└─────────────────────────────────────────────────────────────────────────────
+
+STAGING AND COMMITTING:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add <file-path>
+│ Description: Stage files for commit
+│ Usage: Prepare files to be included in the next commit
+│ Example: git add src/app/features/agency-discrepancies/
+│ When to use: Before every commit, to select which changes to include
+│ Variations:
+│   git add .                  (add all modified files)
+│   git add -A                 (add all files including deletions)
+│   git add *.ts               (add all TypeScript files)
+│   git add -p                 (interactive staging)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git commit -m "commit message"
+│ Description: Create a new commit with staged changes
+│ Usage: Save current state of staged files to repository history
+│ Example: git commit -m "feat: Add agency discrepancy search functionality"
+│ When to use: After staging files that implement a complete feature/fix
+│ Best practices:
+│   - Use conventional commit format (feat:, fix:, docs:, refactor:)
+│   - Keep messages under 50 characters for first line
+│   - Use present tense ("Add" not "Added")
+│   - Be descriptive but concise
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git commit -am "commit message"
+│ Description: Stage all tracked files and commit in one command
+│ Usage: Quick commit of all modifications to tracked files
+│ Example: git commit -am "fix: Correct validation logic in search form"
+│ When to use: When you want to commit all changes without selective staging
+│ Warning: Does not include new (untracked) files
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+3. BRANCH MANAGEMENT
+================================================================================
+
+BRANCH OPERATIONS:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git branch
+│ Description: List all local branches
+│ Usage: See available branches and identify current branch
+│ Example: git branch
+│ When to use: Before switching branches or creating new ones
+│ Variations:
+│   git branch -a              (show all branches including remote)
+│   git branch -r              (show only remote branches)
+│   git branch -v              (show last commit for each branch)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git checkout <branch-name>
+│ Description: Switch to specified branch
+│ Usage: Change working directory to different branch
+│ Example: git checkout feature/agency-accounting-routing
+│ When to use: When you need to work on different feature or review other code
+│ Note: Modern Git also supports 'git switch <branch-name>'
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git checkout -b <new-branch-name>
+│ Description: Create and switch to a new branch
+│ Usage: Start working on a new feature or bug fix
+│ Example: git checkout -b feature/premium-audit-routing
+│ When to use: Beginning work on new features, bug fixes, or experiments
+│ Branch naming conventions:
+│   feature/feature-name       (new features)
+│   bugfix/issue-description   (bug fixes)
+│   hotfix/critical-issue      (urgent fixes)
+│   release/version-number     (release preparation)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git merge <branch-name>
+│ Description: Merge specified branch into current branch
+│ Usage: Integrate changes from feature branch into main branch
+│ Example: git merge feature/agency-discrepancies
+│ When to use: After feature completion, to integrate into main/develop branch
+│ Best practice: Always pull latest changes before merging
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git branch -d <branch-name>
+│ Description: Delete a local branch (safe delete)
+│ Usage: Clean up completed feature branches
+│ Example: git branch -d feature/completed-feature
+│ When to use: After successful merge and no longer need the feature branch
+│ Note: Use -D for force delete (be careful with this)
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+4. REMOTE REPOSITORY OPERATIONS
+================================================================================
+
+SYNCHRONIZATION WITH REMOTE:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git fetch
+│ Description: Download objects and refs from remote repository
+│ Usage: Update local knowledge of remote repository without merging
+│ Example: git fetch origin
+│ When to use: Before merging, to see what changes exist on remote
+│ Note: Safer than pull as it doesn't automatically merge
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git pull
+│ Description: Fetch and merge changes from remote repository
+│ Usage: Update local branch with latest remote changes
+│ Example: git pull origin main
+│ When to use: Start of each work session to get latest changes
+│ Equivalent to: git fetch followed by git merge
+│ Best practice: Always pull before starting new work
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git push
+│ Description: Upload local commits to remote repository
+│ Usage: Share your commits with the team
+│ Example: git push origin feature/agency-discrepancies
+│ When to use: After completing commits that should be shared
+│ First push: git push -u origin <branch-name> (sets upstream)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git push -u origin <branch-name>
+│ Description: Push branch and set upstream tracking
+│ Usage: First push of a new branch to remote repository
+│ Example: git push -u origin feature/ovr2b-conversion
+│ When to use: First time pushing a new local branch to remote
+│ Benefit: Subsequent pushes/pulls don't need origin specification
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+5. ANGULAR-SPECIFIC WORKFLOW COMMANDS
+================================================================================
+
+DEVELOPMENT WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add package.json package-lock.json
+│ Description: Stage dependency changes
+│ Usage: After installing new npm packages for the Angular project
+│ Example: git add package.json package-lock.json
+│ When to use: After 'npm install' adds new dependencies
+│ Why important: Ensures team has same dependency versions
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add src/app/features/
+│ Description: Stage new feature components
+│ Usage: After creating new Angular feature modules/components
+│ Example: git add src/app/features/agency-accounting-routing/
+│ When to use: After generating new features with Angular CLI
+│ Include: .ts, .html, .css, .spec.ts files
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add src/app/core/services/
+│ Description: Stage new or modified services
+│ Usage: After creating or updating Angular services
+│ Example: git add src/app/core/services/agency-discrepancy.service.ts
+│ When to use: After implementing API integration services
+│ Best practice: Include corresponding test files
+└─────────────────────────────────────────────────────────────────────────────
+
+CONFIGURATION FILES:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add angular.json tsconfig*.json
+│ Description: Stage Angular configuration changes
+│ Usage: After modifying Angular CLI or TypeScript configuration
+│ Example: git add angular.json tsconfig.json tsconfig.app.json
+│ When to use: After adding new build configurations or TypeScript settings
+│ Include: angular.json, tsconfig.json, proxy.conf.json
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add src/environments/
+│ Description: Stage environment configuration changes
+│ Usage: After modifying environment-specific settings
+│ Example: git add src/environments/environment.ts
+│ When to use: After updating API URLs, feature flags, or environment configs
+│ Be careful: Don't commit sensitive production credentials
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+6. UNDOING CHANGES
+================================================================================
+
+UNDOING UNCOMMITTED CHANGES:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git checkout -- <file-path>
+│ Description: Discard changes in working directory for specific file
+│ Usage: Undo modifications that haven't been staged
+│ Example: git checkout -- src/app/core/services/agency-discrepancy.service.ts
+│ When to use: When you want to revert file to last committed state
+│ Warning: This permanently discards your changes
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git reset HEAD <file-path>
+│ Description: Unstage files from staging area
+│ Usage: Remove files from staging area but keep working directory changes
+│ Example: git reset HEAD src/app/features/
+│ When to use: When you accidentally staged files you don't want to commit
+│ Result: Files remain modified but unstaged
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git reset --hard HEAD
+│ Description: Reset working directory and staging area to last commit
+│ Usage: Completely undo all changes since last commit
+│ Example: git reset --hard HEAD
+│ When to use: When you want to start fresh from last commit
+│ Warning: This permanently destroys all uncommitted changes
+└─────────────────────────────────────────────────────────────────────────────
+
+UNDOING COMMITTED CHANGES:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git revert <commit-hash>
+│ Description: Create new commit that undoes a previous commit
+│ Usage: Safely undo a commit without rewriting history
+│ Example: git revert 3f4c2b1a
+│ When to use: When you need to undo a commit that's already been pushed
+│ Benefit: Safe for shared branches, preserves history
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git reset --soft HEAD~1
+│ Description: Undo last commit but keep changes staged
+│ Usage: Undo commit but preserve all changes for recommitting
+│ Example: git reset --soft HEAD~1
+│ When to use: When you want to modify the last commit message or add more files
+│ Note: Only use on commits that haven't been pushed
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+7. CONFLICT RESOLUTION
+================================================================================
+
+MERGE CONFLICT HANDLING:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git status
+│ Description: Check files with merge conflicts
+│ Usage: After a failed merge, see which files have conflicts
+│ Example: git status
+│ When to use: When merge fails due to conflicts
+│ Look for: "both modified" files that need manual resolution
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git add <resolved-file>
+│ Description: Mark conflict as resolved
+│ Usage: After manually resolving conflicts in a file
+│ Example: git add src/app/core/services/agency-discrepancy.service.ts
+│ When to use: After editing file to remove conflict markers (<<<<<<, ======, >>>>>>)
+│ Next step: Commit the merge after all conflicts resolved
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git merge --abort
+│ Description: Cancel the merge and return to pre-merge state
+│ Usage: When you want to abandon a merge with conflicts
+│ Example: git merge --abort
+│ When to use: When conflicts are too complex to resolve immediately
+│ Result: Returns to state before merge attempt
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+8. ADVANCED WORKFLOW COMMANDS
+================================================================================
+
+STASHING CHANGES:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git stash
+│ Description: Temporarily store uncommitted changes
+│ Usage: Save work in progress when you need to switch branches quickly
+│ Example: git stash
+│ When to use: When you need to pull changes or switch branches with uncommitted work
+│ Note: Stash saves both staged and unstaged changes
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git stash pop
+│ Description: Apply most recent stash and remove it from stash list
+│ Usage: Restore temporarily stored changes
+│ Example: git stash pop
+│ When to use: After switching back to branch where you had stashed changes
+│ Alternative: git stash apply (keeps stash in list)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git stash list
+│ Description: Show all stored stashes
+│ Usage: See what stashes you have saved
+│ Example: git stash list
+│ When to use: When you have multiple stashes and need to identify them
+│ Output: Shows stash@{0}, stash@{1}, etc.
+└─────────────────────────────────────────────────────────────────────────────
+
+REBASING:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git rebase main
+│ Description: Rebase current branch onto main branch
+│ Usage: Update feature branch with latest main branch changes
+│ Example: git rebase main
+│ When to use: Before merging feature branch to ensure linear history
+│ Benefit: Cleaner commit history than merge commits
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git rebase -i HEAD~3
+│ Description: Interactive rebase of last 3 commits
+│ Usage: Squash, reorder, or edit recent commits
+│ Example: git rebase -i HEAD~3
+│ When to use: Clean up commit history before pushing to shared branch
+│ Actions: pick, squash, edit, reword, drop commits
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+9. INSPECTION AND DEBUGGING
+================================================================================
+
+FILE INSPECTION:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git show <commit-hash>
+│ Description: Show changes introduced by a specific commit
+│ Usage: Inspect what changed in a particular commit
+│ Example: git show 3f4c2b1a
+│ When to use: When reviewing commit history or investigating issues
+│ Output: Shows commit message, author, date, and diff
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git blame <file-path>
+│ Description: Show who last modified each line of a file
+│ Usage: Find out who wrote specific lines of code
+│ Example: git blame src/app/core/services/agency-discrepancy.service.ts
+│ When to use: When investigating bugs or understanding code history
+│ Output: Shows commit hash, author, date for each line
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git log --follow <file-path>
+│ Description: Show commit history for a specific file, including renames
+│ Usage: Track the complete history of a file
+│ Example: git log --follow src/app/core/services/agency-discrepancy.service.ts
+│ When to use: When you need to see all changes to a specific file over time
+│ Benefit: Follows file through renames and moves
+└─────────────────────────────────────────────────────────────────────────────
+
+SEARCHING:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git grep <search-term>
+│ Description: Search for text within tracked files
+│ Usage: Find specific code patterns or text across the codebase
+│ Example: git grep "agencyDiscrepancyService"
+│ When to use: When looking for usage of specific functions, variables, or text
+│ Benefit: Only searches tracked files, ignores node_modules
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+10. PROJECT-SPECIFIC GIT PATTERNS
+================================================================================
+
+ANGULAR PROJECT WORKFLOW:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Daily Development Workflow:
+│ 1. git pull origin main                    (Get latest changes)
+│ 2. git checkout -b feature/new-feature     (Create feature branch)
+│ 3. [Development work]                      (Code, test, repeat)
+│ 4. git add src/app/features/               (Stage feature files)
+│ 5. git commit -m "feat: Add new feature"   (Commit changes)
+│ 6. git push -u origin feature/new-feature (Push feature branch)
+│ 7. [Create Pull Request]                   (Code review process)
+│ 8. git checkout main                       (Switch to main)
+│ 9. git pull origin main                    (Update main)
+│ 10. git branch -d feature/new-feature     (Clean up)
+└─────────────────────────────────────────────────────────────────────────────
+
+COMMIT MESSAGE CONVENTIONS:
+┌─────────────────────────────────────────────────────────────────────────────
+│ feat: Add new feature
+│ fix: Fix bug in existing functionality  
+│ docs: Update documentation
+│ style: Code style changes (formatting, etc.)
+│ refactor: Code refactoring without functionality change
+│ test: Add or update tests
+│ chore: Maintenance tasks (dependencies, build config)
+│ 
+│ Examples for this project:
+│ feat: Add agency accounting routing service
+│ fix: Correct validation logic in search form
+│ refactor: Extract common pagination logic to shared service
+│ docs: Update API integration documentation
+│ test: Add unit tests for discrepancy service
+│ chore: Update Angular to version 20.3.7
+└─────────────────────────────────────────────────────────────────────────────
+
+GITIGNORE IMPORTANT FILES:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Files that should be ignored (add to .gitignore):
+│ node_modules/                   (Dependencies)
+│ dist/                          (Build output)
+│ .angular/                      (Angular cache)
+│ *.log                          (Log files)
+│ .env                           (Environment secrets)
+│ .vscode/settings.json          (Personal IDE settings)
+│ coverage/                      (Test coverage reports)
+│ e2e/                          (End-to-end test artifacts)
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+11. EMERGENCY PROCEDURES
+================================================================================
+
+COMMON EMERGENCY SCENARIOS:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Scenario: Accidentally committed to main instead of feature branch
+│ Solution:
+│ 1. git reset --soft HEAD~1     (Undo commit, keep changes staged)
+│ 2. git checkout -b feature/fix  (Create feature branch)
+│ 3. git commit -m "feat: ..."    (Recommit to feature branch)
+│ 4. git checkout main           (Switch back to main)
+│ 5. git reset --hard origin/main (Reset main to remote state)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Scenario: Need to quickly switch branches but have uncommitted changes
+│ Solution:
+│ 1. git stash                   (Save current changes)
+│ 2. git checkout other-branch   (Switch branches)
+│ 3. [Do urgent work]            (Handle the urgent task)
+│ 4. git checkout original-branch (Switch back)
+│ 5. git stash pop               (Restore saved changes)
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Scenario: Pushed commit with sensitive information
+│ Solution:
+│ 1. git reset --hard HEAD~1     (Remove commit locally)
+│ 2. git push --force origin branch-name (Force push to remove from remote)
+│ 3. Update .gitignore           (Prevent future commits)
+│ Warning: Only use on feature branches, never on shared main branch
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+12. COLLABORATION COMMANDS
+================================================================================
+
+WORKING WITH TEAM:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git fetch --prune
+│ Description: Fetch updates and remove references to deleted remote branches
+│ Usage: Clean up your local branch references after branches are deleted remotely
+│ Example: git fetch --prune
+│ When to use: Regularly, to keep local repository clean
+│ Benefit: Removes stale remote branch references
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git remote -v
+│ Description: Show remote repository URLs
+│ Usage: Verify which remote repositories are configured
+│ Example: git remote -v
+│ When to use: When setting up project or troubleshooting remote issues
+│ Output: Shows fetch and push URLs for each remote
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git log --author="name"
+│ Description: Show commits by specific author
+│ Usage: Review commits made by a team member
+│ Example: git log --author="John Doe"
+│ When to use: During code reviews or when tracking specific contributions
+│ Variations: Use partial names or email addresses
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+13. CONFIGURATION AND SETUP
+================================================================================
+
+GIT CONFIGURATION:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git config --global user.name "Your Name"
+│ Description: Set your Git username globally
+│ Usage: Configure your identity for all repositories
+│ Example: git config --global user.name "John Doe"
+│ When to use: Initial Git setup on new machine
+│ Scope: Applies to all repositories on the system
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git config --global user.email "your.email@example.com"
+│ Description: Set your Git email globally
+│ Usage: Configure email address for commit attribution
+│ Example: git config --global user.email "john.doe@company.com"
+│ When to use: Initial Git setup on new machine
+│ Important: Use same email as your Git hosting service account
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git config --list
+│ Description: Show all Git configuration settings
+│ Usage: Review current Git configuration
+│ Example: git config --list
+│ When to use: Troubleshooting configuration issues
+│ Output: Shows all config values from global and local settings
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+14. PERFORMANCE AND MAINTENANCE
+================================================================================
+
+REPOSITORY MAINTENANCE:
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git gc
+│ Description: Cleanup unnecessary files and optimize local repository
+│ Usage: Improve repository performance and reduce disk usage
+│ Example: git gc
+│ When to use: Periodically, especially after many commits or large operations
+│ Benefit: Compresses objects and removes unreachable objects
+└─────────────────────────────────────────────────────────────────────────────
+
+┌─────────────────────────────────────────────────────────────────────────────
+│ Command: git fsck
+│ Description: Verify integrity of Git objects in repository
+│ Usage: Check for corruption or issues in repository
+│ Example: git fsck
+│ When to use: When experiencing strange Git behavior or suspected corruption
+│ Output: Reports any issues found in repository
+└─────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+15. SUMMARY AND BEST PRACTICES
+================================================================================
+
+ESSENTIAL DAILY COMMANDS:
+1. git status                    (Check current state)
+2. git pull origin main          (Get latest changes)
+3. git add <files>              (Stage changes)
+4. git commit -m "message"       (Save changes)
+5. git push origin <branch>      (Share changes)
+
+BRANCH WORKFLOW:
+1. git checkout -b feature/name  (Create feature branch)
+2. [Development work]           (Code and test)
+3. git add . && git commit      (Save progress)
+4. git push -u origin feature   (Push for backup/review)
+5. [Pull request process]       (Code review)
+6. git checkout main && git pull (Update main)
+7. git branch -d feature/name   (Clean up)
+
+SAFETY RULES:
+- Always git status before committing
+- Always git pull before starting new work
+- Never force push to main/master branch
+- Use descriptive commit messages
+- Test before committing
+- Use branches for all features/fixes
+- Review changes with git diff before staging
+
+TROUBLESHOOTING CHECKLIST:
+1. Check git status first
+2. Verify current branch with git branch
+3. Check remote configuration with git remote -v
+4. Review recent commits with git log --oneline
+5. If stuck, git stash and start fresh
+
+================================================================================
+END OF GIT COMMANDS REFERENCE
+================================================================================
