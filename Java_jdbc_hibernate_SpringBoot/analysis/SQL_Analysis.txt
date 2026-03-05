@@ -1,0 +1,611 @@
+================================================================================
+SQL & DBMS - MASSIVE INTERVIEW PREPARATION (50 Questions)
+For: 7+ Years Experience Level | Java Full Stack Developer
+Based on: Insurance (National) + Retail (ICA/IKEA) Project Context
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DATABASE ARCHITECTURE IN PROJECTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ICA (IKEA): SQL Server
+  - Order DB: orders, order_items, order_status_history
+  - Product DB: products, categories, inventory, pricing
+  - Payment DB: payments, refunds, payment_audit
+
+National Insurance: SQL Server / PostgreSQL
+  - Policy DB: policies, coverages, endorsements, customers
+  - Claim DB: claims, claim_documents, claim_history
+  - Audit DB: audit_events, audit_trail
+
+Each microservice owns its database (Database-per-Service pattern).
+No cross-service JOINs — use Kafka events for data sharing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1: SQL FUNDAMENTALS + INTERNALS (Q1-Q12)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q1. SQL Query Execution Order (internal processing).
+─────────────────────────────────────────────────────────────────────
+Written order:  SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY
+Execution order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
+
+Flow:
+  FROM policies p JOIN customers c ON p.customer_id = c.id
+       ↓ (load tables, perform join)
+  WHERE p.status = 'ACTIVE'
+       ↓ (filter rows)
+  GROUP BY c.city
+       ↓ (group remaining rows)
+  HAVING COUNT(*) > 10
+       ↓ (filter groups)
+  SELECT c.city, COUNT(*) AS total, AVG(p.premium)
+       ↓ (project columns, compute aggregates)
+  ORDER BY total DESC
+       ↓ (sort result set)
+  LIMIT 10
+       ↓ (return top N rows)
+
+Why it matters: You cannot use column aliases in WHERE (SELECT runs after WHERE).
+  -- WRONG: WHERE total > 10 (alias not yet created)
+  -- RIGHT: HAVING COUNT(*) > 10
+
+─────────────────────────────────────────────────────────────────────
+*** Q2. Types of JOINs with insurance/retail examples.
+─────────────────────────────────────────────────────────────────────
+INNER JOIN: Only matching rows from both tables
+  -- Policies WITH claims
+  SELECT p.policy_number, c.claim_id
+  FROM policies p INNER JOIN claims c ON p.id = c.policy_id;
+
+LEFT JOIN: All from left + matching from right (NULL if no match)
+  -- All policies, even those WITHOUT claims
+  SELECT p.policy_number, c.claim_id
+  FROM policies p LEFT JOIN claims c ON p.id = c.policy_id;
+  -- Policies without claims: c.claim_id = NULL
+
+RIGHT JOIN: All from right + matching from left
+
+FULL OUTER JOIN: All from both (NULLs on non-matching sides)
+
+CROSS JOIN: Cartesian product (every row × every row) — rarely used
+
+SELF JOIN: Table joined with itself
+  -- Employees and their managers
+  SELECT e.name AS employee, m.name AS manager
+  FROM employees e LEFT JOIN employees m ON e.manager_id = m.id;
+
+─────────────────────────────────────────────────────────────────────
+*** Q3. Index types and when to use them.
+─────────────────────────────────────────────────────────────────────
+B-Tree Index (default): Equality + range queries
+  CREATE INDEX idx_policy_status ON policies(status);
+  Good for: WHERE status = 'ACTIVE', WHERE premium > 50000
+
+Composite Index: Multiple columns
+  CREATE INDEX idx_policy_status_date ON policies(status, created_date);
+  Left-most prefix rule: Can use (status) or (status, created_date)
+                         Cannot skip: (created_date) alone won't use this index
+
+Unique Index: Enforces uniqueness
+  CREATE UNIQUE INDEX idx_policy_number ON policies(policy_number);
+
+Covering Index: Includes all columns needed by query (avoid table lookup)
+  CREATE INDEX idx_cover ON orders(customer_id) INCLUDE (status, total_amount);
+
+Full-Text Index: Text search within large text fields
+Partial Index (PostgreSQL): Index subset of rows
+  CREATE INDEX idx_active ON policies(premium) WHERE status = 'ACTIVE';
+
+WHEN NOT TO index:
+  - Small tables (full scan faster)
+  - Columns with low cardinality (gender: M/F — index useless)
+  - Columns frequently updated (index maintenance overhead)
+  - Write-heavy tables (every INSERT/UPDATE updates index)
+
+─────────────────────────────────────────────────────────────────────
+*** Q4. How does a B-Tree index work internally?
+─────────────────────────────────────────────────────────────────────
+B-Tree = Balanced Tree (not Binary Tree)
+
+Structure:
+  Root Node [50]
+     ├── Internal [20, 35]
+     │    ├── Leaf [10, 15, 18] → row pointers
+     │    ├── Leaf [20, 25, 30] → row pointers
+     │    └── Leaf [35, 40, 45] → row pointers
+     └── Internal [70, 85]
+          ├── Leaf [50, 55, 65] → row pointers
+          └── Leaf [70, 75, 80, 85, 90] → row pointers
+
+Lookup: O(log n) — traverse from root to leaf
+  WHERE id = 35: Root → left child → second leaf → found!
+
+Range: Leaf nodes are linked → efficient range scans
+  WHERE id BETWEEN 20 AND 45: Navigate to leaf [20] → scan right → stop at [45]
+
+Insert/Delete: May cause node splits/merges to maintain balance
+
+─────────────────────────────────────────────────────────────────────
+*** Q5. EXPLAIN / EXPLAIN ANALYZE — query optimization.
+─────────────────────────────────────────────────────────────────────
+EXPLAIN SELECT * FROM policies WHERE status = 'ACTIVE';
+
+Key terms in execution plan:
+  Seq Scan: Full table scan (BAD for large tables)
+  Index Scan: Uses index to find rows (GOOD)
+  Index Only Scan: All data from index, no table access (BEST)
+  Bitmap Index Scan: Multiple index conditions combined
+  Nested Loop: Join method for small datasets
+  Hash Join: Build hash table for one side (large datasets)
+  Merge Join: Both sides sorted, merge (pre-sorted data)
+  Sort: External sort operation (expensive for large data)
+
+Optimization checklist when EXPLAIN shows Seq Scan:
+  1. Add index on WHERE/JOIN columns
+  2. Check if statistics are up-to-date (ANALYZE table)
+  3. Check if query can be rewritten
+  4. Check if index exists but not used (type mismatch?)
+
+─────────────────────────────────────────────────────────────────────
+*** Q6. Normalization forms (1NF → 3NF → BCNF).
+─────────────────────────────────────────────────────────────────────
+1NF: Atomic values, no repeating groups
+  BAD: skills = "Java, Spring, Kafka" (single column)
+  GOOD: Separate skills table (one row per skill)
+
+2NF: 1NF + no partial dependencies on composite key
+  BAD: (student_id, course_id) → student_name (depends only on student_id)
+
+3NF: 2NF + no transitive dependencies
+  BAD: employee → department_id → department_name
+  GOOD: Separate department table
+
+BCNF: Every determinant is a candidate key (stricter 3NF)
+
+In microservices: Intentional DENORMALIZATION is common!
+  - Each service stores what it needs (avoid cross-service joins)
+  - Read models denormalized for query performance (CQRS)
+
+─────────────────────────────────────────────────────────────────────
+Q7. Primary Key vs Unique Key vs Foreign Key.
+─────────────────────────────────────────────────────────────────────
+Primary Key: Unique + NOT NULL, one per table, clustered index
+Unique Key: Unique, allows one NULL, multiple per table, non-clustered
+Foreign Key: References primary key in another table, enforces referential integrity
+
+In microservices: Foreign keys across services NOT possible.
+  Consistency maintained via Saga pattern + events.
+
+─────────────────────────────────────────────────────────────────────
+Q8. ACID properties with examples.
+─────────────────────────────────────────────────────────────────────
+Atomicity: All or nothing. Claim creation + Audit entry both succeed or both rollback.
+Consistency: DB moves from one valid state to another (constraints enforced).
+Isolation: Concurrent transactions don't interfere (isolation levels).
+Durability: Once committed, survives crash (write-ahead log).
+
+─────────────────────────────────────────────────────────────────────
+Q9. Transaction isolation levels — real scenarios.
+─────────────────────────────────────────────────────────────────────
+READ UNCOMMITTED: Can see other txn's uncommitted changes (dirty read)
+  Scenario: Admin sees claim amount that was later rolled back → confusion
+
+READ COMMITTED (default PostgreSQL): Only sees committed data
+  Scenario: Two reads in same txn might see different data if another txn commits between
+
+REPEATABLE READ (default MySQL InnoDB): Same query = same result in same txn
+  Scenario: Premium calculation stable within a transaction
+
+SERIALIZABLE: Full isolation, transactions execute as if serial
+  Scenario: Strict financial calculations, but SLOW (locks everything)
+
+Spring: @Transactional(isolation = Isolation.READ_COMMITTED)
+
+─────────────────────────────────────────────────────────────────────
+Q10. Clustered vs Non-Clustered Index.
+─────────────────────────────────────────────────────────────────────
+Clustered: Data physically sorted by index key. ONE per table (usually PK).
+  Table IS the index. Fast range queries.
+
+Non-Clustered: Separate structure pointing to data rows. MANY per table.
+  Contains index key + bookmark (row pointer). Extra lookup needed.
+
+SQL Server: Primary Key → Clustered Index by default
+PostgreSQL: No clustered index concept (CLUSTER command sorts once)
+
+─────────────────────────────────────────────────────────────────────
+Q11. Views vs Materialized Views.
+─────────────────────────────────────────────────────────────────────
+View: Virtual table, query re-executed every time
+  CREATE VIEW active_policies AS SELECT * FROM policies WHERE status = 'ACTIVE';
+
+Materialized View: Physical copy of query result, refreshed periodically
+  CREATE MATERIALIZED VIEW claim_summary AS SELECT ... FROM ... GROUP BY ...;
+  REFRESH MATERIALIZED VIEW claim_summary; -- manual or scheduled
+
+Use materialized view for: SOPA Search aggregation, report dashboards
+
+─────────────────────────────────────────────────────────────────────
+Q12. Stored Procedures vs Functions vs Triggers.
+─────────────────────────────────────────────────────────────────────
+Procedure: Execute business logic, can modify data, no return value required
+Function: Returns value, can be used in SELECT, no side effects (ideally)
+Trigger: Auto-executed on INSERT/UPDATE/DELETE
+
+In Spring Boot microservices: Avoid stored procedures!
+  Business logic in Java (testable, version-controlled, portable).
+  Exception: Complex batch reporting (performance-critical SQL).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2: ADVANCED SQL QUERIES (Q13-Q25)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q13. Window Functions — ROW_NUMBER, RANK, DENSE_RANK, LEAD, LAG.
+─────────────────────────────────────────────────────────────────────
+-- Top 3 highest premium policies per city
+SELECT city, policy_number, premium,
+    ROW_NUMBER() OVER (PARTITION BY city ORDER BY premium DESC) AS rn
+FROM policies
+WHERE rn <= 3;  -- Wrong! (use subquery or CTE)
+
+-- Correct with CTE:
+WITH ranked AS (
+    SELECT city, policy_number, premium,
+        ROW_NUMBER() OVER (PARTITION BY city ORDER BY premium DESC) AS rn
+    FROM policies
+)
+SELECT * FROM ranked WHERE rn <= 3;
+
+ROW_NUMBER: Always unique (1,2,3,4) even for ties
+RANK:       Gaps for ties (1,2,2,4)
+DENSE_RANK: No gaps for ties (1,2,2,3)
+
+-- Previous and next claim date for each policy
+SELECT policy_id, claim_date,
+    LAG(claim_date) OVER (PARTITION BY policy_id ORDER BY claim_date) AS prev_claim,
+    LEAD(claim_date) OVER (PARTITION BY policy_id ORDER BY claim_date) AS next_claim
+FROM claims;
+
+-- Running total of premium by date
+SELECT created_date, premium,
+    SUM(premium) OVER (ORDER BY created_date ROWS UNBOUNDED PRECEDING) AS running_total
+FROM policies;
+
+─────────────────────────────────────────────────────────────────────
+*** Q14. Common Table Expressions (CTE) and recursive CTE.
+─────────────────────────────────────────────────────────────────────
+-- Simple CTE:
+WITH active_policies AS (
+    SELECT * FROM policies WHERE status = 'ACTIVE'
+)
+SELECT c.city, COUNT(*) FROM active_policies ap
+JOIN customers c ON ap.customer_id = c.id
+GROUP BY c.city;
+
+-- Recursive CTE (employee hierarchy):
+WITH RECURSIVE org_chart AS (
+    SELECT id, name, manager_id, 1 AS level
+    FROM employees WHERE manager_id IS NULL      -- root (CEO)
+    UNION ALL
+    SELECT e.id, e.name, e.manager_id, oc.level + 1
+    FROM employees e JOIN org_chart oc ON e.manager_id = oc.id
+)
+SELECT * FROM org_chart ORDER BY level;
+
+─────────────────────────────────────────────────────────────────────
+*** Q15. Subqueries — correlated vs non-correlated.
+─────────────────────────────────────────────────────────────────────
+Non-correlated (independent, runs once):
+  SELECT * FROM policies WHERE premium > (SELECT AVG(premium) FROM policies);
+
+Correlated (references outer query, runs per row — SLOW):
+  SELECT * FROM policies p WHERE premium > (
+      SELECT AVG(premium) FROM policies WHERE city = p.city
+  );
+
+Better alternative: Use JOIN or window function instead of correlated subquery.
+
+─────────────────────────────────────────────────────────────────────
+*** Q16. Find Nth highest salary / premium — multiple approaches.
+─────────────────────────────────────────────────────────────────────
+-- Approach 1: DENSE_RANK
+SELECT premium FROM (
+    SELECT premium, DENSE_RANK() OVER (ORDER BY premium DESC) AS dr FROM policies
+) t WHERE dr = 3; -- 3rd highest
+
+-- Approach 2: LIMIT OFFSET
+SELECT DISTINCT premium FROM policies ORDER BY premium DESC LIMIT 1 OFFSET 2;
+
+-- Approach 3: Subquery
+SELECT MAX(premium) FROM policies
+WHERE premium < (SELECT MAX(premium) FROM policies
+                 WHERE premium < (SELECT MAX(premium) FROM policies));
+
+─────────────────────────────────────────────────────────────────────
+*** Q17. Delete duplicate rows — keep one copy.
+─────────────────────────────────────────────────────────────────────
+-- Using CTE + ROW_NUMBER:
+WITH duplicates AS (
+    SELECT id, ROW_NUMBER() OVER (
+        PARTITION BY policy_number, customer_id ORDER BY id
+    ) AS rn
+    FROM policies
+)
+DELETE FROM policies WHERE id IN (SELECT id FROM duplicates WHERE rn > 1);
+
+─────────────────────────────────────────────────────────────────────
+Q18. UNION vs UNION ALL vs INTERSECT vs EXCEPT.
+─────────────────────────────────────────────────────────────────────
+UNION: Combine + remove duplicates (sorts internally — slower)
+UNION ALL: Combine + keep duplicates (faster — no sorting)
+INTERSECT: Only rows in BOTH queries
+EXCEPT: Rows in first query but NOT in second
+
+Rule: Always prefer UNION ALL unless you specifically need dedup.
+
+─────────────────────────────────────────────────────────────────────
+Q19. GROUP BY with ROLLUP, CUBE, GROUPING SETS.
+─────────────────────────────────────────────────────────────────────
+-- ROLLUP: Subtotals + grand total
+SELECT city, status, COUNT(*), SUM(premium)
+FROM policies GROUP BY ROLLUP(city, status);
+-- Result includes: per city+status, per city (subtotal), grand total
+
+-- CUBE: All combinations
+GROUP BY CUBE(city, status);
+-- per city+status, per city, per status, grand total
+
+-- GROUPING SETS: Specific combinations
+GROUP BY GROUPING SETS((city, status), (city), ());
+
+─────────────────────────────────────────────────────────────────────
+Q20. CASE WHEN — conditional logic in SQL.
+─────────────────────────────────────────────────────────────────────
+SELECT policy_number,
+    CASE
+        WHEN premium > 100000 THEN 'Platinum'
+        WHEN premium > 50000 THEN 'Gold'
+        WHEN premium > 10000 THEN 'Silver'
+        ELSE 'Bronze'
+    END AS tier,
+    CASE status
+        WHEN 'ACTIVE' THEN 'Active'
+        WHEN 'LAPSED' THEN 'Lapsed'
+        ELSE 'Unknown'
+    END AS status_label
+FROM policies;
+
+─────────────────────────────────────────────────────────────────────
+Q21. COALESCE, NULLIF, ISNULL — NULL handling.
+─────────────────────────────────────────────────────────────────────
+COALESCE(a, b, c): Returns first non-NULL value
+NULLIF(a, b): Returns NULL if a = b, else returns a
+ISNULL(a, default): SQL Server specific, returns default if a is NULL
+
+  SELECT COALESCE(phone, email, 'No contact') AS contact FROM customers;
+  SELECT amount / NULLIF(count, 0) AS average FROM stats; -- avoid division by zero
+
+─────────────────────────────────────────────────────────────────────
+Q22. EXISTS vs IN — performance comparison.
+─────────────────────────────────────────────────────────────────────
+-- EXISTS: Stops at first match (efficient for large subquery)
+SELECT * FROM policies p WHERE EXISTS (
+    SELECT 1 FROM claims c WHERE c.policy_id = p.id
+);
+
+-- IN: Evaluates entire subquery first (may be faster for small subquery)
+SELECT * FROM policies WHERE id IN (SELECT policy_id FROM claims);
+
+Rule of thumb:
+  - Subquery is large: EXISTS is faster (short-circuits)
+  - Subquery is small: IN is faster (optimized by DB engine)
+
+─────────────────────────────────────────────────────────────────────
+Q23. Pagination — OFFSET vs Keyset.
+─────────────────────────────────────────────────────────────────────
+-- OFFSET pagination (BAD for large offsets):
+SELECT * FROM policies ORDER BY id LIMIT 20 OFFSET 10000;
+-- DB scans 10020 rows, discards 10000 → O(offset + limit)
+
+-- Keyset pagination (GOOD, constant performance):
+SELECT * FROM policies WHERE id > 10000 ORDER BY id LIMIT 20;
+-- DB uses index, starts from id=10000 → O(limit)
+
+Spring Data JPA:
+  Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
+  Page<Policy> result = policyRepo.findAll(pageable);
+  // Internally uses OFFSET → fine for small-medium datasets
+
+─────────────────────────────────────────────────────────────────────
+Q24. INSERT ... ON CONFLICT (UPSERT).
+─────────────────────────────────────────────────────────────────────
+-- PostgreSQL:
+INSERT INTO policies (policy_number, status, premium)
+VALUES ('P123', 'ACTIVE', 50000)
+ON CONFLICT (policy_number) DO UPDATE SET
+    status = EXCLUDED.status,
+    premium = EXCLUDED.premium;
+
+-- SQL Server (MERGE):
+MERGE INTO policies AS target USING (VALUES ('P123','ACTIVE',50000)) AS source
+ON target.policy_number = source.policy_number
+WHEN MATCHED THEN UPDATE SET status = source.status
+WHEN NOT MATCHED THEN INSERT (policy_number, status, premium) VALUES (...);
+
+─────────────────────────────────────────────────────────────────────
+Q25. String functions frequently used.
+─────────────────────────────────────────────────────────────────────
+CONCAT, SUBSTRING, LENGTH/LEN, UPPER, LOWER, TRIM, REPLACE
+LIKE '%pattern%', CHARINDEX (SQL Server), POSITION (PostgreSQL)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3: DATABASE DESIGN + PERFORMANCE (Q26-Q38)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q26. Design schema for Policy Management System.
+─────────────────────────────────────────────────────────────────────
+CREATE TABLE customers (
+    id BIGINT IDENTITY PRIMARY KEY,
+    name NVARCHAR(100) NOT NULL,
+    email NVARCHAR(100) UNIQUE,
+    phone NVARCHAR(20),
+    city NVARCHAR(50),
+    created_at DATETIME2 DEFAULT GETDATE()
+);
+
+CREATE TABLE policies (
+    id BIGINT IDENTITY PRIMARY KEY,
+    policy_number NVARCHAR(20) UNIQUE NOT NULL,
+    customer_id BIGINT NOT NULL REFERENCES customers(id),
+    type NVARCHAR(20) NOT NULL, -- LIFE, HEALTH, AUTO, HOME
+    status NVARCHAR(20) DEFAULT 'ACTIVE',
+    premium DECIMAL(12,2) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    created_at DATETIME2 DEFAULT GETDATE(),
+    updated_at DATETIME2
+);
+
+CREATE TABLE claims (
+    id BIGINT IDENTITY PRIMARY KEY,
+    claim_number NVARCHAR(20) UNIQUE NOT NULL,
+    policy_id BIGINT NOT NULL REFERENCES policies(id),
+    amount DECIMAL(12,2) NOT NULL,
+    status NVARCHAR(20) DEFAULT 'SUBMITTED',
+    description NVARCHAR(MAX),
+    submitted_at DATETIME2 DEFAULT GETDATE(),
+    resolved_at DATETIME2
+);
+
+CREATE INDEX idx_policies_customer ON policies(customer_id);
+CREATE INDEX idx_policies_status ON policies(status);
+CREATE INDEX idx_claims_policy ON claims(policy_id);
+CREATE INDEX idx_claims_status ON claims(status);
+
+─────────────────────────────────────────────────────────────────────
+*** Q27. Query optimization — slow query debugging.
+─────────────────────────────────────────────────────────────────────
+Steps:
+  1. EXPLAIN ANALYZE the query → check for Seq Scan
+  2. Check indexes: Are WHERE/JOIN columns indexed?
+  3. Check statistics: ANALYZE table (PostgreSQL) / UPDATE STATISTICS (SQL Server)
+  4. Check data types: VARCHAR vs INT comparison causes implicit cast → index skip
+  5. Check selectivity: Low-cardinality index useless (e.g., status with 3 values)
+  6. Check query: Can rewrite subquery as JOIN? Avoid SELECT *?
+  7. Check pagination: OFFSET large? Switch to keyset
+  8. Check connection pool: Are queries waiting for connections?
+
+─────────────────────────────────────────────────────────────────────
+*** Q28. Deadlock — cause, detection, prevention.
+─────────────────────────────────────────────────────────────────────
+Cause:
+  Txn A: UPDATE policies SET ... WHERE id = 1 (locks row 1)
+  Txn B: UPDATE claims SET ... WHERE id = 5 (locks claim 5)
+  Txn A: UPDATE claims SET ... WHERE id = 5 (waits for B's lock)
+  Txn B: UPDATE policies SET ... WHERE id = 1 (waits for A's lock) → DEADLOCK!
+
+Detection: DB detects cycle, kills one transaction (deadlock victim)
+
+Prevention:
+  1. Access tables in consistent order (always policies → claims)
+  2. Keep transactions short
+  3. Use row-level locks (not table locks)
+  4. Use optimistic locking (@Version in Hibernate)
+
+─────────────────────────────────────────────────────────────────────
+Q29. Database partitioning — horizontal and vertical.
+─────────────────────────────────────────────────────────────────────
+Horizontal (Range/List/Hash):
+  -- Partition claims by year
+  CREATE TABLE claims_2024 PARTITION OF claims FOR VALUES FROM ('2024-01-01') TO ('2025-01-01');
+
+  Benefit: Query only scans relevant partition (partition pruning)
+
+Vertical: Split wide table into narrow tables
+  policies_core: id, number, customer_id, status
+  policies_details: id, description, terms, documents
+
+─────────────────────────────────────────────────────────────────────
+Q30. Connection pooling in production.
+Spring Boot + HikariCP:
+  maximumPoolSize: 10-20 (formula: cores * 2 + spindle_count)
+  minimumIdle: same as max (avoid pool warmup)
+  connectionTimeout: 30000ms (fail fast)
+  idleTimeout: 600000ms (10 min)
+  maxLifetime: 1800000ms (30 min, must be < DB timeout)
+
+Q31. Read replicas for scaling reads.
+Q32. Database migration with Flyway (V1__ naming, checksums).
+Q33. Soft delete vs Hard delete (is_deleted flag vs DELETE).
+Q34. Audit trail table design (who, what, when, old_value, new_value).
+Q35. Database backup strategy (full + differential + transaction log).
+Q36. SQL injection prevention (parameterized queries, JPA auto-safe).
+Q37. Temporary tables vs Table variables.
+Q38. Execution plan caching and plan cache pollution.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4: SCENARIO-BASED QUERIES (Q39-Q50)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*** Q39. Find customers who have never filed a claim.
+SELECT c.* FROM customers c
+LEFT JOIN policies p ON c.id = p.customer_id
+LEFT JOIN claims cl ON p.id = cl.policy_id
+WHERE cl.id IS NULL;
+
+Q40. Find policies expiring in next 30 days.
+SELECT * FROM policies WHERE end_date BETWEEN GETDATE() AND DATEADD(DAY, 30, GETDATE())
+AND status = 'ACTIVE';
+
+Q41. Monthly premium revenue report.
+SELECT FORMAT(created_at, 'yyyy-MM') AS month, SUM(premium) AS revenue
+FROM policies GROUP BY FORMAT(created_at, 'yyyy-MM') ORDER BY month;
+
+Q42. Top 5 cities by claim amount.
+SELECT c.city, SUM(cl.amount) AS total_claims
+FROM customers c JOIN policies p ON c.id = p.customer_id
+JOIN claims cl ON p.id = cl.policy_id
+GROUP BY c.city ORDER BY total_claims DESC LIMIT 5;
+
+Q43. Year-over-year growth in policies.
+WITH yearly AS (
+    SELECT YEAR(created_at) AS yr, COUNT(*) AS cnt FROM policies GROUP BY YEAR(created_at)
+)
+SELECT yr, cnt, LAG(cnt) OVER (ORDER BY yr) AS prev_year,
+    ROUND((cnt - LAG(cnt) OVER (ORDER BY yr)) * 100.0 / LAG(cnt) OVER (ORDER BY yr), 2) AS growth_pct
+FROM yearly;
+
+Q44. Find consecutive days without claims (gap analysis).
+Q45. Pivot: Claims count per status per month.
+Q46. Running average of premium over last 7 days.
+Q47. Detect anomalous claims (amount > 3 standard deviations).
+Q48. Customer retention: Policies renewed vs lapsed per quarter.
+Q49. Most common claim types per policy type.
+Q50. Recursive: Organization hierarchy with total reportees count.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE: *** HIGH-FREQUENCY QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*** Q1.  SQL execution order
+*** Q2.  JOINs with project examples
+*** Q3.  Index types and when to use
+*** Q4.  B-Tree internal working
+*** Q5.  EXPLAIN query optimization
+*** Q6.  Normalization (1NF-3NF-BCNF)
+*** Q13. Window functions (ROW_NUMBER, RANK, LAG/LEAD)
+*** Q14. CTEs and recursive CTEs
+*** Q15. Correlated vs non-correlated subqueries
+*** Q16. Nth highest salary approaches
+*** Q17. Delete duplicates
+*** Q26. Schema design for insurance
+*** Q27. Slow query debugging
+*** Q28. Deadlock prevention
+*** Q39. LEFT JOIN to find missing records
+
+================================================================================
+END OF SQL & DBMS ANALYSIS (50 Questions)
+================================================================================

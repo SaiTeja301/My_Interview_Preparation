@@ -1,0 +1,301 @@
+================================================================================
+SPRING BOOT - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SOURCE ANALYSIS
+Source: Spring_and_Spring_boot.txt (Spring Boot section ~5000 lines)
+Coverage: Auto Configuration, Starter dependencies, REST API, Profiles, Actuator,
+          Exception handling, Spring MVC, Packaging
+Missing: Spring Boot 3.x changes, GraalVM native images, Observability (Micrometer),
+         Custom Auto-configuration, ConfigurationProperties validation
+
+SECTION 2: 5 INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. What is Spring Boot? How is it different from Spring?
+Spring: Full-featured framework, requires manual configuration
+Spring Boot: Opinionated, convention-over-configuration, auto-configures
+
+Spring Boot Advantages:
+1. Auto Configuration: Configures beans based on classpath
+2. Starter Dependencies: Curated dependency sets (spring-boot-starter-web)
+3. Embedded Server: Tomcat/Jetty/Undertow built in
+4. Production Ready: Actuator, health checks, metrics
+5. No XML: Java-based or YAML/properties configuration
+
+*** Q2. @SpringBootApplication annotation - what does it include?
+@SpringBootApplication = @Configuration + @EnableAutoConfiguration + @ComponentScan
+
+@Configuration: Marks class as bean definition source
+@EnableAutoConfiguration: Enables auto-configuration based on classpath
+@ComponentScan: Scans current package and sub-packages for components
+
+ROUND 2 - CORE TECHNICAL
+
+*** Q3. Spring Boot Auto-Configuration internal working.
+Flow:
+1. @EnableAutoConfiguration triggers AutoConfigurationImportSelector
+2. Reads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+3. Each auto-config class has @Conditional annotations:
+   @ConditionalOnClass: Only if class on classpath
+   @ConditionalOnMissingBean: Only if user hasn't defined bean
+   @ConditionalOnProperty: Only if property set
+
+Example (DataSource auto-config):
+@ConditionalOnClass(DataSource.class) // HikariCP on classpath?
+@ConditionalOnMissingBean(DataSource.class) // User hasn't defined one?
+@AutoConfiguration
+public class DataSourceAutoConfiguration {
+    @Bean
+    public HikariDataSource dataSource(DataSourceProperties props) {
+        return props.initializeDataSourceBuilder()
+            .type(HikariDataSource.class).build();
+    }
+}
+
+Debug auto-config: --debug flag or spring.autoconfigure.exclude
+
+*** Q4. Profiles in Spring Boot.
+application.properties (default)
+application-dev.properties
+application-prod.properties
+
+Activation: spring.profiles.active=dev (or --spring.profiles.active=prod)
+
+@Profile("prod")
+@Configuration
+public class ProdSecurityConfig { ... }
+
+Multi-profile YAML:
+spring:
+  profiles:
+    active: dev
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+server:
+  port: 8080
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+server:
+  port: 443
+
+*** Q5. Spring Boot Actuator.
+Endpoint             | Purpose
+/actuator/health     | Application health status
+/actuator/info       | App information
+/actuator/metrics    | JVM/app metrics
+/actuator/env        | Environment properties
+/actuator/beans      | All registered beans
+/actuator/mappings   | URL mappings
+/actuator/loggers    | View/change log levels at runtime
+/actuator/heapdump   | Heap dump download
+/actuator/threaddump | Thread dump
+
+Config:
+management.endpoints.web.exposure.include=health,info,metrics
+management.endpoint.health.show-details=always
+
+Custom Health:
+@Component
+public class DatabaseHealthIndicator implements HealthIndicator {
+    @Override
+    public Health health() {
+        if (isDatabaseUp()) return Health.up().withDetail("db", "Running").build();
+        return Health.down().withDetail("db", "Not reachable").build();
+    }
+}
+
+ROUND 3 - ADVANCED
+
+*** Q6. Exception Handling in Spring Boot.
+@RestControllerAdvice (Global Exception Handler):
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErrorResponse handleNotFound(ResourceNotFoundException ex) {
+        return new ErrorResponse(404, ex.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrorResponse handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = ex.getBindingResult()
+            .getFieldErrors().stream()
+            .collect(Collectors.toMap(
+                FieldError::getField, FieldError::getDefaultMessage));
+        return new ErrorResponse(400, "Validation failed", errors);
+    }
+}
+
+Flow:
+Client Request -> Controller -> throws Exception
+     |
+@RestControllerAdvice catches
+     |
+Maps to HTTP status + Error body
+     |
+JSON response to client
+
+*** Q7. Spring Boot Logging.
+Default: Logback (via spring-boot-starter-logging)
+Can switch to: Log4j2
+
+Levels: TRACE < DEBUG < INFO < WARN < ERROR
+logging.level.root=INFO
+logging.level.com.myapp=DEBUG
+logging.file.name=/var/log/app.log
+logging.pattern.console=%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+
+Structured logging for ELK/Splunk:
+logging.pattern.console={"time":"%d","level":"%p","logger":"%logger","msg":"%m"}%n
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q8. REST API best practices in Spring Boot.
+@RestController
+@RequestMapping("/api/v1/policies")
+public class PolicyController {
+    @GetMapping
+    public ResponseEntity<Page<PolicyDTO>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(policyService.findAll(pageable));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PolicyDTO> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(policyService.findById(id));
+    }
+
+    @PostMapping
+    public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyRequest req) {
+        PolicyDTO created = policyService.create(req);
+        URI location = URI.create("/api/v1/policies/" + created.getId());
+        return ResponseEntity.created(location).body(created);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<PolicyDTO> update(@PathVariable Long id,
+                                            @Valid @RequestBody PolicyRequest req) {
+        return ResponseEntity.ok(policyService.update(id, req));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        policyService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+
+Best Practices:
+1. Use DTOs (never expose Entity directly)
+2. Proper HTTP status codes (201 Created, 204 No Content)
+3. API versioning (/api/v1/)
+4. Pagination for list endpoints
+5. Validation with @Valid + DTO annotations
+6. Global exception handling
+
+ROUND 5 - ARCHITECTURE
+
+Q9. Spring Boot application structure.
+com.company.project/
+    ├── config/           (Configuration classes)
+    ├── controller/       (REST controllers)
+    ├── service/          (Business logic)
+    ├── repository/       (Data access - JPA)
+    ├── entity/           (JPA entities / DB models)
+    ├── dto/              (Request/Response DTOs)
+    ├── exception/        (Custom exceptions + handler)
+    ├── security/         (Security config, JWT)
+    ├── util/             (Utility classes)
+    └── Application.java  (Main class)
+
+KEY QUESTIONS:
+*** 1. Spring vs Spring Boot
+*** 2. @SpringBootApplication breakdown
+*** 3. Auto-Configuration internal working
+*** 4. Profiles usage
+*** 5. Actuator endpoints
+*** 6. Global exception handling
+*** 7. REST API best practices
+*** 8. Embedded server configuration
+
+================================================================================
+END OF SPRING BOOT ANALYSIS
+================================================================================
+
+================================================================================
+SPRING BOOT - ADDITIONAL QUESTIONS (Q10-Q35) - ENHANCED EXPANSION
+================================================================================
+
+*** Q10. Spring Boot Auto-Configuration debugging.
+Run with --debug flag to see auto-configuration report:
+  Positive matches: Auto-configurations that WERE applied
+  Negative matches: Auto-configurations that were NOT applied (and why)
+  Exclusions: Manually excluded auto-configurations
+
+Exclude: @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+
+*** Q11. @ConfigurationProperties - type-safe config.
+@ConfigurationProperties(prefix = "app.policy")
+public class PolicyConfig {
+    private String defaultType;
+    private int maxRetries;
+    private Duration timeout; // Spring parses "5s", "2m", "1h"
+    private List<String> allowedStatuses;
+    // getters + setters
+}
+// app.policy.default-type=LIFE
+// app.policy.max-retries=3
+// app.policy.timeout=30s
+
+*** Q12. Spring Boot Starter - how to create custom starter.
+1. Create auto-configuration module
+2. @Configuration + @ConditionalOnClass + @ConditionalOnProperty
+3. Register in META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
+4. Package as spring-boot-starter-yourlib
+
+*** Q13. Embedded server comparison.
+Tomcat (default): Servlet-based, blocking I/O, most mature
+Jetty: Lightweight, HTTP/2 support, good for microservices
+Undertow: Non-blocking, good performance, Wildfly team
+Netty: Non-blocking, used with WebFlux (reactive)
+
+Switch: spring-boot-starter-web (exclude tomcat) + spring-boot-starter-undertow
+
+*** Q14. Spring Boot DevTools.
+LiveReload, automatic restart, H2 console, property defaults for dev.
+spring-boot-devtools dependency (auto-disabled in production JAR).
+
+*** Q15. Scenario: How to handle 10K requests/second?
+1. Connection pool tuning: HikariCP maximumPoolSize
+2. Response caching: @Cacheable with Redis
+3. Async processing: @Async + CompletableFuture
+4. Database optimization: Indexes, query tuning, read replicas
+5. Horizontal scaling: Multiple instances + load balancer
+6. Rate limiting: Resilience4j RateLimiter
+7. Response compression: server.compression.enabled=true
+
+*** Q16. Spring WebFlux vs Spring MVC.
+MVC: Servlet-based, blocking, thread-per-request (Tomcat)
+WebFlux: Reactive, non-blocking, event-loop (Netty)
+
+MVC: Good for CRUD apps, simple, most developers know it
+WebFlux: Good for streaming, high-concurrency, reactive DBs
+
+Use MVC unless you have specific non-blocking requirements.
+
+*** Q17-Q20 Quick SpringBoot:
+Q17. Graceful shutdown: server.shutdown=graceful (waits for active requests)
+Q18. Spring Boot testing slices: @WebMvcTest, @DataJpaTest, @JsonTest
+Q19. Health check groups: management.endpoint.health.group.readiness.include=db,diskSpace
+Q20. Externalized config priority: CLI args > env vars > application.yml > defaults
+
+================================================================================

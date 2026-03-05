@@ -1,0 +1,258 @@
+================================================================================
+AWS & DEVOPS - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SOURCE ANALYSIS
+Resume: AWS (S3, EC2), Docker, Jenkins, Harness, GitHub Actions, SonarQube,
+        Kibana, Splunk, Contrast Security, Twistlock, Harbor, Rancher
+Coverage: Real project experience with CI/CD and containerization
+Missing: AWS Lambda, ECS/EKS, CloudFormation/Terraform, CloudWatch deep dive
+
+SECTION 2: AWS SERVICES FOR JAVA DEVELOPERS
+
+Core Services:
+EC2: Virtual servers (deploy Spring Boot JARs)
+S3: Object storage (file uploads, static assets)
+RDS: Managed databases (MySQL, PostgreSQL)
+Lambda: Serverless functions
+ECS/EKS: Container orchestration (Docker/Kubernetes)
+SQS: Message queue
+SNS: Notification service
+CloudWatch: Monitoring and logging
+IAM: Identity and Access Management
+API Gateway: REST API management
+
+SECTION 3: INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. Docker basics for Java developers.
+Dockerfile for Spring Boot:
+FROM openjdk:17-slim
+WORKDIR /app
+COPY target/policy-service-1.0.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar",
+    "-Xms512m", "-Xmx1024m",
+    "--spring.profiles.active=prod"]
+
+Docker Commands:
+docker build -t policy-service:1.0 .
+docker run -d -p 8080:8080 --name policy-svc policy-service:1.0
+docker-compose up -d          # Multi-container setup
+docker logs policy-svc        # View logs
+docker exec -it policy-svc sh # Shell into container
+
+Docker Compose (multi-service):
+version: '3.8'
+services:
+  policy-service:
+    build: ./policy-service
+    ports: ["8080:8080"]
+    depends_on: [postgres, redis]
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: policydb
+      POSTGRES_PASSWORD: secret
+    volumes: ["pg-data:/var/lib/postgresql/data"]
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+*** Q2. AWS EC2 and S3 from resume experience.
+EC2 (Elastic Compute Cloud):
+- Virtual server instances
+- Instance types: t2.micro (free tier), t3.medium (production)
+- Security Groups: Firewall rules (inbound/outbound)
+- Key pairs: SSH access
+- Auto Scaling Group: Scale based on load
+- Load Balancer (ALB): Distribute traffic across instances
+
+S3 (Simple Storage Service):
+Spring Boot integration:
+@Service
+public class S3FileService {
+    @Autowired private AmazonS3 s3Client;
+    private final String bucket = "policy-documents";
+
+    public String uploadFile(MultipartFile file) {
+        String key = UUID.randomUUID() + "/" + file.getOriginalFilename();
+        s3Client.putObject(bucket, key,
+            file.getInputStream(), new ObjectMetadata());
+        return s3Client.getUrl(bucket, key).toString();
+    }
+
+    public S3Object downloadFile(String key) {
+        return s3Client.getObject(bucket, key);
+    }
+}
+
+ROUND 2 - CI/CD PIPELINE
+
+*** Q3. CI/CD Pipeline design (from resume: Jenkins, Harness, GitHub Actions).
+GitHub Actions Pipeline (.github/workflows/ci.yml):
+name: CI/CD Pipeline
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Build & Test
+      run: mvn clean verify -B
+    - name: SonarQube Analysis
+      run: mvn sonar:sonar
+    - name: Security Scan (Contrast)
+      run: contrast-scan --project policy-service
+    - name: Docker Build
+      run: docker build -t policy-service:${{ github.sha }} .
+    - name: Push to Harbor
+      run: |
+        docker tag policy-service:${{ github.sha }} harbor.company.com/policy-service:${{ github.sha }}
+        docker push harbor.company.com/policy-service:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to Kubernetes
+      run: kubectl set image deployment/policy-svc policy-svc=harbor.company.com/policy-service:${{ github.sha }}
+
+Pipeline Flow:
+Code Push -> Build (Maven) -> Unit Tests -> SonarQube -> Security Scan
+     -> Docker Build -> Push to Registry (Harbor) -> Deploy to K8s
+
+*** Q4. SonarQube for code quality (from resume).
+SonarQube checks:
+- Code coverage (target: 80%+)
+- Code smells (maintainability issues)
+- Bugs (potential runtime errors)
+- Vulnerabilities (security issues)
+- Duplications (copy-paste code)
+
+Quality Gate:
+- Coverage >= 80%
+- No new critical/blocker issues
+- Duplication < 3%
+
+Maven integration:
+mvn sonar:sonar -Dsonar.host.url=http://sonarqube:9000
+
+ROUND 3 - ADVANCED
+
+*** Q5. Kubernetes basics for Java developers.
+Kubernetes Objects:
+Pod: Smallest deployable unit (one or more containers)
+Deployment: Manages Pod replicas, rolling updates
+Service: Network endpoint (ClusterIP, NodePort, LoadBalancer)
+ConfigMap: External configuration
+Secret: Sensitive data (passwords, keys)
+Ingress: HTTP routing rules
+
+Deployment YAML:
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: policy-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: policy-service
+  template:
+    metadata:
+      labels:
+        app: policy-service
+    spec:
+      containers:
+      - name: policy-service
+        image: harbor.company.com/policy-service:1.0
+        ports:
+        - containerPort: 8080
+        resources:
+          requests: { cpu: "250m", memory: "512Mi" }
+          limits: { cpu: "500m", memory: "1Gi" }
+        readinessProbe:
+          httpGet: { path: /actuator/health, port: 8080 }
+          initialDelaySeconds: 30
+        livenessProbe:
+          httpGet: { path: /actuator/health, port: 8080 }
+          initialDelaySeconds: 60
+
+Q6. Monitoring and Logging (from resume: Kibana, Splunk, Rancher).
+ELK Stack: Elasticsearch + Logstash + Kibana
+- Application logs -> Logstash -> Elasticsearch -> Kibana (dashboards)
+
+Spring Boot logging for ELK:
+logging.pattern.console=%d{ISO8601} [%thread] %-5level %logger{36} - %msg%n
+// Or structured JSON logging for direct Elasticsearch ingestion
+
+Splunk integration:
+- Forward application logs via Splunk forwarder
+- Create dashboards for error rates, response times
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q7. Explain your CI/CD pipeline from Nationwide project.
+From resume:
+1. Developer pushes code to Git
+2. Jenkins/GitHub Actions triggers pipeline
+3. Maven build + JUnit tests
+4. SonarQube code quality analysis
+5. Contrast Security scan
+6. Docker image built
+7. Image pushed to Harbor registry
+8. Harness deploys to Rancher/Kubernetes
+9. Health checks verify deployment
+10. Splunk/Kibana for monitoring
+
+Q8. Blue-Green vs Canary deployment.
+Blue-Green: Two identical environments, switch traffic at once
+  - Blue (current) serving traffic
+  - Green (new version) deployed and tested
+  - Switch load balancer to Green
+  - Rollback: Switch back to Blue
+
+Canary: Gradually shift traffic to new version
+  - Deploy new version to small % of traffic (5%)
+  - Monitor error rates, latency
+  - Gradually increase (25%, 50%, 100%)
+  - Rollback: Route all to old version
+
+ROUND 5 - SECURITY
+
+Q9. Security tools from resume.
+Contrast Security: Runtime Application Self-Protection (RASP),
+    identifies vulnerabilities during testing
+Twistlock (Prisma Cloud): Container security scanning,
+    image vulnerability assessment
+SonarQube: Static code analysis for security vulnerabilities
+
+KEY QUESTIONS:
+*** 1. Docker for Java developers
+*** 2. CI/CD Pipeline design
+*** 3. AWS EC2 and S3
+*** 4. SonarQube code quality
+*** 5. Kubernetes basics
+*** 6. Monitoring (ELK, Splunk)
+*** 7. Blue-Green vs Canary deployment
+*** 8. Container security (Twistlock/Contrast)
+
+================================================================================
+END OF AWS DEVOPS ANALYSIS
+================================================================================

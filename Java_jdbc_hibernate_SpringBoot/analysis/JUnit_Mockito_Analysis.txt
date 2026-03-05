@@ -1,0 +1,240 @@
+================================================================================
+JUNIT 5 & MOCKITO - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: ANALYSIS
+Resume: JUnit mentioned in resume, used for testing in Nationwide and IKEA projects.
+Coverage in Notes: Basic JUnit concepts
+Missing: JUnit 5 architecture, Mockito deep dive, BDD testing, Integration testing,
+         @SpringBootTest, Test Containers, TDD approach, parameterized tests
+
+SECTION 2: JUNIT 5 ARCHITECTURE
+
+JUnit 5 = JUnit Platform + JUnit Jupiter + JUnit Vintage
+- Platform: Foundation for launching testing frameworks on JVM
+- Jupiter: New programming model + extension model (JUnit 5 tests)
+- Vintage: Backward compatibility with JUnit 3/4
+
+Key Annotations:
+@Test: Marks test method
+@BeforeEach / @AfterEach: Run before/after each test
+@BeforeAll / @AfterAll: Run before/after all tests (static)
+@DisplayName: Custom test name
+@Disabled: Skip test
+@Nested: Group related tests
+@ParameterizedTest: Data-driven tests
+@ExtendWith: Register extensions
+
+SECTION 3: INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. JUnit 4 vs JUnit 5.
+Feature          | JUnit 4            | JUnit 5
+Annotation       | @Before/@After     | @BeforeEach/@AfterEach
+Rule             | @Rule              | @ExtendWith
+Parameterized    | @RunWith(Parameterized) | @ParameterizedTest
+Assertions       | Assert.assertEquals | Assertions.assertEquals
+Assumptions      | Assume             | Assumptions
+Min Java         | Java 5             | Java 8+
+Architecture     | Single JAR         | 3 modules
+
+*** Q2. Writing effective unit tests.
+Structure: Arrange → Act → Assert (AAA)
+
+@Test
+@DisplayName("Should calculate premium for active policy")
+void shouldCalculatePremium() {
+    // Arrange
+    Policy policy = new Policy("POL-001", PolicyType.LIFE, 100000.0);
+    PremiumCalculator calculator = new PremiumCalculator();
+
+    // Act
+    double premium = calculator.calculate(policy);
+
+    // Assert
+    assertEquals(5000.0, premium, 0.01);
+    assertTrue(premium > 0, "Premium should be positive");
+}
+
+ROUND 2 - CORE TECHNICAL (MOCKITO)
+
+*** Q3. Mockito - mock vs spy vs stub.
+Mock: Fake object with no real implementation, returns defaults (null, 0, false)
+Spy: Partial mock, real object with selected method overrides
+Stub: Pre-programmed response for specific method calls
+
+@ExtendWith(MockitoExtension.class)
+class PolicyServiceTest {
+
+    @Mock
+    private PolicyRepository policyRepository;  // Full mock
+
+    @Spy
+    private EmailService emailService = new EmailService(); // Partial mock
+
+    @InjectMocks
+    private PolicyService policyService;  // Inject mocks into this
+
+    @Test
+    void shouldFindPolicyById() {
+        // Stub (when-then)
+        Policy mockPolicy = new Policy("POL-001", "ACTIVE");
+        when(policyRepository.findById("POL-001"))
+            .thenReturn(Optional.of(mockPolicy));
+
+        // Act
+        PolicyDTO result = policyService.findById("POL-001");
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("POL-001", result.getPolicyId());
+
+        // Verify interactions
+        verify(policyRepository, times(1)).findById("POL-001");
+        verify(emailService, never()).sendEmail(any()); // Not called
+    }
+}
+
+*** Q4. Mockito argument matchers and verification.
+Matchers:
+any(), anyString(), anyInt(), anyLong()
+eq("value"), argThat(arg -> arg.length() > 5)
+
+Verification:
+verify(mock, times(1)).method();      // Called exactly once
+verify(mock, never()).method();        // Never called
+verify(mock, atLeast(2)).method();     // At least 2 times
+verify(mock, atMost(5)).method();      // At most 5 times
+verifyNoMoreInteractions(mock);        // No other methods called
+
+Argument Captor:
+ArgumentCaptor<Policy> captor = ArgumentCaptor.forClass(Policy.class);
+verify(policyRepository).save(captor.capture());
+Policy savedPolicy = captor.getValue();
+assertEquals("ACTIVE", savedPolicy.getStatus());
+
+*** Q5. Testing exceptions.
+@Test
+void shouldThrowWhenPolicyNotFound() {
+    when(policyRepository.findById("XXX"))
+        .thenReturn(Optional.empty());
+
+    PolicyNotFoundException ex = assertThrows(
+        PolicyNotFoundException.class,
+        () -> policyService.findById("XXX"));
+
+    assertEquals("Policy not found: XXX", ex.getMessage());
+}
+
+ROUND 3 - ADVANCED
+
+*** Q6. @SpringBootTest vs @WebMvcTest vs @DataJpaTest.
+@SpringBootTest: Full application context, integration test (slow)
+@WebMvcTest: Only web layer (Controller), mock Service/Repository (fast)
+@DataJpaTest: Only JPA layer, H2 in-memory DB, test Repository (fast)
+
+// Controller test with @WebMvcTest
+@WebMvcTest(PolicyController.class)
+class PolicyControllerTest {
+    @Autowired private MockMvc mockMvc;
+    @MockBean private PolicyService policyService;
+
+    @Test
+    void shouldReturnPolicy() throws Exception {
+        PolicyDTO dto = new PolicyDTO("POL-001", "ACTIVE");
+        when(policyService.findById("POL-001")).thenReturn(dto);
+
+        mockMvc.perform(get("/api/v1/policies/POL-001"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.policyId").value("POL-001"))
+            .andExpect(jsonPath("$.status").value("ACTIVE"));
+    }
+
+    @Test
+    void shouldReturn404WhenNotFound() throws Exception {
+        when(policyService.findById("XXX"))
+            .thenThrow(new PolicyNotFoundException("Not found"));
+
+        mockMvc.perform(get("/api/v1/policies/XXX"))
+            .andExpect(status().isNotFound());
+    }
+}
+
+// Repository test with @DataJpaTest
+@DataJpaTest
+class PolicyRepositoryTest {
+    @Autowired private PolicyRepository repo;
+    @Autowired private TestEntityManager entityManager;
+
+    @Test
+    void shouldFindByStatus() {
+        entityManager.persist(new Policy("POL-001", "ACTIVE"));
+        entityManager.persist(new Policy("POL-002", "EXPIRED"));
+        entityManager.flush();
+
+        List<Policy> active = repo.findByStatus("ACTIVE");
+        assertEquals(1, active.size());
+    }
+}
+
+Q7. Parameterized Tests.
+@ParameterizedTest
+@CsvSource({"100000, 5000", "200000, 10000", "50000, 2500"})
+void shouldCalculatePremium(double sumAssured, double expectedPremium) {
+    assertEquals(expectedPremium, calculator.calculate(sumAssured), 0.01);
+}
+
+@ParameterizedTest
+@MethodSource("invalidPolicies")
+void shouldRejectInvalidPolicy(Policy policy) {
+    assertThrows(ValidationException.class, () -> service.validate(policy));
+}
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q8. Test coverage strategy for a Spring Boot service.
+Layer              | Test Type          | Tools
+Controller         | @WebMvcTest        | MockMvc, @MockBean
+Service            | Unit test          | @Mock, @InjectMocks
+Repository         | @DataJpaTest       | TestEntityManager
+Integration        | @SpringBootTest    | Full context
+API Contract       | Spring Cloud Contract | Contract tests
+
+Target: 80%+ line coverage, 100% critical path coverage
+
+Q9. Testing async methods.
+@Test
+void shouldProcessAsync() throws Exception {
+    CompletableFuture<String> future = asyncService.processAsync("data");
+    String result = future.get(5, TimeUnit.SECONDS); // Wait with timeout
+    assertEquals("PROCESSED", result);
+}
+
+ROUND 5 - BEST PRACTICES
+
+Q10. Unit testing best practices.
+1. Test behavior, not implementation
+2. One assertion concept per test
+3. Meaningful test names (@DisplayName)
+4. No logic in tests (no if/else, loops)
+5. Use @Nested for grouping related tests
+6. Mock external dependencies, not the class under test
+7. Test edge cases: null, empty, boundary values
+8. Don't test private methods directly
+9. Use assertAll() for related assertions
+10. Keep tests fast (<100ms per test)
+
+KEY QUESTIONS:
+*** 1. JUnit 4 vs JUnit 5
+*** 2. Mockito mock vs spy vs stub
+*** 3. Argument matchers and verification
+*** 4. @SpringBootTest vs @WebMvcTest vs @DataJpaTest
+*** 5. Exception testing
+*** 6. Parameterized tests
+*** 7. Test coverage strategy
+
+================================================================================
+END OF JUNIT_MOCKITO ANALYSIS
+================================================================================

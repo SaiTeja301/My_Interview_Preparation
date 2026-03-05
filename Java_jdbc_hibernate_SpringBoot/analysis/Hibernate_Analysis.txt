@@ -1,0 +1,304 @@
+================================================================================
+HIBERNATE / JPA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SOURCE ANALYSIS
+Source: Jdbc_Hibernate_Notes.txt (Hibernate section ~4000 lines)
+Coverage: Session lifecycle, SessionFactory, HQL, Criteria API, entity mapping,
+          relationships (One-to-Many, Many-to-Many), cascade, fetch types
+Missing: Second-level cache config, N+1 problem solutions, dirty checking internals,
+         Hibernate Envers, batch fetching, entity graphs
+
+SECTION 2: HIBERNATE ARCHITECTURE
+
+Application -> Session API -> SessionFactory -> Connection Pool -> Database
+
+SessionFactory: Heavyweight, one per database, thread-safe, immutable
+Session: Lightweight, short-lived, NOT thread-safe, wraps JDBC Connection
+
+SECTION 3: 5 INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. JPA vs Hibernate.
+JPA: Specification (interface) - javax.persistence / jakarta.persistence
+Hibernate: Implementation of JPA specification
+
+JPA annotations: @Entity, @Table, @Id, @Column, @OneToMany
+Hibernate-specific: @Cache, @Formula, @DynamicUpdate, @NaturalId
+
+With Spring Data JPA: JPA (interface) -> Hibernate (implementation) -> JDBC -> DB
+
+*** Q2. Entity lifecycle states.
+Transient:  new object, not associated with Session, no DB row
+Persistent: Associated with Session, has DB row, tracked for changes
+Detached:   Was persistent, Session closed, still has DB identity
+Removed:    Scheduled for deletion
+
+Flow:
+new Employee() -> TRANSIENT
+     | session.save()/persist()
+PERSISTENT (in Session cache, dirty checking active)
+     | session.close()/clear()
+DETACHED (changes not tracked)
+     | session.merge()
+PERSISTENT (re-attached)
+     | session.delete()
+REMOVED -> DB DELETE on flush
+
+ROUND 2 - CORE TECHNICAL
+
+*** Q3. Lazy Loading vs Eager Loading.
+LAZY: Related entities loaded ONLY when accessed (default for collections)
+EAGER: Related entities loaded immediately with parent (default for @ManyToOne)
+
+@Entity
+public class Department {
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "department")
+    private List<Employee> employees; // Loaded only when getEmployees() called
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    private Company company; // Loaded immediately with Department
+}
+
+LazyInitializationException:
+Occurs when accessing lazy-loaded field after Session is closed!
+
+Solutions:
+1. Open Session in View pattern (Spring: spring.jpa.open-in-view=true)
+2. Use JOIN FETCH in JPQL
+3. EntityGraph
+4. DTO projection (best practice)
+
+*** Q4. N+1 Problem - Detection and Solutions.
+Problem: 1 query for parent + N queries for each child = N+1 queries!
+
+// This causes N+1:
+List<Department> depts = deptRepo.findAll(); // 1 query
+for (Department d : depts) {
+    d.getEmployees().size(); // N queries (one per dept!)
+}
+
+Solutions:
+1. JOIN FETCH (JPQL):
+   @Query("SELECT d FROM Department d JOIN FETCH d.employees")
+   List<Department> findAllWithEmployees();
+
+2. @EntityGraph:
+   @EntityGraph(attributePaths = {"employees"})
+   List<Department> findAll();
+
+3. @BatchSize (Hibernate):
+   @BatchSize(size = 20)
+   private List<Employee> employees;
+   // Loads employees in batches of 20 instead of 1-by-1
+
+4. DTO Projection (best for read-only):
+   @Query("SELECT new com.dto.DeptDTO(d.name, COUNT(e)) " +
+          "FROM Department d LEFT JOIN d.employees e GROUP BY d.name")
+   List<DeptDTO> getDeptSummary();
+
+*** Q5. First-level vs Second-level Cache.
+First-Level Cache (Session Cache):
+- Scope: Per Session (transaction)
+- Enabled by default, cannot disable
+- Session.get(id) -> checks cache first -> DB only if miss
+- Session.clear() clears cache
+
+Second-Level Cache (SessionFactory Cache):
+- Scope: Across Sessions (application-wide)
+- Must be explicitly enabled
+- Providers: EhCache, Redis, Infinispan
+- Configured per entity: @Cacheable, @Cache
+
+Config (application.properties):
+spring.jpa.properties.hibernate.cache.use_second_level_cache=true
+spring.jpa.properties.hibernate.cache.region.factory_class=
+    org.hibernate.cache.jcache.JCacheRegionFactory
+
+@Entity
+@Cacheable
+@org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+public class Product { ... }
+
+Cache Flow:
+get(Product.class, 1)
+     |
+First-Level Cache (Session) -> HIT -> return
+     | MISS
+Second-Level Cache (SessionFactory) -> HIT -> return + store in L1
+     | MISS
+Database -> return + store in L1 + store in L2
+
+ROUND 3 - ADVANCED
+
+*** Q6. Dirty Checking - how Hibernate detects changes.
+When a persistent entity's field is modified, Hibernate automatically detects
+the change at flush time and generates an UPDATE SQL.
+
+Internal mechanism:
+1. When entity loaded, Hibernate takes a SNAPSHOT (copy of field values)
+2. At flush time, compares current state with snapshot
+3. If different -> generates UPDATE SQL
+4. Only changed columns updated (with @DynamicUpdate)
+
+@DynamicUpdate: Generates UPDATE with only changed columns (not all)
+@DynamicInsert: Generates INSERT with only non-null columns
+
+Q7. Cascade Types.
+CascadeType.PERSIST: Save child when parent saved
+CascadeType.MERGE: Update child when parent updated
+CascadeType.REMOVE: Delete child when parent deleted
+CascadeType.REFRESH: Refresh child when parent refreshed
+CascadeType.DETACH: Detach child when parent detached
+CascadeType.ALL: All of above
+
+@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+private List<Address> addresses;
+
+orphanRemoval=true: Delete child from DB when removed from parent's collection
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q8. Hibernate performance tuning checklist.
+1. Fix N+1: Use JOIN FETCH, @EntityGraph, @BatchSize
+2. Enable second-level cache for read-heavy entities
+3. Use @DynamicUpdate for wide tables
+4. Use DTO projections for read-only queries
+5. Set batch sizes: hibernate.jdbc.batch_size=30
+6. Use pagination: setFirstResult()/setMaxResults()
+7. Enable SQL logging for development:
+   spring.jpa.show-sql=true
+   spring.jpa.properties.hibernate.format_sql=true
+8. Use StatelessSession for bulk operations (no cache/dirty checking)
+9. Avoid bidirectional associations unless needed
+10. Use @Transactional(readOnly=true) for read operations
+
+Q9. save() vs persist() vs merge() vs update().
+save(): Hibernate-specific, returns generated ID, INSERT
+persist(): JPA standard, void return, INSERT, exception if detached
+merge(): Returns managed copy, INSERT or UPDATE, for detached entities
+update(): Hibernate-specific, re-attaches detached entity, exception if same ID in session
+
+Best practice: Use persist() for new, merge() for detached, JPA standard methods
+
+ROUND 5 - ARCHITECTURE
+
+Q10. Spring Data JPA Repository pattern.
+CrudRepository -> PagingAndSortingRepository -> JpaRepository
+
+public interface PolicyRepository extends JpaRepository<Policy, Long> {
+    List<Policy> findByStatusAndType(String status, String type); // Auto query
+    
+    @Query("SELECT p FROM Policy p WHERE p.premium > :min")
+    List<Policy> findHighValuePolicies(@Param("min") double min);
+    
+    @Modifying
+    @Query("UPDATE Policy p SET p.status = :status WHERE p.id = :id")
+    int updateStatus(@Param("id") Long id, @Param("status") String status);
+}
+
+Flow:
+Controller -> Service -> Repository (JpaRepository)
+                              |
+                         Spring Data JPA
+                              |
+                         Hibernate (JPA Provider)
+                              |
+                         JDBC (Connection Pool - HikariCP)
+                              |
+                         Database
+
+KEY QUESTIONS:
+*** 1. JPA vs Hibernate
+*** 2. Entity lifecycle (Transient, Persistent, Detached, Removed)
+*** 3. Lazy vs Eager loading
+*** 4. N+1 Problem and solutions
+*** 5. First-level vs Second-level cache
+*** 6. Dirty Checking internal working
+*** 7. Cascade types and orphanRemoval
+*** 8. Hibernate performance tuning
+
+================================================================================
+END OF HIBERNATE ANALYSIS
+================================================================================
+
+================================================================================
+HIBERNATE - ADDITIONAL QUESTIONS (Q11-Q40) - ENHANCED EXPANSION
+================================================================================
+
+*** Q11. @Transactional with Hibernate - proxy mechanism.
+Spring creates a PROXY around @Transactional bean.
+Proxy intercepts method call -> opens Session -> begins Transaction ->
+executes method -> commit on success / rollback on exception.
+
+Self-invocation problem:
+  public void methodA() { this.methodB(); } // Bypasses proxy!
+  @Transactional public void methodB() { ... } // No transaction!
+
+Fix: Inject self, or call from different bean.
+
+*** Q12. Hibernate entity states diagram.
+  new Entity() -> TRANSIENT (no Session, no DB row)
+       | persist() / save()
+  PERSISTENT (in Session, tracked, dirty checking active)
+       | session.close() / clear() / evict()
+  DETACHED (has DB identity, not tracked)
+       | merge()
+  PERSISTENT (re-attached)
+       | remove() / delete()
+  REMOVED (scheduled for DELETE)
+
+*** Q13. @ManyToMany mapping - best practices.
+AVOID bidirectional @ManyToMany in production.
+Use intermediate entity instead:
+
+// Instead of: Student <-> Course (ManyToMany)
+// Use: Student -> Enrollment <- Course (OneToMany + ManyToOne)
+@Entity
+public class Enrollment {
+    @ManyToOne private Student student;
+    @ManyToOne private Course course;
+    private LocalDate enrollDate;
+    private String grade; // Extra attributes!
+}
+
+*** Q14. Hibernate Query Optimization checklist.
+1. Use DTO projections for read-only: new DeptDTO(d.name, COUNT(e))
+2. Fix N+1 with JOIN FETCH, @EntityGraph, @BatchSize
+3. Enable 2nd-level cache for read-heavy entities
+4. Use @DynamicUpdate for wide tables
+5. Use pagination: setFirstResult/setMaxResults
+6. Use StatelessSession for bulk operations
+7. Set hibernate.jdbc.batch_size=30 for batch INSERT/UPDATE
+8. @Transactional(readOnly=true) for read-only operations
+9. Index frequently queried columns
+10. Use native SQL for complex reports
+
+*** Q15. Optimistic vs Pessimistic Locking.
+Optimistic (@Version):
+  @Version private int version;
+  On update, Hibernate checks version. If changed -> OptimisticLockException.
+  Retry logic needed. Good for low-contention.
+
+Pessimistic:
+  entityManager.find(Policy.class, id, LockModeType.PESSIMISTIC_WRITE);
+  Locks DB row with SELECT FOR UPDATE. Blocks other transactions.
+  Risk: Deadlock. Good for high-contention.
+
+*** Q16. Hibernate Envers - auditing entity changes.
+@Audited annotation tracks all changes (INSERT/UPDATE/DELETE).
+Creates revision table + entity_AUD table.
+
+*** Q17. JPQL vs Criteria API vs Native SQL - when to use each.
+JPQL: Standard queries, type-safe entity names, most common
+Criteria API: Dynamic queries (conditional WHERE clauses), type-safe
+Native SQL: Complex DB-specific queries, stored procedures, performance
+
+*** Q18-Q20: Quick Hibernate.
+Q18. MultipleBagFetchException - cannot fetch two bags. Fix: use Set or @OrderColumn
+Q19. LazyInitializationException - accessing lazy outside Session. Fix: JOIN FETCH/DTO
+Q20. Spring Data JPA Specifications for dynamic queries
+
+================================================================================

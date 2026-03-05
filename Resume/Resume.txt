@@ -1,0 +1,88 @@
+Akula Venkata Sai Teja
+(+91) 9346337502
+Hyderabad, Telangana https://www.linkedin.com/in/akula-venkata-sai-teja-20619724b/
+venkatasaitejaakula@gmail.com https://github.com/SaiTeja301
+Full Stack Java Developer (Java, Spring Boot & Angular)
+
+A passionate Full Stack Java Developer with 4 years of overall experience, including 3.5 years of relevant professional
+experience and 5 months of internship experience, working across backend and frontend technologies to build scalable,
+secure, and high-performing applications. Skilled in Java 8, Spring Framework, Spring Boot, Microservices, REST & SOAP
+services, JUnit, Spring Data JPA, Angular, SQL, and MongoDB, with strong foundations in OOPs Concepts, Collections,
+
+Multi-Threading, Exception Handling, data structures, and enterprise-grade software development. I enjoy solving real-
+world problems through clean code, robust architecture, and continuous learning. Alongside full-stack development, I
+
+am actively exploring new horizons in AI, Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), and
+automation to bring intelligence into modern backend systems.
+SKILLS
+Programming Languages Java, TypeScript, JavaScript
+Back-End Frameworks Spring, Spring Boot, Rest API, Microservices
+Frontend Frameworks Angular, HTML5, CSS3, Bootstrap, RxJS
+Database Systems SQL Server, MySQL, PL/SQL, MongoDB
+ORM Hibernate, Spring Data JPA, Spring JDBC
+Testing Unit Testing, Integration Testing and Automation Testing.
+Version Control Git
+Microservices Architecture Design and Implementation
+Cloud storage AWS -s3
+Code quality SonarQube, Black Duck
+Visualization Tool Kibana, Rancher and Splunk
+Software Design Patterns SOLID, Singleton
+Build Tool Maven
+CI/CD & Deployment Tools Jenkins, Harness and GitHub Actions.
+Containerization &
+Orchestration Tools
+
+Docker and Rancher
+Security & Compliance Tools Contrast Security and Twistlock.
+IDE Eclipse, STS and IntelliJ
+Agile Methodology Scrum, Daily Standup, Retrospective
+PROJECTS
+Software Engineer / (Nationwide Mutual Insurance Project) March-2025 — Present
+Cognizant Technology Solutions Hyderabad, Telangana
+This project is an insurance domain project at Nationwide Insurance, focused on developing and enhancing applications to improve business
+processes and customer experience. My role involves building Microservices and RESTful APIs using Spring Boot, optimizing backend services,
+and integrating with various systems. I also work on CI/CD pipelines with Jenkins and Harness, manage Docker deployments through
+Rancher, and handle AWS services like EC2 and S3 for deployments and storage.
+
+Jr.Software Engineer / (Ikea Internal Systems Retail Department Project) March-2024 — February-2025
+Cognizant Technology Solutions Hyderabad, Telangana
+This project streamlines retail operations for IKEA products across Europe, North America (including Puerto Rico), and West Asia (including
+Israel), built using Agile methodology and a Microservices architecture with Java, Spring Boot, Hibernate, Spring Data JPA, and Angular. The
+system integrates OpenAI Large Language Models via secure APIs, leveraging Retrieval-Augmented Generation (RAG) to deliver real-time,
+business-contextual intelligence aligned with client requirements. Hibernate and Spring Data JPA manage data persistence with SQL Server,
+supporting core functionalities such as order management, product tracking, backend product onboarding, and merchandise planning. The
+solution significantly enhances inventory control, operational efficiency, and data-driven decision-making across multiple regions.
+Jr.Software Engineer / (Cognizant Softvision – Merchandise Retail Department Project) August-2022 — February-2024
+Cognizant Technology Solutions Hyderabad, Telangana
+This project streamlines retail operations for multiple divisions like clothing, footwear, and accessories, featuring brands such as Nike, UCB,
+and Adidas. It includes size profiling, vendor management, and a comprehensive product catalog with various styles and colors, while
+providing insights through product previews and historical sales data to optimize inventory and drive profitability.
+TECHNICAL EXPERIENCE
+• Developed high-performance RESTful APIs using Java, Spring Boot, and Microservices architecture, ensuring scalability and
+efficient back-end functionality.
+• Contributed to the successful Microservices transformation of a monolithic application by applying SOLID principles and design
+patterns for modular, maintainable code.
+• Designed and developed REST APIs using Spring REST/Jersey and optimized MySQL queries for complex data operations.
+• Implemented object-relational mapping (ORM) with Hibernate/JPA for seamless database interactions.
+• Leveraged data structures and Java collections, with strong use of Exception Handling and Multithreading, to deliver reliable, scalable,
+and high-performance solutions in performance-critical scenarios.
+• Developed responsive web interfaces using Angular, following component-based architecture and modular design. Built Angular
+components, services, and routing for seamless integration with Spring Boot REST APIs.
+• Consumed microservices in frontend using Angular HttpClient with interceptor-based error handling.
+• Built secure data storage solutions using AWS S3 and managed application deployments on AWS EC2 instances.
+• Implemented Singleton design patterns for resource optimization and maintainability.
+• Ensured code quality and adherence to standards using SonarQube for static code analysis.
+• Wrote comprehensive unit tests using JUnit, improving code quality and reducing bug-related delays by 90%.
+• Designed and implemented logging mechanisms and used Kibana and Rancher logs for monitoring and troubleshooting production
+issues.
+• Automated CI/CD pipelines using GitHub Actions, Harness, and Jenkins, improving deployment speed by 30% and ensuring reliable,
+frequent releases.
+• Containerized applications using Docker and managed container orchestration and deployments through Rancher.
+• Utilized Harbor for secure container image management and remediated API and container vulnerabilities using Contrast Security and
+Twistlock to maintain enterprise security standards.
+• Partnered with DevOps and architecture teams to design and streamline CI/CD deployment workflows while participating in sprint and
+technical design discussions.
+• Experience working in Agile environments (Scrum) including sprint planning, backlog grooming, and daily stand-ups.
+EDUCATION
+Bachelor of Technology (Mechanical Engineering), Godavari Global University - Rajahmundry 2019-2022
+Diploma (Mechanical Engineering), GIET Polytechnic College -Rajahmundry

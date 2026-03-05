@@ -1,0 +1,310 @@
+================================================================================
+JDBC - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SOURCE ANALYSIS
+Source: Jdbc_Hibernate_Notes.txt (8,620 lines / 353 KB)
+Coverage: Driver loading, Connection, Statement, PreparedStatement, CRUD operations,
+          ResultSet processing, resource management, DAO pattern, connection details
+Missing: Connection Pooling (HikariCP), Batch Processing deep dive, Transaction isolation
+         levels, Savepoints, RowSet, CallableStatement (Stored Procedures)
+
+SECTION 2: JDBC ARCHITECTURE
+
+Application -> JDBC API -> JDBC Driver Manager -> JDBC Driver -> Database
+
+Driver Types:
+Type 1: JDBC-ODBC Bridge (deprecated)
+Type 2: Native-API (partially Java)
+Type 3: Network Protocol (middleware)
+Type 4: Thin Driver (pure Java) - RECOMMENDED (MySQL Connector/J, PostgreSQL driver)
+
+SECTION 3: 5 INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. Statement vs PreparedStatement vs CallableStatement.
+Statement: Simple SQL, compiled every time, SQL injection risk
+PreparedStatement: Precompiled, parameterized (?), prevents SQL injection, reusable
+CallableStatement: For stored procedures
+
+Code:
+// Statement - BAD (SQL injection vulnerable)
+Statement stmt = conn.createStatement();
+ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE id=" + userId);
+
+// PreparedStatement - GOOD
+PreparedStatement pstmt = conn.prepareStatement(
+    "SELECT * FROM users WHERE id = ?");
+pstmt.setInt(1, userId);
+ResultSet rs = pstmt.executeQuery();
+
+// CallableStatement - Stored Procedure
+CallableStatement cs = conn.prepareCall("{call getEmployeeById(?)}");
+cs.setInt(1, empId);
+ResultSet rs = cs.executeQuery();
+
+Internal Flow:
+PreparedStatement pstmt = conn.prepareStatement(sql);
+     |
+SQL sent to DB engine -> Parsed -> Compiled -> Execution plan cached
+     |
+pstmt.setInt(1, value); -> Parameters bound
+pstmt.executeQuery();   -> Uses cached plan (no recompilation!)
+
+*** Q2. JDBC Connection lifecycle.
+DriverManager.getConnection(url, user, pass)
+     |
+Driver loaded (auto from JDBC 4.0 via META-INF/services)
+     |
+Connection established (TCP socket to DB)
+     |
+Create Statement/PreparedStatement
+     |
+Execute queries -> Process ResultSet
+     |
+Close resources (ResultSet -> Statement -> Connection) in REVERSE order
+
+// Try-with-resources (best practice)
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement(sql);
+     ResultSet rs = ps.executeQuery()) {
+    while (rs.next()) {
+        // Process rows
+    }
+} // Auto-closed in reverse order
+
+ROUND 2 - CORE TECHNICAL
+
+*** Q3. Connection Pooling - why and how?
+Problem: Creating new DB connection = ~200ms (TCP + auth + SSL)
+Solution: Pre-create pool of connections, reuse them
+
+HikariCP (fastest pool):
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.maximum-pool-size=20
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.max-lifetime=1200000
+spring.datasource.hikari.connection-timeout=30000
+
+Flow:
+Application requests connection
+     |
+Pool has idle connection? -> YES -> Return to app (fast!)
+     |-- NO -> Pool at max? -> NO -> Create new connection
+                            -> YES -> Wait (up to connectionTimeout)
+                                      -> Timeout -> throw SQLException!
+
+Production Issue:
+In IKEA project, connection leak caused pool exhaustion. All 20 connections
+held but not returned because PreparedStatement was not closed in finally block.
+Fix: Use try-with-resources ALWAYS.
+
+*** Q4. Transaction Management in JDBC.
+conn.setAutoCommit(false); // Start transaction
+try {
+    ps1.executeUpdate(); // Debit
+    ps2.executeUpdate(); // Credit
+    conn.commit();       // Both succeed
+} catch (SQLException e) {
+    conn.rollback();     // Both fail (atomicity!)
+    throw e;
+}
+
+Savepoint:
+Savepoint sp = conn.setSavepoint("afterDebit");
+try {
+    ps2.executeUpdate(); // Credit fails
+} catch (SQLException e) {
+    conn.rollback(sp);   // Rollback only to savepoint
+}
+conn.commit(); // Debit still committed
+
+*** Q5. Transaction Isolation Levels.
+READ_UNCOMMITTED: Dirty reads possible (fastest, least safe)
+READ_COMMITTED: No dirty reads (default for most DBs)
+REPEATABLE_READ: No non-repeatable reads (MySQL default)
+SERIALIZABLE: Full isolation (slowest, safest)
+
+conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+Problems at each level:
+                    Dirty Read | Non-Repeatable Read | Phantom Read
+READ_UNCOMMITTED:      Yes     |       Yes           |     Yes
+READ_COMMITTED:        No      |       Yes           |     Yes
+REPEATABLE_READ:       No      |       No            |     Yes
+SERIALIZABLE:          No      |       No            |     No
+
+ROUND 3 - ADVANCED
+
+*** Q6. Batch Processing - performance optimization.
+// Without batch: 1000 inserts = 1000 round trips to DB
+// With batch: 1000 inserts = 1 round trip!
+
+PreparedStatement ps = conn.prepareStatement(
+    "INSERT INTO employees(name, dept, salary) VALUES(?, ?, ?)");
+
+conn.setAutoCommit(false);
+for (int i = 0; i < employees.size(); i++) {
+    ps.setString(1, employees.get(i).getName());
+    ps.setString(2, employees.get(i).getDept());
+    ps.setDouble(3, employees.get(i).getSalary());
+    ps.addBatch();
+
+    if (i % 1000 == 0) {  // Execute in batches of 1000
+        ps.executeBatch();
+        ps.clearBatch();
+    }
+}
+ps.executeBatch(); // Execute remaining
+conn.commit();
+
+MySQL URL for batch optimization:
+jdbc:mysql://localhost:3306/db?rewriteBatchedStatements=true
+
+Q7. ResultSet types and concurrency.
+TYPE_FORWARD_ONLY: Default, cursor moves forward only
+TYPE_SCROLL_INSENSITIVE: Can scroll, doesn't reflect DB changes
+TYPE_SCROLL_SENSITIVE: Can scroll, reflects DB changes
+
+CONCUR_READ_ONLY: Default, cannot update through ResultSet
+CONCUR_UPDATABLE: Can update/delete through ResultSet
+
+Statement stmt = conn.createStatement(
+    ResultSet.TYPE_SCROLL_INSENSITIVE,
+    ResultSet.CONCUR_UPDATABLE);
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q8. How to prevent SQL Injection?
+1. Use PreparedStatement (parameterized queries) - ALWAYS
+2. Input validation (whitelist approach)
+3. Use stored procedures
+4. Apply principle of least privilege to DB user
+5. Escape special characters as last resort
+
+// VULNERABLE:
+String sql = "SELECT * FROM users WHERE name='" + userInput + "'";
+// userInput = "'; DROP TABLE users; --"
+
+// SAFE:
+PreparedStatement ps = conn.prepareStatement(
+    "SELECT * FROM users WHERE name = ?");
+ps.setString(1, userInput); // Driver handles escaping
+
+Q9. JDBC performance tuning checklist.
+1. Use connection pooling (HikariCP)
+2. Use PreparedStatement (cached execution plan)
+3. Use batch processing for bulk DML
+4. Set appropriate fetch size: rs.setFetchSize(100)
+5. Close resources in finally/try-with-resources
+6. Use proper indexes on queried columns
+7. Avoid SELECT * - select only needed columns
+8. Use pagination: LIMIT/OFFSET or keyset pagination
+
+ROUND 5 - ARCHITECTURE
+
+Q10. JDBC vs Spring JDBC vs Spring Data JPA.
+JDBC: Manual connection, statement, ResultSet management
+Spring JDBC: JdbcTemplate wraps JDBC, eliminates boilerplate, auto resource mgmt
+Spring Data JPA: Repository interface, automatic query generation, ORM
+
+Flowchart:
+Raw JDBC -> Spring JDBC (JdbcTemplate) -> Spring Data JPA (Repository)
+More control <---------------------------------> Less boilerplate
+More code    <---------------------------------> More abstraction
+
+KEY QUESTIONS:
+*** 1. Statement vs PreparedStatement
+*** 2. Connection Pooling (HikariCP)
+*** 3. Transaction isolation levels
+*** 4. Batch processing optimization
+*** 5. SQL Injection prevention
+*** 6. JDBC Connection lifecycle
+*** 7. try-with-resources for JDBC
+
+================================================================================
+END OF JDBC ANALYSIS
+================================================================================
+
+================================================================================
+JDBC - ADDITIONAL QUESTIONS (Q15-Q40) - ENHANCED EXPANSION
+================================================================================
+
+*** Q15. HikariCP Connection Pool - internal working and tuning.
+HikariCP is default in Spring Boot. Pool maintains pre-created connections.
+
+Flow: Request -> Pool.getConnection() -> if available: return cached
+      -> if all busy & below max: create new -> if at max: wait (timeout)
+
+Key Properties:
+  maximumPoolSize=10 (default), minimumIdle=same as max
+  connectionTimeout=30000 (30s wait max), idleTimeout=600000 (10min)
+  maxLifetime=1800000 (30min - must be < DB timeout)
+
+Formula: Pool size = (core_count * 2) + spindle_count
+  For 4-core server: optimal pool = 10
+
+Monitoring: HikariCP exposes metrics via JMX and Micrometer.
+production.yml: spring.datasource.hikari.maximum-pool-size=20
+
+*** Q16. PreparedStatement vs Statement - SQL Injection.
+Statement: SQL concatenation, vulnerable to injection
+  stmt.executeQuery("SELECT * FROM users WHERE id = '" + input + "'");
+  Input: "1' OR '1'='1" -> returns ALL users!
+
+PreparedStatement: Parameterized, safe
+  ps = conn.prepareStatement("SELECT * FROM users WHERE id = ?");
+  ps.setString(1, input); // Treated as data, not SQL
+
+Performance: PreparedStatement is pre-compiled, cached by DB server.
+
+*** Q17. Transaction isolation levels with examples.
+READ_UNCOMMITTED: Dirty reads possible (see uncommitted changes)
+READ_COMMITTED: No dirty reads (default PostgreSQL)
+REPEATABLE_READ: No non-repeatable reads (default MySQL InnoDB)
+SERIALIZABLE: Full isolation, slowest
+
+Dirty Read: Txn A reads uncommitted data from Txn B
+Non-Repeatable Read: Same query returns different values in same txn
+Phantom Read: Same query returns different ROW COUNT in same txn
+
+*** Q18. Batch processing for bulk inserts.
+String sql = "INSERT INTO policies VALUES (?,?,?)";
+PreparedStatement ps = conn.prepareStatement(sql);
+conn.setAutoCommit(false);
+for (int i = 0; i < 10000; i++) {
+    ps.setString(1, policies[i].getId());
+    ps.setString(2, policies[i].getName());
+    ps.setDouble(3, policies[i].getPremium());
+    ps.addBatch();
+    if (i % 1000 == 0) { ps.executeBatch(); ps.clearBatch(); }
+}
+ps.executeBatch();
+conn.commit();
+
+Performance: Batch (1000 at a time) is ~100x faster than individual inserts.
+
+Hibernate batch: spring.jpa.properties.hibernate.jdbc.batch_size=30
+
+*** Q19. Connection leak detection and prevention.
+Symptom: App hangs after running for hours
+Cause: Connection borrowed from pool but never returned (missing close())
+
+Detection: spring.datasource.hikari.leak-detection-threshold=60000
+
+Prevention: Always use try-with-resources
+  try (Connection conn = dataSource.getConnection()) { ... }
+
+Spring: @Transactional manages connection lifecycle automatically.
+
+*** Q20-Q25 Quick JDBC:
+Q20. ResultSet types: TYPE_FORWARD_ONLY, TYPE_SCROLL_INSENSITIVE, TYPE_SCROLL_SENSITIVE
+Q21. CallableStatement for stored procedures
+Q22. BLOB/CLOB handling for large data
+Q23. DataSource vs DriverManager (pool vs no-pool)
+Q24. Database migration tools: Flyway vs Liquibase
+Q25. N+1 query problem at JDBC level and detection with log analysis
+
+================================================================================

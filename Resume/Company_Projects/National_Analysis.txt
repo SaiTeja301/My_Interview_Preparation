@@ -1,0 +1,565 @@
+================================================================================
+NATIONAL MUTUAL INSURANCE - PROJECT ANALYSIS
+Enterprise Interview Preparation | 7+ Years Java Full Stack Developer
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: FULL MICROSERVICES ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Project: National Mutual Insurance Platform
+Architecture: Microservices + SAGA Design Pattern
+Communication: Kafka (loose coupling) + REST Template (tight) + Feign Client
+
+Microservices:
+  1. Policy Service — Policy CRUD, lifecycle management
+  2. Claim Service — Claim submission, processing, approval
+  3. Audit Service — Audit trail for all business operations
+  4. Submission Manager Service — Submission workflow orchestration
+  5. OmniView Data Administration — Data administration + reporting
+  6. SOPA Search Service — Aggregator service (searches across all services)
+
+Service Architecture:
+Client (Angular/Web)
+   ↓ HTTPS
+API Gateway (Authentication + Rate Limiting + SSL Termination)
+   ↓ Route based on path
+   ├──→ Policy Service (port 8081)
+   │        ↓ Kafka (async)
+   │    Claim Service (port 8082)
+   │        ↓ Kafka (async)
+   │    Audit Service (port 8083)
+   │
+   ├──→ Submission Manager (port 8084)
+   │        ↓ Feign Client (sync)
+   │    Policy Service + Claim Service
+   │
+   ├──→ SOPA Search (port 8085) ← AGGREGATOR
+   │        ↓ REST Template (sync, parallel calls)
+   │    Policy Service + Claim Service + OmniView
+   │
+   └──→ OmniView Data Admin (port 8086)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: SOPA SEARCH — AGGREGATOR PATTERN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SOPA Search aggregates data from multiple services into a unified search result.
+
+User searches "Policy P123"
+   ↓
+SOPA Search Service
+   ↓ (parallel calls using CompletableFuture)
+   ├── REST call to Policy Service → policy details
+   ├── REST call to Claim Service → associated claims
+   └── REST call to OmniView → audit/admin data
+   ↓
+Aggregate all responses into unified SearchResult DTO
+   ↓
+Return to client
+
+Code:
+@Service
+public class SOPASearchService {
+    @Autowired private RestTemplate policyClient;
+    @Autowired private RestTemplate claimClient;
+    @Autowired private RestTemplate omniviewClient;
+
+    public SearchResult search(String query) {
+        CompletableFuture<PolicyDTO> policyFuture =
+            CompletableFuture.supplyAsync(() -> policyClient.getForObject(
+                "http://POLICY-SERVICE/api/v1/policies/search?q=" + query, PolicyDTO.class));
+
+        CompletableFuture<List<ClaimDTO>> claimFuture =
+            CompletableFuture.supplyAsync(() -> claimClient.exchange(
+                "http://CLAIM-SERVICE/api/v1/claims/search?q=" + query, ...));
+
+        CompletableFuture<AuditDTO> auditFuture =
+            CompletableFuture.supplyAsync(() -> omniviewClient.getForObject(
+                "http://OMNIVIEW-SERVICE/api/v1/audit/search?q=" + query, AuditDTO.class));
+
+        CompletableFuture.allOf(policyFuture, claimFuture, auditFuture).join();
+
+        return new SearchResult(policyFuture.get(), claimFuture.get(), auditFuture.get());
+    }
+}
+
+Challenges:
+  1. Timeout: If one service slow, entire search slow → set timeout per call (3s)
+  2. Partial failure: If Claim Service down → return policy + audit with "claims unavailable"
+  3. Performance: Cache frequent searches in Redis (TTL 2 min)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: POLICY → CLAIM → AUDIT FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Customer files a claim:
+1. Customer calls Claim Service API (POST /api/v1/claims)
+2. Claim Service validates claim data
+3. Claim Service calls Policy Service (Feign Client) to verify:
+   - Policy exists? Active? Coverage valid? Premium paid?
+4. If valid → Claim created (status: SUBMITTED)
+5. Claim Service publishes "claim-submitted" to Kafka
+6. Audit Service consumes → creates audit record
+7. Submission Manager picks up claim → routes to adjuster
+8. Adjuster reviews → approves/rejects
+9. Status update published to Kafka → Audit Service logs change
+
+Flow:
+Customer → Claim Service → Feign → Policy Service (validates)
+               ↓ Kafka "claim-submitted"
+         Audit Service (logs)
+               ↓ Kafka "claim-submitted"
+         Submission Manager (routes to adjuster)
+               ↓ Adjuster decision
+         Claim Service (update status)
+               ↓ Kafka "claim-approved" or "claim-rejected"
+         Audit Service (logs status change)
+               ↓ Kafka
+         Notification Service (email customer)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: KAFKA LOOSE COUPLING ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Topics:
+  policy-events    → policy-created, policy-updated, policy-cancelled
+  claim-events     → claim-submitted, claim-approved, claim-rejected
+  audit-events     → all state changes for compliance
+  notification-events → email/SMS triggers
+
+Why Kafka (loose coupling)?
+  Policy Service doesn't know about Audit Service.
+  It just publishes events. Audit Service subscribes.
+  If Audit Service is down → messages wait in Kafka → processed when back up.
+  Adding new consumer (e.g., Analytics Service) → zero changes to producer.
+
+vs REST Template (tight coupling):
+  SOPA Search directly calls Policy, Claim, OmniView.
+  If Policy Service down → SOPA Search fails (Circuit Breaker needed).
+  Used because SOPA needs real-time aggregated response.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: REST TEMPLATE vs FEIGN CLIENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+REST Template (Tight Coupling):
+  Manual HTTP calls, verbose code, explicit URL handling
+
+  RestTemplate rt = new RestTemplate();
+  PolicyDTO policy = rt.getForObject(
+      "http://POLICY-SERVICE/api/v1/policies/{id}", PolicyDTO.class, policyId);
+
+  Used in: SOPA Search (aggregation, need fine-grained control)
+
+Feign Client (Declarative, Cleaner):
+  Interface-based, Spring Cloud integration, built-in load balancing
+
+  @FeignClient(name = "POLICY-SERVICE", fallback = PolicyFallback.class)
+  public interface PolicyClient {
+      @GetMapping("/api/v1/policies/{id}")
+      PolicyDTO getPolicyById(@PathVariable Long id);
+
+      @GetMapping("/api/v1/policies/validate/{id}")
+      boolean validatePolicy(@PathVariable Long id);
+  }
+
+  Used in: Claim Service → Policy Service (clean service-to-service calls)
+
+Internal Working of Feign:
+  1. Spring creates proxy implementing interface
+  2. Method call → proxy intercepts → builds HTTP request
+  3. Service Discovery (Eureka) resolves "POLICY-SERVICE" → actual URL:port
+  4. Load Balancer picks instance
+  5. HTTP call made → response deserialized → returned
+
+  Feign = Proxy + Service Discovery + Load Balancing + Serialization
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: SAGA PATTERN — DEEP EXPLANATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PROBLEM: No ACID transactions across microservices.
+  Policy DB ≠ Claim DB ≠ Audit DB → cannot do single distributed transaction.
+  Two-Phase Commit (2PC) → too slow, single point of failure.
+
+SOLUTION: Saga — a sequence of local transactions with compensating actions.
+
+=== ORCHESTRATION vs CHOREOGRAPHY ===
+
+Choreography (used in National):
+  Each service publishes events, others react.
+  No central coordinator. Decoupled but hard to trace.
+
+  Claim submitted → Kafka → Policy validates → Kafka → Audit logs → Kafka → ...
+
+Orchestration:
+  Central Saga Orchestrator calls services in sequence.
+  Easier to understand, single point of failure.
+
+  Orchestrator → call Policy → call Claim → call Audit → done
+
+=== INSURANCE CLAIM SAGA FLOW ===
+
+Happy Path:
+  Step 1: Claim Service → create claim (PENDING) → publish "claim-created"
+  Step 2: Policy Service → validate policy coverage → publish "policy-validated"
+  Step 3: Audit Service → create audit entry → publish "audit-recorded"
+  Step 4: Submission Manager → assign adjuster → publish "claim-assigned"
+  Step 5: Claim Service → update status ASSIGNED
+
+Failure at Step 2 (Policy expired):
+  Step 2F: Policy Service → publish "policy-validation-failed"
+  Step 1C: Claim Service → COMPENSATE → update status REJECTED
+  Step 3C: Audit Service → log rejection reason
+  Notification → inform customer
+
+Failure at Step 3 (Audit Service down):
+  Message stays in Kafka topic (persistent)
+  When Audit comes back → processes pending messages
+  Eventual consistency achieved
+
+=== COMPENSATION TRANSACTIONS ===
+  Each step has a compensating action:
+  Step               | Compensation
+  Create Claim       | Cancel/Reject Claim
+  Reserve Coverage   | Release Coverage
+  Debit Premium      | Refund Premium
+  Assign Adjuster    | Unassign Adjuster
+
+=== IDEMPOTENCY ===
+  Each event has unique eventId + claimId.
+  Services check processed_events table before processing.
+  If already processed → skip (prevents duplicate processing on retries).
+
+  CREATE TABLE processed_events (
+      event_id VARCHAR(36) PRIMARY KEY,
+      processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+=== DATABASE CONSISTENCY ===
+  Outbox Pattern:
+  Write business data + event to outbox table in SAME DB transaction.
+  Background poller reads outbox → publishes to Kafka → marks as sent.
+  Guarantees: If business data saved → event WILL be published.
+
+  @Transactional
+  public void createClaim(ClaimRequest req) {
+      Claim claim = claimRepo.save(new Claim(req));
+      outboxRepo.save(new OutboxEvent("claim-created", claim.getId(), toJson(claim)));
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7: CIRCUIT BREAKER — DEEP EXPLANATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+=== THREE STATES ===
+
+CLOSED (Normal):
+  All requests pass through to the service.
+  Monitor failure count. If failure rate > threshold → switch to OPEN.
+
+OPEN (Circuit Broken):
+  ALL requests immediately return FALLBACK response.
+  No calls made to failing service (protect from cascade failure).
+  After waitDuration → switch to HALF_OPEN.
+
+HALF_OPEN (Testing):
+  Allow LIMITED test requests through.
+  If test requests succeed → switch to CLOSED (service recovered).
+  If test requests fail → switch back to OPEN.
+
+=== STATE DIAGRAM ===
+                   success
+    CLOSED ←──────────────── HALF_OPEN
+      │                         ↑
+      │ failures > threshold    │ waitDuration expires
+      ↓                         │
+    OPEN ────────────────────→ OPEN
+                   test fails
+
+=== FLOW DIAGRAM ===
+
+Client Request
+   ↓
+Circuit Breaker checks state
+   ↓
+CLOSED? → Forward to Policy Service
+   ├── SUCCESS → increment success count → return response
+   └── FAILURE → increment failure count
+         └── failure rate > 50%? → switch to OPEN
+
+OPEN? → Return fallback immediately (no network call)
+   └── waitDuration (30s) expired? → switch to HALF_OPEN
+
+HALF_OPEN? → Allow 3 test requests
+   ├── Tests pass → switch to CLOSED
+   └── Tests fail → switch to OPEN
+
+=== CODE IMPLEMENTATION ===
+
+@CircuitBreaker(name = "policyService", fallbackMethod = "policyFallback")
+@Retry(name = "policyService")
+public PolicyDTO getPolicyById(Long id) {
+    return policyFeignClient.getPolicyById(id);
+}
+
+public PolicyDTO policyFallback(Long id, Exception ex) {
+    log.warn("Policy Service unavailable, returning cached data for: {}", id);
+    return cacheService.getCachedPolicy(id)
+        .orElse(new PolicyDTO(id, "UNKNOWN", "Service temporarily unavailable"));
+}
+
+=== CONFIGURATION ===
+resilience4j:
+  circuitbreaker:
+    instances:
+      policyService:
+        slidingWindowSize: 10           # Last 10 calls monitored
+        failureRateThreshold: 50        # 50% failure → OPEN
+        waitDurationInOpenState: 30s    # Wait 30s before HALF_OPEN
+        permittedNumberOfCallsInHalfOpenState: 3  # 3 test calls
+        slowCallRateThreshold: 80       # 80% slow calls → OPEN
+        slowCallDurationThreshold: 3s   # Call > 3s = slow
+  retry:
+    instances:
+      policyService:
+        maxAttempts: 3
+        waitDuration: 2s
+        retryExceptions: [java.io.IOException, java.net.SocketTimeoutException]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8: LOAD BALANCING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+=== CLIENT-SIDE vs SERVER-SIDE ===
+
+Server-Side (AWS ALB/NGINX):
+  Client → Load Balancer → picks server → forwards request
+  Client doesn't know about individual instances.
+
+Client-Side (Spring Cloud LoadBalancer / Ribbon):
+  Client has list of all server instances (from Eureka).
+  Client picks which instance to call.
+  No single-point-of-failure load balancer.
+
+=== ALGORITHMS ===
+
+Round Robin: Rotate through instances sequentially
+  Instance1 → Instance2 → Instance3 → Instance1 → ...
+
+Weighted Round Robin: More traffic to powerful instances
+  Instance1 (weight=3) → I1, I1, I1, I2, I2, I3, ...
+
+Least Connections: Route to instance with fewest active connections
+  Best for: Long-running requests (prevents overloading slow instance)
+
+Random: Randomly pick instance (simple, good distribution statistically)
+
+Health Check: Remove unhealthy instances from rotation
+  /actuator/health every 10s → if 3 consecutive failures → remove from pool
+
+=== SPRING CLOUD LOADBALANCER ===
+
+@LoadBalanced
+@Bean
+public RestTemplate restTemplate() {
+    return new RestTemplate();
+}
+// Now: restTemplate.getForObject("http://POLICY-SERVICE/api/...") 
+// "POLICY-SERVICE" resolved via Eureka + load balanced
+
+=== FEIGN + LOAD BALANCING ===
+Feign Client automatically integrates with Spring Cloud LoadBalancer.
+@FeignClient(name = "POLICY-SERVICE") → name resolved via Eureka → load balanced.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9: INTERVIEW QUESTIONS (50 Questions)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+=== ARCHITECTURE (Q1-Q10) ===
+
+*** Q1. Explain the National Insurance project architecture.
+"National Mutual Insurance is built on Microservices with SAGA pattern.
+6 services: Policy, Claim, Audit, Submission Manager, OmniView Data Admin,
+and SOPA Search (aggregator). Inter-service communication uses Kafka for
+async loose coupling and Feign Client for sync calls. Circuit Breaker
+(Resilience4j) prevents cascade failures. Client-side load balancing via
+Spring Cloud LoadBalancer. Deployed in containers with CI/CD pipelines."
+
+*** Q2. Why Kafka for Claim→Audit but Feign for Claim→Policy?
+Kafka (Claim→Audit): Audit logging is fire-and-forget. Claim Service
+doesn't need to wait for audit completion. If Audit is down, messages
+persist in Kafka.
+
+Feign (Claim→Policy): Claim needs IMMEDIATE policy validation response.
+Cannot proceed without knowing if policy is valid. Synchronous call needed.
+
+*** Q3. Explain SOPA Search as Aggregator.
+SOPA Search makes parallel REST calls to Policy, Claim, and OmniView.
+Uses CompletableFuture.allOf() for parallel execution.
+Timeout per call: 3 seconds. If one service fails, return partial results
+with error note. Redis cache for frequent searches.
+
+Q4. How does Submission Manager orchestrate?
+  Receives claim via Kafka → validates → routes to appropriate adjuster
+  based on claim type, amount, and region. Maintains submission state machine.
+
+Q5. What is the data model for Policy?
+  Policy → Customer (ManyToOne), Policy → Coverage (OneToMany),
+  Policy → Claims (OneToMany), Policy → Endorsements (OneToMany)
+
+=== SAGA QUESTIONS (Q6-Q20) ===
+
+*** Q6. Walk me through a complete Saga for claim processing.
+[See Section 6 — Happy Path and Failure scenarios above]
+
+*** Q7. What if the compensation transaction itself fails?
+  Retry the compensation 3 times with exponential backoff.
+  If still fails → publish to Dead Letter Topic → alert operations team.
+  Operations team has admin dashboard to manually resolve.
+
+*** Q8. How do you ensure idempotency in Saga?
+  1. Unique eventId per event (UUID)
+  2. processed_events table checked before processing
+  3. Database unique constraint prevents duplicate inserts
+  4. Kafka consumer: enable.auto.commit=false, manual ack after processing
+
+*** Q9. Orchestration vs Choreography — why chose Choreography?
+  Choreography: Each service is autonomous, no central failure point.
+  For insurance: Services owned by different teams → choreography natural.
+  Trade-off: Used correlation IDs + distributed tracing to track flows.
+
+Q10. How do you track the state of a Saga?
+  Each service maintains its own state. Saga state reconstructed from events.
+  Saga state tracking table: saga_id, step, status, timestamp.
+
+Q11. What if an event is processed out of order?
+  Kafka guarantees ordering within a partition.
+  Use claimId as key → all events for same claim → same partition → ordered.
+
+Q12. How long can a Saga take? What if it's stuck?
+  Monitoring: Alert if Saga in PENDING state > 5 minutes.
+  Cleanup job: Check for stuck Sagas every 10 min, escalate to manual review.
+
+Q13. Distributed transaction alternatives?
+  2PC (Two-Phase Commit) → slow, blocking, single coordinator failure
+  Saga → eventual consistency, non-blocking, compensating actions
+  Outbox Pattern → atomic event publishing with DB transaction
+
+Q14-Q20: Saga scenarios
+Q14. Policy update during active claim → reject update until claim resolved
+Q15. Multiple claims on same policy → each claim is independent Saga
+Q16. Saga timeout handling → compensation timer, auto-reject after 24h
+Q17. Testing Saga → Integration test with EmbeddedKafka
+Q18. Saga and data reporting → separate read model (CQRS-like)
+Q19. Saga monitoring dashboard → track per-saga completion rates
+Q20. Saga vs traditional transaction → when to use which
+
+=== CIRCUIT BREAKER QUESTIONS (Q21-Q35) ===
+
+*** Q21. Explain Circuit Breaker states with insurance example.
+  SOPA Search calls Policy Service:
+  CLOSED: Policy Service healthy, all calls pass through
+  OPEN: Policy Service down (5/10 calls failed) → return cached policies
+  HALF_OPEN: After 30s, try 3 test calls → if pass, CLOSED; if fail, OPEN
+
+*** Q22. What is the difference between Circuit Breaker and Retry?
+  Retry: Try again immediately (transient errors like network blip)
+  Circuit Breaker: Stop trying for a period (persistent failure)
+  Use together: Retry 3 times first, then Circuit Breaker opens
+
+*** Q23. What fallback strategy did you use?
+  1. Cached data: Return last known good response from Redis
+  2. Default response: Return "Service unavailable" with HTTP 503
+  3. Degraded mode: Skip non-critical features (skip audit, show partial data)
+
+Q24. How do you monitor Circuit Breaker state?
+  Resilience4j exposes metrics via Micrometer → Prometheus → Grafana
+  Dashboard shows: state, failure rate, slow call rate, buffered calls
+
+Q25. Can Circuit Breaker cause data loss?
+  No: Circuit Breaker only affects sync calls.
+  Kafka messages persist → processed when consumer back up.
+  For sync: Fallback ensures response returned to user.
+
+Q26-Q35: Circuit Breaker scenarios
+Q26. Circuit Breaker + bulkhead pattern (isolate thread pools)
+Q27. Circuit Breaker configuration tuning for production
+Q28. What if all instances of a service are down?
+Q29. Circuit Breaker vs API Gateway rate limiting
+Q30. Half-Open state: how many test calls and why?
+Q31. Slow call detection threshold configuration
+Q32. Circuit Breaker with Feign Client integration
+Q33. Testing Circuit Breaker (WireMock + fault injection)
+Q34. Circuit Breaker metrics and alerting
+Q35. Time-based vs count-based sliding window
+
+=== LOAD BALANCING QUESTIONS (Q36-Q45) ===
+
+*** Q36. Client-side vs Server-side load balancing.
+  Client-side: Client picks instance (Spring Cloud LB + Eureka)
+    Pro: No single point of failure, lower latency
+  Server-side: Load balancer picks instance (AWS ALB)
+    Pro: Client doesn't need service registry, simpler
+
+  National project: Client-side for inter-service, Server-side for external traffic.
+
+*** Q37. How does Feign Client integrate with load balancing?
+  @FeignClient(name = "POLICY-SERVICE")
+  1. "POLICY-SERVICE" looked up in Eureka → returns [instance1:8081, instance2:8082]
+  2. Spring Cloud LoadBalancer picks instance (round robin default)
+  3. Feign makes HTTP call to selected instance
+  4. If instance unhealthy → removed from rotation
+
+Q38. Health check mechanism.
+  Each service exposes /actuator/health
+  Eureka: Service sends heartbeat every 30s
+  If 3 heartbeats missed → instance marked DOWN → removed from LB
+
+Q39-Q45: Load balancing scenarios
+Q39. Sticky sessions: When and why (stateful services)
+Q40. Blue-Green deployment + load balancer switch
+Q41. Canary deployment: Route 5% traffic to new version
+Q42. Load balancer + auto-scaling integration
+Q43. Cross-region load balancing (Route53 + ALB per region)
+Q44. Load balancer timeout configuration
+Q45. Load testing to determine optimal instance count
+
+=== PRODUCTION & DEBUGGING (Q46-Q50) ===
+
+*** Q46. How to debug a failed claim in production?
+  1. Get claimId from customer
+  2. Search Kibana/Splunk logs with claimId (correlation ID in all logs)
+  3. MDC.put("claimId", claimId) at entry point → propagated to all logs
+  4. Trace: Claim Service → Policy validation → Kafka → Audit
+  5. Check: Kafka consumer lag, Circuit Breaker state, Dead Letter Topic
+
+Q47. How to handle deployment without downtime?
+  Rolling deployment in Kubernetes: Replace pods one at a time
+  Old pod handles in-flight requests → graceful shutdown (30s drain)
+  New pod passes health check → added to load balancer
+  Zero downtime for users.
+
+Q48. Database schema migration strategy.
+  Flyway: Versioned SQL migrations (V1__create_policy.sql, V2__add_column.sql)
+  Backward compatible: Add new columns (nullable), never remove in same release.
+  Two-phase: Release 1: Add column, Release 2: Migrate data, Release 3: Remove old column.
+
+Q49. Monitoring and alerting stack.
+  Metrics: Micrometer → Prometheus → Grafana dashboards
+  Logs: Structured JSON → Logstash → Elasticsearch → Kibana
+  Traces: Micrometer Tracing → Zipkin (distributed tracing)
+  Alerts: PagerDuty integration for P1 issues
+
+Q50. Scalability plan for 10x traffic growth.
+  1. Horizontal: Add service instances (auto-scaling)
+  2. Kafka: Increase partitions for throughput
+  3. DB: Read replicas, connection pooling tuning
+  4. Cache: Redis cluster for hot data
+  5. CDN: Static assets via CloudFront
+  6. Async: Convert sync calls to async where possible
+
+================================================================================
+END OF NATIONAL INSURANCE PROJECT ANALYSIS
+================================================================================

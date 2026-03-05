@@ -1,0 +1,320 @@
+================================================================================
+SPRING FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SOURCE ANALYSIS
+Source: Spring_and_Spring_boot.txt (10,694 lines / 474 KB - Spring Core section)
+Coverage: IOC Container, DI (Setter/Constructor), Bean Lifecycle, XML config,
+          Annotation config, Spring JDBC, ApplicationContext, BeanFactory,
+          Circular dependency, VO/DTO/BO pattern
+Missing: AOP deep dive, Spring Security internals, SpEL, Event handling,
+         Profile-based config, @Conditional
+
+SECTION 2: SPRING ARCHITECTURE
+
+Spring Modules: Core | AOP | Data Access | Web | Test | Security
+
+IOC Container Types:
+BeanFactory: Basic, lazy loading, lightweight
+ApplicationContext: BeanFactory + AOP + Events + i18n + Environment (PREFERRED)
+
+SECTION 3: 5 INTERVIEW ROUNDS
+
+ROUND 1 - BASIC
+
+*** Q1. What is IOC and Dependency Injection?
+IOC (Inversion of Control): Framework controls object creation, not developer.
+DI (Dependency Injection): IOC pattern where dependencies injected by container.
+
+Without DI:
+class OrderService {
+    private PaymentService ps = new PaymentService(); // tight coupling!
+}
+
+With DI:
+@Service
+class OrderService {
+    private final PaymentService ps;
+    @Autowired // Spring injects PaymentService
+    public OrderService(PaymentService ps) { this.ps = ps; }
+}
+
+Types of DI:
+1. Constructor Injection (RECOMMENDED): Mandatory dependencies, immutable
+2. Setter Injection: Optional dependencies
+3. Field Injection (@Autowired on field): Avoid! Hard to test
+
+*** Q2. @Component vs @Service vs @Repository vs @Controller.
+All are @Component stereotypes (Spring scans and creates beans):
+@Component: Generic bean
+@Service: Business logic layer (semantic only, no extra functionality)
+@Repository: DAO layer (adds automatic exception translation - SQLException -> DataAccessException)
+@Controller: Web MVC controller (adds @RequestMapping processing)
+@RestController = @Controller + @ResponseBody
+
+*** Q3. Bean Scopes.
+singleton (default): One instance per Spring container
+prototype: New instance every time requested
+request: One per HTTP request (web)
+session: One per HTTP session (web)
+application: One per ServletContext
+websocket: One per WebSocket session
+
+@Scope("prototype")
+@Component
+public class TaskProcessor { }
+
+ROUND 2 - CORE TECHNICAL
+
+*** Q4. Bean Lifecycle in Spring.
+1. Instantiation (constructor call)
+2. Populate Properties (DI - setter/field injection)
+3. BeanNameAware.setBeanName()
+4. BeanFactoryAware.setBeanFactory()
+5. ApplicationContextAware.setApplicationContext()
+6. BeanPostProcessor.postProcessBeforeInitialization()
+7. @PostConstruct
+8. InitializingBean.afterPropertiesSet()
+9. Custom init-method
+10. BeanPostProcessor.postProcessAfterInitialization()
+     --- Bean is READY to use ---
+11. @PreDestroy
+12. DisposableBean.destroy()
+13. Custom destroy-method
+
+Most used: @PostConstruct and @PreDestroy
+
+@Service
+public class CacheService {
+    @PostConstruct
+    public void init() { loadCache(); } // Runs after DI
+
+    @PreDestroy
+    public void cleanup() { clearCache(); } // Runs before shutdown
+}
+
+*** Q5. Spring AOP (Aspect-Oriented Programming).
+Cross-cutting concerns: Logging, Security, Transaction, Performance monitoring.
+
+Terminology:
+- Aspect: Class containing cross-cutting logic (@Aspect)
+- Advice: Action taken (Before, After, Around, AfterReturning, AfterThrowing)
+- JoinPoint: Point in execution (method call)
+- Pointcut: Expression matching JoinPoints
+- Weaving: Linking aspects to target objects (runtime in Spring)
+
+Code:
+@Aspect
+@Component
+public class PerformanceAspect {
+    @Around("execution(* com.service.*.*(..))")
+    public Object measureTime(ProceedingJoinPoint pjp) throws Throwable {
+        long start = System.currentTimeMillis();
+        Object result = pjp.proceed();
+        long duration = System.currentTimeMillis() - start;
+        log.info("{}.{} took {}ms", pjp.getTarget().getClass().getSimpleName(),
+            pjp.getSignature().getName(), duration);
+        return result;
+    }
+}
+
+Internal: Spring AOP uses JDK Dynamic Proxy (interfaces) or CGLIB Proxy (classes).
+
+*** Q6. Spring Transaction Management.
+@Transactional: Declarative transaction management
+
+Attributes:
+- propagation: REQUIRED (default), REQUIRES_NEW, SUPPORTS, NOT_SUPPORTED, MANDATORY, NEVER, NESTED
+- isolation: DEFAULT, READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE
+- readOnly: true/false (optimizer hint)
+- rollbackFor: Exception classes that trigger rollback
+- timeout: Transaction timeout in seconds
+
+@Transactional(propagation = Propagation.REQUIRED, 
+               isolation = Isolation.READ_COMMITTED,
+               rollbackFor = Exception.class)
+public void transferMoney(Account from, Account to, double amount) {
+    from.debit(amount);
+    to.credit(amount);
+}
+
+Propagation Flow:
+REQUIRED: Join existing txn, or create new if none exists
+REQUIRES_NEW: Always create new txn, suspend existing
+NESTED: Nested txn within existing (savepoint), or new if none
+
+Common Pitfall:
+@Transactional doesn't work on:
+- private methods (proxy can't intercept)
+- Self-invocation (this.method() bypasses proxy)
+- Non-Spring managed beans
+
+ROUND 3 - ADVANCED
+
+*** Q7. @Qualifier vs @Primary.
+When multiple beans of same type exist:
+@Primary: Default bean to inject (used when no qualifier specified)
+@Qualifier: Explicitly name which bean to inject
+
+@Component("mysqlDS")
+public class MySQLDataSource implements DataSource { }
+
+@Component("postgresDS")
+@Primary // Default choice
+public class PostgresDataSource implements DataSource { }
+
+@Service
+public class ReportService {
+    @Autowired
+    @Qualifier("mysqlDS") // Overrides @Primary
+    private DataSource dataSource;
+}
+
+Q8. Spring Profiles.
+// application-dev.properties, application-prod.properties
+spring.profiles.active=dev
+
+@Configuration
+@Profile("prod")
+public class ProdConfig {
+    @Bean
+    public DataSource dataSource() { return productionDS(); }
+}
+
+ROUND 4 - SCENARIO-BASED
+
+*** Q9. How does @Transactional work internally?
+1. Spring creates a PROXY around the bean
+2. When @Transactional method called:
+   a. Proxy intercepts the call
+   b. TransactionManager.getTransaction() - starts txn
+   c. Target method executes
+   d. No exception -> TransactionManager.commit()
+   e. RuntimeException -> TransactionManager.rollback()
+
+Flow:
+Caller -> Proxy (AOP) -> Transaction Begin -> Target Method -> Commit/Rollback
+
+This is why self-invocation fails:
+this.transferMoney() -> calls directly, bypasses proxy!
+Fix: Inject self, or restructure to call from different bean.
+
+ROUND 5 - ARCHITECTURE
+
+Q10. Spring Application layered architecture.
+Client (REST) -> Controller -> Service -> Repository -> Database
+
+@RestController: HTTP handling, request/response mapping
+@Service: Business logic, transaction boundaries
+@Repository: Data access, exception translation
+@Entity: JPA entity mapping to DB table
+
+KEY QUESTIONS:
+*** 1. IOC and Dependency Injection types
+*** 2. Bean Lifecycle (PostConstruct, PreDestroy)
+*** 3. AOP concepts and @Around advice
+*** 4. @Transactional internal working
+*** 5. Transaction propagation types
+*** 6. @Qualifier vs @Primary
+*** 7. Bean Scopes
+*** 8. Circular dependency handling
+
+================================================================================
+END OF SPRING ANALYSIS
+================================================================================
+
+================================================================================
+SPRING FRAMEWORK - ADDITIONAL QUESTIONS (Q11-Q35) - ENHANCED EXPANSION
+================================================================================
+
+*** Q11. Circular Dependency - detection and resolution.
+When Bean A depends on Bean B, and Bean B depends on Bean A.
+
+Spring's solution (constructor injection): FAILS! Throws BeanCurrentlyInCreationException
+Spring's solution (setter injection): Works using 3-level cache (singletonFactories)
+
+3-Level Cache:
+  Level 1: singletonObjects (fully initialized beans)
+  Level 2: earlySingletonObjects (partially initialized, exposed early)
+  Level 3: singletonFactories (ObjectFactory to create early reference)
+
+Flow:
+  Creating A -> needs B -> Creating B -> needs A -> Level 3 returns early A ref
+  -> B completes -> A completes -> both in Level 1
+
+Best Fix: Refactor to remove circular dependency (extract common logic)
+Alternative: @Lazy on one dependency
+
+*** Q12. @Autowired - byType vs byName vs @Qualifier.
+@Autowired: Injects byType first.
+If multiple beans of same type: Ambiguity!
+Resolution order:
+  1. @Qualifier("beanName") → explicit name match
+  2. @Primary → marked as default
+  3. Variable name matching → if variable name matches bean name
+
+*** Q13. Spring AOP - JDK Proxy vs CGLIB Proxy.
+JDK Dynamic Proxy: For interfaces (default in Spring)
+  Creates proxy implementing same interface
+  Uses InvocationHandler.invoke()
+
+CGLIB Proxy: For concrete classes (no interface)
+  Creates subclass at runtime
+  Cannot proxy final methods/classes
+
+Spring Boot default: CGLIB (spring.aop.proxy-target-class=true)
+
+*** Q14. ApplicationContext vs BeanFactory.
+BeanFactory: Lazy loading, basic DI, lightweight
+ApplicationContext: Eager loading, all BeanFactory features + AOP + Events + i18n + Environment
+
+In production: Always use ApplicationContext (via @SpringBootApplication)
+
+*** Q15. @Transactional propagation - scenario questions.
+Scenario: Service A (@Transactional REQUIRED) calls Service B (@Transactional REQUIRES_NEW)
+
+  A begins txn-1 -> calls B -> B suspends txn-1, starts txn-2
+  -> B completes, commits txn-2 -> A resumes txn-1
+  -> If A fails, txn-1 rolls back but txn-2 stays committed!
+
+Use case: Audit logging in REQUIRES_NEW should persist even if main txn rolls back.
+
+*** Q16. @Async - async method execution.
+@EnableAsync on config class
+@Async on method -> runs in separate thread pool
+
+@Async
+public CompletableFuture<Report> generateReport(Long id) {
+    Report r = reportService.buildReport(id);
+    return CompletableFuture.completedFuture(r);
+}
+
+Default pool: SimpleAsyncTaskExecutor (no pooling - BAD!)
+Custom pool: Define ThreadPoolTaskExecutor bean
+
+*** Q17. @Cacheable - Spring Cache abstraction.
+@Cacheable("policies") -> First call: executes method, caches result
+                       -> Subsequent calls: returns cached value
+@CacheEvict("policies") -> Removes from cache
+@CachePut("policies") -> Always executes, updates cache
+
+Providers: ConcurrentHashMap (default), Redis, EhCache, Caffeine
+
+@Cacheable(value = "policies", key = "#id", unless = "#result == null")
+public PolicyDTO findById(Long id) { return repo.findById(id).map(mapper::toDTO).orElse(null); }
+
+*** Q18. Spring Events - ApplicationEvent pattern.
+Publisher: applicationEventPublisher.publishEvent(new OrderCreatedEvent(order))
+Listener: @EventListener or @TransactionalEventListener
+
+@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+public void onOrderCreated(OrderCreatedEvent event) {
+    emailService.sendConfirmation(event.getOrder()); // Only after txn commits
+}
+
+*** Q19-Q20 Quick Spring:
+Q19. @Value vs @ConfigurationProperties - property injection
+Q20. Spring Expression Language (SpEL): @Value("#{systemProperties['user.home']}")
+
+================================================================================

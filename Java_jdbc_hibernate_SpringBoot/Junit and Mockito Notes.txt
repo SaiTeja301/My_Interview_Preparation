@@ -1,0 +1,737 @@
+JUnit is a unit testing framework for Java programming language. JUnit has been 
+important in the development of test-driven development, and is one of a family 
+of unit testing frameworks collectively known as xUnit, that originated with JUnit. 
+This tutorial explains the use of JUnit in your project unit testing, while working 
+with Java. After completing this tutorial you will gain sufficient knowledge in using 
+JUnit testing framework from where you can take yourself to next levels. 
+Audience 
+This tutorial has been prepared for beginners to help them understand the basic 
+functionality of JUnit tool.  
+Prerequisites 
+We assume you are going to use JUnit to handle all levels of Java projects 
+development. So it will be good if you have the knowledge of software 
+development using any programming language, especially Java programming and 
+software testing process. 
+Copyright & Disclaimer 
+ Copyright 2015 by Tutorials Point (I) Pvt. Ltd.  
+All the content and graphics published in this e-book are the property of Tutorials 
+Point (I) Pvt. Ltd.  The user of this e-book is prohibited to reuse, retain, copy, 
+distribute or republish any contents or a part of contents of this e-book in any 
+manner without written consent of the publisher.   
+We strive to update the contents of our website and tutorials as timely and as 
+precisely as possible, however, the contents may contain inaccuracies or errors. 
+Tutorials Point (I) Pvt. Ltd. provides no guarantee regarding the accuracy, 
+timeliness or completeness of our website or its contents including this tutorial. If 
+you discover any errors on our website or in this tutorial, please notify us at 
+contact@tutorialspoint.com 
+Table of Contents 
+  JUnit 
+ -----------------------------------------------------------------------
+5 
+Testing is the process of checking the functionality of an application to ensure it runs 
+as per requirements. Unit testing comes into picture at the developers’ level; it is the 
+testing of single entity (class or method). Unit testing plays a critical role in helping 
+a software company deliver quality products to its customers. 
+Unit testing can be done in two ways: manual testing and automated testing. 
+Manual Testing Automated Testing 
+Executing a test cases manually 
+without any tool support is known 
+as manual testing. 
+Taking tool support and executing the 
+test cases by using an automation tool 
+is known as automation testing. 
+Time-consuming and tedious: 
+Since test cases are executed by 
+human resources, it is very slow 
+and tedious. 
+Fast: Automation runs test cases 
+significantly faster than human 
+resources. 
+Huge investment in human 
+resources: As test cases need to 
+be executed manually, more testers 
+are required in manual testing. 
+Less investment in human 
+resources: Test cases are executed 
+using automation tools, so less number 
+of testers are required in automation 
+testing. 
+Less reliable: Manual testing is 
+less reliable, as it has to account 
+for human errors.  
+More reliable: Automation tests are 
+precise and reliable.  
+Non-programmable: No 
+programming can be done to write 
+sophisticated tests to fetch hidden 
+information. 
+Programmable: Testers can program 
+sophisticated tests to bring out hidden 
+information. 
+1.  OVERVIEW 
+What is JUnit? 
+JUnit 
+JUnit is a unit testing framework for Java programming language. It plays a crucial 
+role test-driven development, and is a family of unit testing frameworks collectively 
+known as xUnit. 
+JUnit promotes the idea of "first testing then coding", which emphasizes on setting 
+up the test data for a piece of code that can be tested first and then implemented. 
+This approach is like "test a little, code a little, test a little, code a little." It increases 
+the productivity of the programmer and the stability of program code, which in turn 
+reduces the stress on the programmer and the time spent on debugging. 
+Features of JUnit 
+ JUnit is an open source framework, which is used for writing and running tests. 
+ Provides annotations to identify test methods. 
+ Provides assertions for testing expected results. 
+ Provides test runners for running tests. 
+ JUnit tests allow you to write codes faster, which increases quality. 
+ JUnit is elegantly simple. It is less complex and takes less time. 
+ JUnit tests can be run automatically and they check their own results and 
+provide immediate feedback. There's no need to manually comb through a 
+report of test results. 
+ JUnit tests can be organized into test suites containing test cases and even 
+other test suites. 
+ JUnit shows test progress in a bar that is green if the test is running smoothly, 
+and it turns red when a test fails. 
+What is a Unit Test Case? 
+A Unit Test Case is a part of code, which ensures that another part of code (method) 
+works as expected. To achieve the desired results quickly, a test framework is 
+required. JUnit is a perfect unit test framework for Java programming language. 
+A formal written unit test case is characterized by a known input and an expected 
+output, which is worked out before the test is executed. The known input should test 
+a precondition and the expected output should test a post-condition. 
+6 
+JUnit 
+There must be at least two unit test cases for each requirement: one positive test 
+and one negative test. If a requirement has sub-requirements, each sub-requirement 
+must have at least two test cases as positive and negative. 
+7 
+  JUnit 
+8 
+Try it Online Option  
+We already have set up Java programming environment online, so that you can 
+compile and execute all the available examples online at the same time while you are 
+doing your theory work. It gives you confidence in what you are reading and verify 
+the programs with different options. Feel free to modify any example and execute it 
+online. 
+Try the following example using our online compiler option available at 
+http://www.compileonline.com/. 
+public class MyFirstJavaProgram { 
+    public static void main(String []args) { 
+       System.out.println("Hello World"); 
+    } 
+}  
+For most of the examples given in this tutorial, you will find a Try it option in our 
+website code sections at the top right corner that will take you to the online compiler. 
+So just make use of it and enjoy your learning. 
+Local Environment Setup 
+JUnit is a framework for Java, so the very first requirement is to have JDK installed 
+in your machine. 
+System Requirement 
+JDK 1.5 or above. 
+Memory No minimum requirement. 
+2.  ENVIRONMENT SETUP 
+JUnit 
+Disk Space 
+Operating System 
+No minimum requirement. 
+No minimum requirement. 
+Step 1: Verify Java Installation in Your Machine 
+First of all, open the console and execute a java command based on the operating 
+system you are working on. 
+OS 
+Task 
+Command 
+Windows 
+Open Command Console 
+c:\> java -version 
+Linux 
+Open Command Terminal $ java -version 
+Mac 
+Open Terminal 
+machine:~ joseph$ java -version 
+Let's verify the output for all the operating systems: 
+OS 
+Output 
+Windows 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+Java HotSpot(TM) Client VM (build 17.0-b17, mixed mode, 
+sharing) 
+Linux 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+9 
+JUnit 
+Java HotSpot(TM) Client VM (build 17.0-b17, mixed mode, 
+sharing) 
+Mac 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+Java HotSpot(TM)64-Bit Server VM (build 17.0-b17, mixed 
+mode, sharing) 
+If you do not have Java installed on your system, then download the Java Software 
+Development Kit (SDK) from the following link: 
+http://www.oracle.com/technetwork/java/javase/downloads/index.html  
+We are assuming Java 1.6.0_21 as the installed version for this tutorial. 
+Step 2: Set JAVA Environment 
+Set the JAVA_HOME environment variable to point to the base directory location 
+where Java is installed on your machine. For example, 
+OS 
+Output 
+Windows 
+Set the environment variable JAVA_HOME to C:\Program 
+Files\Java\jdk1.6.0_21 
+Linux 
+export JAVA_HOME=/usr/local/java-current 
+Mac 
+export JAVA_HOME=/Library/Java/Home 
+Append Java compiler location to the System Path. 
+OS 
+Output 
+10 
+  JUnit 
+11 
+Windows Append the string C:\Program 
+Files\Java\jdk1.6.0_21\bin at  the end of the system 
+variable, Path. 
+Linux export PATH=$PATH:$JAVA_HOME/bin/ 
+Mac not required 
+Verify Java installation using the command java -version as explained above. 
+Step 3: Download Junit Archive 
+Download the latest version of JUnit jar file from http://www.junit.org. At the time of 
+writing this tutorial, we have downloaded Junit-4.10.jar and copied it into C:\>JUnit 
+folder. 
+OS Archive name 
+Windows junit4.10.jar 
+Linux junit4.10.jar 
+Mac junit4.10.jar 
+Step 4: Set JUnit Environment 
+Set the JUNIT_HOME environment variable to point to the base directory location 
+where JUNIT jar is stored on your machine. Let’s assuming we've stored junit4.10.jar 
+in the JUNIT folder.  
+OS Description 
+Windows Set the environment variable JUNIT_HOME to C:\JUNIT 
+JUnit 
+Linux 
+export JUNIT_HOME=/usr/local/JUNIT 
+Mac 
+export JUNIT_HOME=/Library/JUNIT 
+Step 5: Set CLASSPATH Variable 
+Set the CLASSPATH environment variable to point to the JUNIT jar location.  
+OS 
+Description 
+Windows 
+Set the environment variable CLASSPATH to 
+%CLASSPATH%;%JUNIT_HOME%\junit4.10.jar;.; 
+Linux 
+export 
+CLASSPATH=$CLASSPATH:$JUNIT_HOME/junit4.10.jar:. 
+Mac 
+export 
+CLASSPATH=$CLASSPATH:$JUNIT_HOME/junit4.10.jar:. 
+Step 6: Test JUnit Setup 
+Create a java class file name TestJunit in C:\>JUNIT_WORKSPACE 
+import org.junit.Test; 
+import static org.junit.Assert.assertEquals; 
+public class TestJunit { 
+@Test 
+public void testAdd() { 
+String str= "Junit is working fine"; 
+assertEquals("Junit is working fine",str); 
+} 
+} 
+12 
+  JUnit 
+13 
+Create a java class file name TestRunner in C:\>JUNIT_WORKSPACE to execute 
+test case(s). 
+import org.junit.runner.JUnitCore; 
+import org.junit.runner.Result; 
+import org.junit.runner.notification.Failure; 
+public class TestRunner { 
+   public static void main(String[] args) { 
+      Result result = JUnitCore.runClasses(TestJunit.class); 
+      for (Failure failure : result.getFailures()) { 
+         System.out.println(failure.toString()); 
+      } 
+      System.out.println(result.wasSuccessful()); 
+   } 
+}    
+Step 7: Verify the Result 
+Compile the classes using javac compiler as follows: 
+C:\JUNIT_WORKSPACE>javac TestJunit.java TestRunner.java 
+Now run the Test Runner to see the result as follows: 
+C:\JUNIT_WORKSPACE>java TestRunner 
+Verify the output. 
+true 
+3.  TEST FRAMEWORK 
+JUnit 
+JUnit is a Regression Testing Framework used by developers to implement unit 
+testing in Java, and accelerate programming speed and increase the quality of code. 
+JUnit Framework can be easily integrated with either of the following: 
+ Eclipse 
+ Ant 
+ Maven 
+Features of Junit Test Framework 
+JUnit test framework provides the following important features: 
+ Fixtures 
+ Test suites 
+ Test runners 
+ JUnit classes 
+Fixtures 
+Fixtures is a fixed state of a set of objects used as a baseline for running tests. The 
+purpose of a test fixture is to ensure that there is a well-known and fixed environment 
+in which tests are run so that results are repeatable. It includes:  
+ setUp() method, which runs before every test invocation. 
+ tearDown() method, which runs after every test method. 
+Let's check one example: 
+import junit.framework.*; 
+public class JavaTest extends TestCase { 
+protected int value1, value2; 
+14 
+  JUnit 
+15 
+   // assigning the values 
+   protected void setUp(){ 
+      value1=3; 
+      value2=3; 
+   } 
+   // test method to add two values 
+   public void testAdd(){ 
+      double result= value1 + value2; 
+      assertTrue(result == 6); 
+   } 
+} 
+Test Suites 
+A test suite bundles a few unit test cases and runs them together. In JUnit, both 
+@RunWith and @Suite annotation are used to run the suite test. Given below is an 
+example that uses TestJunit1 & TestJunit2 test classes. 
+import org.junit.runner.RunWith; 
+import org.junit.runners.Suite; 
+//JUnit Suite Test 
+@RunWith(Suite.class) 
+@Suite.SuiteClasses({  
+   TestJunit1.class ,TestJunit2.class 
+}) 
+public class JunitTestSuite { 
+} 
+import org.junit.Test; 
+  JUnit 
+16 
+import org.junit.Ignore; 
+import static org.junit.Assert.assertEquals; 
+public class TestJunit1 { 
+   String message = "Robert";  
+   MessageUtil messageUtil = new MessageUtil(message); 
+   @Test 
+   public void testPrintMessage() {  
+      System.out.println("Inside testPrintMessage()");     
+      assertEquals(message, messageUtil.printMessage());      
+   } 
+} 
+import org.junit.Test; 
+import org.junit.Ignore; 
+import static org.junit.Assert.assertEquals; 
+public class TestJunit2 { 
+   String message = "Robert";  
+   MessageUtil messageUtil = new MessageUtil(message); 
+   @Test 
+   public void testSalutationMessage() { 
+      System.out.println("Inside testSalutationMessage()"); 
+      message = "Hi!" + "Robert"; 
+      assertEquals(message,messageUtil.salutationMessage()); 
+   } 
+JUnit 
+} 
+Test Runners 
+Test runner is used for executing the test cases. Here is an example that assumes 
+the test class TestJunit already exists. 
+import org.junit.runner.JUnitCore; 
+import org.junit.runner.Result; 
+import org.junit.runner.notification.Failure; 
+public class TestRunner { 
+public static void main(String[] args) { 
+Result result = JUnitCore.runClasses(TestJunit.class); 
+for (Failure failure : result.getFailures()) { 
+System.out.println(failure.toString()); 
+} 
+System.out.println(result.wasSuccessful()); 
+} 
+} 
+JUnit Classes 
+JUnit classes are important classes, used in writing and testing JUnits. Some of the 
+important classes are: 
+ Assert - Contains a set of assert methods. 
+ TestCase - Contains a test case that defines the fixture to run multiple tests. 
+ TestResult - Contains methods to collect the results of executing a test case. 
+17 
+  JUnit 
+18 
+Let us now have a basic example to demonstrate the step-by-step process of using 
+Junit.  
+Create a Class 
+Create a java class to be tested, say, MessageUtil.java in C:\> JUNIT_WORKSPACE 
+/* 
+* This class prints the given message on console. 
+*/ 
+public class MessageUtil { 
+   private String message; 
+   //Constructor 
+   //@param message to be printed 
+   public MessageUtil(String message){ 
+      this.message = message; 
+   } 
+   // prints the message 
+   public String printMessage(){ 
+      System.out.println(message); 
+      return message; 
+   }    
+}   
+4.  BASIC USAGE 
+Create Test Case Class 
+JUnit 
+1. Create a java test class, say, TestJunit.java. 
+2. Add a test method testPrintMessage() to your test class. 
+3. Add an Annotaion @Test to method testPrintMessage(). 
+4. Implement the test condition and check the condition using assertEquals API 
+of Junit. 
+Create a java class file name TestJunit.java in C:\>JUNIT_WORKSPACE. 
+import org.junit.Test; 
+import static org.junit.Assert.assertEquals; 
+public class TestJunit { 
+String message = "Hello World";  
+MessageUtil messageUtil = new MessageUtil(message); 
+@Test 
+public void testPrintMessage() { 
+assertEquals(message,messageUtil.printMessage()); 
+} 
+} 
+Create Test Runner Class 
+1. Create a TestRunner java class. 
+2. Use runClasses method of JUnitCore class of JUnit to run the test case of the 
+above created test class. 
+3. Get the result of test cases run in Result Object. 
+4. Get failure(s) using the getFailures() method of Result object. 
+5. Get Success result using the wasSuccessful() method of Result object. 
+19 
+  JUnit 
+20 
+Create a java class file named TestRunner.java in C:\>JUNIT_WORKSPACE to execute 
+test case(s). 
+import org.junit.runner.JUnitCore; 
+import org.junit.runner.Result; 
+import org.junit.runner.notification.Failure; 
+public class TestRunner { 
+   public static void main(String[] args) { 
+      Result result = JUnitCore.runClasses(TestJunit.class); 
+      for (Failure failure : result.getFailures()) { 
+         System.out.println(failure.toString()); 
+      } 
+      System.out.println(result.wasSuccessful()); 
+   } 
+}    
+Compile the MessageUtil, Test case and Test Runner classes using javac. 
+C:\JUNIT_WORKSPACE>javac MessageUtil.java TestJunit.java TestRunner.java 
+Now run the Test Runner, which will run the test case defined in the provided Test 
+Case class. 
+C:\JUNIT_WORKSPACE>java TestRunner 
+Verify the output. 
+Hello World 
+true 
+Now update TestJunit in C:\>JUNIT_WORKSPACE so that the test fails. Change the 
+message string. 
+import org.junit.Test; 
+import static org.junit.Assert.assertEquals; 
+  JUnit 
+21 
+public class TestJunit { 
+   String message = "Hello World";  
+   MessageUtil messageUtil = new MessageUtil(message); 
+   @Test 
+   public void testPrintMessage() { 
+      message = "New Word"; 
+      assertEquals(message,messageUtil.printMessage()); 
+   } 
+} 
+Let's keep the rest of the classes as is, and try to run the same Test Runner. 
+import org.junit.runner.JUnitCore; 
+import org.junit.runner.Result; 
+import org.junit.runner.notification.Failure; 
+public class TestRunner { 
+   public static void main(String[] args) { 
+      Result result = JUnitCore.runClasses(TestJunit.class); 
+      for (Failure failure : result.getFailures()) { 
+         System.out.println(failure.toString()); 
+      } 
+      System.out.println(result.wasSuccessful()); 
+   } 
+} 
+Now run the Test Runner, which will run the test case defined in the provided Test 
+Case class. 
+JUnit 
+C:\JUNIT_WORKSPACE>java TestRunner 
+Verify the output. 
+Hello World 
+testPrintMessage(TestJunit): expected:<[New Wor]d> but was:<[Hello Worl]d> 
+false 
+22 
+End of ebook preview 
+JUnit 
+If you liked what you saw… 
+Buy it from our store @ https://store.tutorialspoint.com 
+Mokito
+--------
+About the Tutorial 
+Mockito is a mocking framework, JAVA-based library that is used for effective unit testing of 
+JAVA applications. Mockito is used to mock interfaces so that a dummy functionality can be 
+added to a mock interface that can be used in unit testing. 
+This tutorial should help you learn how to create unit tests with Mockito as well as how to use 
+its APIs in a simple and intuitive way. 
+Audience 
+This tutorial is meant for Java developers, from novice to expert level, who would like to improve 
+the quality of their software through unit testing and test-driven development. 
+After completing this tutorial, you should gain sufficient exposure to Mockito from where you 
+can take yourself to next levels of expertise. 
+Prerequisites 
+Readers must have a working knowledge of JAVA programming language in order to make the 
+most of this tutorial. Knowledge of JUnit is an added advantage. 
+Copyright & Disclaimer  
+© Copyright 2018 by Tutorials Point (I) Pvt. Ltd.   
+All the content and graphics published in this e-book are the property of Tutorials Point (I) Pvt. 
+Ltd.  The user of this e-book is prohibited to reuse, retain, copy, distribute or republish any 
+contents or a part of contents of this e-book in any manner without written consent of the 
+publisher.    
+We strive to update the contents of our website and tutorials as timely and as precisely as 
+possible, however, the contents may contain inaccuracies or errors. Tutorials Point (I) Pvt. Ltd. 
+provides no guarantee regarding the accuracy, timeliness or completeness of our website or its 
+contents including this tutorial. If you discover any errors on our website or in this tutorial, 
+please notify us at contact@tutorialspoint.com 
+i 
+Mockito 
+ii 
+Table of Contents 
+About the Tutorial ..................................................................................................................................... i 
+Audience.................................................................................................................................................... i 
+Prerequisites ............................................................................................................................................. i 
+Copyright & Disclaimer ............................................................................................................................ i 
+Table of Contents .................................................................................................................................... ii 
+1. MOCKITO – OVERVIEW .............................................................................................. 1 
+What is Mocking? .................................................................................................................................... 1 
+Mockito ..................................................................................................................................................... 1 
+Benefits of Mockito ................................................................................................................................. 1 
+2. MOCKITO – ENVIRONMENT SETUP .......................................................................... 4 
+System Requirement ............................................................................................................................... 4 
+3. MOCKITO – FIRST APPLICATION .............................................................................. 8 
+4. MOCKITO – JUNIT INTEGRATION ........................................................................... 13 
+5. MOCKITO – ADDING BEHAVIOR ............................................................................. 17 
+Example .................................................................................................................................................. 17 
+6. MOCKITO – VERIFYING BEHAVIOR ........................................................................ 21 
+Example - verify() with same arguments ............................................................................................. 21 
+Example - verify() with different arguments ....................................................................................... 24 
+7. MOCKITO – EXPECTING CALLS .............................................................................. 28 
+Example .................................................................................................................................................. 28 
+8. MOCKITO – VARYING CALLS .................................................................................. 33 
+Example .................................................................................................................................................. 33 
+9. MOCKITO – EXCEPTION HANDLING ....................................................................... 37 
+Example .................................................................................................................................................. 37 
+Mockito 
+iii 
+10. MOCKITO – CREATE MOCK..................................................................................... 41 
+Example .................................................................................................................................................. 41 
+11. MOCKITO – ORDERED VERIFICATION ................................................................... 45 
+Example .................................................................................................................................................. 45 
+12. MOCKITO – CALLBACKS ......................................................................................... 50 
+Example .................................................................................................................................................. 50 
+13. MOCKITO – SPYING .................................................................................................. 55 
+Example .................................................................................................................................................. 55 
+14. MOCKITO – RESETTING A MOCK ........................................................................... 60 
+Example .................................................................................................................................................. 60 
+15. MOCKITO – BEHAVIOR DRIVEN DEVELOPMENT .................................................. 64 
+Example .................................................................................................................................................. 64 
+16. MOCKITO – TIMEOUTS ............................................................................................. 68 
+Example .................................................................................................................................................. 68 
+1.  Mockito – Overview 
+Mockito 
+What is Mocking? 
+Mocking is a way to test the functionality of a class in isolation. Mocking does not require a 
+database connection or properties file read or file server read to test a functionality. Mock objects 
+do the mocking of the real service. A mock object returns a dummy data corresponding to some 
+dummy input passed to it. 
+Mockito 
+Mockito facilitates creating mock objects seamlessly. It uses Java Reflection in order to create 
+mock objects for a given interface. Mock objects are nothing but proxy for actual 
+implementations.  
+Consider a case of Stock Service which returns the price details of a stock. During development, 
+the actual stock service cannot be used to get real-time data. So we need a dummy 
+implementation of the stock service. Mockito can do the same very easily, as its name suggests. 
+Benefits of Mockito 
+ No Handwriting – No need to write mock objects on your own. 
+ Refactoring Safe – Renaming interface method names or reordering parameters will 
+not break the test code as Mocks are created at runtime. 
+ Return value support – Supports return values. 
+ Exception support – Supports exceptions. 
+ Order check support – Supports check on order of method calls. 
+ Annotation support – Supports creating mocks using annotation. 
+Consider the following code snippet. 
+package com.tutorialspoint.mock; 
+import java.util.ArrayList; 
+import java.util.List; 
+import static org.mockito.Mockito.*; 
+public class PortfolioTester { 
+public static void main(String[] args){ 
+1 
+Mockito 
+2 
+      //Create a portfolio object which is to be tested   
+      Portfolio portfolio = new Portfolio(); 
+      //Creates a list of stocks to be added to the portfolio 
+      List<Stock> stocks = new ArrayList<Stock>(); 
+      Stock googleStock = new Stock("1","Google", 10); 
+      Stock microsoftStock = new Stock("2","Microsoft",100); 
+      stocks.add(googleStock); 
+      stocks.add(microsoftStock);   
+      //Create the mock object of stock service 
+      StockService stockServiceMock = mock(StockService.class); 
+      // mock the behavior of stock service to return the value of various stocks 
+      when(stockServiceMock.getPrice(googleStock)).thenReturn(50.00); 
+      when(stockServiceMock.getPrice(microsoftStock)).thenReturn(1000.00); 
+      //add stocks to the portfolio 
+      portfolio.setStocks(stocks); 
+      //set the stockService to the portfolio 
+      portfolio.setStockService(stockServiceMock); 
+      double marketValue = portfolio.getMarketValue(); 
+      //verify the market value to be  
+      //10*50.00 + 100* 1000.00 = 500.00 + 100000.00 = 100500 
+      System.out.println("Market value of the portfolio: "+ marketValue); 
+   } 
+} 
+Let's understand the important concepts of the above program. The complete code is available 
+in the chapter First Application. 
+ Portfolio – An object to carry a list of stocks and to get the market value computed 
+using stock prices and stock quantity. 
+ Stock – An object to carry the details of a stock such as its id, name, quantity, etc. 
+ StockService – A stock service returns the current price of a stock. 
+Mockito 
+ mock(...) – Mockito created a mock of stock service. 
+ when(...).thenReturn(...) – Mock implementation of getPrice method of stockService 
+interface. For googleStock, return 50.00 as price. 
+ portfolio.setStocks(...) – The portfolio now contains a list of two stocks. 
+ portfolio.setStockService(...) - Assigns the stockService Mock object to the portfolio. 
+ portfolio.getMarketValue() – The portfolio returns the market value based on its 
+stocks using the mock stock service. 
+3 
+Mockito 
+4 
+Mockito is a framework for Java, so the very first requirement is to have JDK installed in your 
+machine. 
+System Requirement 
+JDK 1.5 or above. 
+Memory no minimum requirement. 
+Disk Space no minimum requirement. 
+Operating System no minimum requirement. 
+Step 1: Verify Java Installation on Your Machine 
+Open the console and execute the following java command. 
+OS Task Command 
+Windows Open Command Console c:\> java -version 
+Linux Open Command Terminal $ java -version 
+Mac Open Terminal machine:> joseph$ java -version 
+Let's verify the output for all the operating systems: 
+OS Output 
+Windows 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+Java HotSpot(TM) Client VM (build 17.0-b17, mixed mode, sharing) 
+Linux 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+Java HotSpot(TM) Client VM (build 17.0-b17, mixed mode, sharing) 
+Mac 
+java version "1.6.0_21" 
+Java(TM) SE Runtime Environment (build 1.6.0_21-b07) 
+2. Mockito – Environment Setup 
+Mockito 
+5 
+Java HotSpot(TM)64-Bit Server VM (build 17.0-b17, mixed mode, sharing) 
+If you do not have Java installed, To install the Java Software Development Kit (SDK) click here. 
+We assume you have Java 1.6.0_21 installed on your system for this tutorial. 
+Step 2: Set JAVA Environment 
+Set the JAVA_HOME environment variable to point to the base directory location where Java is 
+installed on your machine. For example, 
+OS Output 
+Windows Set the environment variable JAVA_HOME to C:\Program Files\Java\jdk1.6.0_21 
+Linux export JAVA_HOME=/usr/local/java-current 
+Mac export JAVA_HOME=/Library/Java/Home 
+Append the location of the Java compiler to your System Path. 
+OS Output 
+Windows Append the string ;C:\Program Files\Java\jdk1.6.0_21\bin to the end of the 
+system variable, Path. 
+Linux export PATH=$PATH:$JAVA_HOME/bin/ 
+Mac not required 
+Verify Java Installation using the command java -version as explained above. 
+Step 3: Download Mockito-All Archive 
+To download the latest version of Mockito from Maven Repository click here. 
+Save the jar file on your C drive, let's say, C:\>Mockito. 
+OS Archive name 
+Windows mockito-all-2.0.2-beta.jar 
+Linux mockito-all-2.0.2-beta.jar 
+Mac mockito-all-2.0.2-beta.jar 
+Mockito 
+6 
+Step 4: Set Mockito Environment 
+Set the Mockito_HOME environment variable to point to the base directory location where 
+Mockito and dependency jars are stored on your machine.  
+The following table shows how to set the environment variable on different operating systems, 
+assuming we've extracted mockito-all-2.0.2-beta.jar onto C:\>Mockito folder. 
+OS Output 
+Windows Set the environment variable Mockito_HOME to C:\Mockito 
+Linux export Mockito_HOME=/usr/local/Mockito 
+Mac export Mockito_HOME=/Library/Mockito 
+Step 5: Set CLASSPATH Variable 
+Set the CLASSPATH environment variable to point to the location where Mockito jar is stored. 
+The following table shows how to set the CLASSPATH variable on different operating systems. 
+OS Output 
+Windows Set the environment variable CLASSPATH to 
+%CLASSPATH%;%Mockito_HOME%\mockito-all-2.0.2-beta.jar;.; 
+Linux export CLASSPATH=$CLASSPATH:$Mockito_HOME/mockito-all-2.0.2-beta.jar:. 
+Mac export CLASSPATH=$CLASSPATH:$Mockito_HOME/mockito-all-2.0.2-beta.jar:. 
+Step 6: Download JUnit Archive 
+Download the latest version of JUnit jar file from Github. Save the folder at the location 
+C:\>Junit. 
+OS Archive name 
+Windows junit4.11.jar, hamcrest-core-1.2.1.jar 
+Linux junit4.11.jar, hamcrest-core-1.2.1.jar 
+Mac junit4.11.jar, hamcrest-core-1.2.1.jar 
+Step 7: Set JUnit Environment 
+Set the JUNIT_HOME environment variable to point to the base directory location where JUnit 
+jars are stored on your machine.  
+The following table shows how to set this environment variable on different operating systems, 
+assuming we've stored junit4.11.jar and hamcrest-core-1.2.1.jar at C:\>Junit. 
+Mockito 
+OS 
+Output 
+Windows 
+Set the environment variable JUNIT_HOME to C:\JUNIT 
+Linux 
+export JUNIT_HOME=/usr/local/JUNIT 
+Mac 
+export JUNIT_HOME=/Library/JUNIT 
+Step 8: Set CLASSPATH Variable 
+Set the CLASSPATH environment variable to point to the JUNIT jar location. The following table 
+shows how it is done on different operating systems. 
+OS 
+Output 
+Windows  Set the environment variable CLASSPATH to 
+%CLASSPATH%;%JUNIT_HOME%\junit4.11.jar; 
+%JUNIT_HOME%\hamcrest-core-1.2.1.jar;.; 
+Linux 
+export 
+CLASSPATH=$CLASSPATH:$JUNIT_HOME/junit4.11.jar:$JUNIT_HOME/hamcrest
+core-1.2.1.jar:. 
+Mac 
+export 
+CLASSPATH=$CLASSPATH:$JUNIT_HOME/junit4.11.jar:$JUNIT_HOME/hamcrest
+core-1.2.1.jar:. 
+7 
+End of ebook preview 
+Mockito 

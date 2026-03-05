@@ -1,0 +1,203 @@
+================================================================================
+SYSTEM DESIGN - INTERVIEW PREPARATION GUIDE
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+SECTION 1: SYSTEM DESIGN FUNDAMENTALS
+
+Key Concepts:
+- Scalability: Horizontal (add machines) vs Vertical (add resources)
+- Load Balancing: Round Robin, Least Connections, IP Hash
+- Caching: L1 (in-process) -> L2 (Redis) -> DB
+- Database: SQL vs NoSQL, Sharding, Replication, Indexing
+- Message Queues: Async processing, decoupling (Kafka, RabbitMQ)
+- CAP Theorem: Consistency, Availability, Partition Tolerance (pick 2)
+
+SECTION 2: INTERVIEW QUESTIONS
+
+*** Q1. Design a URL Shortener (like bit.ly).
+Requirements: Shorten URL, redirect, analytics, 100M URLs/month
+
+Components:
+Client -> Load Balancer -> API Server -> Database (NoSQL)
+                                      -> Cache (Redis)
+                                      -> Analytics (Kafka -> HDFS)
+
+URL Generation: Base62 encoding of auto-increment ID
+Database: NoSQL (Cassandra/DynamoDB) - key: shortURL, value: longURL
+Cache: Redis for hot URLs (80/20 rule - 20% URLs get 80% traffic)
+Read:Write ratio = 100:1 -> Optimize for reads
+
+*** Q2. Design a Rate Limiter.
+Algorithms:
+1. Token Bucket: Tokens added at fixed rate, request uses token
+2. Sliding Window: Count requests in sliding time window
+3. Fixed Window Counter: Count in fixed intervals
+
+Implementation:
+- Redis INCR + EXPIRE for distributed rate limiting
+- Spring: Bucket4j or Resilience4j RateLimiter
+
+*** Q3. Design an E-Commerce Order System.
+Services: User, Product, Cart, Order, Payment, Inventory, Notification
+Pattern: Saga for distributed transactions
+
+Order Flow:
+1. User places order -> Order Service creates order (PENDING)
+2. Order Service -> Kafka "order-created" topic
+3. Payment Service consumes -> process payment -> publish "payment-completed"
+4. Inventory Service consumes -> reserve stock -> publish "stock-reserved"
+5. Order Service listens -> all pass -> order CONFIRMED
+6. Notification Service -> send confirmation email/SMS
+
+Failure handling: Compensating transactions via Saga pattern
+
+*** Q4. Design a Chat Application.
+Components: WebSocket Server, Message Queue, User Service, Message Store
+Tech: Spring WebSocket, Kafka, MongoDB (messages), Redis (presence)
+
+Flow:
+User A -> WebSocket -> Message Service -> Kafka "chat-messages"
+                                            |
+User B <- WebSocket <- Consumer <- reads from topic
+
+*** Q5. Design a Notification System.
+Channels: Email, SMS, Push, In-App
+Pattern: Strategy (channel selection) + Observer (event-driven)
+
+Architecture:
+Event Source -> Kafka "notification-requests" -> Notification Service
+     |
+     ├── Email Worker (SES/SendGrid)
+     ├── SMS Worker (Twilio)
+     ├── Push Worker (FCM/APNs)
+     └── In-App Worker (WebSocket)
+
+Priority queue for urgent vs batch notifications
+Template engine for message formatting
+Rate limiting per user to prevent spam
+
+SECTION 3: ESTIMATION TECHNIQUES
+
+Back-of-envelope calculations:
+- 1 day = 86,400 seconds ≈ 100K seconds
+- 1 month = 2.5M seconds
+- 1 char = 1 byte (ASCII), 2 bytes (UTF-16)
+- 1 KB = 1,000 bytes, 1 MB = 1M bytes, 1 GB = 1B bytes
+- 1 TB = 1T bytes
+
+Example: URL Shortener storage for 5 years
+- 100M URLs/month × 60 months = 6B URLs
+- Each record ≈ 500 bytes (shortURL + longURL + metadata)
+- Total = 6B × 500B = 3 TB
+
+KEY QUESTIONS:
+*** 1. URL Shortener design
+*** 2. Rate Limiter design
+*** 3. E-Commerce Order System
+*** 4. CAP Theorem
+*** 5. Horizontal vs Vertical scaling
+*** 6. Caching strategies (L1/L2)
+
+================================================================================
+END OF SYSTEM DESIGN ANALYSIS
+================================================================================
+
+================================================================================
+SYSTEM DESIGN - ADDITIONAL QUESTIONS (Q7-Q30) - ENHANCED EXPANSION
+================================================================================
+
+*** Q7. CAP Theorem - deep explanation with examples.
+C (Consistency): Every read returns most recent write
+A (Availability): Every request gets a response (even if stale)
+P (Partition Tolerance): System works despite network splits
+
+You can only guarantee 2 of 3:
+CP: MongoDB, HBase (consistent reads, may be unavailable during partition)
+AP: Cassandra, DynamoDB (always available, eventually consistent)
+CA: Traditional RDBMS (not distributed, no partition tolerance)
+
+In microservices: Pick AP (availability) with eventual consistency.
+Use Saga pattern for distributed transactions.
+
+*** Q8. Design Notification System (enterprise grade).
+Architecture:
+  Event Producer -> Kafka "notification-requests"
+       |
+  Notification Orchestrator (reads from Kafka)
+       |
+       +-> Template Engine (Freemarker/Thymeleaf)
+       +-> Priority Queue (urgent vs batch)
+       |
+       +-> Email Worker (AWS SES/SendGrid) -> "email-results" topic
+       +-> SMS Worker (Twilio) -> "sms-results" topic
+       +-> Push Worker (FCM/APNs) -> "push-results" topic
+       +-> In-App Worker (WebSocket) -> "inapp-results" topic
+       |
+  Result Tracker (reads results, stores delivery status)
+
+Features:
+  Rate limiting per user (max 5 notifications/hour)
+  Template management (versioned email/SMS templates)
+  Delivery tracking (sent/delivered/bounced/clicked)
+  User preferences (opt-out per channel)
+  Retry with exponential backoff
+
+*** Q9. Design Distributed Cache (Redis architecture).
+Single node: All data on one Redis instance
+Sentinel: Auto failover (master/slave)
+Cluster: Data sharded across nodes (16384 hash slots)
+
+Cache Strategies:
+  Cache-Aside: App checks cache, if miss -> DB -> store in cache
+  Write-Through: Write to cache + DB simultaneously
+  Write-Behind: Write to cache, async write to DB
+  Read-Through: Cache library handles DB access
+
+Eviction: LRU (Least Recently Used), TTL (Time To Live)
+
+*** Q10. Load Balancing algorithms.
+Round Robin: Equal distribution (default)
+Weighted Round Robin: More traffic to powerful servers
+Least Connections: Route to server with fewest active connections
+IP Hash: Same client always goes to same server (sticky sessions)
+Consistent Hashing: Minimal redistribution when servers added/removed
+
+*** Q11. Database Sharding strategies.
+Horizontal: Split rows across DBs (user_id % 4 -> shard 0-3)
+Vertical: Split columns (user_profile vs user_orders)
+Range-based: user_id 1-1M -> shard1, 1M-2M -> shard2
+
+Challenges: Cross-shard queries, rebalancing, global unique IDs
+
+*** Q12. Design a Rate Limiter - detailed.
+Token Bucket Algorithm:
+  Bucket has max N tokens, refills at R tokens/second
+  Each request takes 1 token
+  If no tokens: reject (HTTP 429)
+
+Distributed rate limiter with Redis:
+  Key: "rate:{userId}"
+  INCR key
+  EXPIRE key 60 (TTL 60 seconds)
+  If count > limit -> reject
+
+*** Q13. Consistent Hashing.
+Problem: Hash(key) % N servers -> adding/removing server remaps ALL keys
+Solution: Consistent hashing ring -> only K/N keys remapped
+
+Virtual nodes: Each server has multiple positions on ring
+  Ensures even distribution when servers added/removed
+
+Used in: Redis Cluster, Cassandra, CDN routing
+
+*** Q14-Q20 Quick System Design:
+Q14. Design Twitter Feed (fan-out on write vs fan-out on read)
+Q15. Design Uber/ride-sharing (matching algorithm, location service)
+Q16. Design File Storage (S3-like): chunking, replication, metadata service
+Q17. Design Search Autocomplete: Trie data structure, pre-computed suggestions
+Q18. ACID vs BASE (Basically Available, Soft state, Eventually consistent)
+Q19. CDN (Content Delivery Network): Edge caching, origin server, cache invalidation
+Q20. Hot spot detection and Solutions (celebrity problem): cache, rate limit
+
+================================================================================

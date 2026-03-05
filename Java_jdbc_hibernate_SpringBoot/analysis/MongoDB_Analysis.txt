@@ -1,0 +1,553 @@
+================================================================================
+MONGODB - MASSIVE INTERVIEW PREPARATION (50 Questions)
+For: 7+ Years Experience Level | Java Full Stack Developer
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MONGODB ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MongoDB = NoSQL Document Database
+Storage: BSON (Binary JSON) documents in collections
+No fixed schema — flexible structure per document
+
+Use cases in microservices:
+  - Product catalog (varied attributes per product)
+  - Audit/Event logs (high write throughput, append-only)
+  - User sessions/profiles (flexible schema)
+  - Search indexes for SOPA-like aggregation
+
+SQL                → MongoDB
+Database           → Database
+Table              → Collection
+Row                → Document (BSON)
+Column             → Field
+JOIN               → Embedded document / $lookup
+Primary Key        → _id (auto-generated ObjectId)
+Index              → Index (B-Tree, same concept)
+GROUP BY           → Aggregation Pipeline
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1: FUNDAMENTALS (Q1-Q12)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q1. What is MongoDB? When to use it over RDBMS?
+─────────────────────────────────────────────────────────────────────
+MongoDB: Document-oriented NoSQL database storing BSON documents.
+
+Use MongoDB when:
+  ✅ Flexible/evolving schema (product catalog with varying attributes)
+  ✅ High write throughput (event logs, audit trail, IoT data)
+  ✅ Hierarchical/nested data (embedded documents avoid JOINs)
+  ✅ Horizontal scaling needed (built-in sharding)
+  ✅ Rapid prototyping (no migrations needed)
+
+Use RDBMS when:
+  ✅ Strong ACID transactions critical (financial data)
+  ✅ Complex JOINs and relationships
+  ✅ Strict schema enforcement needed
+  ✅ Mature reporting/BI tools needed
+
+Insurance project: RDBMS for policies/claims (ACID, relationships)
+                   MongoDB for audit events (high write, flexible schema)
+
+─────────────────────────────────────────────────────────────────────
+*** Q2. BSON vs JSON — what's the difference?
+─────────────────────────────────────────────────────────────────────
+JSON: Text format, human-readable, limited types (string, number, bool, null, array, object)
+BSON: Binary JSON, machine-efficient, additional types
+
+Extra BSON types:
+  ObjectId (12-byte unique ID), Date, Int32, Int64, Decimal128,
+  Binary, Regex, Timestamp, MinKey, MaxKey
+
+Benefits of BSON:
+  - Faster parsing (binary, not text)
+  - Richer types (Date, Decimal128 for money)
+  - Size-prefixed (know document size without parsing all)
+  - Traversable (skip fields efficiently)
+
+Max BSON document size: 16 MB
+
+─────────────────────────────────────────────────────────────────────
+*** Q3. ObjectId structure — how is _id generated?
+─────────────────────────────────────────────────────────────────────
+ObjectId = 12 bytes:
+  4 bytes: Timestamp (seconds since epoch)
+  5 bytes: Random value (unique per machine + process)
+  3 bytes: Incrementing counter
+
+  ObjectId("507f1f77bcf86cd799439011")
+            ^^^^^^^^                   → timestamp
+                    ^^^^^^^^^^         → random
+                              ^^^^^^   → counter
+
+No central authority needed — globally unique across machines.
+Can extract creation time: new ObjectId().getTimestamp()
+
+─────────────────────────────────────────────────────────────────────
+*** Q4. Document design — embedded vs referenced.
+─────────────────────────────────────────────────────────────────────
+EMBEDDED (denormalized): Nest related data inside document
+  {
+    "_id": ObjectId("..."),
+    "policyNumber": "P123",
+    "customer": {                    // embedded
+      "name": "Teja",
+      "email": "teja@email.com"
+    },
+    "coverages": [                   // embedded array
+      { "type": "LIFE", "amount": 500000 },
+      { "type": "HEALTH", "amount": 200000 }
+    ]
+  }
+
+  ✅ Single read fetches all data (no JOINs)
+  ✅ Atomic updates (single document = single transaction)
+  ❌ Duplication if same customer in many policies
+  ❌ Document size limit (16 MB)
+
+REFERENCED (normalized): Store reference (_id) to another collection
+  // policies collection
+  { "_id": ObjectId("p1"), "customerId": ObjectId("c1"), ... }
+  // customers collection
+  { "_id": ObjectId("c1"), "name": "Teja", ... }
+
+  ✅ No duplication
+  ✅ Independent updates
+  ❌ Requires $lookup (like JOIN) or multiple queries
+
+Rule of thumb:
+  1:1 or 1:few → Embed
+  1:many (unbounded) → Reference
+  many:many → Reference with array of IDs
+
+Production: Embed data you read together, reference data accessed independently.
+
+─────────────────────────────────────────────────────────────────────
+Q5. Collections — capped vs regular.
+─────────────────────────────────────────────────────────────────────
+Regular: No size limit, documents persist forever
+Capped: Fixed size, oldest documents auto-deleted when full
+  db.createCollection("logs", { capped: true, size: 1048576, max: 5000 })
+
+  Use for: Application logs, event streams (circular buffer behavior)
+  Restriction: Cannot delete or update document size, no sharding
+
+─────────────────────────────────────────────────────────────────────
+Q6. Data types in MongoDB.
+─────────────────────────────────────────────────────────────────────
+String, Number (int32, int64, double, decimal128), Boolean, Date,
+Array, Object (embedded document), ObjectId, Binary Data, Null,
+Regular Expression, Timestamp, MinKey, MaxKey
+
+For money: Use Decimal128 (not Double — floating point precision issues!)
+  { premium: NumberDecimal("50000.75") }
+
+─────────────────────────────────────────────────────────────────────
+Q7. Schema validation in MongoDB.
+─────────────────────────────────────────────────────────────────────
+db.createCollection("policies", {
+  validator: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["policyNumber", "status", "premium"],
+      properties: {
+        policyNumber: { bsonType: "string", description: "required string" },
+        status: { enum: ["ACTIVE", "LAPSED", "CANCELLED"] },
+        premium: { bsonType: "decimal", minimum: 0 }
+      }
+    }
+  },
+  validationLevel: "strict",    // "off", "moderate", "strict"
+  validationAction: "error"     // "warn" or "error"
+});
+
+From MongoDB 3.6+: JSON Schema validation gives structure without losing flexibility.
+
+─────────────────────────────────────────────────────────────────────
+Q8-Q12 Quick fundamentals:
+─────────────────────────────────────────────────────────────────────
+Q8. mongosh shell: show dbs, use dbname, show collections, db.collection.find()
+Q9. MongoDB Atlas vs self-hosted (managed service, auto-scaling, backups)
+Q10. Write Concern: { w: 1 } (ack from primary), { w: "majority" } (ack from majority)
+Q11. Read Concern: "local" (fastest), "majority" (durable), "linearizable" (strongest)
+Q12. Read Preference: primary (default), primaryPreferred, secondary, secondaryPreferred
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2: CRUD + QUERIES (Q13-Q24)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q13. CRUD operations — complete reference.
+─────────────────────────────────────────────────────────────────────
+// INSERT
+db.policies.insertOne({ policyNumber: "P123", premium: 50000 })
+db.policies.insertMany([{ ... }, { ... }])
+
+// FIND (SELECT)
+db.policies.find({ status: "ACTIVE" })                   // WHERE
+db.policies.find({ premium: { $gt: 50000 } })            // WHERE premium > 50000
+db.policies.find({ status: "ACTIVE" }, { policyNumber: 1, premium: 1 }) // SELECT fields
+db.policies.find().sort({ premium: -1 }).limit(10)        // ORDER BY + LIMIT
+db.policies.find({ "customer.city": "Hyderabad" })        // Nested field query
+db.policies.find({ tags: "health" })                      // Array contains value
+
+// UPDATE
+db.policies.updateOne({ _id: id }, { $set: { status: "LAPSED" } })
+db.policies.updateMany({ status: "ACTIVE" }, { $inc: { premium: 1000 } })  // increment
+
+// DELETE
+db.policies.deleteOne({ _id: id })
+db.policies.deleteMany({ status: "CANCELLED" })
+
+─────────────────────────────────────────────────────────────────────
+*** Q14. Query operators — comparison, logical, array.
+─────────────────────────────────────────────────────────────────────
+Comparison:
+  $eq, $ne, $gt, $gte, $lt, $lte, $in, $nin
+
+  db.policies.find({ premium: { $gte: 10000, $lte: 100000 } })
+  db.policies.find({ status: { $in: ["ACTIVE", "PENDING"] } })
+
+Logical:
+  $and, $or, $not, $nor
+
+  db.policies.find({ $or: [{ status: "ACTIVE" }, { premium: { $gt: 100000 } }] })
+
+Array:
+  $all: Array contains all specified elements
+  $size: Array has exact size
+  $elemMatch: Element in array matches all conditions
+
+  db.policies.find({ coverages: { $elemMatch: { type: "LIFE", amount: { $gt: 100000 } } } })
+
+─────────────────────────────────────────────────────────────────────
+*** Q15. Aggregation Pipeline — deep dive.
+─────────────────────────────────────────────────────────────────────
+Aggregation = SQL GROUP BY on steroids
+
+Stages: $match → $group → $sort → $project → $limit → $lookup → $unwind
+
+// Total premium per city
+db.policies.aggregate([
+  { $match: { status: "ACTIVE" } },                    // WHERE
+  { $group: {
+      _id: "$customer.city",                            // GROUP BY
+      totalPremium: { $sum: "$premium" },               // SUM
+      avgPremium: { $avg: "$premium" },                 // AVG
+      count: { $sum: 1 }                                // COUNT
+  }},
+  { $sort: { totalPremium: -1 } },                     // ORDER BY
+  { $limit: 10 }                                        // LIMIT
+])
+
+// JOIN-like: Policies with customer details
+db.policies.aggregate([
+  { $lookup: {
+      from: "customers",
+      localField: "customerId",
+      foreignField: "_id",
+      as: "customerDetails"
+  }},
+  { $unwind: "$customerDetails" },  // Flatten array to single object
+  { $project: { policyNumber: 1, "customerDetails.name": 1, premium: 1 } }
+])
+
+Pipeline optimization: $match FIRST (reduces documents early).
+Internally: Pipeline stages process documents in streaming fashion.
+
+─────────────────────────────────────────────────────────────────────
+Q16. $unwind — exploding arrays.
+─────────────────────────────────────────────────────────────────────
+// Document: { name: "Teja", skills: ["Java", "Spring", "Kafka"] }
+// After $unwind: 3 documents
+//   { name: "Teja", skills: "Java" }
+//   { name: "Teja", skills: "Spring" }
+//   { name: "Teja", skills: "Kafka" }
+
+Use: Count skills across employees, analyze array elements individually.
+
+Q17. $project — reshape documents (include/exclude/compute fields).
+Q18. $addFields — add computed fields without removing existing ones.
+Q19. $bucket / $bucketAuto — histogram grouping.
+Q20. $facet — multiple aggregation pipelines in a single query.
+
+─────────────────────────────────────────────────────────────────────
+*** Q21. Text search in MongoDB.
+─────────────────────────────────────────────────────────────────────
+// Create text index
+db.products.createIndex({ name: "text", description: "text" })
+
+// Search
+db.products.find({ $text: { $search: "wooden table" } })
+
+// With relevance score
+db.products.find(
+  { $text: { $search: "wooden table" } },
+  { score: { $meta: "textScore" } }
+).sort({ score: { $meta: "textScore" } })
+
+Limitation: Basic text search. For production, use:
+  - MongoDB Atlas Search (Lucene-based, like Elasticsearch)
+  - Elasticsearch alongside MongoDB
+
+Q22. Regex queries.
+  db.policies.find({ policyNumber: { $regex: /^P1/, $options: "i" } })
+  // Starts with "P1", case-insensitive
+  // WARNING: Regex without anchor (^) cannot use index → full scan!
+
+Q23. Geospatial queries (for location-based services).
+Q24. Date queries and date aggregation operators.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3: INDEXES + PERFORMANCE (Q25-Q35)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q25. MongoDB index types.
+─────────────────────────────────────────────────────────────────────
+Single Field: db.policies.createIndex({ policyNumber: 1 })   // ascending
+Compound: db.policies.createIndex({ status: 1, premium: -1 }) // 2 fields
+Multikey: Auto-created for array fields
+Text: db.products.createIndex({ description: "text" })
+Hashed: db.users.createIndex({ email: "hashed" })  // for sharding
+TTL: db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 })
+  // Auto-delete documents after 1 hour (sessions, tokens, temp data)
+Unique: db.policies.createIndex({ policyNumber: 1 }, { unique: true })
+Sparse: Only index documents that have the field (skip nulls)
+Partial: db.orders.createIndex({ total: 1 }, { partialFilterExpression: { status: "ACTIVE" } })
+
+*** Q26. explain() — query optimization.
+db.policies.find({ status: "ACTIVE" }).explain("executionStats")
+
+Key fields:
+  queryPlanner.winningPlan: Shows chosen plan
+  executionStats.totalDocsExamined: Documents scanned
+  executionStats.totalKeysExamined: Index entries scanned
+  executionStats.executionTimeMillis: Query duration
+
+Ideal: totalDocsExamined ≈ nReturned (no wasted scans)
+Bad: COLLSCAN (collection scan = no index used)
+Good: IXSCAN (index scan)
+
+─────────────────────────────────────────────────────────────────────
+*** Q27. Compound index and prefix rule.
+─────────────────────────────────────────────────────────────────────
+Index: { status: 1, city: 1, premium: -1 }
+
+Can support queries:
+  ✅ { status: "ACTIVE" }                        → uses index (prefix)
+  ✅ { status: "ACTIVE", city: "Hyderabad" }     → uses index
+  ✅ { status: "ACTIVE", city: "Hyd" }.sort({premium: -1})  → fully covered
+
+Cannot support:
+  ❌ { city: "Hyderabad" }                        → prefix not matched
+  ❌ { premium: { $gt: 50000 } }                  → prefix not matched
+
+ESR Rule (Equality, Sort, Range):
+  Put equality filters first, then sort fields, then range filters.
+
+─────────────────────────────────────────────────────────────────────
+Q28. Covered query (index-only query).
+  // If index = { policyNumber: 1, status: 1 }
+  db.policies.find({ policyNumber: "P123" }, { status: 1, _id: 0 })
+  // All fields from index → no document fetch (PROJECTION_COVERED)
+
+Q29. Index intersection — MongoDB can combine two single-field indexes.
+Q30. TTL index use case: Auto-expire sessions, OTP tokens, temp data.
+
+─────────────────────────────────────────────────────────────────────
+*** Q31. WiredTiger storage engine internals.
+─────────────────────────────────────────────────────────────────────
+Default engine since MongoDB 3.2.
+
+Features:
+  - Document-level concurrency control (fine-grained locking)
+  - Compression: Snappy (default), zlib, zstd
+  - Write-Ahead Log (journal): Durability on crash
+  - Checkpointing: Snapshot to disk every 60s
+  - In-memory cache: Default 50% of (RAM - 1GB) or 256MB
+
+Write flow:
+  Write → Journal (WAL) → In-memory cache → Checkpoint to disk (60s)
+  Crash recovery: Replay journal entries since last checkpoint
+
+Q32. Memory management: wiredTigerCacheSizeGB configuration.
+Q33. Lock granularity: MongoDB 3.0+ = collection-level, WiredTiger = document-level.
+
+─────────────────────────────────────────────────────────────────────
+*** Q34. Replica Set — high availability.
+─────────────────────────────────────────────────────────────────────
+Replica Set = 1 Primary + N Secondaries (minimum 3 members)
+
+Primary: Handles ALL writes. Reads by default.
+Secondary: Replicates from Primary via oplog. Can serve reads.
+
+Failover:
+  Primary goes down → election among Secondaries
+  Secondary with most recent oplog wins → becomes new Primary
+  Automatic failover in ~10 seconds
+
+Oplog (operations log): Capped collection recording all write operations
+  Secondaries tail the oplog and replay operations
+
+Driver behavior:
+  Write to Primary → ack with w: "majority" → guaranteed on 2/3 nodes
+  Read from Secondary → readPreference: "secondaryPreferred"
+
+─────────────────────────────────────────────────────────────────────
+*** Q35. Sharding — horizontal scaling.
+─────────────────────────────────────────────────────────────────────
+Sharding distributes data across multiple servers (shards).
+
+Components:
+  mongos: Query router (clients connect here)
+  Config Server: Stores cluster metadata (which chunks on which shard)
+  Shards: Store actual data (each shard = replica set)
+
+Shard Key: Field used to distribute documents
+  db.orders.createIndex({ customerId: "hashed" })
+  sh.shardCollection("mydb.orders", { customerId: "hashed" })
+
+Shard key strategies:
+  Hashed: Even distribution, random reads (customerId hash)
+  Ranged: Range queries efficient, risk of hot spots (date range)
+
+  BAD shard key: monotonically increasing (timestamp/ObjectId) → all writes to one shard!
+  GOOD shard key: high cardinality + even distribution (customerId hashed)
+
+Flow:
+  Client → mongos → determine which shard(s) → route query → aggregate results
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4: SPRING BOOT + MONGODB INTEGRATION (Q36-Q42)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q36. Spring Data MongoDB — Repository pattern.
+─────────────────────────────────────────────────────────────────────
+// Entity
+@Document(collection = "policies")
+public class Policy {
+    @Id private String id;                        // Maps to _id
+    @Indexed(unique = true) private String policyNumber;
+    @Field("cust") private Customer customer;      // Custom field name
+    private String status;
+    private BigDecimal premium;
+    @CreatedDate private LocalDateTime createdAt;
+    @LastModifiedDate private LocalDateTime updatedAt;
+}
+
+// Repository
+public interface PolicyRepository extends MongoRepository<Policy, String> {
+    List<Policy> findByStatus(String status);
+    List<Policy> findByPremiumGreaterThan(BigDecimal amount);
+    @Query("{ 'customer.city': ?0, 'status': 'ACTIVE' }")
+    List<Policy> findActivePoliciesByCity(String city);
+}
+
+// application.yml
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/insurance
+      database: insurance
+
+─────────────────────────────────────────────────────────────────────
+Q37. MongoTemplate — for complex queries.
+─────────────────────────────────────────────────────────────────────
+@Autowired private MongoTemplate mongoTemplate;
+
+// Complex query with criteria
+Query query = new Query();
+query.addCriteria(Criteria.where("status").is("ACTIVE")
+    .and("premium").gt(new BigDecimal("50000")));
+query.with(Sort.by(Sort.Direction.DESC, "premium"));
+query.limit(10);
+
+List<Policy> policies = mongoTemplate.find(query, Policy.class);
+
+// Aggregation
+Aggregation agg = Aggregation.newAggregation(
+    Aggregation.match(Criteria.where("status").is("ACTIVE")),
+    Aggregation.group("customer.city")
+        .sum("premium").as("totalPremium")
+        .count().as("count"),
+    Aggregation.sort(Sort.Direction.DESC, "totalPremium")
+);
+AggregationResults<CityReport> results = mongoTemplate.aggregate(agg, "policies", CityReport.class);
+
+Q38. @DBRef vs manual references.
+Q39. MongoDB Change Streams for real-time event processing.
+Q40. Transactions in MongoDB (multi-document, replica set required).
+Q41. Auditing: @EnableMongoAuditing + @CreatedDate + @LastModifiedDate.
+Q42. Migration: Mongock (like Flyway for MongoDB).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 5: SCENARIOS + PRODUCTION (Q43-Q50)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+*** Q43. When would you use MongoDB alongside SQL Server in microservices?
+  Policy Service → SQL Server (ACID, relational, financial data)
+  Audit Service → MongoDB (high write, flexible schema, append-only)
+  Product Catalog → MongoDB (varied attributes, nested categories)
+  Session Store → MongoDB TTL collection (auto-expire)
+  Search Service → MongoDB Atlas Search or Elasticsearch
+
+*** Q44. How to handle MongoDB in a Saga pattern?
+  Same as RDBMS: Each service has own DB (polyglot persistence).
+  MongoDB service publishes events to Kafka after writing.
+  Outbox pattern: Write document + outbox event atomically (multi-document txn).
+
+Q45. Performance tuning checklist.
+  1. Add indexes for query patterns (explain to verify)
+  2. Use projection (return only needed fields)
+  3. Use covered queries (index-only)
+  4. Pre-aggregate with $out or materialized views
+  5. Shard for horizontal scale
+  6. WiredTiger cache sizing
+  7. Connection pooling (MongoClient default = 100 connections)
+
+Q46. Scenario: Migrate from SQL to MongoDB.
+  1. Analyze schema: Identify embedded vs referenced relationships
+  2. Denormalize for read patterns
+  3. Build MongoDB schema + indexes
+  4. Dual-write migration: Write to both during transition
+  5. Validate data consistency
+  6. Switch reads to MongoDB → switch writes → retire SQL
+
+Q47. MongoDB vs Elasticsearch — when to use which?
+  MongoDB: Primary datastore, CRUD, aggregation, transactions
+  Elasticsearch: Search engine, full-text search, analytics, not primary store
+  Pattern: MongoDB (source of truth) → sync to Elasticsearch (for search)
+
+Q48. Security: Authentication (SCRAM), Authorization (roles), Encryption at rest, TLS.
+Q49. Backup: mongodump/mongorestore, Atlas continuous backup, point-in-time recovery.
+Q50. MongoDB 7.0 features: Queryable encryption, Cluster-to-Cluster sync, improved aggregation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE: *** HIGH-FREQUENCY QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*** Q1.  MongoDB vs RDBMS — when to use
+*** Q2.  BSON vs JSON
+*** Q3.  ObjectId structure
+*** Q4.  Embedded vs Referenced document design
+*** Q13. CRUD operations
+*** Q14. Query operators
+*** Q15. Aggregation Pipeline
+*** Q21. Text search
+*** Q25. Index types (TTL, compound, partial)
+*** Q26. explain() query optimization
+*** Q27. Compound index prefix rule + ESR
+*** Q31. WiredTiger storage engine
+*** Q34. Replica Set + failover
+*** Q35. Sharding + shard key selection
+*** Q36. Spring Data MongoDB integration
+*** Q43. MongoDB alongside SQL in microservices
+*** Q44. MongoDB in Saga pattern
+
+================================================================================
+END OF MONGODB ANALYSIS (50 Questions)
+================================================================================

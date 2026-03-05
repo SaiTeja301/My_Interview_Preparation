@@ -1,0 +1,1069 @@
+================================================================================
+JAVA CORE - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+For: Akula Venkata Sai Teja | Target: 7+ Years Experience Level
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1: SOURCE FILE ANALYSIS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total Notes File: Java_Notes.txt (14,076 lines / 483 KB)
+
+Concept Coverage Summary:
+  ✅ JVM Architecture (JDK, JRE, JVM layers)
+  ✅ Variables (Instance vs Local), Memory Maps
+  ✅ Methods, Delegation, Method Overloading
+  ✅ Arrays (1D, 2D, 3D, Jagged Arrays)
+  ✅ OOPs Concepts (Inheritance, Polymorphism, Encapsulation, Abstraction)
+  ✅ Constructors and this/super keywords
+  ✅ Exception Handling
+  ✅ String handling (String, StringBuilder, StringBuffer)
+  ✅ Collections Framework (List, Set, Map)
+  ✅ Generics
+  ✅ Java 8 Features (Lambda, Streams, Optional, Functional Interfaces)
+  ✅ Multithreading basics
+  ✅ File I/O
+
+Missing/Weak Areas:
+  ❌ JVM Internals - ClassLoader hierarchy deep dive
+  ❌ GC Algorithms (G1GC, ZGC, Shenandoah internals)
+  ❌ JMM (Java Memory Model) - happens-before relationship
+  ❌ CompletableFuture advanced chaining
+  ❌ Executor Framework - ThreadPoolExecutor internals
+  ❌ ConcurrentHashMap internal working (segments vs. buckets)
+  ❌ HashMap collision resolution (LinkedList → Tree after Java 8)
+  ❌ WeakHashMap, IdentityHashMap
+  ❌ Fork/Join Framework
+  ❌ Volatile keyword internals
+  ❌ AtomicInteger / AtomicReference internals
+  ❌ String Pool internals (String.intern())
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2: JVM ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+JVM Architecture Diagram:
+  ┌────────────────────────────────────────────────────┐
+  │                  Java Source (.java)               │
+  └─────────────────────┬──────────────────────────────┘
+                        │ javac
+  ┌─────────────────────▼──────────────────────────────┐
+  │               Bytecode (.class)                    │
+  └─────────────────────┬──────────────────────────────┘
+                        │
+  ┌─────────────────────▼──────────────────────────────┐
+  │                       JVM                         │
+  │  ┌──────────────────────────────────────────────┐ │
+  │  │             Class Loader Subsystem           │ │
+  │  │  Bootstrap → Extension → Application        │ │
+  │  └────────────────────┬─────────────────────────┘ │
+  │  ┌─────────────────────▼────────────────────────┐ │
+  │  │              Runtime Data Areas              │ │
+  │  │  Method Area | Heap | Stack | PC Reg | NMS  │ │
+  │  └────────────────────┬─────────────────────────┘ │
+  │  ┌─────────────────────▼────────────────────────┐ │
+  │  │            Execution Engine                  │ │
+  │  │   Interpreter + JIT Compiler + GC            │ │
+  │  └──────────────────────────────────────────────┘ │
+  └────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3: INTERVIEW ROUNDS - 5 COMPLETE ROUNDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+════════════════════════════════════════
+ROUND 1 – BASIC + RESUME DISCUSSION
+════════════════════════════════════════
+
+─────────────────────────────────────────────────────────────────────
+Q1. Tell me about yourself and your Java experience.
+─────────────────────────────────────────────────────────────────────
+Answer:
+  I am a Full Stack Java Developer with 4 years of experience (3.5 years
+  professional + 5 months internship). I work extensively with Java 8,
+  Spring Boot, Microservices, Hibernate/JPA, and Angular. Currently working
+  at Cognizant on Nationwide Insurance project, building and optimizing
+  Microservices and RESTful APIs. Previously worked on IKEA Internal Systems
+  integrating OpenAI/LLM RAG capabilities with Java Spring Boot backend.
+
+─────────────────────────────────────────────────────────────────────
+*** Q2. What is the difference between JDK, JRE, and JVM?
+─────────────────────────────────────────────────────────────────────
+Answer:
+  JDK (Java Development Kit):
+    - Complete development environment
+    - Includes JRE + development tools (javac, javadoc, javap, jdb)
+    - Used by developers to write and compile Java programs
+    - Contains: JRE + Compiler + Debugger + JavaDoc + other tools
+
+  JRE (Java Runtime Environment):
+    - Environment to RUN Java programs (not develop)
+    - Includes: JVM + Runtime Libraries (java.lang, java.util, etc.)
+
+  JVM (Java Virtual Machine):
+    - Abstract computing machine
+    - Executes Java bytecode
+    - Platform-specific implementation
+    - Provides: Memory management, GC, security sandbox
+
+  Hierarchy: JDK ⊃ JRE ⊃ JVM
+
+Real-time Example:
+  Your production server only needs JRE to run the Spring Boot JAR.
+  Your developer laptop needs JDK to compile and run the code.
+
+─────────────────────────────────────────────────────────────────────
+*** Q3. Explain OOPs principles with real-world examples.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+1) ENCAPSULATION:
+   - Binding data (variables) and methods together in a class
+   - Hiding implementation details using access modifiers
+   - Real Example: BankAccount class - balance is private; only accessible
+     via getBalance()/deposit()/withdraw() methods
+
+   Code Example:
+   public class BankAccount {
+       private double balance;  // Hidden from outside
+
+       public void deposit(double amount) {
+           if (amount > 0) balance += amount;
+       }
+
+       public double getBalance() { return balance; }
+   }
+
+2) INHERITANCE:
+   - One class inherits properties/behavior of another
+   - Promotes code reuse
+   - Real Example: Vehicle → Car, Bike, Truck (IS-A relationship)
+
+   Code Example:
+   public class Vehicle {
+       protected String brand;
+       public void startEngine() {
+           System.out.println("Engine started");
+       }
+   }
+   public class Car extends Vehicle {
+       private int numDoors;
+       @Override
+       public void startEngine() {
+           super.startEngine();
+           System.out.println("Car ready to drive");
+       }
+   }
+
+3) POLYMORPHISM:
+   - One interface, many implementations
+   - Compile-time (Method Overloading) / Runtime (Method Overriding)
+   - Real Example: Payment.pay() → CreditCardPayment, UPIPayment, NetBanking
+
+   Runtime Polymorphism Example:
+   Payment payment = new CreditCardPayment();
+   payment.pay(1000); // Calls CreditCardPayment's pay() at runtime
+
+4) ABSTRACTION:
+   - Hiding complexity, showing only essential features
+   - Achieved via abstract classes or interfaces
+   - Real Example: ATM machine - you press "Withdraw" without knowing
+     the underlying database/network calls
+
+   Code Example:
+   public abstract class Shape {
+       public abstract double area(); // Force subclasses to implement
+   }
+   public class Circle extends Shape {
+       private double radius;
+       @Override
+       public double area() { return Math.PI * radius * radius; }
+   }
+
+Flowchart:
+  Client Request
+       ↓
+  Abstraction (Interface/Abstract) - What to do
+       ↓
+  Polymorphism - Which implementation to use
+       ↓
+  Encapsulation - Data protection within class
+       ↓
+  Inheritance - Reuse parent behavior
+       ↓
+  Result returned
+
+─────────────────────────────────────────────────────────────────────
+Q4. What is the difference between abstract class and interface?
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  Feature            | Abstract Class              | Interface
+  -------------------|-----------------------------|--------------------------
+  Methods            | Abstract + Concrete         | Abstract + Default + Static (Java 8)
+  Variables          | Any type                    | public static final (constants)
+  Constructors       | Yes                         | No
+  Multiple Inherit.  | No (single)                 | Yes (multiple interfaces)
+  Access Modifiers   | Any                         | public (default)
+  IS-A relationship  | Strong IS-A                 | CAN-DO / HAS-ABILITY-TO
+  Use Case           | Template pattern            | Contract definition
+
+Real-time Example:
+  Abstract Class: Vehicle (has engine, wheels - common template)
+  Interface: Flyable, Swimmable (specific capabilities)
+
+Production Scenario:
+  In Insurance project - PaymentProcessor is an interface implemented by
+  CreditCardProcessor, WireTransferProcessor. The base validation logic is
+  in an abstract AbstractPaymentProcessor class.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROUND 2 – CORE TECHNICAL DEEP DIVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q5. Explain JVM Memory Model in detail.
+─────────────────────────────────────────────────────────────────────
+Answer:
+  JVM Memory is divided into 5 main areas:
+
+  1) METHOD AREA (MetaSpace since Java 8):
+     - Stores class metadata, static variables, constant pool
+     - Shared across all threads
+     - Was PermGen (before Java 8) → Now MetaSpace (native memory)
+     - MetaSpace auto-grows unlike PermGen (eliminates OutOfMemoryError: PermGen)
+
+  2) HEAP:
+     - Dynamic object allocation
+     - Divided into: Young Gen + Old Gen (+ MetaSpace)
+     - Young Gen → Eden + Survivor S0 + Survivor S1
+     - Objects start in Eden, move to Survivor after minor GC
+     - Objects that survive multiple GC cycles move to Old Gen
+
+  3) STACK:
+     - Per-thread memory
+     - Each method call creates a Stack Frame
+     - Stack Frame contains: Local Variables + Operand Stack + Frame Data
+     - LIFO structure - last method called, first to be removed
+     - StackOverflowError when stack is full (infinite recursion)
+
+  4) PC REGISTER (Program Counter):
+     - Per-thread, holds address of current executing instruction
+     - Points to next instruction to execute
+
+  5) NATIVE METHOD STACK:
+     - For native (C/C++) method execution
+     - Used with JNI (Java Native Interface)
+
+  Heap Memory Diagram:
+  ┌─────────────────────────────────────────┐
+  │              HEAP                       │
+  │  ┌──────────────────────┐  ┌─────────┐ │
+  │  │    Young Generation  │  │  Old    │ │
+  │  │  ┌──────┐ ┌──┐ ┌──┐ │  │  Gen    │ │
+  │  │  │ Eden │ │S0│ │S1│ │  │(Tenured)│ │
+  │  │  └──────┘ └──┘ └──┘ │  │         │ │
+  │  └──────────────────────┘  └─────────┘ │
+  └─────────────────────────────────────────┘
+
+Real-time Production Scenario:
+  In Nationwide Insurance project, processing millions of policy claims
+  caused frequent GC pauses. Tuning Young Gen size and using G1GC:
+  -XX:+UseG1GC -Xms4g -Xmx8g -XX:NewRatio=3
+  Reduced GC pause times from 2s to 200ms.
+
+─────────────────────────────────────────────────────────────────────
+*** Q6. Explain HashMap internal working in Java 8+.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  Internal Structure:
+  - Array of Node<K,V>[] (called table/bucket array)
+  - Default capacity: 16 buckets
+  - Default Load Factor: 0.75 (resize at 75% full)
+  - Initial threshold = capacity * loadFactor = 16 * 0.75 = 12
+
+  put(key, value) Flow:
+  1. Compute key.hashCode()
+  2. Apply hash spreading: hash = (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16)
+  3. Calculate index: index = hash & (capacity - 1)
+  4. Check bucket at index:
+     a. If empty → Insert new Node
+     b. If same key exists → Update value
+     c. If collision (different key, same bucket):
+        - Before Java 8: LinkedList (O(n) lookup)
+        - Java 8+: LinkedList → Tree (TreeNode) when chain length > 8 (TREEIFY_THRESHOLD)
+        - Tree → LinkedList when shrinks < 6 (UNTREEIFY_THRESHOLD)
+
+  get(key) Flow:
+  1. Hash key → find bucket index
+  2. Traverse LinkedList or Tree in bucket
+  3. Compare keys: (k = e.key) == key || (key != null && key.equals(k))
+
+  Execution Flowchart:
+  put("name", "Teja")
+       ↓
+  hashCode("name") = 3373752
+       ↓
+  hash spreading → apply XOR with upper 16 bits
+       ↓
+  index = hash & 15 = 8 (example)
+       ↓
+  bucket[8] empty? → Insert Node{"name","Teja"}
+       ↓
+  bucket[8] has entry?
+       ↓ (if collision)
+  Chain length < 8? → LinkedList
+  Chain length >= 8? → Convert to Red-Black Tree
+
+  Code Example:
+  Map<String, Integer> map = new HashMap<>();
+  map.put("apple", 1);   // Goes to bucket based on hash
+  map.put("mango", 2);   // Different bucket
+  // If "apple" and "mango" hash to same bucket -> LinkedList/Tree
+
+  Production Issue:
+  HashMap is NOT thread-safe. In multi-threaded environments, infinite
+  loop can occur during concurrent resize. Use:
+  - ConcurrentHashMap for thread-safety
+  - Collections.synchronizedMap() (less efficient)
+
+─────────────────────────────────────────────────────────────────────
+*** Q7. What is String Pool? Explain String immutability.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  String Pool (String Literal Pool / String Intern Pool):
+  - Special area in Heap (since Java 7, moved from PermGen to Heap)
+  - Stores unique String literals
+  - JVM reuses String objects to save memory
+
+  How it Works:
+  String s1 = "Hello";  // Created in String Pool
+  String s2 = "Hello";  // Reuses same reference from pool
+  String s3 = new String("Hello");  // New object in Heap (NOT in pool)
+
+  s1 == s2  → true  (same pool reference)
+  s1 == s3  → false (s3 is heap object)
+  s1.equals(s3) → true (content same)
+
+  String.intern():
+  - Manually adds string to pool
+  - s3.intern() → if "Hello" exists in pool, returns pool ref
+
+  Why String is Immutable:
+  1. Security: Connection strings, passwords can't be changed mid-use
+  2. Thread Safety: Multiple threads can safely share strings
+  3. Hashcode Caching: String's hashcode is cached (used in HashMap keys)
+  4. String Pool: Immutability enables safe pool sharing
+
+  Code Example:
+  String url = "jdbc:mysql://localhost:3306/db";
+  // If String were mutable, malicious code could modify url
+  // between your security check and actual connection
+
+  Internal Representation (Java 9+):
+  - Before Java 9: char[] array (2 bytes per char)
+  - Java 9+: byte[] with charset encoding (Compact Strings)
+    - Latin-1 (1 byte/char) for ASCII strings
+    - UTF-16 (2 bytes/char) for others
+    - Saves ~30-40% memory
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROUND 3 – ADVANCED + INTERNAL WORKING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q8. Explain Garbage Collection in Java - all algorithms.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  GC Types and When They Run:
+  1. Minor GC → Young Generation (Eden + Survivor)
+     - Fast, frequent
+     - Objects that survive copied to Survivor S0/S1 alternately
+     - After N generations (default 15), promoted to Old Gen
+
+  2. Major GC (Old Gen GC) → Old Generation
+     - Slower, less frequent
+     - Triggered when Old Gen is nearly full
+
+  3. Full GC → Entire Heap
+     - Most expensive, causes Stop-The-World pause
+
+  GC Algorithms:
+  ┌─────────────────────────────────────────────────────────────────┐
+  │Algorithm       │ Release │ Focus                               │
+  ├─────────────────┼─────────┼─────────────────────────────────────┤
+  │Serial GC        │ Old     │ Single thread, small apps           │
+  │Parallel GC      │ Java 9  │ Multiple threads, throughput focus  │
+  │CMS (deprecated) │ Old     │ Low pause time (concurrent)         │
+  │G1GC             │ Java 9+ │ Large heaps, balanced pause/thput   │
+  │ZGC              │ Java 15 │ Ultra-low pause (<10ms)             │
+  │Shenandoah       │ Java 12 │ Low pause, RedHat                   │
+  └─────────────────────────────────────────────────────────────────┘
+
+  G1GC Internal Working:
+  - Divides heap into equal-sized Regions (2MB each by default)
+  - Regions designated as: Eden, Survivor, Old, Humongous (large objects)
+  - Builds "Collection Set" - regions with most garbage first
+  - Concurrent marking → Evacuation pause
+  - Target: -XX:MaxGCPauseMillis=200
+
+  Production Tuning Flags:
+  -XX:+UseG1GC
+  -Xms4g -Xmx8g
+  -XX:MaxGCPauseMillis=200
+  -XX:G1HeapRegionSize=8m
+  -XX:InitiatingHeapOccupancyPercent=45
+  -XX:G1ReservePercent=10
+
+  Flowchart - Object Lifecycle:
+  Object created (new keyword)
+       ↓
+  Eden Space (Young Gen)
+       ↓ Minor GC triggered
+  Survivors (S0 ↔ S1 alternating)
+  Age counter incremented each GC
+       ↓ Age > 15 (default)
+  Old Generation
+       ↓ Major GC triggered
+  Objects with no references → Collected
+       ↓
+  Memory released
+
+─────────────────────────────────────────────────────────────────────
+*** Q9. Explain Java 8 Lambda and Functional Interfaces.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  Functional Interface:
+  - Interface with exactly ONE abstract method
+  - Can have multiple default/static methods
+  - Annotated with @FunctionalInterface (optional but recommended)
+
+  Built-in Functional Interfaces:
+  ┌────────────────────┬──────────────────────┬─────────────────────┐
+  │Interface           │ Method               │ Use Case            │
+  ├────────────────────┼──────────────────────┼─────────────────────┤
+  │Predicate<T>        │ boolean test(T t)    │ Filtering           │
+  │Function<T,R>       │ R apply(T t)         │ Transformation      │
+  │Consumer<T>         │ void accept(T t)     │ Side effects        │
+  │Supplier<T>         │ T get()              │ Lazy generation     │
+  │BiFunction<T,U,R>   │ R apply(T t, U u)   │ Two args → result   │
+  │UnaryOperator<T>    │ T apply(T t)         │ Same type in/out    │
+  │BinaryOperator<T>   │ T apply(T t1, T t2) │ Two same type args  │
+  └────────────────────┴──────────────────────┴─────────────────────┘
+
+  Lambda Syntax:
+  (parameters) -> expression
+  (parameters) -> { statements; }
+
+  Code Examples:
+  // Before Lambda (Anonymous class)
+  Runnable r = new Runnable() {
+      @Override
+      public void run() { System.out.println("Running"); }
+  };
+
+  // With Lambda
+  Runnable r = () -> System.out.println("Running");
+
+  // Predicate example (Insurance domain)
+  Predicate<Policy> isActive = policy -> policy.getStatus().equals("ACTIVE");
+  List<Policy> activePolicies = policies.stream()
+      .filter(isActive)
+      .collect(Collectors.toList());
+
+  // Function example
+  Function<String, Integer> stringLength = String::length;
+  int len = stringLength.apply("Hello");  // 5
+
+  // Consumer example
+  Consumer<Policy> logPolicy = p -> logger.info("Processing: {}", p.getId());
+  activePolicies.forEach(logPolicy);
+
+  Internal Working:
+  - Lambda expressions are NOT anonymous inner classes
+  - JVM uses invokedynamic bytecode instruction
+  - Lambda body converted to a static method in the enclosing class
+  - LambdaMetafactory creates a functional interface implementation
+  - More efficient than anonymous classes (no extra .class files)
+
+─────────────────────────────────────────────────────────────────────
+Q10. Explain Optional class - purpose and usage.
+─────────────────────────────────────────────────────────────────────
+Answer:
+  Optional<T> - container that may or may not contain a non-null value.
+  Introduced in Java 8 to eliminate NullPointerException.
+
+  Creation:
+  Optional<String> empty = Optional.empty();
+  Optional<String> name = Optional.of("Teja");        // throws NPE if null
+  Optional<String> nullable = Optional.ofNullable(name); // safe for null
+
+  Usage Methods:
+  optional.isPresent()        → true if value exists
+  optional.isEmpty()          → true if empty (Java 11)
+  optional.get()              → returns value (throws if empty)
+  optional.orElse("default")  → returns value or default
+  optional.orElseGet(supplier)→ returns value or executes supplier
+  optional.orElseThrow(...)   → throws exception if empty
+  optional.map(f)             → transforms value if present
+  optional.flatMap(f)         → for Optional-returning functions
+  optional.filter(predicate)  → filters value
+
+  Production Code Example (Insurance Service):
+  // Finding a policy by ID - avoiding null checks
+  public PolicyDTO findPolicy(String policyId) {
+      return policyRepository.findById(policyId)
+          .map(policy -> new PolicyDTO(policy))
+          .orElseThrow(() -> new PolicyNotFoundException(
+              "Policy not found: " + policyId));
+  }
+
+  // Nested null check scenario
+  // Before Optional:
+  if (user != null && user.getAddress() != null
+      && user.getAddress().getCity() != null) {
+      return user.getAddress().getCity();
+  }
+
+  // With Optional:
+  return Optional.ofNullable(user)
+      .map(User::getAddress)
+      .map(Address::getCity)
+      .orElse("Unknown City");
+
+  When NOT to use Optional:
+  - As method parameter type (use overloading instead)
+  - As collection element (use empty collection instead)
+  - As field type in a class (serialization issues)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROUND 4 – SCENARIO-BASED + DEBUGGING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q11. How do you debug a memory leak in a Java application?
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  Signs of Memory Leak:
+  - Heap usage keeps growing over time
+  - Frequent Full GC with no memory recovery
+  - OutOfMemoryError: Java heap space
+  - Application slows down over time
+
+  Step-by-step Debug Process:
+  1. Enable GC Logging:
+     -XX:+PrintGCDetails -XX:+PrintGCDateStamps
+     -Xloggc:/var/log/myapp-gc.log
+     -XX:+UseGCLogFileRotation
+
+  2. Take Heap Dump:
+     jmap -dump:format=b,file=heap.hprof <pid>
+     Or via Actuator: /actuator/heapdump
+
+  3. Analyze with Eclipse MAT (Memory Analyzer Tool):
+     - Find Leak Suspects report
+     - Look for objects with large retention
+
+  4. Common Causes:
+     - Static collections growing without bounds
+     - Unclosed connections (JDBC, HTTP)
+     - Event listeners not removed
+     - Caches without eviction policy
+     - ThreadLocal variables not cleared
+     - Classloader leaks
+
+  Real Production Scenario (IKEA Project):
+  A memory leak was found in the product onboarding service. Each request
+  created a new ObjectMapper without caching it. After switching to a
+  singleton ObjectMapper bean, memory stabilized.
+
+  Code Fix:
+  // BAD - creates new ObjectMapper per request
+  public String serialize(Object obj) {
+      return new ObjectMapper().writeValueAsString(obj); // LEAK!
+  }
+
+  // GOOD - singleton bean
+  @Bean
+  public ObjectMapper objectMapper() {
+      return new ObjectMapper();
+  }
+
+  // Inject and reuse
+  @Autowired
+  private ObjectMapper objectMapper;
+
+─────────────────────────────────────────────────────────────────────
+*** Q12. Scenario: Your HashMap application has poor performance in
+         multi-threaded environment. How do you fix?
+─────────────────────────────────────────────────────────────────────
+Answer:
+  Problem: HashMap is not thread-safe.
+  - Concurrent puts can cause infinite loop (Java < 8)
+  - In Java 8, causes data corruption
+
+  Solutions (in order of preference):
+
+  1. ConcurrentHashMap:
+     - Best performance for concurrent access
+     - Uses segment locking (Java 7) or CAS + synchronized per bucket (Java 8)
+     - Multiple threads can READ simultaneously
+     - Write locks: Only lock the single bucket being modified
+     - No full-map locking
+
+     Code:
+     Map<String, Policy> policyCache =
+         new ConcurrentHashMap<>();
+
+  2. Collections.synchronizedMap():
+     - Wraps HashMap with synchronized methods
+     - All operations are synchronized (full lock)
+     - Less efficient than ConcurrentHashMap
+
+  3. Hashtable (legacy):
+     - All methods synchronized
+     - Very poor performance, avoid in new code
+
+  ConcurrentHashMap Internal (Java 8):
+  - Lock-free reads using volatile fields
+  - CAS (Compare-And-Swap) for updates
+  - synchronized block only for specific node operations
+  - Allows full concurrent reads + N/16 concurrent writes
+
+  Production Implementation:
+  @Service
+  public class PolicyCacheService {
+      private final ConcurrentHashMap<String, Policy> cache =
+          new ConcurrentHashMap<>(1000, 0.75f, 16);
+      // 16 = concurrency level (estimated concurrent writers)
+
+      public Policy getOrLoad(String policyId) {
+          return cache.computeIfAbsent(policyId,
+              id -> policyRepository.findById(id).orElseThrow());
+      }
+  }
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROUND 5 – SYSTEM DESIGN + ARCHITECTURE + OPTIMIZATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q13. How would you design a high-performance caching system
+         for a Java microservice?
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  Layered Caching Architecture:
+  Client Request
+       ↓
+  L1 Cache: In-Process (ConcurrentHashMap / Caffeine)
+       ↓ miss
+  L2 Cache: Distributed (Redis)
+       ↓ miss
+  Database (MySQL / SQL Server)
+
+  Implementation with Spring Cache + Redis:
+
+  1. Dependency (pom.xml):
+     <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-data-redis</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-cache</artifactId>
+     </dependency>
+
+  2. Configuration:
+     @Configuration
+     @EnableCaching
+     public class CacheConfig {
+         @Bean
+         public RedisCacheManager cacheManager(RedisConnectionFactory f) {
+             RedisCacheConfiguration config = RedisCacheConfiguration
+                 .defaultCacheConfig()
+                 .entryTtl(Duration.ofMinutes(30))
+                 .serializeValuesWith(
+                     RedisSerializationContext.SerializationPair
+                         .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+             return RedisCacheManager.create(f);
+         }
+     }
+
+  3. Service Layer:
+     @Service
+     public class PolicyService {
+         @Cacheable(value = "policies", key = "#policyId",
+                    unless = "#result == null")
+         public Policy getPolicy(String policyId) {
+             return policyRepository.findById(policyId).orElse(null);
+         }
+
+         @CacheEvict(value = "policies", key = "#policy.id")
+         public Policy updatePolicy(Policy policy) {
+             return policyRepository.save(policy);
+         }
+
+         @CachePut(value = "policies", key = "#policy.id")
+         public Policy savePolicy(Policy policy) {
+             return policyRepository.save(policy);
+         }
+     }
+
+  Cache Eviction Strategies:
+  - TTL (Time-To-Live): Auto expire after N minutes
+  - LRU (Least Recently Used): Evict least used when full
+  - LFU (Least Frequently Used): Evict least frequent
+
+  Production Considerations:
+  - Cache stampede prevention: Use Caffeine with async loading
+  - Cache coherency: Use @CacheEvict on update/delete
+  - Distributed locks: Redis SETNX for cache warming
+
+─────────────────────────────────────────────────────────────────────
+Q14. Explain CompletableFuture and async programming in Java 8.
+─────────────────────────────────────────────────────────────────────
+Answer:
+
+  CompletableFuture = Future + Completion stage chaining
+
+  Key Methods:
+  - supplyAsync(Supplier)     → Async computation returning value
+  - runAsync(Runnable)        → Async computation, no return
+  - thenApply(Function)       → Transform result (sync)
+  - thenApplyAsync(Function)  → Transform result (async)
+  - thenAccept(Consumer)      → Consume result
+  - thenCombine(CF, BiFunc)   → Combine two futures
+  - allOf(CF...)              → Wait for all
+  - anyOf(CF...)              → Wait for any one
+  - exceptionally(Function)   → Error handling
+  - handle(BiFunction)        → Handle result or exception
+
+  Production Example (Nationwide Insurance):
+  // Parallel API calls to reduce latency
+  public ClaimSummaryDTO getClaimSummary(String claimId) {
+      CompletableFuture<ClaimDetails> detailsFuture =
+          CompletableFuture.supplyAsync(
+              () -> claimService.getDetails(claimId));
+
+      CompletableFuture<List<Document>> docsFuture =
+          CompletableFuture.supplyAsync(
+              () -> documentService.getDocuments(claimId));
+
+      CompletableFuture<PolicyInfo> policyFuture =
+          CompletableFuture.supplyAsync(
+              () -> policyService.getPolicy(claimId));
+
+      // Wait for all 3 to complete (parallel execution)
+      return CompletableFuture.allOf(detailsFuture, docsFuture, policyFuture)
+          .thenApply(v -> new ClaimSummaryDTO(
+              detailsFuture.join(),
+              docsFuture.join(),
+              policyFuture.join()))
+          .exceptionally(ex -> {
+              logger.error("Failed to get claim summary", ex);
+              return new ClaimSummaryDTO(); // fallback
+          })
+          .join();
+  }
+
+  // Before:  Sequential = 300ms + 200ms + 150ms = 650ms
+  // After:   Parallel   = max(300ms, 200ms, 150ms) = 300ms
+  // Latency improvement: ~54%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4: PERFORMANCE CONSIDERATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. String Concatenation:
+   BAD:  String s = "Hello" + name + "!";  // Creates multiple objects
+   GOOD: StringBuilder sb = new StringBuilder()
+              .append("Hello").append(name).append("!"); // Faster
+
+2. ArrayList vs LinkedList:
+   ArrayList:  O(1) get, O(n) insert/delete middle → use for read-heavy
+   LinkedList: O(n) get, O(1) insert/delete middle → use for write-heavy
+
+3. Auto-boxing overhead:
+   BAD:  Integer sum = 0;
+         for(int i = 0; i < 1000000; i++) sum += i;  // 1M boxing/unboxing
+   GOOD: int sum = 0;
+         for(int i = 0; i < 1000000; i++) sum += i;  // No boxing
+
+4. Stream vs Traditional for-loop:
+   - Parallel streams only worth it for: large data + CPU-intensive operations
+   - Sequential stream has overhead vs for-loop for small data
+   - For I/O bound operations, use CompletableFuture instead
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5: BEST PRACTICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Follow SOLID Principles:
+   S - Single Responsibility Principle
+   O - Open/Closed Principle
+   L - Liskov Substitution Principle
+   I - Interface Segregation Principle
+   D - Dependency Inversion Principle
+
+2. Always close resources (try-with-resources):
+   try (Connection conn = dataSource.getConnection();
+        PreparedStatement ps = conn.prepareStatement(sql)) {
+       // use resources
+   } // Auto-closed
+
+3. Prefer composition over inheritance
+4. Use final for constants: static final
+5. Program to interfaces, not implementations
+6. Use Optional instead of null returns
+7. Use meaningful exception types
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6: MOST IMPORTANT QUESTIONS QUICK REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*** 1. JDK vs JRE vs JVM
+*** 2. OOPs 4 pillars with examples
+*** 3. Abstract class vs Interface
+*** 4. JVM Memory Model - all 5 areas
+*** 5. HashMap internal working (Java 8)
+*** 6. String Pool and immutability
+*** 7. GC algorithms - G1GC, ZGC
+*** 8. Java 8 Lambda and Functional Interfaces
+*** 9. Optional class usage
+*** 10. CompletableFuture and async programming
+*** 11. ConcurrentHashMap vs HashMap vs Hashtable
+*** 12. Memory leak detection and debugging
+
+================================================================================
+END OF JAVA CORE ANALYSIS
+================================================================================
+
+================================================================================
+JAVA CORE - ADDITIONAL QUESTIONS (Q30-Q50) - ENHANCED EXPANSION
+================================================================================
+
+*** Q30. How does HashMap.put() work internally step-by-step?
+1. Calculate hash: hash = key.hashCode() ^ (key.hashCode() >>> 16) (spread bits)
+2. Calculate bucket index: index = hash & (capacity - 1)
+3. If bucket empty: create new Node, place at index
+4. If bucket occupied:
+   a. Check if key equals existing key (equals + hashCode) ? replace value
+   b. If TreeNode (bucket has 8+ entries): tree insertion O(log n)
+   c. Else: linked list insertion at tail, check if treeify needed
+5. Check load factor: if size > capacity * 0.75 ? resize (double capacity)
+
+Resize Flow:
+  Old array (16 buckets) ? New array (32 buckets)
+  Each node re-hashed: newIndex = hash & (newCapacity - 1)
+  Nodes split into low-half and high-half buckets
+
+Memory: HashMap<Integer,String> with 1M entries:
+  ~48 bytes per Node + ~8 bytes per bucket = ~56 MB
+
+*** Q31. ConcurrentHashMap internal working (Java 8).
+Java 7: Segment-based locking (16 segments, each with own lock)
+Java 8: Node-level CAS + synchronized on bucket head
+
+put() flow (Java 8):
+1. hash = spread(key.hashCode())
+2. If bucket null ? CAS (Compare-And-Swap) to insert new Node (lock-free!)
+3. If bucket occupied ? synchronized(head node) {
+     traverse chain, update or append
+   }
+4. If chain length >= 8 ? treeify (like HashMap)
+5. size using CounterCell array (distributed counting, not single counter)
+
+get() flow: LOCK-FREE always � volatile reads ensure visibility
+
+Why NOT Collections.synchronizedMap?
+  Locks entire map for every operation ? terrible concurrency
+  ConcurrentHashMap: Multiple threads operate on different buckets simultaneously
+
+*** Q32. String Pool and intern() mechanism.
+String Pool: Special memory area in Heap (moved from PermGen in Java 7).
+
+String s1 = "hello";   // Pool: checks if "hello" exists, reuses or creates
+String s2 = "hello";   // Same reference as s1 (s1 == s2 is true)
+String s3 = new String("hello"); // Creates new object on Heap (s1 == s3 is false)
+String s4 = s3.intern(); // Returns pooled reference (s1 == s4 is true)
+
+Why immutable? Thread-safe, hashCode caching, security (class loading).
+
+*** Q33. Why is String immutable? Consequences?
+1. Security: Class names, DB URLs are Strings � mutable would allow tampering
+2. Thread safety: No synchronization needed
+3. HashCode caching: hashCode calculated once, cached (optimizes HashMap)
+4. String Pool: Only works because Strings don't change
+5. Class loading: Class names are Strings � must be trustworthy
+
+StringBuilder vs StringBuffer:
+  StringBuilder: Not thread-safe, faster (single-threaded use)
+  StringBuffer: Thread-safe (all methods synchronized), slower
+
+*** Q34. JVM Garbage Collection algorithms deep dive.
+Serial GC: Single thread, stop-the-world (small apps)
+Parallel GC: Multiple GC threads (default in Java 8, throughput focus)
+CMS: Concurrent Mark-Sweep (low pause, deprecated)
+G1GC: Region-based, divides heap into regions (default Java 9+)
+ZGC: Sub-millisecond pauses, concurrent compaction (Java 15+)
+
+G1GC Phases:
+1. Initial Mark (STW, short): Mark root objects
+2. Concurrent Mark: Trace reachable objects (concurrent with app)
+3. Remark (STW, short): Final corrections
+4. Cleanup (STW, short): Free empty regions, compact
+
+JVM Flags:
+  -XX:+UseG1GC -XX:MaxGCPauseMillis=200
+  -XX:+UseZGC  (for low-latency microservices)
+  -Xms512m -Xmx2048m  (heap size)
+  -XX:+HeapDumpOnOutOfMemoryError
+
+*** Q35. Memory leak in Java � how to detect and fix.
+Common causes:
+1. Static collections growing unbounded
+2. Unclosed resources (streams, connections, ResultSets)
+3. Inner class holding reference to outer class
+4. ThreadLocal not removed after use
+5. Event listeners/listeners not deregistered
+6. Custom classloaders in application servers
+
+Detection tools:
+1. jmap -dump:live,format=b,file=heap.hprof PID
+2. Eclipse MAT / VisualVM ? analyze heap dump
+3. JFR (Java Flight Recorder) ? continuous profiling
+4. -XX:+HeapDumpOnOutOfMemoryError ? auto dump on OOM
+
+*** Q36. ClassNotFoundException vs NoClassDefFoundError.
+ClassNotFoundException: Checked exception, Class.forName() can't find class at runtime
+NoClassDefFoundError: Error, class was available at compile time but not at runtime
+
+*** Q37. Serialization and Deserialization.
+implements Serializable ? marker interface
+serialVersionUID: Version control for serialized objects
+transient keyword: Skip field during serialization
+
+Security risk: Deserialization can execute arbitrary code
+Best practice: Use JSON (Jackson/Gson) instead of Java serialization
+
+*** Q38. Comparable vs Comparator.
+Comparable<T>: Natural ordering, implements compareTo(T), modifies class
+Comparator<T>: Custom ordering, external to class, compare(T,T)
+
+// Comparable
+class Employee implements Comparable<Employee> {
+    public int compareTo(Employee o) { return this.name.compareTo(o.name); }
+}
+
+// Comparator
+Comparator<Employee> bySalary = Comparator.comparing(Employee::getSalary).reversed();
+employees.sort(bySalary);
+
+*** Q39. try-with-resources and AutoCloseable.
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement(sql);
+     ResultSet rs = ps.executeQuery()) {
+    // All closed automatically in reverse order
+}
+// Even if exception thrown, resources are closed
+// Suppressed exceptions accessible via getSuppressed()
+
+*** Q40. Optional - best practices.
+NEVER use Optional as method parameter or field
+USE as return type: Optional<Employee> findById(Long id)
+
+Anti-patterns:
+  if (opt.isPresent()) opt.get()  // BAD: defeats purpose
+  opt.orElse(new Obj())  // BAD if Obj creation is expensive (always created)
+  opt.orElseGet(() -> new Obj())  // GOOD: lazy creation
+
+Good patterns:
+  opt.map(User::getName).orElse("Unknown")
+  opt.ifPresent(user -> sendEmail(user))
+  opt.orElseThrow(() -> new NotFoundException("Not found"))
+
+*** Q41. Functional Interfaces - Predicate, Function, Consumer, Supplier, BiFunction.
+Predicate<T>: boolean test(T) - filtering
+Function<T,R>: R apply(T) - transformation
+Consumer<T>: void accept(T) - side effects
+Supplier<T>: T get() - factory/lazy creation
+BiFunction<T,U,R>: R apply(T,U) - two-arg transformation
+UnaryOperator<T>: T apply(T) - same type transformation
+BinaryOperator<T>: T apply(T,T) - reduction
+
+*** Q42. Diamond problem and default methods in interfaces.
+When two interfaces have same default method:
+interface A { default void greet() { print("A"); } }
+interface B { default void greet() { print("B"); } }
+class C implements A, B {
+    public void greet() { A.super.greet(); } // MUST override to resolve
+}
+
+*** Q43. Java Memory Model - volatile and happens-before.
+volatile: Guarantees visibility (not atomicity)
+  - Write to volatile: flushes all variables to main memory
+  - Read from volatile: reads all variables from main memory
+
+happens-before:
+  - Thread.start() happens-before any action in started thread
+  - synchronized unlock happens-before subsequent lock
+  - volatile write happens-before subsequent volatile read
+
+*** Q44. Scenario: Debug OutOfMemoryError in production.
+Steps:
+1. Check logs: java.lang.OutOfMemoryError: Java heap space
+2. Get heap dump: jmap or -XX:+HeapDumpOnOutOfMemoryError
+3. Analyze with Eclipse MAT: find dominator tree
+4. Look for: Large collections, byte arrays, String accumulation
+5. Common fix: Increase heap, fix leak, use pagination
+
+*** Q45. Scenario: Service throwing StackOverflowError.
+Cause: Infinite recursion (A calls B, B calls A)
+Debug: Stack trace shows repeating method sequence
+Fix: Add base case, or convert to iterative approach
+
+*** Q46. equals() and hashCode() contract.
+1. If a.equals(b) then a.hashCode() == b.hashCode() (MUST)
+2. If hashCodes equal, equals may or may not be true (hash collision)
+3. If equals returns false, hashCodes may or may not be equal
+
+Breaking this contract: HashMap/HashSet will malfunction
+  - Objects equal but different hashCode ? stored in different buckets
+  - Can add "duplicate" objects, contains() returns false
+
+*** Q47. Deep copy vs Shallow copy.
+Shallow: clone() copies references (nested objects shared)
+Deep: Recursively copy all nested objects
+
+Approaches for deep copy:
+1. Manual: Copy constructor
+2. Serialization: Serialize then deserialize (slow)
+3. Jackson: objectMapper.readValue(objectMapper.writeValueAsString(obj), Class)
+
+*** Q48. Type Erasure in Generics.
+At runtime, List<String> and List<Integer> are both just List.
+The type parameter is ERASED by compiler.
+
+Cannot do: new T(), T.class, instanceof List<String>
+Can do: @SuppressWarnings("unchecked") cast
+
+*** Q49. Java Module System (Java 9).
+module-info.java: requires, exports, provides, uses
+Purpose: Strong encapsulation, reliable configuration
+Production: Most enterprise apps still don't use modules directly
+
+*** Q50. Records (Java 14+) and Sealed Classes (Java 17).
+record PolicyDTO(String id, String name, double premium) {}
+  // Auto-generates: constructor, getters, equals, hashCode, toString
+  // Immutable, final, cannot extend
+  
+sealed interface Shape permits Circle, Rectangle, Triangle {}
+  // Only specified classes can implement
+  // Enables exhaustive switch expressions
+
+================================================================================
