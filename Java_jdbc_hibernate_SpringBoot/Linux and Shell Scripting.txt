@@ -1,0 +1,1097 @@
+﻿AI Powered DevOps with AWS - V3
+==============================
+Telusko
+15th feb 
+==============================
+Linux and bash shell scripting
+==============================
+What is an Operating System (OS)?
+---------------------------------
+--> An Operating System (OS) is software that acts as a mediator between the user and the computer hardware.
+--> It allows users to interact with computers and run the programs/apps.
+--> Without an OS, we cannot use any computer system.
+--> It provides an environment (platform) for users to operate and manage hardware and software resources
+Types of Operating Systems in the market
+=========================================
+Common examples include:
+Windows
+Linux
+macOs
+Android
+iOS
+..
+..
+Windows operating system:
+========================
+-> Primarily a single-user OS
+-> Commercial OS - requires paid licenses
+-> Lower built-in security - anti-virus software is often necessary
+-> Best suited for personal or home use such as:
+ Playing Games
+ Watching Movies
+ Internet browsing
+ Storing files
+ Attending online classes
+Note : Windows is not recommended for enterprise-level operations like application deployment or server hosting
+======================
+Linux Operating System
+======================
+-> Free, Open source and community developed
+-> Supports multi-user environment
+-> Offers high security
+-> CLI-Based (Command Line Interface), though some distros have GUIs
+Highly recommended for:
+Servers
+Application Deployment
+Infrastructure Setup
+Note : ðŸ’¡ In real-time IT environments, Linux is the OS of choice for infrastructure and DevOps operations.
+ðŸ“œ History of Linux
+=======================
+Created by Linus Torvalds
+Initially used UNIX OS, but faced limitations and his feedback was not accepted
+He discovered Minix OS, which aligned more closely with his ideas
+Linus modified Minix and created Linux
+Name Origin:
+Lin(us) + Min(ux) = Linux
+Linux Distributions (Flavors)
+=============================
+After Linux was released as open source, many companies downloaded the source code and customized it to create their own versions, known as Linux Distributions.
+ðŸ”¹ Popular Linux Distros:
+-> CentOS
+-> Ubuntu
+-> Amazon Linux
+-> Red Hat Enterprise Linux (RHEL)
+There are 200+ Linux Distributions available today
+âœ… Summary
+What is an Operating System and why do we need it?
+Windows OS â€“ GUI, single-user, commercial, for personal use
+Linux OS â€“ CLI, multi-user, open source, secure, for enterprise use
+History of Linux â€“ Linus Torvalds' journey from UNIX to Linux
+Linux Distributions â€“ Various flavors developed from the base Linux kernel
+=============================================================================
+==> Create a free tie AWS account (Video is uploaded in course dashboard)
+Install Git bash
+https://git-scm.com/downloads
+Install Mobaxterm(Optional and only for windows)
+https://mobaxterm.mobatek.net/download-home-edition.html
+====================================================
+Linux File System
+==================
+=> Everything is represented as a file
+   -> Directory file (Folder) (starts with d)
+   -> Normal file/ordinary file (starts with -)
+   -> Link file (starts with l)
+Linux Commands
+==============
+$ clear --> To clear our screen
+$ mkdir telusko --> create a folder/directory named telusko
+$ cd telusko --> changing our current directory to telusko --> to move or go inside telusko directory
+$ cd .. --> to come out of the directory
+$ pwd --> To check our current directory/folder
+/home/ec2-user/telusko
+$ rmdir telusko --> it removes/deletes directory by name telusko (It must be an empty directory)
+$ rm -rf <directory-name>
+$ rm -rf finishers --> To delete/remove directory which is not empty (directory which has some files in it)
+---------------------------------------------------
+$ ls --> display files present in current working directory ( one beside the other)
+$ ls -l --> display files in current working directory in alphabetical order one below the other with file permissions info
+$ ls -lr --> display files in current working directory in reverse alphabetical order(z-a) one below the other with file permissions info
+$ ls -lt --> display files in current working directory with latest file create on top ( time based order )
+$ ls -ltr --> display files in current working directory with oldest file create on top ( time based order )
+------------------------------------------------
+$ rm <file-name> -> it will remove/delete file 
+$ rm alien.txt --> it will delete file named alien
+$ rm *.txt --> it will remove/delete all files with extension .txt
+$ rm a*.txt --> it will delete all files names starting with a and with .txt extension
+===========================================
+mv : To Move and to Rename 
+$ mv <current-name> <new-name>  ==> Renaming the file
+ex: 
+$ mv linux.txt linux-shellscript.txt
+$ mv <current-locationfilename> <new-location> ==> Changing location
+ex:
+$mv docker.txt telusko  ==> It moved docker.txt from current directory to telusko directory
+=================================
+$ cat <file-name> ==> It will display data/content of the file
+$ cat aws.txt
+$ cat > <file-name>
+$ cat > terraform.txt  ==> New file by name terraform.txt will be created and we will get the option to enter data from terminal(ctrl+d) to come out of terminal editing 
+$ cat terraform.txt ==> display the content of terraform.txt file
+$ cat >> <file-name>
+$ cat >> terraform.txt ==> append/add data to existing file by name terraform.txt
+$ cat -n terraform.txt ==> It will display file content/data with numbering
+$ tac terraform.txt  ==> It will print/display content from bottom to top order
+$ rev terraform.txt ==> reverse each words of the line and display the content
+Note: here terraform.txt or Jenkins.txt all of these are just file name example it could be any file name
+===================================
+Copy data: cp
+===============
+$ cp <source-file> <destination-file>
+$ cp Jenkins.txt k8s.txt  ==> Jenkins file data will be added in k8s file (if there is content/ata in k8s file then it will be replaced by new content/data coming from Jenkins txt file)(Jenkins and k8s are just example file names)
+===============
+Copy multiple files data into another/one file
+===============
+$ cat <sourcefile1> <source file2> > <destination-filename>
+$  cat jenkins.txt k8s.txt > linux-shellscript.txt ==> Content of Jenkins.txt and k8s.txt file will be added in linux-shellscript.txt file
+===================
+$ cat <file-name>
+$ cat jenkins.txt ==> it will display entire content file
+$ head <file-name>
+$ head jenkins.txt ==> Prints/display first 10 lines of the file
+$ tail <file-name>
+$ tail jenkins.txt ==> Prints/display last/bottom 10 lines of the file
+$ head -n 4 jenkins.txt ==> Prints/display first 4 lines of the file
+$ tail -n 4 jenkins.txt ==> Prints/display last/bottom 4  lines of the file
+$ history     ==> It will display all the commands which we have run in this particular Linux vm
+    1  clear
+    2  mkdir telusko
+    3  touch linux.txt
+    4  touch aws.txt
+    5  touch docker.txt
+    6  ls
+    7  ls -l
+    8  mv linux.txt linux-shellscript.txt
+    9  ls -l
+   10  clear
+   11  ls -l
+   12  cd telusko
+   13  ls -l
+   14  cd ..
+   15  mv docker.txt telusko
+   16  ls -l
+   17  cd telusko
+   18  ld -l
+   19  clear
+   20  ls -l
+   21  cd ..
+   22  ls -l
+   23  pwd
+   24  mv aws.txt telusko
+   25  ls -l
+   26  clear
+   27  ls -l
+   28  touch k8s.txt
+   29  cat k8s.txt
+   30  ls -l
+   31  cat > jenkins.txt
+   32  ls -l
+   33  cat jenkins.txt
+   34  cat > terraform.txt
+   35  cat terraform.txt
+   36  cat >> terraform.txt
+   37  cat terraform.txt
+   38  clear
+   39  vi terraform.txt
+   40  clear
+   41  ls -l
+   42  cat -n jenkins.txt
+   43  tac jenkins.txt
+   44  rev jenkins.txt
+   45  clear
+   46  ls -l
+   47  cat k8s.txt
+   48  cat jenkins.txt
+   49  cp jenkins.txt k8s.txt
+   50  cat jenkins.txt
+   51  cat k8s.txt
+   52  cat terraform.txt
+   53  cp terraform.txt k8s.txt
+   54  cat k8s.txt
+   55  clear
+   56  ls -l
+   57  cat linux-shellscript.txt
+   58  cat jenkins.txt k8s.txt > linux-shellscript.txt
+   59  cat linux-shellscript.txt
+   60  clear
+   61  ls
+   62  cat jenkins.txt
+   63  head jenkins.txt
+   64  tail jenkins.txt
+   65  cat >> jenkins.txt
+   66  cat jenkins.txt
+   67  cat -n jenkins.txt
+   68  head jenkins.txt
+   69  tail jenkins.txt
+   70  clear
+   71  head -n 4 jenkins.txt
+   72  tail -n 4 jenkins.txt
+   73  clear
+   74  history
+=============================
+grep command
+============
+==> grep stands for Global Regular Expression Print
+==> It's a command-line utility in Linux used to search for patterns in text using regular expression. It prints the matching lines
+$ cat aws.txt
+AWS classes will be right after Linux and Bash shell scripting
+aws is important for devops and cloud
+AWS is very popular
+aws is easy to learn if you're implementing
+$ grep 'aws' aws.txt  ==> It will print/display the lines which has 'aws' in it by considering case sensitivity
+aws is important for devops and cloud
+aws is easy to learn if you're implementing
+$ grep -i 'aws' aws.txt  ==> It will print/display the lines which has 'aws' in it by ignoring case sensitivity
+AWS classes will be right after Linux and Bash shell scripting
+aws is important for devops and cloud
+AWS is very popular
+aws is easy to learn if you're implementing
+$ grep -n 'aws' aws.txt  ==> It will print/display line of file aws.txt which as 'aws' in it alone side number
+2:aws is important for devops and cloud
+4:aws is easy to learn if you're implementing
+$ grep -n -i 'aws' aws.txt ==> It will print/display line of file aws.txt which as 'aws' in it alone side number by ignoring case sensitivity
+1:AWS classes will be right after Linux and Bash shell scripting
+2:aws is important for devops and cloud
+3:AWS is very popular
+4:aws is easy to learn if you're implementing
+$ grep -i 'aws' *   ==> search for 'aws' keyword in all the file of pwd(present working directory)
+aws.txt:AWS classes will be right after Linux and Bash shell scripting
+aws.txt:aws is important for devops and cloud
+aws.txt:AWS is very popular
+aws.txt:aws is easy to learn if you're implementing
+jenkins.txt:aws
+jenkins.txt:aws is dominating
+k8s.txt:we will learn aws eks
+grep: telusko: Is a directory
+terraform.txt:aws infra provisioning we will do with terraform iac
+grep -i "warning" app.log
+ðŸ”¹ Finds "Warning", "WARNING", "wArNiNg", etc., in app.log.
+Count the number of matches
+grep -c "Exception" error.log
+ðŸ”¹ Outputs how many lines contain "Exception" in error.log.
+Show line numbers with matches
+grep -n "Database" db.log
+ðŸ”¹ Shows lines with "Database" along with their line numbers.
+Search for an exact word match
+grep -w "fail" results.txt
+ðŸ”¹ Matches only the word fail, not failed or failing.
+$ diff aws.txt jenkins.txt  ==> To See diff between these 2 files (aws.txt and Jenkins.txt are just file names)
+$ wc k8s.txt
+  4  22 128 k8s.txt
+4 -> number of lines
+22 -> number of words
+128 -> number of bytes/characters
+tac, cp ,mv , cat, tail, grep, wc, diff, head
+=====================
+Text Editors in Linux
+=====================
+==> vi (visual editor) ==> it is a default editor in Linux
+==> Using 'vi' command we can create new files and we can modify, add, update the existing file data.
+==> vi command have 3 modes
+1) command mode
+===============
+=> We can just open file and navigate pr see the content, we cannot edit or modify or add content in this mode
+$ vi <file-name>
+it could be existing file or a new file and extension could be anything (.txt, .yml, .tf , .py ......)
+$ vi alien.txt 
+if there is fine by name alien already exist then it will open that file or else it will create a new file
+2)Insert Mode
+==============
+=> To edit the file or to add the content into the file (press i in keyboard to get into insert mode)
+3) esc mode
+============
+=> to come out of the file or to exit the file (press esc in keyboard)
+:wq => To save changes we have made in the file and close file
+:q! => To close the file without saving the changes
+File creation in Linux
+========================
+touch --> To Create an empty file
+cat --> To create file with data without opening any editor ( cat can be used to view and for copy too please refer to notes above)
+cp --> Copy one file data into another file ( cp aws.txt devops.txt)
+vi --> create and open file for editing (vi f.txt)
+=========================
+Reading Data from a file 
+------------------------
+vi --> open the file and we could able to see and navigate over content in command mode
+cat --> print/display the file data from top to bottom as it is present in the file
+tac --> print/display the data from bottom to top 
+rev --> prints/display data in reverse order
+head --> prints/display first 10 lines of the file
+tail  -->  prints/display last 10 lines of the file
+==============================
+SED command
+===========
+==> SED --> stream editor
+==> SED is used to process the data (substitute, delete, insert ,....)
+==> SED is very powerful command in Linux using which we can perform operations on the file without opening it
+$ sed 's/AWS/AZURE/' aws.txt  (aws.txt is just a file)
+Replace first occurrence of  AWS with AZURE in file without saving changes in the original file
+$ sed -i 's/AWS/AZURE/' aws.txt
+Replace first occurrence of  AWS with AZURE in file and save changes in the original file
+$ sed -i 's/AWS/AZURE/g' aws.txt
+Replace all occurrence of AWS with AZURE in file named aws.txt
+$ sed -i '5d' aws.txt
+Delete 5th line from file aws.txt
+$ sed -i '$d' aws.txt
+Delete last line from file aws.txt
+$ sed -i '/AWS/d' aws.txt
+Delete all lines from aws.txt file which has 'AWS' word in it
+$ sed -n '2,4p' aws.txt
+Print the data from line number 2 to 4 from a file aws.txt
+$ sed -i '5i\ ai making ppl to learn cloud' aws.txt
+Insert Data "ai making ppl to learn cloud" before 5th line in file named aws.txt and save the changes in it
+$ sed '5i\ ai making ppl to learn cloud' aws.txt
+Insert Data "ai making ppl to learn cloud" before 5th line in file named aws.txt and it doesn't change the original file
+$ sed -i '$a\I love or Hate Linux I must learn' aws.txt
+Add the data after the last line
+21 feb (Sat)
+===========
+Networking Commands
+====================
+Package managers
+==> Package Managers are used to install/update software in Linux machine
+==> Package managers are specific to Linux distributions
+Ubuntu/Debian ==> apt
+Amazon Linux / Red hat / CentOs ==> yum / dnf
+//Install git and java in amazon linux
+$ sudo yum install git 
+$ sudo yum install java
+$ sudo dnf install maven 
+//Install git and java in ubuntu
+$ sudo apt install git
+$ sudo apt install java
+===============================
+wget: It is used to download files from internet
+$ wget https://downloads.apache.org/tomcat/tomcat-9/v9.0.109/bin/apache-tomcat-9.0.109.zip.asc
+curl : To send Http request to api and get response
+curl https://api/endpoints
+ping : To check the connectivity 
+$ ping 192.164.2.1
+$ ping www.google.com
+ctrl+c
+free : To print/display memory level details
+top : To print/display running processes
+===========================================
+USER Accounts
+=============
+==> Linux is a multi user based OS
+==> One Linux machine we can create multiple user accounts and multiple users can perform multitasking
+'ec2-user' is a default user in Amazon Linux
+'ubuntu' is a default user in Ubuntu Linux
+--> Add new user
+$ sudo useradd Raj
+--> Add password for the new user
+$ sudo passwd Raj
+Changing password for user Raj.
+New password:
+BAD PASSWORD: The password fails the dictionary check - it is based on a dictionary word
+Retype new password:
+passwd: all authentication tokens updated successfully.
+--> display users created
+$ cat /etc/passwd
+--> Switch user
+$ sudo su Raj
+$ whoami
+Raj
+$ pwd
+/home/ec2-user
+$ cd ~
+$ pwd
+/home/Raj
+--> You need to be default ec2-user to make all these changes
+$ sudo su ec2-user
+We trust you have received the usual lecture from the local System
+Administrator. It usually boils down to these three things:
+    #1) Respect the privacy of others.
+    #2) Think before you type.
+    #3) With great power comes great responsibility.
+For security reasons, the password you type will not be visible.
+[sudo] password for Raj:
+Raj is not in the sudoers file.
+$ exit ==> to come back to default ec2-user
+--> Delete the user
+$ sudo userdel Raj
+--> Delete the user with home directory
+$ sudo userdel Raj --remove
+After Deleting user trying to switch to Raj
+$ sudo su Raj
+su: user Raj does not exist or the user entry does not contain all the required fields
+--> Changing user name
+$ sudo usermod -l <newname> <oldname>
+$ sudo usermod -l kalyan shreekant
+================
+USER Groups
+================
+==> A user group in Linux is a collection of user accounts that share the same permissions for accessing files, directories, or system resources.
+==> When we create user in Linux , for every user one group also be created with a given username
+To display user belong to which group
+$ id Suraj  
+uid=1003(Suraj) gid=1003(Suraj) groups=1003(Suraj)
+(Suraj is a new user account)
+==> Creating a new user group
+$ sudo groupadd <group-name>
+$ sudo groupadd telusko
+==> Adding user to a group
+$ sudo usermod -aG telusko Suraj  ==> adding Suraj to telusko user group
+==> Displays users in a group
+$ sudo lid -g telusko
+ Suraj(uid=1003)
+ Binzila(uid=1004)
+==> Display user belong to which group 
+ id Suraj
+uid=1003(Suraj) gid=1003(Suraj) groups=1003(Suraj),1005(telusko)
+==> Remove user from user group
+$ id Suraj
+uid=1003(Suraj) gid=1003(Suraj) groups=1003(Suraj),1005(telusko)
+$ sudo gpasswd -d Suraj telusko
+Removing user Suraj from group telusko
+$ id Suraj
+uid=1003(Suraj) gid=1003(Suraj) groups=1003(Suraj)
+$ sudo groupmod -n newgroupname old groupname
+$ sudo groupmod -n alien telusko
+===============
+sudoers file
+===============
+=> Very important file in Linux machine, with the help of this file we can control which user can run command as superuser
+Note: We must be very careful when we are working with sudoers file
+$ sudo cat /etc/sudoers
+Prints content of sudoers file
+$ sudo visudo
+## Allow root to run any commands anywhere
+root    ALL=(ALL)       ALL
+Suraj   ALL=(ALL)       ALL
+Binzila ALL=(ALL)       ALL
+ctrl+x+y --> enter
+To exit the sudoers file
+==========================
+Enable password based authentication for the user
+==================================================
+To enable password authentication for the user we have to enable PasswordBasedAuthentication in sshd_config file
+$ sudo cat /etc/ssh/sshd_config  ==> Display content of sshd_config file
+$ sudo vi /etc/ssh/sshd_config ==> Open the ssh config file
+==> Get into insert mode , set PasswordAuthentication yes
+$ sudo systemctl restart sshd ==> restart sshd service
+Login to EC2 Amazon Linux VM with a new user other than ec2-user
+=================================================================
+Get connected to Linux vm as diff user
+(watch live class demonstration recording)
+File Permission in Linux
+==========================
+-> read => r
+-> write => w
+-> execute => x
+In Permissions every file will have 3 sections
+=> user (u)
+=> group (g)
+=> otherusers (o)
+user group other
+read write execute
+  r    w     x
+rw-r--r--
+user -> read and write
+group -> read
+others -> read
+Change the file permission
+===========================
+chmod command
+$ chmod u+x alien.txt  ==> Gives execute permission for user
+$ chmod g+w aws.txt  ==> Gives write permission for group
+$ chmod o+x aws.txt  ==> Gives execute permission for others
+$ chmod o-x aws.txt  ==> Removes execute permission for other
+$ chmod u-x alien.txt  ==> Removes execute permission for user
+=================================
+File Permission in the numeric format
+=====================================
+0 ==> No permission
+1 ==> execute
+2 ==> write 
+3 ==> (execute + write)
+4 ==> read
+5 ==> 4 + 1 (read + execute)
+6 ==> 4 + 2 (read + write)
+7 ==> 6 + 1 ( read + write + execute)
+--- --- ---
+4 0 0 ==> read no no
+rw-r--r--
+644
+- ==> 0
+x ==> 1
+w ==> 2
+xw ==> 3
+r ==> 4
+rx ==> 5
+rw ==> 6
+rwx ==> 7
+chmod 400 "teluskokp.pem"
+chmod 666 aws.txt ==> rw-rw-rw
+chmod 444 telusko.txt ==> r--r--r--
+chmod 777 aws.txt ==> rwxrwxrwx
+What is the default permission for a directory in Linux
+755 rwxr-xr-x
+What is the default permission for a file in Linux
+644 rw-r--r--
+Highest permission for any file in Linux ==> 777 ==> rwxrwxrwx
+Changing file/directory ownership
+=================================
+$ chown
+$ sudo chown <newowner> filename
+$ sudo chown Suraj aws.txt  ==> Change owner of the file to new Onwer Binzila
+$ sudo chown :<groupname> filename.directory
+$ sudo chown :telusko terraform.txt ==> Change owner group to telusko
+$ sudo chown <ownername>:<groupname> filename
+$ sudo chown Binzila:telusko terraform.txt
+chmod vs chown
+===============
+chmod ==> To change file/directory permission
+chown ==> To change the owner/group of a file
+================================================
+Link files in files
+====================
+==> Similar to shortcut files on windows, In Linux we can create link files 
+   -> Hard Link
+   -> Soft Link
+==> Hard Link
+===============
+$ ln <originalfile> <linkfile>
+$ ln telusko.txt teluskoai.txt
+$ ls -l
+Check inode number of both files
+$ ls -li
+9182233 -rw-r--r--. 2 ec2-user ec2-user 124 Sep 30 16:03 telusko.txt
+9182233 -rw-r--r--. 2 ec2-user ec2-user 124 Sep 30 16:03 teluskoai.txt
+telusko(original file) and teluskoai(link) will have same inode number
+Note : 1) If we add new content or update or modify the original file then it will reflect in link file also
+2) If we delete the original file then it will have no impact/affect on link file
+Soft Link
+==========
+==> ln -s <originalfile> <softlinkfile>
+$ ln -s devops.txt devopsai.txt
+$ ls -l
+-rw-r--r--. 1 ec2-user ec2-user   0 Sep 30 16:23 devops.txt
+lrwxrwxrwx. 1 ec2-user ec2-user  10 Sep 30 16:24 devopsai.txt -> devops.txt 
+$ ls -li
+9182235 -rw-r--r--. 1 ec2-user ec2-user   0 Sep 30 16:23 devops.txt
+9182237 lrwxrwxrwx. 1 ec2-user ec2-user  10 Sep 30 16:24 devopsai.txt -> devops.txt
+==> Original and softlink file will have diff inode number and by default new soft link file will have maximum file permission(meaning less permission)
+Note : 1) If we add new content or update or modify the original file then it will reflect in link file also
+2) If we delete the original file then it will have impact/affect on link file and we cannot access soft link file
+Working with zip files in Linux
+================================
+==> Zip file is used for files archives (compressed files)
+$ zip <zip-filename> <context>
+$ zip devops *.txt ==> it will create a zip file by name devops and add all the text of current directory into it.
+$ zip -sf devops.zip  ==> it will display/print the content of a zip file
+Archive contains:
+  ansible.txt
+  aws.txt
+  docker.txt
+  k8s.txt
+Total 4 entries (172 bytes)
+$ zip -r devops.zip f1.txt ==> adding file f1.txt file into existing zip file
+$ zip -d devops.zip f1.txt
+$ rm devops.zip  ==> delete the zip file
+$ unzip devops.zip ==> unzip the file
+$ unzip -l devops.zip  ==> list the content of devops.zip file
+=================================================
+Create a tar File
+tar -cvf archive.tar foldername/
+Extract (Decompress) a tar File
+tar -xvf archive.tar
+=====================================
+22 feb (Sun)
+=====================================
+find vs locate
+==============
+$ locate aws.txt
+-bash: locate: command not found
+$ sudo yum install locate
+$ locate aws.txt
+locate: can not stat () `/var/lib/mlocate/mlocate.db': No such file or directory
+locate ==> it is used to locate or find the location of directory or file in the system by name
+It will search for the file or directories updated in located not in entire file system unlike find command
+to update locatedb ==> sudo updatedb
+$ locate telusko
+/home/ec2-user/telusko
+/home/ec2-user/telusko/aws.txt
+/home/ec2-user/telusko/docker.txt
+==> locate command is super- faster then find command to locate or find any file or directory in linux
+==> find command searches entire Linux file system (based on given path)
+$ sudo find /home -name terraform.txt  ==> search for the file which is having name terraform.txt in entire Linux file system
+/home/ec2-user/terraform.txt
+$ sudo find /home -type f -empty  ==> search for empty files inside /home
+$ sudo find /home -type d -empty ==> search for empty directory inside /home
+/home/ec2-user/alien
+/home/ec2-user/devops
+==============================
+AWK command
+============
+==> It is a versatile processing tool in Linux
+==> It allows us to manipulate and extract data from a structured text file
+usually in a columnar format
+==> awk takes input processes it line by line and perform actions based on specified pattern and rules
+$ awk 'pattern{action}' file
+$ awk '/manager/{print}' telusko.txt
+Harsh is general manager
+sushil is content manager
+ishan is app manager
+$ awk '/Manager/{print}' telusko.txt
+akshay is backend Manager
+gaurav is support Manager
+$ awk '{print $1,$4}' telusko.txt  ==> 1 and 4 are column numbers
+Harsh manager
+sushil manager
+akshay Manager
+gaurav Manager
+ishan manager
+$ awk '{print NR, $0}' telusko.txt
+1 Harsh is general manager
+2 sushil is content manager
+3 akshay is backend Manager
+4 gaurav is support Manager
+5 ishan is app manager
+$ awk '{print NR, " - " $1}' telusko.txt
+1  - Harsh
+2  - sushil
+3  - akshay
+4  - gaurav
+5  - ishan
+===========================================
+awk vs grep vs sed vs cat vs find vs locate
+===========================================
+Webservers in Linux VM
+======================
+==> Webserver is a tool/software which is used to host/run websites
+==> We can use 'httpd' as a webserver in our Linux vm
+$ sudo yum install httpd  ==> Install httpd server
+$ sudo service httpd start ==> start httpd webserver
+==> httpd webserver runs on 80 port number
+==> To access our webapp we need to enable 80 port number in security group of our Linux vm
+     (please watch live class instructions)
+==> Navigate to web content directory
+$ cd /var/www/html
+$ pwd 
+/var/www/html
+$ sudo vi index.html
+Access the website using public ip of Linux vm
+======================================
+systemctl in Linux
+==================
+==> It is a command-line utility in Linux to manage system services
+==> Some common tasks that systemctl can perform are
+starting service
+stopping service
+restarting service
+enabling /disabling services
+examples: 
+sudo systemctl start docker 
+sudo systemctl enable docker
+sudo systemctl enable jenkins
+sudo systemctl start Jenkins
+sudo systemctl status Jenkins
+sudo systemctl restart sshd ==> restart sshd service
+systemctl start service-name ==> start a service
+systemctl stop service-name ==> stops a service
+systemctl restart service-name ==> restart service
+systemctl enable service-name ==> enables service to start automatically at boot time
+systemctl disable service-name ==> disables service to start automatically at boot time
+systemctl status service-name ==> shows the current status of the service
+systemctl list-units --type=service ==> list all active services 
+systemctl reload service-name ==> reloads configuration files for a service without stopping
+Set Hostname permanently
+=========================
+$ sudo vi /etc/hostname
+restart the VM
+You will be able to see the change of host name
+=>Print networking related info
+$ netstat
+=> How to check Linux kernel version
+$ uname -r
+6.1.150-174.273.amzn2023.x86_64
+=> Check Linux OS version
+$ cat /etc/os-release
+==> Running process in Linux machine
+$ ps aux
+==> Kill running process
+$ sudo kill <pid>
+Architecture of Linux
+======================
+Hardware 
+Kernel
+Shell
+Application
+Linux is CLI based free and open source OS which is highly secure.
+It is a multi user based OS
+Whenever we execute any Linux commands shell will read our commands and it translates commands into kernel understandable format
+Shell is a mediator between user and kernel
+(Takes commands from the user , intercepts them, and passes them to the kernel for the execution)
+Kernel -> It is core component of Linux OS which will convert commands into Linux hardware understandable format and manages CPU, RAM, IO devices and all hardware components
+man <command name>
+info <command-name>
+help <command-name>
+man pwd
+info pwd
+help pwd
+File Based Operations
+Text Editors
+Text filters
+users management
+file permissions
+file ownership
+archieves
+Networking
+sudoes file
+ssh_config
+static website hosting (httpd)
+packagers
+Linux architecture
+====================================
+Shell Scripting ==> Bash shell scripting
+========================================
+Set of commands in a file for execution is Scripting which will help us to automate our daily routine task
+The process of executing the script file using bash shell is called as bash shell scripting which is used to automate regular task in a project
+$ vi telusko.sh
+pwd
+whoami
+date
+cal
+.sh is extension for any shell script
+To execute shell script
+$ sh telusko.sh
+To execute shell script file created we use sh command as shown above
+shebang in shell script
+-----------------------
+Writing shebang is optional but highly recommended
+#! /bin/bash
+$ echo $SHELL
+/bin/bash
+Variables
+==========
+To Store info or data we use variables in scripting
+There are 2 types of variables
+1) pre-defined / env variables
+$ echo $SHELL
+/bin/bash
+$ echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+2) user defined variables
+id= 4
+name= rohan
+city= Bengaluru
+==> variables are case sensitive
+==> We need not to define any data type in shell scripting
+$ vi var-script.sh
+#! /bin/bash
+echo "Enter Your Name"
+read FULLNAME
+echo "Enter Your City Name"
+read CITY
+echo "Name and City : $FULLNAME $CITY "
+$ sh var-script.sh
+===================================
+Rules to work with variables
+===================================
+Variable name must not start with digits -> 1name(invalid), id1(valid)
+It must not have any special characters -> @ # $
+Note: It is highly recommended to use UPPERCASE for variable naming
+Operators
+==========
+Operators are used to perform operations on variables/data
+Arithmetic operations
+=====================
+Addition : $((NUM1 + NUM2))
+Subtraction: $((NUM1 - NUM2))
+Multiplication : $((NUM1 * NUM2))
+Division : $((NUM1 / NUM2))
+Modulas : $((NUM1 % NUM2))
+===========================
+$ vi oper1.sh
+#! /bin/bash
+echo "Enter the first number to ADD"
+read NUM1
+echo "Enter the second number to ADD"
+read NUM2
+echo "Result of addition is : $((NUM1+NUM2)) "
+$  sh oper1.sh
+Enter the first number to ADD
+44
+Enter the second number to ADD
+44
+Result of addition is : 88
+=========================
+Comparison operators
+=========================
+equal : == ( -eq )
+not equal : !=
+greater than : > ( -gt )
+less than : < ( -lt )
+========================
+Conditional Statement
+=====================
+if - else
+if [ condition 1 ] ; then
+// something
+elif [ condion 2 ] ; then
+// something
+else
+//something
+fi
+===========================
+Day 14 - 13th OCT Monday
+=============================
+$ vi conditional1.sh
+#! /bin/bash
+echo "enter the first number"
+read NUM1
+echo "enter the second number"
+read NUM2
+if [ $NUM1 -eq $NUM2 ] ; then
+        echo "Numbers are equal"
+else
+        echo "Number are not equals"
+fi
+$ sh conditional1.sh
+---------------------------------------
+$ vi conditional1.sh
+#! /bin/bash
+echo "enter the first number"
+read NUM1
+if [ $NUM1 -gt 0 ] ; then
+        echo "Number is positive number"
+elif [ $NUM1 -lt 0 ] ; then
+        echo "Number is negative number"
+else
+        echo "Number is zero"
+fi
+$ sh conditional1.sh
+Loop statements
+===============
+=> Loops are used to execute statements multiple times at any given point of time 
+=> We can use loops in 2 ways
+Range based loops ( for loop )
+Conditional based loops ( while )
+For Loop Syntax
+===============
+for ((initialization ; condition ; update))
+do
+ //something
+done
+$ vi loop1.sh
+#! /bin/bash
+for((i=1 ; i<=4 ; i++))
+do
+echo "Focus is the key to maser any skill"
+done
+$ sh loop1.sh
+Print Numbers from 1 to 5
+------------------------
+$ vi loop1.sh
+#! /bin/bash
+for((i=1 ; i<=5 ; i++))
+do
+echo "$i"
+done
+$ sh loop1.sh
+Print Numbers from 5 to 1
+---------------------------
+$ vi loop1.sh
+#! /bin/bash
+for((i=5 ; i>=1 ; i--))
+do
+echo "$i"
+done
+$ sh loop1.sh
+--------------------------------
+While Loop
+--> While loop is used to execute statements until the condition is true
+Print Numbers from 1 to 5
+==========================
+$ vi loop2.sh
+#! /bin/bash
+NUM=1
+while [ $NUM -lt 5 ]
+do
+echo "$NUM"
+let NUM++
+done
+$ sh loop2.sh
+Infinite loop
+=============================
+=> The loop which gets executed or run non stop 
+$ vi infiloop2.sh
+#! /bin/bash
+NUM=1
+while [ $NUM -lt 5 ]
+do
+echo "$NUM"
+done
+$ sh infiloop2.sh
+Note : press ctrl+c to stop infinite loop
+28thFeb (Sat)
+===============
+functions or methods
+====================
+function functionName()
+{
+	//functionbody
+}
+call function name for execution
+functionName
+----------------------------------------
+$ vi function-demo1.sh
+#! /bin/bash
+function telusko(){
+        echo "Welcome to telusko learning"
+        echo "Telusko launching Java Spring boot Ai batch on 20th July"
+        echo "It's a weekend batch 9 am to 12 pm sat sun"
+}
+telusko
+telusko
+telusko
+$ sh function-demo1.sh
+--------------------------------------------
+Q : Write a function which would read a filename from user and print content of that file.
+--------------------------------------------
+$ vi function2.sh
+#! /bin/bash
+function doTask(){
+        echo "Enter Your file name "
+        read FNAME
+        cat $FNAME
+}
+doTask
+press esc
+:wq
+$ sh function2.sh
+------------------------------------------------------
+Q : Write a shell script to define a function that will read a file name from user and check if file is present , if file is not present then create a file and if file is already present print the content of file.
+------------------------------------------------------
+$ vi function-ops.sh
+#! /bin/bash
+function fileOps(){
+        echo "Enter File Name"
+        read FNAME
+        if [ -f "$FNAME" ]; then
+                echo "File is already there and hence printing content...."
+                cat $FNAME
+        else
+                echo "File is not there to creating new file"
+                touch $FNAME
+                echo "file created..."
+        fi
+}
+fileOps
+press esc
+:wq
+$ sh function-ops.sh
+===============================================================
+Command line arguments
+-------------------------
+--> Command line arguments are used to supply data/arguments to script file at the time of execution 
+$ sh telusko.sh 44 45 45
+--> Command line arguments can be accessed in script file as follow below
+$# --> To get total number of args passed
+$* --> To Read all args
+$1 --> To Read first args
+$2 --> To Read 2nd args
+$0 --> To get script file name
+$ vi telusko.sh
+#! /bin/bash
+echo "Script file name : $0"
+echo "All cmd line args : $*"
+echo "First arg : $1"
+echo "Second args : $2"
+echo "Total Number of args : $#"
+-----------------------------------
+$ sh telusko.sh java devops aws
+Script file name : telusko.sh
+All cmd line args : java devops aws
+First arg : java
+Second args : devops
+Total Number of args : 3
+-----------------------------------------------
+$ cat add.sh
+#! /bin/bash
+RESULT=$(($1+$2))
+echo "Sum is : $RESULT"
+--------------------
+$ sh add.sh 44 44
+Sum is : 88
+Assignment 
+------------
+Write a shell script to check given string is palindrome or not
+Write a shell script to check given number is prime or not
+Write a shell script to check given number is even or odd
+============================
+Extra part of variable concept
+============================
+Note : If we use export command in terminal for setting variables then those variables will be removed once we close our terminal and we refer these variables are temporary variables
+export course=java
+export instructor=hyder
+echo $course
+echo $instructor
+Set variables permanently
+=========================
+--> We use .bashrc file to set variables permanently for the user
+--> cat .bashrc
+$ vi .bashrc --> open .bashrc file
+course=java
+instructor=hyder
+--> added variables into bashrc file
+$ source .bashrc  --> Apply .bashrc changes
+Access variables 
+$ echo $course
+echo $instructor
+Note : In Linux machine, every user will contain their own .bashrc file
+Set variables for all users of Linux
+-----------------------------------------
+If we want to add variables for all users then we can add that in /etc/profile 
+$ cat /etc/profile
+======================================
+Scheduling and CRON JOB
+=======================
+==> It refers to configuring the tasks to be executed automatically (Setting Alarm in Phone)
+==> Similar to alarm Trigger if we want to schedule my Linux command/script file execution we can use CRON to schedule jobs execution
+==> CRON is a utility in Linux to schedule jobs execution
+ex: Take backup of files
+    System health check
+CROND
+======
+CROND => is a daemon process (background process), every minute CROND will be checking if CRON JOBs schedule for the execution 
+CRON Job Syntax
+----------------
+one two three four five six
+* * * * * <command/scriptfile>
+--> First * ==> minutes (0-59)
+--> Second * ==> hour (0-23)
+--> Third * ==> day of month (1-31)
+--> Fourth * ==> Month of year (1-12)
+--> Fifth * ==> Day of Week (0-6)(Sun-Mon)
+5 * * * * touch telusko.txt
+* * * * * touch telusko.txt
+one two three four five six
+* * * * * <command/script>
+--> First * --> minutes(0-59)
+--> Second * --> hour (0-23)
+--> Third * --> day of month(1-31)
+--> Fourth * --> month of year(1-12)
+--> Fifth * --> day of week(0-6/ sun - mon)
+Run every day @ 5: am --> 0 5 * * * <task/scriptfile>
+Run every day @ 5: pm --> 0 17 * * * <task/scriptfile>
+Run on 1st day of month --> 0 8 1 * * <task/scriptfile>
+Run 5 min of 9 am of 15th day  15 aug 5th day of week  ==> 5 9 15 8 5 echo "hello"
+Run on Every Monday @ 10 am --> 0 10 * * 1 <task/script>
+Run on 15th of every month @ mid night (00:00) ==> 0 0 15 * * <task/script>
+Run every workday (Mon-Friday) @ 6pm ==> 0 18 * * 1-5 <task/script>
+Run every 2 hour starting from top of hour ==> * */2 * * * <task/script>
+Crontab file 
+============
+ Used to configure cronjobs execution
+$ crontab -e ==> It opens crontab file
+$ crontab -l ==> display scheduled jobs
+========================
+$ sudo yum update -y
+$ sudo yum install cronie -y
+$ sudo systemctl start crond
+$ sudo systemctl enable crond
+$ crontab -l 
+$ crontab -e ==> opens crontab file where we can edit current users cron jobs
+$ crontab -u root -e  ==> opens crontab filw where we can edit root user cron jobs 
+Follow live class insructions for demo
+Remove All Cron Jobs
+crontab -r
+======================================
+Absolute vs relative path
+===========================
+Absolute Path: Giving someone the complete, exact street address (including city, state, zip code) so they can find it no matter where they start.
+An absolute path (also called a full path) is the complete and unambiguous location of a file or directory on a file system, starting from the very top of the directory tree
+Relative Path: Giving someone directions from where they currently are ("Go two blocks straight, then turn left"). These directions only make sense if you know the starting point.
+A relative path specifies the location of a file or directory in relation to your current working directory (CWD). Its meaning changes depending on where you currently are in the file system.
