@@ -299,3 +299,359 @@ Q19. Health check groups: management.endpoint.health.group.readiness.include=db,
 Q20. Externalized config priority: CLI args > env vars > application.yml > defaults
 
 ================================================================================
+
+================================================================================
+          SPRING BOOT - DEEP DIVE ANALYSIS (FROM SOURCE FILE)
+          Extracted from Spring_and_Spring_boot.txt (Lines 5800-10694)
+          Topics: DataSource, REST APIs, SpEL, JSR-330, YAML Config
+================================================================================
+
+================================================================================
+SECTION A: DATASOURCE AUTO-CONFIGURATION - DECISION TREE
+================================================================================
+
+  Spring Boot DataSource Auto-Configuration Priority:
+
+  Spring Boot starts
+       |
+       v
+  spring-boot-starter-jdbc on classpath?
+       | YES                    | NO
+       |                        --> No DataSource created
+       v
+  HikariCP jar present?
+       | YES              | NO
+       v                  v
+  CREATE HikariDS     Tomcat JDBC jar present?
+  (DEFAULT)                | YES          | NO
+                           v              v
+                     CREATE Tomcat    DBCP2 present?
+                     DataSource       | YES    | NO
+                                      v        v
+                                 CREATE DBCP2   ERROR!
+                                 DataSource     No pool found
+
+  Manual DataSource Configuration (Overriding Auto-Config):
+  1. Exclude auto-config:
+     @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
+
+  2. Create @Bean method in @Configuration class:
+     @Configuration
+     public class PersistConfig {
+         @Autowired
+         private Environment env;
+
+         @Bean
+         public DataSource createDataSource() throws Exception {
+             ComboPooledDataSource ds = new ComboPooledDataSource();
+             ds.setDriverClass(env.getProperty("jdbc.driver"));
+             ds.setJdbcUrl(env.getProperty("jdbc.url"));
+             ds.setUser(env.getProperty("jdbc.user"));
+             ds.setPassword(env.getProperty("jdbc.password"));
+             return ds;
+         }
+     }
+
+  Switching Connection Pools (HikariCP to Tomcat JDBC):
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-jdbc</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.zaxxer</groupId>
+          <artifactId>HikariCP</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tomcat</groupId>
+      <artifactId>tomcat-jdbc</artifactId>
+    </dependency>
+
+================================================================================
+SECTION B: CONFIGURATION - PROPERTIES vs YAML DETAILED
+================================================================================
+
+  application.properties (Flat Key-Value):
+    server.port=8080
+    spring.application.name=MyApp
+    spring.datasource.url=jdbc:mysql:///testschema
+    spring.datasource.username=root
+    spring.datasource.password=root123
+    spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+  application.yml (YAML - Hierarchical):
+    spring:
+      application:
+        name: MyApp
+      datasource:
+        url: jdbc:mysql:///testschema
+        username: root
+        password: root123
+        driver-class-name: com.mysql.cj.jdbc.Driver
+    server:
+      port: 8080
+
+  Comparison:
+  Feature                 .properties             .yml
+  ----------------------  ----------------------  --------------------------
+  Format                  Flat key=value          Hierarchical YAML
+  Readability             Simple for few props    Better for nested config
+  Multi-document          Not supported           Supported (--- separator)
+  Profile-specific        application-dev.props   Can embed in same file
+  Collection support      Comma-separated         Native list/map syntax
+  Spring Boot Priority    Loaded AFTER yml        Loaded first
+
+================================================================================
+SECTION C: SPRING EXPRESSION LANGUAGE (SpEL) - DEEP DIVE
+================================================================================
+
+  SpEL enables runtime expression evaluation within Spring beans.
+
+  Syntax:
+    dollar{key}    = Property file value injection.
+                    @Value("dollar{server.port}") -> reads from application.properties
+    #{expression} = SpEL runtime expression.
+                    @Value("#{beanName.field}") -> reads from another bean.
+                    @Value("#{10 + 20}") -> computed result = 30.
+
+  Cross-Bean Computation Example:
+    // Bean 1: ItemsInfo (reads from properties)
+    @Component("item")
+    public class ItemsInfo {
+        @Value("dollar{items.info.idlyPrice}")  private double idlyPrice;   // 10
+        @Value("dollar{items.info.dosaPrice}")  private double dosaPrice;   // 20
+        @Value("dollar{items.info.vadaPrice}")  private double vadaPrice;   // 30
+    }
+
+    // Bean 2: BillGenerator (reads from Bean 1 via SpEL)
+    @Component("bill")
+    public class BillGenerator {
+        @Value("#{item.idlyPrice + item.dosaPrice + item.vadaPrice}")
+        private double billAmount;  // Computed at DI time = 60.0
+
+        @Value("Accord")
+        private String hotelName;   // Literal string injection
+
+        @Autowired
+        private ItemsInfo info;     // Full bean injection
+    }
+
+  SpEL Evaluation Flow:
+    1. Spring creates "item" bean and injects property values (10, 20, 30).
+    2. Spring creates "bill" bean.
+    3. SpEL engine locates "item" bean in ApplicationContext.
+    4. Reads idlyPrice, dosaPrice, vadaPrice fields.
+    5. Evaluates expression: 10 + 20 + 30 = 60.0.
+    6. Injects result into billAmount field.
+    7. This happens during BeanPostProcessor phase.
+
+================================================================================
+SECTION D: JSR-330 - NON-INVASIVE PROGRAMMING
+================================================================================
+
+  JSR-330 annotations allow DI without Spring-specific imports.
+  Requires javax.inject dependency.
+
+  JSR-330 Annotation   Spring Equivalent         Notes
+  ------------------   ----------------------    ----------------------------------
+  @Inject              @Autowired                Field/constructor/setter. No
+                                                 "required" attribute.
+  @Named("name")       @Component + @Qualifier   Names bean AND resolves ambiguity
+  @Resource            @Autowired+@Qualifier     JSR-250. Field/setter only (NOT
+                                                 constructor). byName first.
+
+  Annotation Priority Order (recommended):
+    1. Java Config Annotations (JSR-330: @Inject, @Named) - First choice
+    2. Spring Annotations (@Autowired, @Component)
+    3. Third-party Annotations
+    4. Custom Annotations
+
+  Example:
+    @Named("std")
+    public class Student {
+        @Inject
+        @Named("courseId")
+        private ICourseMaterial material;
+    }
+
+    @Named("java")
+    public class JavaCourseMaterial implements ICourseMaterial { ... }
+
+  Configuration:
+    application.properties: course.choose=java
+    applicationContext.xml:  <alias name="dollar{course.choose}" alias="courseId"/>
+    -> "courseId" resolves to "java" bean dynamically.
+
+================================================================================
+SECTION E: REST API DEVELOPMENT - CODE EXAMPLES
+================================================================================
+
+  REST Controller with Full CRUD:
+    @RestController
+    @RequestMapping("/api/customers")
+    public class CustomerRestController {
+
+        @Autowired
+        private CustomerService service;
+
+        @GetMapping("/getById")
+        public ResponseEntity<CustomerVo> getById(@RequestParam int id) {
+            CustomerVo customer = service.findById(id);
+            if (customer != null) return ResponseEntity.ok(customer);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        @GetMapping("/all")
+        public ResponseEntity<List<CustomerVo>> getAll() {
+            return ResponseEntity.ok(service.getAllCustomers());
+        }
+
+        @PostMapping("/insert")
+        public ResponseEntity<String> insert(@RequestBody CustomerVo vo) {
+            try {
+                String result = service.processResult(vo);
+                return ResponseEntity.status(HttpStatus.CREATED).body(result);
+            } catch (Exception e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                       .body("Error: " + e.getMessage());
+            }
+        }
+
+        @DeleteMapping("/deleteById")
+        public ResponseEntity<String> delete(@RequestParam int id) {
+            int status = service.deleteById(id);
+            return ResponseEntity.ok("Deleted customer with ID: " + status);
+        }
+
+        @PutMapping("/updateById")
+        public ResponseEntity<CustomerVo> update(@RequestParam int id) {
+            CustomerVo updated = service.updateById(id);
+            return ResponseEntity.ok(updated);
+        }
+    }
+
+  API Endpoints (from source file project):
+    GET  http://localhost:8080/Spr/customers/getCustomerById?id=1
+    GET  http://localhost:8080/Spr/customers/all
+    POST http://localhost:8080/Spr/customers/insert
+    PUT  http://localhost:8080/Spr/customers/updateCustomerById?id=4
+    DELETE http://localhost:8080/Spr/customers/deleteCustomerById?id=6
+
+================================================================================
+SECTION F: SPRING BOOT COLLECTION INJECTION (YAML)
+================================================================================
+
+  Spring Boot supports injecting complex data from application.yml
+  into beans using @ConfigurationProperties.
+
+  application.yml Example:
+    employee:
+      empName: Aravind
+      empId: 21
+      empSkills:
+        - Core Java
+        - Spring Boot
+        - J2EE
+        - SQL
+      empProjects:
+        - Banking Finance System
+        - Retail Merchandise System
+      idDetails:
+        aadhar: AD1234XYZ
+        pan: PAN1234XYZ
+        passport: PAS1234XYZ
+
+  Java Bean:
+    @Component
+    @ConfigurationProperties(prefix = "employee")
+    public class Employee {
+        private String empName;
+        private int empId;
+        private List<String> empSkills;
+        private List<String> empProjects;
+        private Map<String, String> idDetails;
+        // getters and setters
+    }
+
+================================================================================
+SECTION G: SPRING BOOT JDBC PROJECT - COMPLETE LAYERED ARCHITECTURE
+================================================================================
+
+  Project Architecture Flow:
+
+  REST CLIENT (Postman / Browser)
+       | HTTP GET/POST/PUT/DELETE
+       v
+  @RestController Layer (REST API)
+  - @GetMapping, @PostMapping, @PutMapping, @DeleteMapping
+  - @RequestParam, @PathVariable, @RequestBody
+  - ResponseEntity returns
+       | (DTO)
+       v
+  @Service Layer (Business Logic)
+  - DTO <-> BO conversion
+  - Calculations (e.g., Simple Interest formula)
+  - Transaction boundaries
+       | (BO)
+       v
+  @Repository Layer (Data Access)
+  - JDBC queries
+  - DataSource.getConnection()
+  - PreparedStatement + ResultSet
+  - CRUD operations
+       | (SQL)
+       v
+  MySQL Database (via HikariCP DataSource auto-configured from yml/props)
+
+  application.yml (Spring Boot DataSource):
+    spring:
+      datasource:
+        url: jdbc:mysql:///testschema
+        username: root
+        password: 2580
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+================================================================================
+SECTION H: EXECUTION FLOW DIAGRAMS
+================================================================================
+
+  Spring Boot DI Flow:
+    APP START -> @SpringBootApplication triggers ComponentScan
+       |
+       |-> Finds @Named/@Component beans in packages
+       |-> @ImportResource loads applicationContext.xml (if present)
+       |      --> <alias name="dollar{course.choose}" alias="courseId"/>
+       |-> IoC Container: Instantiate all beans + inject dependencies
+       |-> Start Embedded Tomcat (if web starter present)
+       --> APPLICATION READY
+
+  REST API Request Flow:
+    Client HTTP Request
+       -> DispatcherServlet (Front Controller)
+       -> HandlerMapping: finds matching @RequestMapping
+       -> @RestController method invoked
+            -> @RequestParam/@PathVariable extracted
+            -> @RequestBody deserialized (Jackson JSON -> Java)
+            -> Service Layer called -> DAO Layer called -> DB query
+            -> ResponseEntity returned
+       -> HTTP Response (JSON body + status code)
+
+================================================================================
+SECTION I: ADDITIONAL BEST PRACTICES (FROM SOURCE FILE)
+================================================================================
+
+  1. Use application.yml for nested configs, .properties for simple ones.
+  2. Always use ResponseEntity with proper HTTP status codes.
+  3. Use @ConfigurationProperties over multiple @Value annotations.
+  4. Use spring.profiles.active for environment-specific configs.
+  5. Enable Actuator: management.endpoints.web.exposure.include=health,info
+  6. Handle exceptions globally with @RestControllerAdvice.
+  7. Use HikariCP (default) unless a specific pool is needed.
+  8. Keep controller layer thin - move logic to service layer.
+  9. Use constructor injection in Spring Boot beans.
+ 10. Use Lombok to reduce boilerplate in VO/DTO/BO classes.
+
+================================================================================
+END OF SPRING BOOT DEEP DIVE ANALYSIS - Appended March 2026
+================================================================================
