@@ -1,0 +1,248 @@
+================================================================================
+LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
+Extracted from: Linux and Shell Scripting.txt (Deduplicated)
+For: DevOps Engineers | System Administrators | Java Developers
+================================================================================
+
+================================================================================
+STRUCTURED COMMAND TABLE
+================================================================================
+
+| # | Command / Concept         | Description                                                     | Real-Time Usage Scenario                                                  | Priority |
+|---|---------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------|----------|
+|   |                           |                                                                 |                                                                           |          |
+|   | --- FILE & DIRECTORY ---  |                                                                 |                                                                           |          |
+| 1 | pwd                       | Print current working directory                                 | Verify deployment path before running scripts on EC2                      | ***      |
+| 2 | ls                        | List files in current directory                                 | Quick check of deployed JARs/configs on server                            | ***      |
+| 3 | ls -l                     | Long listing with permissions, owner, size, date                | Verify file ownership and permissions after deployment                    | ***      |
+| 4 | ls -lt                    | List sorted by modification time (newest first)                 | Identify latest log files or recently deployed artifacts                  | **       |
+| 5 | ls -ltr                   | List sorted by time (oldest first)                              | Find oldest backup files for cleanup                                      | **       |
+| 6 | ls -lr                    | List in reverse alphabetical order                              | Reverse sort for review                                                   | *        |
+| 7 | ls -li                    | List with inode numbers                                         | Debug hard link / soft link issues                                        | *        |
+| 8 | cd <dir>                  | Change directory                                                | Navigate to /var/log, /opt/app, /etc/nginx on servers                     | ***      |
+| 9 | cd ..                     | Go up one directory level                                       | Navigate between nested deployment directories                            | ***      |
+| 10| cd ~                      | Go to home directory of current user                            | Return to user home after deep navigation                                 | **       |
+| 11| mkdir <dir>               | Create a new directory                                          | Create log directories, deployment folders on EC2                         | ***      |
+| 12| rmdir <dir>               | Remove empty directory                                          | Clean up empty temp directories                                           | *        |
+| 13| rm <file>                 | Delete a file                                                   | Remove old deployment artifacts and temp files                            | ***      |
+| 14| rm *.txt                  | Delete all .txt files using wildcard                            | Bulk cleanup of log rotation files                                        | **       |
+| 15| rm -rf <dir>              | Force delete directory and all contents (DANGEROUS)             | Clean up failed deployments, old Docker volumes                           | ***      |
+| 16| touch <file>              | Create empty file or update timestamp                           | Create placeholder config files, lock files                               | ***      |
+| 17| cp <src> <dest>           | Copy file from source to destination                            | Backup config before editing: cp nginx.conf nginx.conf.bak                | ***      |
+| 18| mv <old> <new>            | Move or rename file/directory                                   | Rename releases: mv app-v1.jar app-v2.jar, move files between dirs       | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- FILE VIEWING ---      |                                                                 |                                                                           |          |
+| 19| cat <file>                | Display entire file content                                     | View small config files: cat application.yml                              | ***      |
+| 20| cat > <file>              | Create file and write from stdin (Ctrl+D to save)               | Quick config file creation on fresh server                                | **       |
+| 21| cat >> <file>             | Append data to existing file                                    | Add new entries to /etc/hosts or environment files                        | ***      |
+| 22| cat -n <file>             | Display file with line numbers                                  | Reference specific lines when debugging config files                      | **       |
+| 23| cat f1 f2 > f3            | Merge multiple files into one                                   | Combine split log files for analysis                                      | *        |
+| 24| tac <file>                | Display file content in reverse (bottom to top)                 | View latest entries first in append-only logs                             | *        |
+| 25| rev <file>                | Reverse characters in each line                                 | Rarely used, text manipulation edge cases                                 |          |
+| 26| head <file>               | Show first 10 lines of file                                     | Quick peek at log file headers or config structure                        | ***      |
+| 27| head -n N <file>          | Show first N lines                                              | View top N error entries: head -n 20 error.log                            | ***      |
+| 28| tail <file>               | Show last 10 lines of file                                      | Check latest log entries for errors after deployment                      | ***      |
+| 29| tail -n N <file>          | Show last N lines                                               | Review last N lines of application.log                                    | ***      |
+| 30| tail -f <file>            | Follow file in real-time (live tail)                            | Monitor live app logs: tail -f /var/log/app/spring.log                    | ***      |
+| 31| wc <file>                 | Count lines, words, bytes in file                               | Check log file size before transferring: wc -l error.log                  | **       |
+| 32| diff <f1> <f2>            | Compare two files line by line                                  | Compare config files between environments (dev vs prod)                   | **       |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- TEXT PROCESSING ---   |                                                                 |                                                                           |          |
+| 33| grep 'pattern' <file>     | Search for pattern in file (case sensitive)                     | Find errors: grep 'Exception' app.log                                     | ***      |
+| 34| grep -i 'pattern' <file>  | Case-insensitive search                                         | Search warnings: grep -i 'warning' app.log                               | ***      |
+| 35| grep -n 'pattern' <file>  | Search with line numbers                                        | Locate exact line of error: grep -n 'NullPointer' app.log                | ***      |
+| 36| grep -c 'pattern' <file>  | Count matching lines                                            | Count exceptions: grep -c 'Exception' error.log                          | **       |
+| 37| grep -w 'word' <file>     | Match exact word only                                           | Find "fail" but not "failed": grep -w 'fail' results.txt                 | **       |
+| 38| grep -i 'pattern' *       | Search across all files in directory                            | Search all logs for keyword: grep -i 'OutOfMemory' *.log                 | ***      |
+| 39| grep -r 'pattern' <dir>   | Recursive search in directories                                 | Find config across nested dirs: grep -r 'db.url' /opt/app/               | ***      |
+|   |                           |                                                                 |                                                                           |          |
+| 40| sed 's/old/new/' <file>   | Replace first occurrence per line (preview only)                | Test replacement before saving                                            | ***      |
+| 41| sed -i 's/old/new/' <file>| Replace first occurrence per line (in-place edit)               | Patch config: sed -i 's/8080/9090/' application.yml                       | ***      |
+| 42| sed -i 's/old/new/g' file | Replace ALL occurrences (global, in-place)                      | Bulk find-replace across config files in CI/CD pipeline                   | ***      |
+| 43| sed -i '5d' <file>        | Delete 5th line in file                                         | Remove unwanted header line from CSV data                                 | **       |
+| 44| sed -i '$d' <file>        | Delete last line in file                                        | Remove trailing empty line from config                                    | **       |
+| 45| sed -i '/pattern/d' file  | Delete all lines matching pattern                               | Remove debug lines: sed -i '/DEBUG/d' app.log                            | **       |
+| 46| sed -n '2,4p' <file>      | Print only lines 2 to 4                                         | Extract specific config block from large file                             | **       |
+| 47| sed -i '5i\ text' <file>  | Insert text before line 5                                       | Add environment var before line in script                                 | *        |
+| 48| sed -i '$a\ text' <file>  | Append text after last line                                     | Add new config entry to end of file                                       | *        |
+|   |                           |                                                                 |                                                                           |          |
+| 49| awk '{print $1,$4}' file  | Extract specific columns from structured text                   | Parse access.log: awk '{print $1,$9}' access.log (IP + status code)      | ***      |
+| 50| awk '/pattern/{print}'    | Print lines matching pattern                                    | Filter log entries by keyword                                             | **       |
+| 51| awk '{print NR, $0}' file | Print with line numbers                                         | Add line numbers to CSV for debugging                                     | *        |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- TEXT EDITORS ---      |                                                                 |                                                                           |          |
+| 52| vi <file>                 | Open file in vi editor (3 modes: command/insert/esc)            | Edit config files on servers: vi /etc/nginx/nginx.conf                    | ***      |
+|   |                           | i = insert mode, Esc = command mode                             |                                                                           |          |
+|   |                           | :wq = save & quit, :q! = quit without saving                   |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- FIND & LOCATE ---     |                                                                 |                                                                           |          |
+| 53| find /path -name "file"   | Search for file by name in directory tree                       | Find config: find /opt -name "application.yml"                            | ***      |
+| 54| find /path -type f -empty | Find empty files                                                | Cleanup empty placeholder files                                           | *        |
+| 55| find /path -type d -empty | Find empty directories                                          | Cleanup empty directories after old deployments                           | *        |
+| 56| locate <file>             | Fast file lookup using pre-built database                       | Quickly locate file: locate nginx.conf (run sudo updatedb first)          | **       |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- USER & GROUP MGMT --- |                                                                 |                                                                           |          |
+| 57| sudo useradd <user>       | Create new user account                                         | Create service accounts for apps: sudo useradd appuser                    | ***      |
+| 58| sudo passwd <user>        | Set/change password for user                                    | Reset password for team member on shared server                           | ***      |
+| 59| sudo userdel <user>       | Delete user account                                             | Remove departed team member's access                                      | **       |
+| 60| sudo userdel --remove usr | Delete user with home directory                                 | Full cleanup of user data                                                 | **       |
+| 61| sudo usermod -l new old   | Rename user account                                             | Rename user after name change                                             | *        |
+| 62| sudo su <user>            | Switch to another user account                                  | Switch to app service account for deployment                              | ***      |
+| 63| whoami                    | Display current logged-in user name                             | Verify which user is running deployment scripts                           | ***      |
+| 64| id <user>                 | Display user ID, group ID, and groups                           | Verify user group membership for permissions                              | **       |
+| 65| exit                      | Exit current shell/user session                                 | Return to original user after su                                          | **       |
+| 66| sudo groupadd <group>     | Create new user group                                           | Create groups for team access: sudo groupadd devops-team                  | **       |
+| 67| sudo usermod -aG grp user | Add user to group                                               | Add dev to docker group: sudo usermod -aG docker devuser                  | ***      |
+| 68| sudo gpasswd -d user grp  | Remove user from group                                          | Revoke access when team member changes role                               | *        |
+| 69| sudo visudo               | Safely edit sudoers file                                        | Grant sudo access to new DevOps team members                              | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- FILE PERMISSIONS ---  |                                                                 |                                                                           |          |
+| 70| chmod u+x <file>          | Add execute permission for user (symbolic)                      | Make deployment script executable: chmod u+x deploy.sh                    | ***      |
+| 71| chmod 755 <file>          | rwxr-xr-x (numeric: owner all, group+others read+exec)         | Standard permission for shell scripts                                     | ***      |
+| 72| chmod 644 <file>          | rw-r--r-- (default file permission)                             | Standard permission for config files                                      | **       |
+| 73| chmod 400 <file>          | r-------- (read-only for owner)                                 | Secure SSH key: chmod 400 mykey.pem (AWS requirement)                     | ***      |
+| 74| chmod 777 <file>          | rwxrwxrwx (all permissions — AVOID in production!)              | NEVER use on production servers — security risk                           | *        |
+| 75| chown user:group <file>   | Change file ownership                                           | Fix ownership after copy: sudo chown appuser:appgroup app.jar             | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- LINKS ---             |                                                                 |                                                                           |          |
+| 76| ln <orig> <link>          | Create hard link (same inode, survives original delete)         | Create backup reference to important config                               | *        |
+| 77| ln -s <orig> <link>       | Create soft/symbolic link (shortcut, breaks if original deleted)| Link current release: ln -s /opt/app-v2.jar /opt/app/current.jar          | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- ARCHIVING ---         |                                                                 |                                                                           |          |
+| 78| zip <name> <files>        | Create zip archive                                              | Archive logs: zip backup-logs *.log                                       | **       |
+| 79| zip -sf <file.zip>        | Show contents of zip file                                       | Verify archive contents before transfer                                   | *        |
+| 80| unzip <file.zip>          | Extract zip archive                                             | Unzip downloaded artifacts on server                                      | **       |
+| 81| tar -cvf name.tar dir/    | Create tar archive                                              | Archive application directory: tar -cvf app-backup.tar /opt/app/          | ***      |
+| 82| tar -xvf name.tar         | Extract tar archive                                             | Extract deployment bundle on target server                                | ***      |
+| 83| tar -czvf name.tar.gz dir/| Create compressed tar.gz archive                                | Compress and transfer logs between servers                                | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- NETWORKING ---        |                                                                 |                                                                           |          |
+| 84| ping <host>               | Check network connectivity to host                              | Verify connectivity: ping db-server.internal                              | ***      |
+| 85| curl <url>                | Send HTTP request and display response                          | Test API endpoints: curl http://localhost:8080/actuator/health             | ***      |
+| 86| wget <url>                | Download file from internet                                     | Download JDK/Tomcat: wget https://download.oracle.com/java17.tar.gz       | ***      |
+| 87| netstat                   | Display network connections and listening ports                  | Check if port 8080 is in use: netstat -tlnp | grep 8080                  | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- PACKAGE MGMT ---      |                                                                 |                                                                           |          |
+| 88| sudo yum install <pkg>    | Install package (RHEL/CentOS/Amazon Linux)                      | Install Java: sudo yum install java-17-amazon-corretto                    | ***      |
+| 89| sudo apt install <pkg>    | Install package (Ubuntu/Debian)                                 | Install nginx: sudo apt install nginx                                     | ***      |
+| 90| sudo dnf install <pkg>    | Install package (newer RHEL/Fedora)                             | Install Maven: sudo dnf install maven                                     | **       |
+| 91| sudo yum update -y        | Update all packages                                             | Patch server: regular security updates                                    | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   |--- PROCESS & SYSTEM ---   |                                                                 |                                                                           |          |
+| 92| ps aux                    | List all running processes                                      | Find Java process: ps aux | grep java                                     | ***      |
+| 93| top                       | Real-time process monitor (CPU, memory)                         | Monitor server load during deployment or load testing                     | ***      |
+| 94| kill <PID>                | Terminate process by PID                                        | Kill stuck Java process: sudo kill 12345                                  | ***      |
+| 95| free                      | Display memory usage (RAM + swap)                               | Check available memory before deploying new service                       | **       |
+| 96| uname -r                  | Show kernel version                                             | Verify kernel compatibility for Docker/container runtime                  | **       |
+| 97| cat /etc/os-release       | Show OS distribution and version                                | Identify OS for correct package manager and compatibility                 | **       |
+| 98| history                   | Show command history                                            | Review what was done on server for audit/troubleshooting                  | **       |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- SERVICE MGMT ---      |                                                                 |                                                                           |          |
+| 99| systemctl start <svc>     | Start a service                                                 | Start app: sudo systemctl start docker                                    | ***      |
+|100| systemctl stop <svc>      | Stop a service                                                  | Stop old version before deploying new                                     | ***      |
+|101| systemctl restart <svc>   | Restart a service                                               | Restart after config change: systemctl restart nginx                      | ***      |
+|102| systemctl status <svc>    | Check service status                                            | Verify service running: systemctl status jenkins                          | ***      |
+|103| systemctl enable <svc>    | Enable auto-start at boot                                       | Ensure Docker starts on reboot: systemctl enable docker                   | ***      |
+|104| systemctl disable <svc>   | Disable auto-start at boot                                      | Disable unused services for security hardening                            | **       |
+|105| systemctl reload <svc>    | Reload config without restart                                   | Reload nginx after config update (zero downtime)                          | **       |
+|106| systemctl list-units      | List all active services                                        | Audit running services on server                                          | *        |
+|107| service <svc> start       | Legacy command to start service                                 | Older systems: service httpd start                                        | *        |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- SSH & SYSTEM ---      |                                                                 |                                                                           |          |
+|108| cat /etc/ssh/sshd_config  | View SSH server configuration                                   | Verify PasswordAuthentication setting for security                        | **       |
+|109| sudo vi /etc/hostname     | Change hostname permanently                                     | Set meaningful hostname for server identification                         | *        |
+|110| cat /etc/passwd           | Display all user accounts                                       | Audit user accounts on shared server                                      | **       |
+|111| cat /etc/sudoers          | View sudoers file (who has root access)                         | Security audit: verify who has sudo privileges                            | **       |
+|112| man <command>             | Display manual page for a command                               | Learn command options: man grep                                           | **       |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- WEBSERVER ---         |                                                                 |                                                                           |          |
+|113| sudo yum install httpd    | Install Apache HTTP server                                      | Set up web server on EC2 instance                                         | **       |
+|114| sudo service httpd start  | Start Apache web server                                         | Host static website on EC2                                                | **       |
+|115| /var/www/html             | Default web content directory (httpd)                           | Place index.html here for website hosting                                 | **       |
+
+================================================================================
+FILE PERMISSION NUMERIC REFERENCE
+================================================================================
+
+Number | Permission        | Symbol
+-------|-------------------|--------
+0      | No permission     | ---
+1      | Execute           | --x
+2      | Write             | -w-
+3      | Write + Execute   | -wx
+4      | Read              | r--
+5      | Read + Execute    | r-x
+6      | Read + Write      | rw-
+7      | Read+Write+Execute| rwx
+
+Default file permission:      644 (rw-r--r--)
+Default directory permission: 755 (rwxr-xr-x)
+SSH key permission:           400 (r--------)
+
+================================================================================
+LINUX FILE TYPES
+================================================================================
+
+Symbol | Type               | Example
+-------|--------------------|-------------------------
+ -     | Regular file       | -rw-r--r-- app.jar
+ d     | Directory          | drwxr-xr-x  config/
+ l     | Symbolic link      | lrwxrwxrwx  current -> v2
+
+================================================================================
+LINUX ARCHITECTURE
+================================================================================
+
+User (runs commands)
+    |
+Shell (interprets commands - Bash, Zsh)
+    |
+Kernel (core OS - manages CPU, RAM, I/O, hardware)
+    |
+Hardware (physical CPU, RAM, disk, network)
+
+================================================================================
+FINAL SUMMARY NOTES
+================================================================================
+
+TOP 10 MOST IMPORTANT LINUX COMMANDS FOR DEVOPS:
+1.  grep    — Log searching, error finding, pattern matching
+2.  tail -f — Live monitoring of application logs
+3.  chmod   — Securing files, making scripts executable
+4.  systemctl — Managing services (Docker, Jenkins, Nginx)
+5.  find    — Locating config files and deployment artifacts
+6.  sed     — In-place config file editing in CI/CD pipelines
+7.  curl    — Testing API health endpoints and REST services
+8.  ps aux / kill — Process management and troubleshooting
+9.  tar / zip — Archiving logs and deployment packages
+10. usermod — Managing user group membership (Docker group, etc.)
+
+COMMAND CATEGORIES:
+  File Management:     ls, cd, mkdir, rm, cp, mv, touch, ln
+  File Viewing:        cat, head, tail, wc, diff, tac
+  Text Processing:     grep, sed, awk
+  Text Editors:        vi (command, insert, esc modes)
+  File Search:         find, locate
+  User Management:     useradd, userdel, usermod, passwd, su, whoami, id
+  Group Management:    groupadd, groupmod, gpasswd, lid
+  Permissions:         chmod (symbolic & numeric), chown
+  Archiving:           zip, unzip, tar
+  Networking:          ping, curl, wget, netstat
+  Package Management:  yum, apt, dnf
+  Process Management:  ps, top, kill, free
+  Service Management:  systemctl (start, stop, restart, enable, status)
+  System Info:         uname, cat /etc/os-release, hostname, history
+
+KEY LEARNING TAKEAWAYS:
+1. Linux is the OS of choice for servers, DevOps, and cloud infrastructure.
+2. Everything in Linux is a file (regular, directory, or link).
+3. Permissions (chmod) and ownership (chown) are critical for security.
+4. grep + sed + awk = the power trio for text processing and log analysis.
+5. systemctl is the modern way to manage services (replaces service command).
+6. Always use chmod 400 for SSH private key files (.pem).
+7. Hard links share inode (survive original delete), soft links are shortcuts (break on delete).
+8. Package managers vary by distro: yum/dnf (RHEL), apt (Ubuntu).
+
+================================================================================
+END OF LINUX COMMANDS ANALYSIS
+================================================================================
