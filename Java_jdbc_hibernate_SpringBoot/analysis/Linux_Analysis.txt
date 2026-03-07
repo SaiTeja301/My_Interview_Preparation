@@ -122,11 +122,101 @@ STRUCTURED COMMAND TABLE
 | 86| wget <url>                | Download file from internet                                     | Download JDK/Tomcat: wget https://download.oracle.com/java17.tar.gz       | ***      |
 | 87| netstat                   | Display network connections and listening ports                  | Check if port 8080 is in use: netstat -tlnp | grep 8080                  | ***      |
 |   |                           |                                                                 |                                                                           |          |
-|   | --- PACKAGE MGMT ---      |                                                                 |                                                                           |          |
-| 88| sudo yum install <pkg>    | Install package (RHEL/CentOS/Amazon Linux)                      | Install Java: sudo yum install java-17-amazon-corretto                    | ***      |
-| 89| sudo apt install <pkg>    | Install package (Ubuntu/Debian)                                 | Install nginx: sudo apt install nginx                                     | ***      |
-| 90| sudo dnf install <pkg>    | Install package (newer RHEL/Fedora)                             | Install Maven: sudo dnf install maven                                     | **       |
-| 91| sudo yum update -y        | Update all packages                                             | Patch server: regular security updates                                    | ***      |
+|   | --- PACKAGE MGMT & INSTALLATION SETUP (IN-DEPTH) ---                                                                                                                    |
+|   |                           |                                                                 |                                                                           |          |
+|   | PACKAGE MANAGER MAPPING:  |                                                                 |                                                                           |          |
+|   |   Ubuntu / Debian         | ==> apt (Advanced Package Tool)                                 | Most cloud VMs on AWS/GCP use Ubuntu                                      |          |
+|   |   Amazon Linux / RHEL     | ==> yum (Yellowdog Updater Modified)                            | Default on AWS EC2 Amazon Linux AMI                                       |          |
+|   |   CentOS / Red Hat        | ==> yum or dnf                                                  | dnf is modern replacement for yum (RHEL 8+)                               |          |
+|   |   Fedora (RHEL 8+)        | ==> dnf (Dandified YUM)                                         | Faster dependency resolution than yum                                     |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- BASIC PACKAGE COMMANDS ---                                                                                                                                           |
+| 88| sudo yum install <pkg>    | Install package on RHEL/CentOS/Amazon Linux                     | Primary installer on Amazon EC2 instances                                 | ***      |
+| 89| sudo apt install <pkg>    | Install package on Ubuntu/Debian                                | Primary installer on Ubuntu cloud VMs                                     | ***      |
+| 90| sudo dnf install <pkg>    | Install package on newer RHEL/Fedora (replaces yum)             | Modern alternative: sudo dnf install maven                                | **       |
+| 91| sudo yum update -y        | Update ALL packages to latest version (RHEL family)             | Regular security patching on production servers                           | ***      |
+| 92| sudo apt update           | Refresh package index (MUST run before install on Ubuntu)       | Always run before apt install to get latest versions                      | ***      |
+| 93| sudo apt upgrade -y       | Upgrade all installed packages (Ubuntu)                         | Security patching on Ubuntu servers                                       | ***      |
+| 94| sudo yum remove <pkg>     | Uninstall a package (RHEL family)                               | Remove unwanted software for security hardening                           | **       |
+| 95| sudo apt remove <pkg>     | Uninstall a package (Ubuntu)                                    | Clean up unused services                                                  | **       |
+| 96| yum list installed        | List all installed packages (RHEL)                              | Audit installed software on server                                        | **       |
+| 97| dpkg -l                   | List all installed packages (Ubuntu/Debian)                     | Audit installed packages for compliance                                   | **       |
+| 98| yum search <keyword>      | Search for available packages by name                           | Find correct Java package: yum search java                                | *        |
+| 99| apt search <keyword>      | Search for packages on Ubuntu                                   | Find nginx version: apt search nginx                                      | *        |
+|100| rpm -qa                   | List all installed RPM packages (low-level, RHEL)               | Quick audit: rpm -qa | grep java                                         | *        |
+|   |                           |                                                                 |                                                                           |          |
+|   | ================================================================================                                                                                         |
+|   | DEVOPS SOFTWARE INSTALLATION CHEAT SHEET                                                                                                                                 |
+|   | ================================================================================                                                                                         |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL GIT ---       |                                                                 |                                                                           |          |
+|   | Amazon Linux / RHEL:      | $ sudo yum install git -y                                       | Source code management, CI/CD trigger                                     | ***      |
+|   | Ubuntu / Debian:          | $ sudo apt install git -y                                       |                                                                           |          |
+|   | Verify:                   | $ git --version                                                 |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL JAVA (JDK) ---|                                                                 |                                                                           |          |
+|   | Amazon Linux:             | $ sudo yum install java-17-amazon-corretto-devel -y             | Required for Spring Boot, Maven, Jenkins                                  | ***      |
+|   | Ubuntu / Debian:          | $ sudo apt install openjdk-17-jdk -y                            |                                                                           |          |
+|   | RHEL / CentOS:            | $ sudo yum install java-17-openjdk-devel -y                     |                                                                           |          |
+|   | Verify:                   | $ java -version                                                 |                                                                           |          |
+|   | Set JAVA_HOME:            | $ export JAVA_HOME=/usr/lib/jvm/java-17                         | Add to ~/.bashrc for persistence                                          |          |
+|   |                           | $ echo 'export JAVA_HOME=/usr/lib/jvm/java-17' >> ~/.bashrc     |                                                                           |          |
+|   |                           | $ source ~/.bashrc                                              |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL MAVEN ---     |                                                                 |                                                                           |          |
+|   | Amazon Linux / RHEL:      | $ sudo dnf install maven -y                                     | Build Spring Boot projects: mvn clean install                             | ***      |
+|   |                           | OR: $ sudo yum install maven -y                                 |                                                                           |          |
+|   | Ubuntu / Debian:          | $ sudo apt install maven -y                                     |                                                                           |          |
+|   | Verify:                   | $ mvn -version                                                  |                                                                           |          |
+|   | Set M2_HOME:              | $ export M2_HOME=/usr/share/maven                               | Add to ~/.bashrc for persistence                                          |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL DOCKER ---    |                                                                 |                                                                           |          |
+|   | Amazon Linux 2023:        | $ sudo yum install docker -y                                    | Containerize Spring Boot microservices                                    | ***      |
+|   |                           | $ sudo systemctl start docker                                   |                                                                           |          |
+|   |                           | $ sudo systemctl enable docker                                  |                                                                           |          |
+|   |                           | $ sudo usermod -aG docker ec2-user  (run docker without sudo)   |                                                                           |          |
+|   | Ubuntu:                   | $ sudo apt update                                               |                                                                           |          |
+|   |                           | $ sudo apt install docker.io -y                                 |                                                                           |          |
+|   |                           | $ sudo systemctl start docker && sudo systemctl enable docker   |                                                                           |          |
+|   |                           | $ sudo usermod -aG docker $USER                                 |                                                                           |          |
+|   | Verify:                   | $ docker --version                                              |                                                                           |          |
+|   |                           | $ docker run hello-world                                        |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL JENKINS ---   |                                                                 |                                                                           |          |
+|   | Amazon Linux / RHEL:      | $ sudo wget -O /etc/yum.repos.d/jenkins.repo \                  | CI/CD pipeline automation                                                 | ***      |
+|   |                           |   https://pkg.jenkins.io/redhat-stable/jenkins.repo              |                                                                           |          |
+|   |                           | $ sudo rpm --import https://pkg.jenkins.io/redhat-stable/...key  |                                                                           |          |
+|   |                           | $ sudo yum install jenkins -y                                    |                                                                           |          |
+|   |                           | $ sudo systemctl start jenkins                                   |                                                                           |          |
+|   |                           | $ sudo systemctl enable jenkins                                  |                                                                           |          |
+|   | Access:                   | http://<server-ip>:8080  (default Jenkins port)                  |                                                                           |          |
+|   | Initial Password:         | $ sudo cat /var/lib/jenkins/secrets/initialAdminPassword         |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL NODE.JS ---   |                                                                 |                                                                           |          |
+|   | Amazon Linux (via nvm):   | $ curl -o- https://raw.githubusercontent.com/.../install.sh | bash| Required for Angular frontend builds                                     | **       |
+|   |                           | $ nvm install 18                                                 |                                                                           |          |
+|   | Ubuntu:                   | $ sudo apt install nodejs npm -y                                 |                                                                           |          |
+|   | Verify:                   | $ node -v && npm -v                                              |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL KUBECTL ---   |                                                                 |                                                                           |          |
+|   | Any Linux:                | $ curl -LO "https://dl.k8s.io/release/.../kubectl"               | Manage Kubernetes deployments                                             | **       |
+|   |                           | $ chmod +x kubectl && sudo mv kubectl /usr/local/bin/            |                                                                           |          |
+|   | Verify:                   | $ kubectl version --client                                       |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | --- INSTALL TERRAFORM --- |                                                                 |                                                                           |          |
+|   | Any Linux:                | $ sudo yum install -y yum-utils                                  | Infrastructure as Code for AWS/Azure/GCP                                  | **       |
+|   |                           | $ sudo yum-config-manager --add-repo https://rpm.releases...     |                                                                           |          |
+|   |                           | $ sudo yum install terraform -y                                  |                                                                           |          |
+|   | Verify:                   | $ terraform -version                                             |                                                                           |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | POST-INSTALL VERIFICATION CHECKLIST:                                                                                                                                     |
+|   |   $ java -version          | Confirm JDK installed                                           |                                                                           |          |
+|   |   $ mvn -version           | Confirm Maven installed                                         |                                                                           |          |
+|   |   $ git --version          | Confirm Git installed                                           |                                                                           |          |
+|   |   $ docker --version       | Confirm Docker installed                                        |                                                                           |          |
+|   |   $ node -v                | Confirm Node.js installed                                       |                                                                           |          |
+|   |   $ kubectl version        | Confirm kubectl installed                                       |                                                                           |          |
+|   |   $ jenkins --version      | Confirm Jenkins installed                                       |                                                                           |          |
 |   |                           |                                                                 |                                                                           |          |
 |   |--- PROCESS & SYSTEM ---   |                                                                 |                                                                           |          |
 | 92| ps aux                    | List all running processes                                      | Find Java process: ps aux | grep java                                     | ***      |
@@ -155,10 +245,92 @@ STRUCTURED COMMAND TABLE
 |111| cat /etc/sudoers          | View sudoers file (who has root access)                         | Security audit: verify who has sudo privileges                            | **       |
 |112| man <command>             | Display manual page for a command                               | Learn command options: man grep                                           | **       |
 |   |                           |                                                                 |                                                                           |          |
-|   | --- WEBSERVER ---         |                                                                 |                                                                           |          |
-|113| sudo yum install httpd    | Install Apache HTTP server                                      | Set up web server on EC2 instance                                         | **       |
-|114| sudo service httpd start  | Start Apache web server                                         | Host static website on EC2                                                | **       |
-|115| /var/www/html             | Default web content directory (httpd)                           | Place index.html here for website hosting                                 | **       |
+|   | --- WEBSERVERS IN LINUX (IN-DEPTH) ---                                                                                                                                   |
+|   |                           |                                                                 |                                                                           |          |
+|   | What is a Webserver?      | Software that hosts/runs websites and serves HTTP requests      | Every web app needs a webserver (Apache, Nginx, Tomcat)                   |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | ========== APACHE HTTPD (httpd) ==========                                                                                                                               |
+|   |                           |                                                                 |                                                                           |          |
+|   | INSTALL (Amazon Linux):   | $ sudo yum install httpd -y                                     | Most widely used webserver globally                                       | ***      |
+|   | INSTALL (Ubuntu):         | $ sudo apt install apache2 -y                                   | Package name differs: httpd (RHEL) vs apache2 (Ubuntu)                    | ***      |
+|   | START:                    | $ sudo systemctl start httpd                                    | Start Apache after installation                                           | ***      |
+|   | ENABLE (auto-start):      | $ sudo systemctl enable httpd                                   | Ensure survives reboot                                                    | ***      |
+|   | STATUS:                   | $ sudo systemctl status httpd                                   | Check if Apache is running                                                | ***      |
+|   | STOP:                     | $ sudo systemctl stop httpd                                     | Stop webserver for maintenance                                            | **       |
+|   | RESTART:                  | $ sudo systemctl restart httpd                                  | Apply config changes                                                      | **       |
+|   | RELOAD (no downtime):     | $ sudo systemctl reload httpd                                   | Reload config without stopping                                            | **       |
+|   |                           |                                                                 |                                                                           |          |
+|   | DEFAULT PORT:             | 80 (HTTP) and 443 (HTTPS)                                       | Must open port 80 in AWS Security Group!                                  | ***      |
+|   | WEB CONTENT DIR:          | /var/www/html/                                                  | Place index.html here to host website                                     | ***      |
+|   | CONFIG FILE:              | /etc/httpd/conf/httpd.conf (RHEL)                               | Modify for virtual hosts, port, doc root                                  | **       |
+|   |                           | /etc/apache2/apache2.conf (Ubuntu)                              |                                                                           |          |
+|   | LOG FILES:                | /var/log/httpd/access_log                                       | Monitor who accessed your website                                         | **       |
+|   |                           | /var/log/httpd/error_log                                        | Debug webserver errors                                                    |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | QUICK SETUP STEPS:        |                                                                 |                                                                           |          |
+|   |   1. $ sudo yum install httpd -y                                | Install Apache                                                            |          |
+|   |   2. $ sudo systemctl start httpd                               | Start the service                                                         |          |
+|   |   3. $ sudo systemctl enable httpd                              | Auto-start on reboot                                                      |          |
+|   |   4. Open port 80 in AWS Security Group (Inbound Rules)         | Allow HTTP traffic                                                        |          |
+|   |   5. $ sudo vi /var/www/html/index.html                         | Create your web page                                                      |          |
+|   |   6. Access http://<EC2-Public-IP> in browser                   | Your website is live!                                                     |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | ========== NGINX (Alternative to Apache) ==========                                                                                                                      |
+|   |                           |                                                                 |                                                                           |          |
+|   | INSTALL (Amazon Linux):   | $ sudo yum install nginx -y                                     | Preferred for microservices reverse proxy                                 | ***      |
+|   | INSTALL (Ubuntu):         | $ sudo apt install nginx -y                                     |                                                                           | ***      |
+|   | START + ENABLE:           | $ sudo systemctl start nginx && sudo systemctl enable nginx     | Start Nginx and enable auto-start                                         | ***      |
+|   | CONFIG FILE:              | /etc/nginx/nginx.conf                                           | Main config for server blocks                                             | ***      |
+|   | WEB CONTENT DIR:          | /usr/share/nginx/html/ (default)                                | Place static files here                                                   | **       |
+|   | TEST CONFIG:              | $ sudo nginx -t                                                 | Validate config BEFORE restart (catches syntax errors)                    | ***      |
+|   |                           |                                                                 |                                                                           |          |
+|   | REVERSE PROXY FOR SPRING BOOT:                                                                                                                                           |
+|   |   Edit /etc/nginx/conf.d/spring-app.conf:                                                                                                                                |
+|   |   server {                |                                                                 |                                                                           |          |
+|   |       listen 80;          |                                                                 |                                                                           |          |
+|   |       server_name myapp.com;                                    |                                                                           |          |
+|   |       location / {        |                                                                 |                                                                           |          |
+|   |           proxy_pass http://localhost:8080;                     | Forward traffic to Spring Boot app on 8080                                |          |
+|   |           proxy_set_header Host $host;                          |                                                                           |          |
+|   |           proxy_set_header X-Real-IP $remote_addr;              |                                                                           |          |
+|   |       }                   |                                                                 |                                                                           |          |
+|   |   }                       |                                                                 |                                                                           |          |
+|   |   $ sudo nginx -t && sudo systemctl reload nginx               | Validate and apply                                                        |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | APACHE vs NGINX:          |                                                                 |                                                                           |          |
+|   |   Apache httpd            | Process-based, .htaccess support, good for traditional sites    | Use when: hosting PHP apps, need .htaccess                                |          |
+|   |   Nginx                   | Event-driven, lightweight, excellent reverse proxy              | Use when: microservices, load balancing, Spring Boot proxy                |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | ========== TOMCAT (Java App Server) ==========                                                                                                                           |
+|   |                           |                                                                 |                                                                           |          |
+|   | INSTALL:                  | $ wget https://downloads.apache.org/tomcat/tomcat-9/...tar.gz   | Run WAR files (Spring Boot can also use embedded Tomcat)                  | **       |
+|   |                           | $ tar -xzvf apache-tomcat-9.*.tar.gz                             |                                                                           |          |
+|   |                           | $ cd apache-tomcat-9.*/bin                                       |                                                                           |          |
+|   | START:                    | $ ./startup.sh                                                   | Starts Tomcat on port 8080                                                | **       |
+|   | STOP:                     | $ ./shutdown.sh                                                  | Gracefully stop Tomcat                                                    | **       |
+|   | DEPLOY WAR:               | Copy .war file to webapps/ directory                             | Tomcat auto-deploys WAR files placed in webapps/                          | **       |
+|   | DEFAULT PORT:             | 8080                                                             | Access: http://<IP>:8080                                                  |          |
+|   |                           |                                                                 |                                                                           |          |
+|   | REAL-TIME ARCHITECTURE (Java Full Stack on Linux):                                                                                                                        |
+|   |                           |                                                                 |                                                                           |          |
+|   |   Client (Browser)  --->  Nginx (Port 80, Reverse Proxy)                                                                                                                 |
+|   |                              |                                                                                                                                              |
+|   |                              +--> Spring Boot App (Port 8080, Embedded Tomcat)                                                                                            |
+|   |                              |                                                                                                                                              |
+|   |                              +--> Angular Frontend (Port 4200 or served as static via Nginx)                                                                               |
+|   |                           |                                                                 |                                                                           |          |
+|   | IMPORTANT PORTS TO OPEN IN AWS SECURITY GROUP:                                                                                                                            |
+|   |   22   = SSH (remote login)                                                                                                                                               |
+|   |   80   = HTTP (Apache/Nginx)                                                                                                                                              |
+|   |   443  = HTTPS (SSL/TLS)                                                                                                                                                  |
+|   |   8080 = Tomcat / Spring Boot                                                                                                                                              |
+|   |   8443 = Spring Boot HTTPS                                                                                                                                                 |
+|   |   3306 = MySQL                                                                                                                                                              |
+|   |   5432 = PostgreSQL                                                                                                                                                         |
+|   |   27017= MongoDB                                                                                                                                                            |
+|   |   6379 = Redis                                                                                                                                                               |
+|   |   9092 = Kafka                                                                                                                                                               |
+|   |   9090 = SonarQube                                                                                                                                                           |
 
 ================================================================================
 FILE PERMISSION NUMERIC REFERENCE
@@ -228,9 +400,11 @@ COMMAND CATEGORIES:
   Permissions:         chmod (symbolic & numeric), chown
   Archiving:           zip, unzip, tar
   Networking:          ping, curl, wget, netstat
-  Package Management:  yum, apt, dnf
+  Package Management:  yum, apt, dnf, rpm, dpkg
+  Installation Setup:  Git, Java JDK, Maven, Docker, Jenkins, Node.js, kubectl, Terraform
   Process Management:  ps, top, kill, free
   Service Management:  systemctl (start, stop, restart, enable, status)
+  Webservers:          Apache httpd, Nginx (reverse proxy), Tomcat
   System Info:         uname, cat /etc/os-release, hostname, history
 
 KEY LEARNING TAKEAWAYS:
@@ -242,6 +416,10 @@ KEY LEARNING TAKEAWAYS:
 6. Always use chmod 400 for SSH private key files (.pem).
 7. Hard links share inode (survive original delete), soft links are shortcuts (break on delete).
 8. Package managers vary by distro: yum/dnf (RHEL), apt (Ubuntu).
+9. Always run 'sudo apt update' BEFORE 'sudo apt install' on Ubuntu.
+10. Nginx is preferred over Apache for microservices reverse proxy setups.
+11. For Java Full Stack: Nginx (port 80) -> Spring Boot (port 8080) is the standard architecture.
+12. Always open required ports (22, 80, 443, 8080) in AWS Security Group before testing.
 
 ================================================================================
 END OF LINUX COMMANDS ANALYSIS
