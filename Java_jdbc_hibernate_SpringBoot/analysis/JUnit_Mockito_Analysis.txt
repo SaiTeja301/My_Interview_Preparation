@@ -238,3 +238,379 @@ KEY QUESTIONS:
 ================================================================================
 END OF JUNIT_MOCKITO ANALYSIS
 ================================================================================
+
+================================================================================
+JUNIT + MOCKITO DEEP ANALYSIS UPDATE - 10-Mar-2026
+Source reviewed: Junit and Mockito Notes.txt
+================================================================================
+
+1) WHAT IS ACTUALLY COVERED IN THE SOURCE FILE
+- Unit testing fundamentals, manual vs automation testing.
+- JUnit basics and JUnit 4 style setup (JDK, JUNIT_HOME, CLASSPATH).
+- JUnit framework concepts: fixtures, test suites, test runners, assert APIs.
+- Basic JUnit usage with TestJunit + TestRunner examples.
+- Mockito basics: what mocking is, why Mockito is used, core benefits.
+- Mockito first application idea: mock(), when().thenReturn(), verify().
+- Mockito environment setup and chapter index (verify, spy, ordered verify, BDD, timeout).
+
+2) IMPORTANT SOURCE-QUALITY OBSERVATION
+- Source material is mostly old JUnit 4 era content.
+- Environment examples use outdated versions (for example JDK 1.6, junit4.10/junit4.11, mockito-all-2.0.2-beta).
+- Source gives strong fundamentals but not enough depth for 7+ year Spring Boot interview rounds.
+
+3) GAP ANALYSIS FOR SENIOR INTERVIEW READINESS
+- Missing practical JUnit 5 migration details (Jupiter, extension model, modern annotations in real projects).
+- Missing Mockito strict stubbing, argument captors in business scenarios, doThrow/doAnswer depth.
+- Missing layered Spring Boot test strategy with clear trade-offs (unit vs slice vs full integration).
+- Missing CI test reliability topics: flaky tests, deterministic data setup, test isolation.
+- Missing modern toolchain topics: Maven Surefire/Failsafe split, JaCoCo thresholds, Testcontainers.
+
+4) WHAT TO SAY IN INTERVIEW (BASED ON SOURCE + MODERN EXPECTATION)
+- Start with: "Unit test checks one class/method in isolation with controlled dependencies."
+- Mention JUnit role: test lifecycle, assertions, suites/runners (source-backed basics).
+- Mention Mockito role: isolate dependencies and control collaborator behavior.
+- Then add modern expectation: "In production projects we use JUnit 5 + Mockito extension + slice tests for speed."
+
+5) INTERVIEW CHEAT SHEET (QUICK DECISION TABLE)
+- Pure business logic class -> JUnit unit test (no Spring context).
+- Class with collaborators -> JUnit + Mockito (@Mock, @InjectMocks).
+- Controller contract -> @WebMvcTest.
+- Repository query behavior -> @DataJpaTest.
+- Full wiring, configuration, startup behavior -> @SpringBootTest.
+- External dependency behavior -> mock server / Testcontainers based integration tests.
+
+6) SOURCE-ALIGNED CODE SNIPPETS (HIGH VALUE)
+
+6.1 Minimal JUnit style test (core idea from source)
+```java
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+public class MessageUtilTest {
+    @Test
+    public void shouldPrintMessage() {
+        MessageUtil util = new MessageUtil("Hello World");
+        assertEquals("Hello World", util.printMessage());
+    }
+}
+```
+
+6.2 Mockito behavior + verification (core idea from source)
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class PortfolioTest {
+    @Test
+    public void shouldCalculateMarketValue() {
+        StockService stockService = mock(StockService.class);
+        Stock google = new Stock("1", "Google", 10);
+        when(stockService.getPrice(google)).thenReturn(50.0);
+
+        Portfolio portfolio = new Portfolio();
+        portfolio.setStockService(stockService);
+        portfolio.setStocks(java.util.Arrays.asList(google));
+
+        assertEquals(500.0, portfolio.getMarketValue(), 0.001);
+        verify(stockService, times(1)).getPrice(google);
+    }
+}
+```
+
+6.3 Exception assertion pattern (must know)
+```java
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+
+class PolicyServiceTest {
+    @Test
+    void shouldThrowWhenPolicyMissing() {
+        assertThrows(PolicyNotFoundException.class, () -> service.findById("X-404"));
+    }
+}
+```
+
+7) TOP QUESTIONS YOU SHOULD PREPARE NEXT
+- Difference: mock vs spy vs stub with one real use case each.
+- verify() variants: times, never, atLeast, verifyNoMoreInteractions.
+- JUnit 4 vs JUnit 5 differences and why teams moved to Jupiter.
+- When to choose @WebMvcTest vs @SpringBootTest.
+- How to keep tests fast, deterministic, and independent.
+
+8) ACTION PLAN TO UPGRADE YOUR CURRENT NOTES
+- Keep source fundamentals as base (definitions and flow are good).
+- Add JUnit 5 examples beside each JUnit 4 example.
+- Add one real project scenario per topic (controller, service, repository tests).
+- Add one "anti-pattern and fix" per topic (flaky tests, over-mocking, shared state).
+- Add build pipeline section: test phases, coverage gates, and reporting.
+
+================================================================================
+APPEND CHECKPOINT - 10-Mar-2026
+This section was appended after analyzing Junit and Mockito Notes.txt.
+================================================================================
+
+================================================================================
+INTERVIEW LEVEL CODING QUESTIONS (20) WITH CODE ANSWERS - JUNIT + MOCKITO
+================================================================================
+
+Q1) Write a unit test for service method that fetches entity by id.
+Answer:
+```java
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
+    @Mock UserRepository repo;
+    @InjectMocks UserService service;
+
+    @Test
+    void shouldGetUserById() {
+        when(repo.findById(1L)).thenReturn(Optional.of(new User(1L, "Teja")));
+        User result = service.getById(1L);
+        assertEquals("Teja", result.getName());
+        verify(repo).findById(1L);
+    }
+}
+```
+
+Q2) Test exception path when entity is not found.
+Answer:
+```java
+@Test
+void shouldThrowWhenUserNotFound() {
+    when(repo.findById(99L)).thenReturn(Optional.empty());
+    UserNotFoundException ex = assertThrows(UserNotFoundException.class,
+            () -> service.getById(99L));
+    assertTrue(ex.getMessage().contains("99"));
+}
+```
+
+Q3) Write parameterized test for discount calculator.
+Answer:
+```java
+@ParameterizedTest
+@CsvSource({
+    "1000,10,900",
+    "500,20,400",
+    "200,0,200"
+})
+void shouldCalculateDiscount(double price, int percent, double expected) {
+    assertEquals(expected, DiscountCalculator.finalPrice(price, percent), 0.001);
+}
+```
+
+Q4) Group related validation tests with @Nested.
+Answer:
+```java
+class SignupValidatorTest {
+    SignupValidator validator = new SignupValidator();
+
+    @Nested
+    class EmailValidation {
+        @Test void validEmail() { assertTrue(validator.isValidEmail("a@b.com")); }
+        @Test void invalidEmail() { assertFalse(validator.isValidEmail("ab.com")); }
+    }
+}
+```
+
+Q5) Verify dependency method called exact number of times.
+Answer:
+```java
+@Test
+void shouldCallRepositoryTwice() {
+    service.refreshCache();
+    service.refreshCache();
+    verify(repo, times(2)).loadAll();
+}
+```
+
+Q6) Capture saved argument and assert values.
+Answer:
+```java
+@Test
+void shouldSaveUserWithActiveStatus() {
+    service.create("Teja");
+    ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+    verify(repo).save(captor.capture());
+    assertEquals("ACTIVE", captor.getValue().getStatus());
+}
+```
+
+Q7) Verify call order across multiple mocks.
+Answer:
+```java
+@Test
+void shouldCallAuditAfterSave() {
+    service.create("Teja");
+    InOrder inOrder = inOrder(repo, auditService);
+    inOrder.verify(repo).save(any(User.class));
+    inOrder.verify(auditService).log("USER_CREATED");
+}
+```
+
+Q8) Ensure no interaction with external client in validation failure.
+Answer:
+```java
+@Test
+void shouldNotCallGatewayWhenInvalid() {
+    assertThrows(IllegalArgumentException.class, () -> service.pay(null));
+    verifyNoInteractions(paymentGateway);
+}
+```
+
+Q9) Use spy to stub one method and execute others normally.
+Answer:
+```java
+@Test
+void shouldUseSpyForPartialMock() {
+    ArrayList<String> list = spy(new ArrayList<>());
+    doReturn(100).when(list).size();
+    list.add("A");
+    assertEquals("A", list.get(0)); // real method
+    assertEquals(100, list.size()); // stubbed method
+}
+```
+
+Q10) Mock void method to throw exception.
+Answer:
+```java
+@Test
+void shouldHandleEmailFailure() {
+    doThrow(new RuntimeException("SMTP down")).when(emailService).send(anyString());
+    assertThrows(NotificationException.class, () -> service.notifyUser("u1"));
+}
+```
+
+Q11) Return dynamic value using doAnswer.
+Answer:
+```java
+@Test
+void shouldGenerateTokenDynamically() {
+    when(tokenClient.issue(anyString())).thenAnswer(inv -> "TKN-" + inv.getArgument(0));
+    assertEquals("TKN-user1", service.createToken("user1"));
+}
+```
+
+Q12) Test with timeout.
+Answer:
+```java
+@Test
+void shouldCompleteWithinTwoSeconds() {
+    assertTimeout(Duration.ofSeconds(2), () -> {
+        service.heavyComputation();
+    });
+}
+```
+
+Q13) Test asynchronous CompletableFuture method.
+Answer:
+```java
+@Test
+void shouldProcessAsyncRequest() throws Exception {
+    CompletableFuture<String> future = service.processAsync("input");
+    assertEquals("OK-input", future.get(3, TimeUnit.SECONDS));
+}
+```
+
+Q14) Controller slice test success response using @WebMvcTest.
+Answer:
+```java
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+    @Autowired MockMvc mvc;
+    @MockBean UserService service;
+
+    @Test
+    void shouldReturnUser() throws Exception {
+        when(service.getById(1L)).thenReturn(new User(1L, "Teja"));
+        mvc.perform(get("/users/1"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.name").value("Teja"));
+    }
+}
+```
+
+Q15) Controller slice test 404 scenario.
+Answer:
+```java
+@Test
+void shouldReturnNotFound() throws Exception {
+    when(service.getById(99L)).thenThrow(new UserNotFoundException("not found"));
+    mvc.perform(get("/users/99"))
+       .andExpect(status().isNotFound());
+}
+```
+
+Q16) Repository query test using @DataJpaTest.
+Answer:
+```java
+@DataJpaTest
+class UserRepositoryTest {
+    @Autowired UserRepository repo;
+
+    @Test
+    void shouldFindByEmail() {
+        repo.save(new User(null, "Teja", "teja@mail.com"));
+        Optional<User> found = repo.findByEmail("teja@mail.com");
+        assertTrue(found.isPresent());
+    }
+}
+```
+
+Q17) Full integration test using @SpringBootTest.
+Answer:
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+class UserIntegrationTest {
+    @Autowired MockMvc mvc;
+
+    @Test
+    void healthEndpointShouldReturnUp() throws Exception {
+        mvc.perform(get("/actuator/health"))
+           .andExpect(status().isOk())
+           .andExpect(jsonPath("$.status").value("UP"));
+    }
+}
+```
+
+Q18) Verify method argument with argThat custom matcher.
+Answer:
+```java
+@Test
+void shouldSendOnlyHighPriorityAlerts() {
+    service.alert("PAYMENT_FAILED");
+    verify(alertClient).send(argThat(msg -> msg.contains("HIGH")));
+}
+```
+
+Q19) Write BDD-style Mockito test.
+Answer:
+```java
+@Test
+void shouldUseBddStyle() {
+    given(repo.findById(1L)).willReturn(Optional.of(new User(1L, "Teja")));
+    User user = service.getById(1L);
+    then(repo).should(times(1)).findById(1L);
+    assertEquals("Teja", user.getName());
+}
+```
+
+Q20) Test retry logic: first call fails, second succeeds.
+Answer:
+```java
+@Test
+void shouldRetryOnceAndSucceed() {
+    when(client.fetch())
+        .thenThrow(new RuntimeException("temporary"))
+        .thenReturn("SUCCESS");
+
+    String result = service.fetchWithRetry();
+    assertEquals("SUCCESS", result);
+    verify(client, times(2)).fetch();
+}
+```
+
+================================================================================
+PRACTICE CHECKPOINT - 10-Mar-2026
+Use these 20 questions for mock interview coding rounds.
+================================================================================
