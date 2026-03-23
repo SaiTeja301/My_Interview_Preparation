@@ -347,6 +347,12 @@ Answer:
   s1 == s3  → false (s3 is heap object)
   s1.equals(s3) → true (content same)
 
+  s1 = s3.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
+  s3 = s1.intern(); -> s3 will point to the same reference as s2 (s3 == s2) -> true
+  s1 = s2.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
+  s2 = s1.intern(); -> s2 will point to the same reference as s2 (s2 == s2) -> true
+  
+
   String.intern():
   - Manually adds string to pool
   - s3.intern() → if "Hello" exists in pool, returns pool ref
