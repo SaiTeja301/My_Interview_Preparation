@@ -1,4 +1,4 @@
-﻿================================================================================
+================================================================================
 JAVA CORE - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 For: Akula Venkata Sai Teja | Target: 7+ Years Experience Level
 ================================================================================
@@ -38,6 +38,7 @@ Missing/Weak Areas:
   ❌ AtomicInteger / AtomicReference internals
   ❌ String Pool internals (String.intern())
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SECTION 2: JVM ARCHITECTURE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -328,6 +329,85 @@ Answer:
   - ConcurrentHashMap for thread-safety
   - Collections.synchronizedMap() (less efficient)
 
+  [CODE EXAMPLE - ConcurrentHashMap vs HashMap vs synchronizedMap]
+
+  import java.util.*;
+  import java.util.concurrent.*;
+
+  // ── 1. HashMap (NOT thread-safe) ──────────────────────────────────
+  Map<String, Integer> hashMap = new HashMap<>();
+  // Risk: if two threads call put() during resize → infinite loop / data loss
+
+  // ── 2. Collections.synchronizedMap (thread-safe, but coarse lock) ─
+  Map<String, Integer> syncMap = Collections.synchronizedMap(new HashMap<>());
+  // Entire map is locked on every read AND write → low concurrency
+
+  // ── 3. ConcurrentHashMap (Best choice for concurrent access) ───────
+  ConcurrentHashMap<String, Integer> concurrentMap = new ConcurrentHashMap<>();
+
+  // Basic operations (same API as HashMap)
+  concurrentMap.put("Alice", 1);
+  concurrentMap.put("Bob",   2);
+  concurrentMap.put("Carol", 3);
+
+  // Atomic "putIfAbsent" — adds only if key is not already present
+  concurrentMap.putIfAbsent("Alice", 99);           // Ignored; Alice already exists
+  concurrentMap.putIfAbsent("Dave",  4);            // Dave=4 added
+
+  // Atomic "computeIfAbsent" — compute value only if key is absent
+  concurrentMap.computeIfAbsent("Eve", k -> k.length()); // Eve=3 (length of "Eve")
+
+  // Atomic "compute" — update value based on existing value
+  concurrentMap.compute("Alice", (k, v) -> (v == null) ? 1 : v + 10); // Alice=11
+
+  // Atomic "merge" — merges old and new value using the given function
+  concurrentMap.merge("Bob", 5, Integer::sum);      // Bob = 2 + 5 = 7
+
+  System.out.println(concurrentMap);
+  // OUTPUT (order may vary): {Alice=11, Bob=7, Carol=3, Dave=4, Eve=3}
+
+  // ── Multi-threaded Counter Demo ────────────────────────────────────
+  ConcurrentHashMap<String, Integer> wordCount = new ConcurrentHashMap<>();
+
+  Runnable task = () -> {
+      String[] words = {"java", "spring", "java", "kafka", "spring", "java"};
+      for (String word : words) {
+          // Thread-safe increment — no explicit synchronization needed
+          wordCount.merge(word, 1, Integer::sum);
+      }
+  };
+
+  // Launch 3 threads processing the same word list
+  ExecutorService executor = Executors.newFixedThreadPool(3);
+  executor.submit(task);
+  executor.submit(task);
+  executor.submit(task);
+  executor.shutdown();
+  executor.awaitTermination(5, TimeUnit.SECONDS);
+
+  System.out.println(wordCount);
+  // OUTPUT: {java=9, spring=6, kafka=3}  (3 threads × 3/2/1 occurrences)
+
+  // ── Key Differences Table ──────────────────────────────────────────
+  // +------------------------+------------+--------------+--------------------+
+  // | Feature                | HashMap    | synchronizedMap| ConcurrentHashMap|
+  // +------------------------+------------+--------------+--------------------+
+  // | Thread-safe            | No         | Yes          | Yes                |
+  // | Lock granularity       | N/A        | Whole map    | Bucket-level (CAS) |
+  // | Null key/value         | Yes        | Yes          | NO                 |
+  // | Performance (multi-th) | Unsafe     | Low          | High               |
+  // | Atomic ops (merge etc) | No         | No           | Yes                |
+  // | Iteration safety       | Fail-fast  | Fail-fast    | Weakly consistent  |
+  // +------------------------+------------+--------------+--------------------+
+
+  NOTE:
+  - ConcurrentHashMap uses CAS (Compare-And-Swap) + bucket-level locking (Java 8+)
+    instead of locking the entire map → allows many threads to read/write in parallel.
+  - It does NOT allow null keys or null values (throws NullPointerException).
+  - For interview: "Use ConcurrentHashMap when multiple threads read/write the map;
+    use synchronizedMap only for legacy code compatibility."
+
+
 ─────────────────────────────────────────────────────────────────────
 *** Q7. What is String Pool? Explain String immutability.
 ─────────────────────────────────────────────────────────────────────
@@ -546,7 +626,6 @@ Answer:
   - As collection element (use empty collection instead)
   - As field type in a class (serialization issues)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ROUND 4 – SCENARIO-BASED + DEBUGGING
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -844,6 +923,8 @@ SECTION 6: MOST IMPORTANT QUESTIONS QUICK REFERENCE
 *** 10. CompletableFuture and async programming
 *** 11. ConcurrentHashMap vs HashMap vs Hashtable
 *** 12. Memory leak detection and debugging
+
+================================================================================
 
 ================================================================================
 END OF JAVA CORE ANALYSIS
@@ -1186,6 +1267,272 @@ SECTION 6: GENERICS
       dest.addAll(src);
   }
 
+--- 6.4 Generic Class: ApiResponse<T> ---
+  Real-world use case: REST APIs return different data types but share the same
+  response structure (status, message, data). Generics let you model this cleanly.
+
+  [CODE EXAMPLE]
+  package TestPack;
+
+  //Generic class
+  class ApiResponse<T> {
+
+      private T data;
+
+      // Constructor
+      public ApiResponse(T data) {
+          this.data = data;
+      }
+
+      // Getter
+      public T getData() {
+          return data;
+      }
+
+      // Setter
+      public void setData(T data) {
+          this.data = data;
+      }
+
+      // Display method
+      public void printDataType() {
+          System.out.println("Data: " + data);
+          System.out.println("Type: " + data.getClass().getSimpleName());
+      }
+  }
+
+  public class TestT1 {
+      public static void main(String[] args) {
+
+          // Integer type response
+          ApiResponse<Integer> intResponse = new ApiResponse<>(101);
+          intResponse.printDataType();
+
+          System.out.println("------------------");
+
+          // String type response
+          ApiResponse<String> stringResponse = new ApiResponse<>("Success");
+          stringResponse.printDataType();
+      }
+  }
+
+  OUTPUT:
+  Data: 101
+  Type: Integer
+  ------------------
+  Data: Success
+  Type: String
+
+  WHY GENERICS HERE?
+  - Without generics, getData() would return Object, requiring an unsafe cast.
+  - With generics, the compiler enforces the type — no ClassCastException at runtime.
+  - One ApiResponse class handles Integer, String, List, custom DTO — no duplication.
+
+--- 6.5 Real-Time Generic Use Cases ---
+
+  [USE CASE 1: Generic Repository Pattern]
+  // In Spring Data / custom DAO layers, a base repository uses generics to
+  // avoid writing separate DAO classes for each entity.
+
+  interface GenericRepository<T, ID> {
+      void save(T entity);
+      Optional<T> findById(ID id);
+      List<T> findAll();
+      void delete(ID id);
+  }
+
+  class UserRepository implements GenericRepository<User, Long> {
+      // Only User-specific logic here; CRUD logic comes from the generic interface
+      @Override public void save(User u) { /* persist to DB */ }
+      @Override public Optional<User> findById(Long id) { return Optional.empty(); }
+      @Override public List<User> findAll() { return List.of(); }
+      @Override public void delete(Long id) { /* remove from DB */ }
+  }
+
+  // Same interface works for Order, Product, Payment — zero code duplication.
+  class OrderRepository implements GenericRepository<Order, Integer> { /* ... */ }
+
+  ----------------------------------------------------------------
+
+  [USE CASE 2: Generic Result Wrapper (Success / Failure)]
+  // Used in service layers to avoid throwing exceptions for expected failures.
+  // Common in functional-style Spring Boot services.
+
+  class Result<T> {
+      private final T value;
+      private final String errorMessage;
+      private final boolean success;
+
+      private Result(T value, String error, boolean success) {
+          this.value = value;
+          this.errorMessage = error;
+          this.success = success;
+      }
+
+      public static <T> Result<T> success(T value) {
+          return new Result<>(value, null, true);
+      }
+
+      public static <T> Result<T> failure(String error) {
+          return new Result<>(null, error, false);
+      }
+
+      public boolean isSuccess()     { return success; }
+      public T getValue()            { return value; }
+      public String getError()       { return errorMessage; }
+  }
+
+  // Usage in a service method:
+  public Result<User> findUser(Long id) {
+      User u = userRepo.findById(id).orElse(null);
+      if (u == null) return Result.failure("User not found: " + id);
+      return Result.success(u);
+  }
+
+  // Caller:
+  Result<User> result = userService.findUser(42L);
+  if (result.isSuccess()) {
+      System.out.println("Found: " + result.getValue().getName());
+  } else {
+      System.out.println("Error: " + result.getError());
+  }
+
+  ----------------------------------------------------------------
+
+  [USE CASE 3: Generic In-Memory Cache]
+  // A type-safe cache that can hold any object type.
+  // Used in caching layers (before Redis), config holders, session stores.
+
+  class GenericCache<K, V> {
+      private final Map<K, V> store = new ConcurrentHashMap<>();
+      private final int maxSize;
+
+      public GenericCache(int maxSize) { this.maxSize = maxSize; }
+
+      public void put(K key, V value) {
+          if (store.size() >= maxSize) {
+              // Evict first entry (simple LRU replacement)
+              store.remove(store.keySet().iterator().next());
+          }
+          store.put(key, value);
+      }
+
+      public Optional<V> get(K key) { return Optional.ofNullable(store.get(key)); }
+
+      public void evict(K key) { store.remove(key); }
+  }
+
+  // Usage:
+  GenericCache<String, UserDTO>    userCache    = new GenericCache<>(1000);
+  GenericCache<Long,   ProductDTO> productCache = new GenericCache<>(500);
+
+  userCache.put("alice@mail.com", new UserDTO("Alice", 30));
+  userCache.get("alice@mail.com").ifPresent(u -> System.out.println(u.getName()));
+
+  ----------------------------------------------------------------
+
+  [USE CASE 4: Generic Event Bus / Publisher-Subscriber]
+  // Microservices and Spring apps use generic event buses to decouple
+  // producers from consumers. Each event type is type-safe.
+
+  interface EventListener<E> {
+      void onEvent(E event);
+  }
+
+  class EventBus<E> {
+      private final List<EventListener<E>> listeners = new ArrayList<>();
+
+      public void subscribe(EventListener<E> listener) {
+          listeners.add(listener);
+      }
+
+      public void publish(E event) {
+          listeners.forEach(l -> l.onEvent(event));
+      }
+  }
+
+  // Domain events
+  class OrderPlacedEvent {
+      String orderId;
+      OrderPlacedEvent(String id) { this.orderId = id; }
+  }
+
+  // Usage:
+  EventBus<OrderPlacedEvent> orderBus = new EventBus<>();
+  orderBus.subscribe(e -> System.out.println("Email: Order " + e.orderId + " placed!"));
+  orderBus.subscribe(e -> System.out.println("SMS: Order " + e.orderId + " confirmed!"));
+  orderBus.publish(new OrderPlacedEvent("ORD-001"));
+
+  // OUTPUT:
+  // Email: Order ORD-001 placed!
+  // SMS: Order ORD-001 confirmed!
+
+  ----------------------------------------------------------------
+
+  [USE CASE 5: Generic Pair / Triple (used in batch processing & APIs)]
+  // When a method needs to return two or three related values, a generic
+  // Pair avoids creating extra wrapper classes each time.
+
+  class Pair<A, B> {
+      public final A first;
+      public final B second;
+      public Pair(A first, B second) { this.first = first; this.second = second; }
+      @Override public String toString() { return "(" + first + ", " + second + ")"; }
+  }
+
+  // Service returning paginated result:
+  public Pair<List<Order>, Long> getOrders(int page, int size) {
+      List<Order> orders = orderRepo.findPage(page, size);
+      long total         = orderRepo.countAll();
+      return new Pair<>(orders, total);
+  }
+
+  // Caller:
+  Pair<List<Order>, Long> result = orderService.getOrders(0, 10);
+  System.out.println("Orders: " + result.first.size() + " / Total: " + result.second);
+
+  ----------------------------------------------------------------
+
+  [USE CASE 6: Generic Typed Configuration Holder]
+  // Spring applications often store configuration values of different types
+  // (String, Integer, Boolean). A generic holder keeps them type-safe.
+
+  class ConfigProperty<T> {
+      private final String key;
+      private final T defaultValue;
+      private T value;
+
+      public ConfigProperty(String key, T defaultValue) {
+          this.key = key;
+          this.defaultValue = defaultValue;
+      }
+
+      public void setValue(T value)  { this.value = value; }
+      public T    getValue()         { return value != null ? value : defaultValue; }
+      public String getKey()         { return key; }
+  }
+
+  // Usage:
+  ConfigProperty<Integer> timeoutConfig  = new ConfigProperty<>("db.timeout", 30);
+  ConfigProperty<Boolean> featureToggle  = new ConfigProperty<>("feature.newUI", false);
+  ConfigProperty<String>  appNameConfig  = new ConfigProperty<>("app.name", "MyApp");
+
+  timeoutConfig.setValue(60);
+  System.out.println(timeoutConfig.getKey() + " = " + timeoutConfig.getValue()); // db.timeout = 60
+  System.out.println(featureToggle.getValue()); // false (default)
+  System.out.println(appNameConfig.getValue()); // MyApp (default)
+
+  SUMMARY TABLE - Generic Real-Time Use Cases:
+  +----+---------------------------+----------------------------------+
+  | #  | Use Case                  | Benefit                          |
+  +----+---------------------------+----------------------------------+
+  | 1  | Generic Repository        | One CRUD interface for all DBOs  |
+  | 2  | Result<T> Wrapper         | Type-safe success/failure return |
+  | 3  | Generic Cache<K,V>        | Reusable cache for any types     |
+  | 4  | EventBus<E>               | Decoupled typed event publishing |
+  | 5  | Pair<A,B>                 | Multi-return without extra class |
+  | 6  | ConfigProperty<T>         | Type-safe configuration holding  |
+  +----+---------------------------+----------------------------------+
 ================================================================================
 SECTION 7: MULTITHREADING & CONCURRENCY
 ================================================================================
@@ -1624,6 +1971,7 @@ SECTION 11: ADVANCED JAVA CONCEPTS
   Employee e = new Employee(101, "John", 75000.0);
   System.out.println(e.name()); // Getter (no "get" prefix in records)
   System.out.println(e);        // Employee[id=101, name=John, salary=75000.0]
+
 
 ================================================================================
 SECTION 12: INTERVIEW QUICK REFERENCE (TOP 50 Q&A)

@@ -1492,6 +1492,15 @@ Solution:
       return result;
   }
 
+  //version 3 : find missing numbers in the list using flatMap 
+  //Input: [1, 2, 3, 6, 7, 9, 11, 12, 13, 14, 17, 18, 19]
+  //Output: [4, 5, 8, 10, 15, 16]
+  	public static List<Integer> missingmultiNumbers(List<Integer> list) {
+		return IntStream.range(0, list.size() - 1)
+				.flatMap(num -> IntStream.range(list.get(num) + 1, list.get(num + 1)))
+				.boxed()
+				.collect(Collectors.toList());
+
 Explanation:
   IntStream.range() iterates indices (not elements).
   mapToObj() converts primitive int index to the actual Integer from the list.
@@ -1954,6 +1963,32 @@ Explanation:
   IntStream.range + mapToObj bridges primitive indices to Transaction objects.
   flatMap() combines per-group duplicate lists into one flat result list.
 
+------------------------------------------------------------------------------
+Problem 26 (Expert): PartitioningBy of Employees based on Salary
+------------------------------------------------------------------------------
+
+Map<Boolean,List<Employee>> SalarypartMap = employees.stream()
+	    		                                        .collect(Collectors
+	    		                                        		.partitioningBy(emp -> emp.getSalary()>=90000));
+	
+	     System.out.println("Employees with salary >= 90000:");
+	     SalarypartMap.get(true)
+	                  .forEach(emp -> System.out.println("Employee name : "+emp.getEmployeeName()+ 
+	                		  " --- "+" Employee Salary "+emp.getSalary()));
+	     
+	     System.out.println("Employees with salary <= 90000:");
+	     SalarypartMap.get(false)
+	                  .forEach(emp -> System.out.println("Employee name : "+emp.getEmployeeName()+ 
+	                		  " --- "+" Employee Salary "+emp.getSalary()));
+
+So for Example  the output is:
+Employees with salary >= 90000:
+Employee name : Teja  ---  Employee Salary 100000.0
+Employee name : Sai Teja  ---  Employee Salary 120000.0
+Employees with salary <= 90000:
+Employee name : Sai  ---  Employee Salary 80000.0
+Employee name : Teja  ---  Employee Salary 70000.0
+                      
 ================================================================================
 SECTION D -- ADVANCED (flatMap / mapToObj / mapToInt / mapToDouble /
              parallelStream / Stream vs Parallel Performance)
