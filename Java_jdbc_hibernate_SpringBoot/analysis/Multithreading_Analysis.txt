@@ -48,7 +48,10 @@ public void transfer(Account from, Account to, double amount) {
     try {
         from.debit(amount);
         to.credit(amount);
-    } finally {
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+    finally {
         lock.unlock(); // MUST unlock in finally!
     }
 }

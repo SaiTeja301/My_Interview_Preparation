@@ -1,0 +1,537 @@
+Cloud Computing with AWS ==> Devops v3 course -> Telusko)
+=========================================================
+Instructor : Hyder Abbas
+
+Day 0 ==> 28th Feb (Sat)
+========================== 
+
+AWS Services :
+
+In AWS we have 200+ services 
+
+-> Why Cloud and What is Cloud Computing
+-> Cloud Providers
+-> AWS Introduction and Services Overview
+-> Regions & AZ's
+-> EC2 ( Elastic Compute Cloud) -> To Create Virtual Machines ( Hourly )
+-> EBS (Elastic Block Store + volumes + Snapshots) --> Hard Disc, SSD
+-> Load Balancer : To distribute Load
+-> Autoscaling : Adjusting the capacity by based on the demand
+-> S3 : Unlimited Storage
+-> RDS : Relational Database service
+-> EFS : Shared File system ( Elastic file system )
+-> IAM : Identity & Access Management
+-> VPC : Virtual Private Cloud ( Networking )
+-> Cloud Formation : Infrastructure as a code ---> Terraform
+-> AWS CLI : AWS Command Line Interface
+-> Elastic Beanstalk : Platform as a service
+-> AWS Lambdas : Serverless computing
+-> EKS : K8S cluster ( Elastic Kubernetes Service )
+-> Route 53: Domain mapping
+-> Cloud Watch 
+-> SNS : Simple notification Service
+-> Billing Overview
+
+Infrastructure 
+---------------
+--> The resources required to run our project / company ( Machines , networks, storage, database, monitoring ......)
+
+--> We can maintain infrastructure in 2 ways 
+1) On-prem infrastructure
+2) Cloud Infrastructure
+
+On-prem infrastructure
+======================
+
+--> On-Prem infra --> Purchasing and maintaining all resources by our own
+--> Challenges and limitations of On-prem infrastructure
+    -> Lot of Cost
+    -> Scalability
+    -> Security Issue
+    -> Availability
+    -> Network issue
+
+--> To Overcome the problems of on prem infra most of the companies prefer Cloud Infrastructure
+
+
+Cloud Computing 
+===================
+
+--> Delivering IT resources over internet on-demand basis with "Pay AS You Go model" is referred as Cloud Computing.
+
+   Advantages 
+----------------
+-> Pay as you go
+-> Security
+-> Backup 
+-> Scalability
+-> Availability
+--
+--
+
+Cloud Providers
+===============
+AWS --> Amazon
+Azure --> Microsoft
+GCP --> Google
+Oracle
+Ali Baba
+Salesforce
+--
+--
+--
+
+Cloud Service Models
+====================
+1) IAAS : Infrastructure as a service
+
+2) PAAS : Platform as a service
+
+3) SAAS : Software as a service
+
+Cloud Service Models
+====================
+1) IAAS : Infrastructure as a service
+
+2) PAAS : Platform as a service
+
+3) SAAS : Software as a service
+
+IAAS : Infrastructure as a service
+----------------------------------
+--> Provider will provide infrastructure 
+    ex: Machines(servers), storage, network
+--> We need to take care of platform and application
+
+Your Responsibility: Operating systems, applications, data, runtime, middleware.
+
+PAAS : Platform as a service
+----------------------------
+--> Provider will provider ready made platform to run our app ( Provider will take care of infrastructure and platform )
+ex: AWS Elastic beanstalk
+
+The provider handles the underlying infrastructure and the software environment (operating systems, middleware, databases, web servers). You just focus on your code.
+
+Your Responsibility: Your application code, data, and configuration.
+
+
+SAAS : Software as a service
+-----------------------------
+--> Application + Infrastructure + Platform all will be maintained by provider
+--> Provider will give their application to run our business
+
+ex: Zoom , Dropbox, Google Drive ........
+
+
+AWS Cloud --> Amazon Webservices
+=========
+
+AWS Providing Cloud Services from 2006 
+
+AWS Works on "Pay As You Go" model
+
+The AWS Cloud spans 123 Availability Zones within 39 Geographic Regions, with announced plans for 7 more Availability Zones and 2 more AWS Regions in the Kingdom of Saudi Arabia, and Chile.
+
+AWS global infrastructure is the most secure, reliable, and extensive cloud, providing diverse infrastructure solutions for running your applications anywhere.
+
+01 March (Sun)
+EC2 (Elastic Compute Cloud)
+===========================
+
+-> Elastic Compute Cloud -> Most demanded service in AWS
+
+-> Used to Create Virtual Machines/Servers/VM in AWS Cloud
+
+==> EC2 Instance ==> Server / VM / Computer (laptop)
+
+==> It's a paid service --> Hourly Billing
+
+    11:15 AM --> 11:30 AM ==> 15 mins --> Billed for 1 hour
+    09:15 AM --> 09:20 AM ==> 5 mins --> Billed for 1 hour
+    09:15 AM --> 10:10 AM ==> 55 mins --> Billed for 1 hour
+
+==> EC2 Instance minimum billing period is 1 hour
+
+-> AWS provides t2.micro/t3.micro (6 months) of free ec2 instance to encourage learners and free tier account will get free credits as and when they practice any of the asked services by AWS
+
+-> EC2 VM also have storage with EBS ( Ec2 Linux VM -> 8GB ( default ) , EC2 Windows VM -> 30 GB ( default ) EBS max -> 16 TB )
+
+-> We use AMI(Amazon Machine Image) which represents Configuration required for machine 
+
+  Windows AMI
+  Ubuntu AMI
+  RedHat AMI
+  Amazon Linux AMI
+
+-> To Secure access to EC2 VM we use Key-Pair (.pem) 
+    
+   -> One Key-Pair ( .pem ) can be used for multiple ec2-instances
+
+-> We use Security Group to allow incoming and outgoing traffic ( In bound rules and Out Bound rules )
+   
+   -> One Security Group ( SG ) can be used for multiple instances
+
+EC2 VM creation
+===============
+
+--> Create Key Pair( pem file ) 
+   public key   ( aws will keep it )
+   private key ( we get this )
+
+--> Create  a Security Group and update inbound rules based on requirement
+    
+    HTTP :22
+    HTTPS : 443
+    SSH : 22
+	..
+	..
+
+Note : We can create new key pair and Security Group at the time of instance creation also.
+
+--> Create EC2 Instance / Server / VM
+
+    -> Give a name VM
+    -> SELECT AMI
+    -> Instance Type
+    -> Select Key-pair ( choose existing one or create a new )
+    -> Select Security Group ( choose existing one or create a new )
+    -> Select EBS storage ( keep it default )
+    -> Launch Instance 
+
+Types of IP's in AWS 
+======================
+
+1) private ip 
+2) public ip 
+3) elastic ip
+
+-> private IP -> Fixed Ip -> It is used for internal Communication (within VPC).
+
+-> public IP -> Dynamic IP -> It is used to connect with EC2 VM from outside. When we restart our VM the public IP gets changed.
+
+Dynamic Public IP --> 3.109.213.248    13.235.79.233
+
+Fixed private IP --> 172.31.7.164   172.31.7.164
+
+-> If we want fixed public IP -> Elastic IP -> ( Elastic IP s are paid ) --> Charges would be applied and bills would be generated
+
+Elastic IP Practical's
+=======================
+65.0.78.209  65.0.78.209  --> Same IP irrespective of how many times we restart VM
+
+--> Allocate Elastic IP ( Getting IP from AWS )  ( Elastic IP Section under EC2)
+
+--> Action --> Associate Elastic IP with EC2 VM/Instance
+
+--> Restart VM and Check public IP ( You will notice its same )
+
+--> De-Associated Elastic IP
+
+--> Release Elastic IP to AWS
+
+
+7th March(Saturday)
+====================
+EBS --> Elastic Block Store
+===========================
+
+--> It is a block level storage device ( HDD / SSD )
+
+--> EBS will be attached with EC2 Instance
+
+--> EBS provides both Primary and Secondary storage for EC2 Instances
+
+--> EBS has 2 types of Volumes ( Storage )
+  
+    -> Root Volume
+    -> Additional Volume
+
+=> Root Volume is a default storage which comes whenever we launch a EC2 instance/machine
+
+-> Root Volume is mandatory to have and if we remove root volume from EC2 instance then we cannot start or use the instance/VM
+
+-> Additional Volumes are optional ( we can add or remove any time )
+
+-> For Linux VM, we get around 8 GB as default volume size ( root volume )
+
+-> For windows VM, we get around 30 GB as default volume size ( root volume )
+
+-> EBS Volumes can have upto 16 TB
+
+-> One EC2 VM can have multiple EBS Volumes
+
+-> One EBS Volume can be attached to one EC2 VM at a time not multiple
+
+-> EBS Volumes are specific to Availability Zone
+     
+                 Mumbai ( ap-south-1)
+                 ap-south-1a
+                 ap-south-1b
+                 ap-south-1c
+-> If our EC2 Instance is in ap-south-1a then our EBS volume must also be there in ap-south-1a zone 
+
+
+EBS Volume Types
+==================
+1) General Purpose ( Min: 1 GiB, Max: 16384 GiB )
+
+2) Provisioned IOPS ( Min: 4 GiB, Max: 16384 GiB )
+
+3) COLD HDD ( Min: 125 GiB, Max: 16384 GiB )
+
+4) Throughput optimized ( Min: 125 GiB, Max: 16384 GiB )
+
+5) Magnetic ( Min: 1 GiB, Max: 1024 GiB )
+
+Practical
+===========
+
+
+$ lsblk
+
+$ sudo mkfs -t ext4 /dev/nvme1n1
+
+$ sudo mkdir /alien
+
+$ sudo mount /dev/nvme1n1 /alien
+
+$ cd /alien
+
+$ sudo touch terraform.txt
+$ sudo touch aws.txt
+
+--> Detach additional volume from EC2 Instance(VM)
+
+--> Created a new EC2 VM 
+
+--> Attached the same Additional volume into the new VM created
+
+--> Check the files available
+ 
+    $ lsblk
+    $ mkdir /alien
+    $ sudo mount /dev/nvme1n1 /alien
+    $ cd telusko
+    $ ls -l
+
+
+Note : Once Done with Practice, Detach the additional volumes and delete the volume as shown in the live class.
+
+Snapshots
+============
+
+--> Snapshots are used for volumes backup
+
+--> Snapshots are regional specific ( Volumes are zone specific )
+
+--> From volume we can create snapshot and from snapshot we can create a volume
+  
+
+	Volume --> Snapshot --> Volume
+
+--> Snapshots cannot be attached to any VM ( EC2 instance ) directly  however Volumes could be attached to a VM ( EC2 Instance )
+
+Copy the data from 1a zone VM to 1b zone VM
+=============================================
+--> Create a Snapshot from 1a zone vm volume
+
+--> From that snapshot create a volume in 1b zone
+
+--> Attach the created 1b volume to 1b VM(EC2 instance)
+
+
+
+Website/WebApp
+==============
+
+--> Collection of web pages ( html pages )
+
+--> static websites <--> dynamic website
+
+--> static website will give same response for every user ( user page for all users )
+
+--> dynamic website will give response specific to user or diff response for diff users
+   ex: gmail, telusko, facebook ........
+
+--> To Host Any website or webapp we must have webservers 
+
+---------------------------------------------------
+Host a static website using httpd server
+-------------------------------------------------
+
+--> Webserver is a tool/software which is used to host/run websites
+
+--> We can use 'httpd' as a webserver in our Linux VM
+
+
+$ sudo yum install httpd --> Install httpd webserver
+ 
+$ sudo service httpd start --> start httpd webserver
+
+
+--> httpd webserver runs on 80 port number
+--> To access our website we need to enable 80 port number in security group ( watch live class recording to see how to do it )
+
+--> Navigate to web content directory
+
+$ cd /var/www/html
+
+$ pwd
+/var/www/html
+
+--> Create index.html file within this web directory
+$ sudo vi index.html  (Use ai tool and generate static website content of your own choice)
+<h1> Telusko devOps Learning </h1>
+
+--> We can access our website using Linux vm public ip
+
+user-data in EC2 VM
+====================
+
+--> It is used to execute shell script/commands while launching EC2 Instance ( VM )
+
+--> User data will execute only once
+
+--> Create an EC2 VM with following user data 
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 1 </h1></html>" > index.html
+service httpd start
+
+--> After the VM is launched access the website using public ip in the web browser
+
+also follow live class recordings for the demo
+
+==============================================
+IAM (Identity and Access Management)
+==============================================
+Two ways access the aws cloud account
+1-> Root Account --> Powerful account with all the access and no restriction
+2 -> IAM account 
+
+--> It is used to manage users, groups, policies and roles
+
+--> IAM is a free service 
+
+--> Root account owner can access everything in AWS without any restrictions 
+    (It is highly recommended to enable high security by enabling Multifactor Authentication MFA for root user account)
+
+As a part of a team or a project you will be getting IAM account credentials with specific access 
+
+
+IAM Policies --> Permissions 
+=============================
+
+What actions are allowed or denied on which aws resources and under what condition
+
+Resource-specific: Permissions are almost always tied to specific AWS resources (e.g., a particular S3 bucket, an EC2 instance, a DynamoDB table).
+
+No inherent identity: A policy on its own does nothing. It's just a set of rules. It needs to be attached to an identity or a resource to take effect.
+
+IAM User
+========
+
+A person or application that needs to access AWS.
+
+Has a username and password / access keys.
+
+Can log in to the AWS Management Console or use CLI/API.
+
+Example: “haider” is an IAM user who can start EC2 instances.
+
+IAM Group
+===========
+
+A collection of IAM users.
+
+Helps you assign permissions to many users at once.
+
+Example:
+
+Group name: Developers
+
+Attached policy: AmazonEC2FullAccess
+
+→ Every user in that group gets EC2 full access
+
+IAM Role
+========
+
+A temporary identity with specific permissions.
+
+No username or password. Instead, AWS services or users assume the role.
+
+Used for giving temporary access or allowing AWS services to talk to each other.
+
+Example:
+
+An EC2 instance assumes a role that allows it to read data from an S3 bucket.
+
+
+Load Balancers and Auto Scaling group
+=====================================
+
+Load Balancer
+=============
+
+--> When we deploy our app into a single server then we might/may face the following issues/challenges
+
+    -> One Server trying to handle all requests coming to app 
+    -> Increased Burden on the server
+    -> Server may slow down leading delayed responses to the clients
+    -> Server can crash too
+    -> Single Point of Failure
+
+--> To Avoid the above issues, we shall deploy our app into multiple servers and implement the concept of load balancer
+
+--> Load Balancer is used to distribute load to multiple servers in round robin technique
+
+--> The following benefits could be noticed with Load balancer
+   
+    -> Our App will run on Multiple Servers
+    -> Load will be distributed into multiple servers
+    -> Burden will eventually reduced on servers
+    -> Fast Performance 
+    -> High Availability of our app 
+
+-> In AWS there are 4 types of Load Balancers
+
+   -> Application Load Balancer ( http & https )
+   -> Network Load Balancer
+   -> Gateway Load Balancer
+   -> Classic Load Balancer ( Legacy / outdated )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1161,6 +1161,40 @@ SECTION 4: ARRAYS
   Arrays.sort(nums);              // [1, 2, 3, 4, 5]
   int pos = Arrays.binarySearch(nums, 3); // returns index 2
 
+
+  //Converting Arrays to List Example
+  String[] fruits = {"Apple", "Banana", "Cherry"};
+
+// 1. Arrays.asList() - Fixed-size list (cannot add/remove)
+List<String> list1 = Arrays.asList(fruits);
+list1.add("Mango"); // Throws UnsupportedOperationException
+
+// 2. ArrayList constructor - Full mutable list
+List<String> list2 = new ArrayList<>(Arrays.asList(fruits));
+list2.add("Mango"); // Works fine
+
+// 3. Java 9+ List.of() - Immutable list
+List<String> list3 = List.of(fruits);
+list3.add("Mango"); // Throws UnsupportedOperationException
+
+------------------------------------------------------------
+
+//Converting List to Array Example
+List<String> list = Arrays.asList("Apple", "Banana", "Cherry");
+
+// 1. toArray() - Returns Object[] (need casting)
+Object[] objArray = list.toArray();
+String[] strArray1 = (String[]) objArray; // Unsafe cast, may throw ClassCastException
+
+// 2. toArray(T[] a) - Type-safe (preferred)
+String[] strArray2 = list.toArray(new String[0]);
+String[] strArray3 = list.toArray(new String[list.size()]);
+
+// 3. Java 11+ toArray(IntFunction<T[]> generator)
+String[] strArray4 = list.toArray(String[]::new);
+
+
+
 ================================================================================
 SECTION 5: EXCEPTION HANDLING
 ================================================================================
@@ -1315,6 +1349,7 @@ SECTION 6: GENERICS
           stringResponse.printDataType();
       }
   }
+ 
 
   OUTPUT:
   Data: 101
