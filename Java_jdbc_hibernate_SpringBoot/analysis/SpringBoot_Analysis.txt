@@ -2102,3 +2102,793 @@ COMMON INTERVIEW SCENARIOS:
 ================================================================================
 END OF AOP COMPREHENSIVE INTERVIEW GUIDE - Appended March 2026
 ================================================================================
+
+
+================================================================================
+COMPLETE SPRING / SPRING BOOT ANNOTATIONS REFERENCE GUIDE
+Added: 2026-04-22  |  Interview-Ready Cheat Sheet
+================================================================================
+
+LEGEND:
+  [CORE]    = Spring Core / IoC / DI
+  [BOOT]    = Spring Boot specific
+  [MVC]     = Spring MVC / REST
+  [AOP]     = Aspect-Oriented Programming
+  [HIB]     = Hibernate ORM (javax.persistence / jakarta.persistence)
+  [JPA]     = Spring Data JPA
+  [SEC]     = Spring Security
+  [TX]      = Transaction Management
+  [VALID]   = Bean Validation (javax.validation)
+  [LOMBOK]  = Lombok (widely used alongside Spring Boot)
+
+================================================================================
+SECTION A: SPRING CORE / IoC / DI ANNOTATIONS  [CORE]
+================================================================================
+
+1.  @Component
+    Package : org.springframework.stereotype
+    Definition : Generic stereotype to mark a class as a Spring-managed bean.
+                 Auto-detected via component scanning and registered in the
+                 ApplicationContext. Root annotation for @Service, @Repository,
+                 @Controller.
+    Use : Utility/helper classes not fitting any specific layer role.
+
+2.  @Service
+    Package : org.springframework.stereotype
+    Definition : Specialization of @Component. Marks a class as a service-layer
+                 bean holding business logic. Functionally identical to @Component
+                 but adds semantic clarity.
+    Use : Business logic / use-case classes.
+
+3.  @Repository
+    Package : org.springframework.stereotype
+    Definition : Specialization of @Component for the persistence layer.
+                 Additionally activates Spring's PersistenceExceptionTranslation:
+                 vendor-specific exceptions (HibernateException etc.) are
+                 automatically translated into Spring's DataAccessException hierarchy.
+    Use : DAO classes; Spring Data JPA interfaces inherit this behavior.
+
+4.  @Controller
+    Package : org.springframework.stereotype
+    Definition : Specialization of @Component for the presentation layer.
+                 Marks a class as a Spring MVC controller returning view names
+                 (for Thymeleaf / JSP rendering).
+    Use : Traditional MVC controllers returning HTML views.
+
+5.  @RestController
+    Package : org.springframework.web.bind.annotation
+    Definition : Meta-annotation = @Controller + @ResponseBody.
+                 All handler methods automatically serialize return values to
+                 the HTTP response body (JSON/XML) — no per-method @ResponseBody needed.
+    Use : REST API controllers.
+
+6.  @Autowired
+    Package : org.springframework.beans.factory.annotation
+    Definition : Instructs Spring to inject a dependency automatically by type.
+                 Applicable to constructor, setter, or field.
+                 Preferred style: constructor injection for immutability & testability.
+    Attribute  : required = false  (no NoSuchBeanDefinitionException if bean absent).
+
+7.  @Qualifier
+    Package : org.springframework.beans.factory.annotation
+    Definition : Used alongside @Autowired when multiple beans of the same type
+                 exist. Specifies which bean to inject by its name.
+    Example:
+      @Autowired
+      @Qualifier("mysqlDataSource")
+      private DataSource dataSource;
+
+8.  @Primary
+    Package : org.springframework.context.annotation
+    Definition : Marks a bean as the default candidate when multiple beans of
+                 the same type exist. Preferred when no @Qualifier is specified.
+
+9.  @Bean
+    Package : org.springframework.context.annotation
+    Definition : Declares a method inside @Configuration as a bean factory.
+                 The method return value is registered in the ApplicationContext.
+                 Spring manages the bean's full lifecycle.
+    Note: In @Configuration classes, Spring intercepts @Bean calls via CGLIB
+          to guarantee singleton semantics.
+
+10. @Configuration
+    Package : org.springframework.context.annotation
+    Definition : Marks a class as a source of bean definitions (Java-based config).
+                 Spring creates a CGLIB subclass to intercept @Bean methods
+                 and enforce singleton contract.
+    Replaces : XML applicationContext.xml.
+
+11. @Value
+    Package : org.springframework.beans.factory.annotation
+    Definition : Injects a scalar value from application.properties, environment
+                 variables, or SpEL expression.
+    Examples:
+      @Value("${app.name}")               // from properties
+      @Value("${server.port:8080}")        // with default
+      @Value("#{systemProperties['os']}")  // SpEL
+
+12. @PropertySource
+    Package : org.springframework.context.annotation
+    Definition : Adds a properties file to Spring's Environment.
+                 Values accessible via @Value or Environment.getProperty().
+    Example : @PropertySource("classpath:db.properties")
+
+13. @ComponentScan
+    Package : org.springframework.context.annotation
+    Definition : Configures component scanning. Spring scans specified base
+                 packages (and sub-packages) for @Component-annotated classes.
+    Note: Included automatically by @SpringBootApplication.
+
+14. @Scope
+    Package : org.springframework.context.annotation
+    Definition : Defines the lifecycle scope of a Spring bean.
+    Values:
+      "singleton"   (default) : one instance per ApplicationContext
+      "prototype"             : new instance per request
+      "request"               : one per HTTP request  (web)
+      "session"               : one per HTTP session   (web)
+      "application"           : one per ServletContext  (web)
+
+15. @Lazy
+    Package : org.springframework.context.annotation
+    Definition : Delays bean initialization until first usage (default is eager).
+    Use : Expensive beans, break circular dependency, optional deps.
+
+16. @DependsOn
+    Package : org.springframework.context.annotation
+    Definition : Forces specified beans to be initialized BEFORE this bean.
+                 Used when ordering matters without a direct dependency link.
+
+17. @PostConstruct
+    Package : javax.annotation (jakarta.annotation in Jakarta EE 9+)
+    Definition : Method called AFTER all dependencies are injected.
+                 Runs once at bean initialization. Replaces InitializingBean.
+    Use : Cache warming, connection pool init, data load.
+
+18. @PreDestroy
+    Package : javax.annotation
+    Definition : Method called BEFORE the bean is destroyed (shutdown).
+    Use : Resource cleanup, connection closing, graceful shutdown logic.
+
+19. @Profile
+    Package : org.springframework.context.annotation
+    Definition : Registers a bean only when the specified Spring profile is active.
+    Activation: spring.profiles.active=dev  in application.properties.
+    Example:
+      @Bean @Profile("prod")
+      public DataSource prodDataSource() { ... }
+
+20. @Conditional
+    Package : org.springframework.context.annotation
+    Definition : Registers a bean only when the given Condition.matches() returns true.
+                 Base for all @ConditionalOn* variants used in auto-configuration.
+
+================================================================================
+SECTION B: SPRING BOOT ANNOTATIONS  [BOOT]
+================================================================================
+
+21. @SpringBootApplication
+    Package : org.springframework.boot.autoconfigure
+    Definition : Meta-annotation bundling three annotations:
+                   @SpringBootConfiguration  -> marks class as config source
+                   @EnableAutoConfiguration  -> activates auto-configuration
+                   @ComponentScan            -> scans from root package
+                 Entry point of every Spring Boot application.
+
+22. @EnableAutoConfiguration
+    Package : org.springframework.boot.autoconfigure
+    Definition : Triggers Spring Boot's auto-configuration mechanism.
+                 Reads spring.factories / AutoConfiguration.imports and applies
+                 configuration classes when classpath conditions are met
+                 (e.g., auto-configures DataSource if JDBC driver present).
+
+23. @SpringBootConfiguration
+    Package : org.springframework.boot
+    Definition : Specialization of @Configuration for Spring Boot.
+                 Signals Spring Boot application-level @Bean definitions.
+                 Only ONE allowed per application.
+
+24. @ConditionalOnClass
+    Package : org.springframework.boot.autoconfigure.condition
+    Definition : Loads a bean/configuration ONLY when the specified class is
+                 present on the classpath. Core of auto-config conditional loading.
+    Example : @ConditionalOnClass(DataSource.class)
+
+25. @ConditionalOnMissingBean
+    Package : org.springframework.boot.autoconfigure.condition
+    Definition : Loads a bean ONLY if no bean of the given type already exists.
+                 Enables users to override Spring Boot's default auto-configured beans.
+
+26. @ConditionalOnProperty
+    Package : org.springframework.boot.autoconfigure.condition
+    Definition : Loads a bean only when a property matches the required value.
+    Example : @ConditionalOnProperty(name="feature.enabled", havingValue="true")
+
+27. @ConfigurationProperties
+    Package : org.springframework.boot.context.properties
+    Definition : Binds external configuration (application.properties / YAML)
+                 to a Java POJO using a prefix. Provides type-safe config.
+    Example:
+      @ConfigurationProperties(prefix = "app.mail")
+      public class MailProperties {
+          private String host;
+          private int port;   // binds app.mail.host and app.mail.port
+      }
+
+28. @EnableConfigurationProperties
+    Package : org.springframework.boot.context.properties
+    Definition : Enables @ConfigurationProperties bean registration.
+                 Auto-handled in Spring Boot 2.2+; explicit in older versions.
+
+29. @SpringBootTest
+    Package : org.springframework.boot.test.context
+    Definition : Loads the entire ApplicationContext for integration testing.
+                 Can spin up a real HTTP server via webEnvironment attribute.
+    Values : RANDOM_PORT | DEFINED_PORT | MOCK | NONE
+
+30. @TestPropertySource
+    Package : org.springframework.test.context
+    Definition : Overrides application properties for a specific test.
+    Example : @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:test")
+
+================================================================================
+SECTION C: SPRING MVC / REST ANNOTATIONS  [MVC]
+================================================================================
+
+31. @RequestMapping
+    Package : org.springframework.web.bind.annotation
+    Definition : Maps HTTP requests to handler methods/controllers.
+                 Supports URL path, HTTP method, consumes, and produces.
+                 Parent annotation; @GetMapping etc. are shortcuts.
+
+32. @GetMapping
+    Definition : Shortcut for @RequestMapping(method=GET).
+    Use : Fetch / query operations. Safe, idempotent.
+
+33. @PostMapping
+    Definition : Shortcut for @RequestMapping(method=POST).
+    Use : Create a new resource. Request body carries the new data.
+
+34. @PutMapping
+    Definition : Shortcut for @RequestMapping(method=PUT).
+    Use : Full replacement update of an existing resource.
+
+35. @PatchMapping
+    Definition : Shortcut for @RequestMapping(method=PATCH).
+    Use : Partial update of an existing resource.
+
+36. @DeleteMapping
+    Definition : Shortcut for @RequestMapping(method=DELETE).
+    Use : Delete a resource.
+
+37. @PathVariable
+    Package : org.springframework.web.bind.annotation
+    Definition : Extracts a value embedded in the URI path (e.g., /users/{id})
+                 and binds it to a method parameter.
+    Example : @GetMapping("/users/{id}") ... getUser(@PathVariable Long id)
+
+38. @RequestParam
+    Package : org.springframework.web.bind.annotation
+    Definition : Binds an HTTP query parameter (?key=value) to a method param.
+    Attributes : name, required (default true), defaultValue.
+    Example : @GetMapping("/search") ... search(@RequestParam String keyword)
+
+39. @RequestBody
+    Package : org.springframework.web.bind.annotation
+    Definition : Deserializes the HTTP request body (JSON/XML) to a Java object
+                 using HttpMessageConverter (Jackson by default).
+    Use : Typically on POST/PUT methods.
+
+40. @ResponseBody
+    Package : org.springframework.web.bind.annotation
+    Definition : Serializes method return value directly to HTTP response body.
+                 @RestController applies this globally; no per-method usage needed.
+
+41. @ResponseStatus
+    Package : org.springframework.web.bind.annotation
+    Definition : Sets HTTP status code on a method or exception handler.
+    Example : @ResponseStatus(HttpStatus.CREATED) on a @PostMapping method.
+
+42. @RequestHeader
+    Package : org.springframework.web.bind.annotation
+    Definition : Binds an HTTP request header value to a method parameter.
+    Example : @RequestHeader("Authorization") String token
+
+43. @CrossOrigin
+    Package : org.springframework.web.bind.annotation
+    Definition : Enables CORS (Cross-Origin Resource Sharing) on a controller
+                 or specific handler method. Configures allowed origins, methods, headers.
+
+44. @ExceptionHandler
+    Package : org.springframework.web.bind.annotation
+    Definition : Handles specific exceptions thrown from handler methods
+                 in the same controller (or globally in @ControllerAdvice).
+
+45. @ControllerAdvice
+    Package : org.springframework.web.bind.annotation
+    Definition : Global handler for @ExceptionHandler, @InitBinder, @ModelAttribute
+                 across ALL controllers. Enables centralized exception handling.
+
+46. @RestControllerAdvice
+    Package : org.springframework.web.bind.annotation
+    Definition : Meta-annotation = @ControllerAdvice + @ResponseBody.
+                 Returns exception responses as JSON automatically.
+    Use : Global REST API exception handlers.
+
+47. @Valid
+    Package : javax.validation
+    Definition : Triggers JSR-303/380 bean validation on a method parameter.
+                 Throws MethodArgumentNotValidException on constraint violations.
+                 Cascades to nested objects (@Valid on nested @NotNull fields).
+
+48. @Validated
+    Package : org.springframework.validation.annotation
+    Definition : Spring's variant of @Valid. Supports validation groups.
+                 Also enables class-level method argument validation via AOP proxy.
+
+================================================================================
+SECTION D: AOP (ASPECT-ORIENTED PROGRAMMING) ANNOTATIONS  [AOP]
+================================================================================
+
+49. @Aspect
+    Package : org.aspectj.lang.annotation
+    Definition : Marks a class as an Aspect (container for cross-cutting concerns).
+                 Must also have @Component for Spring to detect it as a bean.
+                 Enables the class to contain @Before, @After, @Around etc.
+
+50. @Before
+    Package : org.aspectj.lang.annotation
+    Definition : Advice that executes BEFORE the matched method runs.
+                 Cannot prevent method execution unless it throws an exception.
+    Example : @Before("execution(* com.app.service.*.*(..))")
+
+51. @After
+    Package : org.aspectj.lang.annotation
+    Definition : Advice that executes AFTER the matched method finishes —
+                 whether it returned normally or threw an exception.
+                 Equivalent to a finally block. No access to return value.
+
+52. @AfterReturning
+    Package : org.aspectj.lang.annotation
+    Definition : Advice that runs ONLY on successful method return (no exception).
+                 Can access the return value via the 'returning' attribute.
+    Example : @AfterReturning(pointcut="...", returning="result")
+
+53. @AfterThrowing
+    Package : org.aspectj.lang.annotation
+    Definition : Advice that runs ONLY when the matched method throws an exception.
+                 Access the exception via 'throwing' attribute.
+                 CANNOT suppress the exception (use @Around for suppression).
+    Example : @AfterThrowing(pointcut="...", throwing="ex")
+
+54. @Around
+    Package : org.aspectj.lang.annotation
+    Definition : Most powerful advice. Completely wraps the method call.
+                 Must call pjp.proceed() to run the actual method.
+                 Can modify arguments, return value, or catch/suppress exceptions.
+    Use : Timing, caching, retry, rate-limiting, transaction management.
+
+55. @Pointcut
+    Package : org.aspectj.lang.annotation
+    Definition : Declares a reusable, named pointcut expression.
+                 Keeps advice annotations DRY (no repeated expressions).
+    Example:
+      @Pointcut("execution(* com.app.service.*.*(..))")
+      public void serviceLayer() {}
+
+56. @EnableAspectJAutoProxy
+    Package : org.springframework.context.annotation
+    Definition : Registers AnnotationAwareAspectJAutoProxyCreator which creates
+                 AOP proxies (JDK or CGLIB) for beans matched by @Aspect pointcuts.
+                 Auto-enabled in Spring Boot when spring-boot-starter-aop is present.
+
+57. @Order
+    Package : org.springframework.core.annotation
+    Definition : Controls execution order across multiple aspects for the same join point.
+                 Lower number = higher priority (runs first in @Before, last in @After).
+    Example : @Order(1) SecurityAspect runs before @Order(2) LoggingAspect.
+
+================================================================================
+SECTION E: HIBERNATE / JPA ANNOTATIONS  [HIB]
+================================================================================
+  Package base: javax.persistence (Java EE)  /  jakarta.persistence (Jakarta EE 9+)
+  Hibernate-specific: org.hibernate.annotations
+
+58. @Entity
+    Definition : Marks a Java class as a JPA-managed persistent entity.
+                 Mapped to a database table. Requires a no-arg constructor and @Id.
+
+59. @Table
+    Definition : Specifies database table name, schema, and unique constraints.
+                 Optional — defaults to the class name if omitted.
+    Example : @Table(name="orders", schema="public")
+
+60. @Id
+    Definition : Marks a field as the primary key (PK) of the entity.
+
+61. @GeneratedValue
+    Definition : Configures automatic PK generation strategy.
+    Strategies:
+      GenerationType.IDENTITY  : DB auto-increment column (MySQL, PostgreSQL)  [most common]
+      GenerationType.SEQUENCE  : DB sequence object (PostgreSQL preferred)
+      GenerationType.AUTO      : JPA picks based on DB dialect
+      GenerationType.TABLE     : Uses key-generation table (avoid — poor performance)
+
+62. @Column
+    Definition : Maps a field to a specific database column. Customizes DDL and DML.
+    Attributes : name, nullable, unique, length, insertable, updatable, columnDefinition.
+    Example : @Column(name="email", nullable=false, unique=true, length=100)
+
+63. @Transient
+    Definition : Excludes a field from persistence. Field exists only in Java,
+                 never stored in or loaded from the database.
+
+64. @OneToOne
+    Definition : Maps a one-to-one relationship. Each side holds a reference
+                 to exactly one instance of the other entity.
+    Attributes : cascade, fetch(EAGER default), orphanRemoval, mappedBy.
+
+65. @OneToMany
+    Definition : Maps one entity owning a collection of another entity.
+                 The FK is on the child (many) side.
+    Attributes : mappedBy (child field name), cascade, fetch (LAZY default), orphanRemoval.
+    Example:
+      @OneToMany(mappedBy="department", cascade=CascadeType.ALL, fetch=FetchType.LAZY)
+      private List<Employee> employees;
+
+66. @ManyToOne
+    Definition : Owning side of many-to-one. The FK column is in this entity's table.
+    Attributes : fetch (EAGER default — change to LAZY!), cascade, optional.
+    Example:
+      @ManyToOne(fetch=FetchType.LAZY)
+      @JoinColumn(name="dept_id")
+      private Department department;
+
+67. @ManyToMany
+    Definition : Maps a many-to-many relationship. Requires a join table in the DB.
+    Attributes : mappedBy (non-owning side), cascade, fetch (LAZY default).
+    Example:
+      @ManyToMany
+      @JoinTable(name="student_course",
+          joinColumns=@JoinColumn(name="student_id"),
+          inverseJoinColumns=@JoinColumn(name="course_id"))
+      private List<Course> courses;
+
+68. @JoinColumn
+    Definition : Specifies the FK column for @ManyToOne / @OneToOne associations.
+    Attributes : name (FK column name), referencedColumnName, nullable.
+
+69. @JoinTable
+    Definition : Specifies the join/bridge table for @ManyToMany relationships.
+    Attributes : name, joinColumns, inverseJoinColumns.
+
+70. @Embeddable
+    Definition : Marks a class as an embeddable value object. Its fields are
+                 mapped into the owning entity's table (no separate table created).
+    Example : Address class embedded into Customer table.
+
+71. @Embedded
+    Definition : Used IN the owning entity to embed an @Embeddable class.
+    Example : @Embedded private Address address;  // Address cols -> Customer table
+
+72. @AttributeOverride / @AttributeOverrides
+    Definition : Overrides the column name mappings of an @Embeddable class
+                 when the same embeddable is used in multiple places.
+
+73. @Lob
+    Definition : Maps a field to a Large Object (CLOB for String/char[],
+                 BLOB for byte[]). Used for document content, images, etc.
+
+74. @Enumerated
+    Definition : Maps a Java Enum to a DB column.
+    Values:
+      EnumType.ORDINAL : stores enum ordinal int  → FRAGILE (avoid)
+      EnumType.STRING  : stores enum name String  → PREFERRED
+
+75. @Temporal  (deprecated in JPA 2.2+ in favour of java.time)
+    Definition : Maps java.util.Date / Calendar to DATE, TIME, or TIMESTAMP.
+    Note: Use LocalDate, LocalDateTime, ZonedDateTime with JSR-310 support instead.
+
+76. @Version
+    Package : javax.persistence
+    Definition : Marks a field as the optimistic lock version counter.
+                 Hibernate auto-increments it on every UPDATE. Concurrent update
+                 conflict throws OptimisticLockException.
+    Example : @Version private int version;
+
+77. @CreationTimestamp   [Hibernate-specific]
+    Package : org.hibernate.annotations
+    Definition : Auto-populates the field with the current timestamp when the
+                 entity is first INSERT-ed. Never updated after that.
+
+78. @UpdateTimestamp   [Hibernate-specific]
+    Package : org.hibernate.annotations
+    Definition : Auto-updates the field with the current timestamp on every
+                 UPDATE operation. Combined with @CreationTimestamp for audit fields.
+
+79. @NaturalId   [Hibernate-specific]
+    Package : org.hibernate.annotations
+    Definition : Marks a business/natural identifier (e.g., email, username).
+                 Enables efficient lookup via session.byNaturalId() with
+                 second-level cache support.
+
+80. @Cache   [Hibernate-specific]
+    Package : org.hibernate.annotations
+    Definition : Enables second-level (L2) cache for the entity.
+    Example : @Cache(usage=CacheConcurrencyStrategy.READ_WRITE)
+
+81. @BatchSize   [Hibernate-specific]
+    Package : org.hibernate.annotations
+    Definition : Optimizes lazy collection loading. Instead of N+1 SELECT queries,
+                 Hibernate fetches in batches of the specified size.
+    Example : @BatchSize(size=25) on a @OneToMany collection.
+
+82. @NamedQuery
+    Package : javax.persistence
+    Definition : Defines a static JPQL query at the entity class level.
+                 Parsed and validated at startup (fail-fast).
+
+================================================================================
+SECTION F: SPRING DATA JPA ANNOTATIONS  [JPA]
+================================================================================
+
+83. @Query
+    Package : org.springframework.data.jpa.repository
+    Definition : Declares a custom JPQL or native SQL query on a repository method.
+    Attributes:
+      value         -> JPQL or SQL string
+      nativeQuery=true -> treats value as native SQL
+    Example:
+      @Query("SELECT e FROM Employee e WHERE e.department = :dept")
+      List<Employee> findByDepartment(@Param("dept") String dept);
+
+84. @Param
+    Package : org.springframework.data.repository.query
+    Definition : Binds a method parameter to a named parameter (:name) in @Query.
+                 Required when using named parameters in JPQL/SQL.
+
+85. @Modifying
+    Package : org.springframework.data.jpa.repository
+    Definition : Required for @Query methods performing UPDATE or DELETE (DML).
+                 Without it, Spring Data throws InvalidDataAccessApiUsageException.
+                 Must be paired with @Transactional.
+    Example:
+      @Modifying
+      @Transactional
+      @Query("UPDATE Employee e SET e.salary = :sal WHERE e.id = :id")
+      int updateSalary(@Param("id") Long id, @Param("sal") double sal);
+
+86. @EnableJpaRepositories
+    Package : org.springframework.data.jpa.repository.config
+    Definition : Enables Spring Data JPA repository scanning for specified packages.
+                 Auto-configured in Spring Boot; explicit in plain Spring.
+
+87. @EntityGraph
+    Package : org.springframework.data.jpa.repository
+    Definition : Overrides the default fetch plan for a specific query.
+                 Fetches LAZY associations eagerly to avoid N+1 SELECT problem.
+    Example:
+      @EntityGraph(attributePaths = {"orders", "orders.items"})
+      @Query("SELECT c FROM Customer c WHERE c.id = :id")
+      Optional<Customer> findWithOrdersById(@Param("id") Long id);
+
+88. @Lock
+    Package : org.springframework.data.jpa.repository
+    Definition : Applies a JPA lock mode to a repository query method.
+    Modes:
+      LockModeType.PESSIMISTIC_WRITE  : SELECT ... FOR UPDATE (row-level DB lock)
+      LockModeType.OPTIMISTIC         : version-based optimistic locking
+
+================================================================================
+SECTION G: TRANSACTION MANAGEMENT ANNOTATIONS  [TX]
+================================================================================
+
+89. @Transactional
+    Package : org.springframework.transaction.annotation
+    Definition : Wraps the annotated method in a DB transaction using AOP proxy.
+                 On success -> COMMIT. On RuntimeException -> ROLLBACK.
+    Key attributes:
+      propagation  : REQUIRED(default), REQUIRES_NEW, NESTED, SUPPORTS,
+                      NOT_SUPPORTED, MANDATORY, NEVER
+      isolation    : DEFAULT, READ_UNCOMMITTED, READ_COMMITTED,
+                      REPEATABLE_READ, SERIALIZABLE
+      rollbackFor  : Exception classes that trigger rollback
+                      (default: RuntimeException and its subclasses)
+      noRollbackFor: Exceptions that must NOT trigger rollback
+      readOnly     : true for read queries (optimization hint)
+      timeout      : seconds before auto-rollback
+
+90. @EnableTransactionManagement
+    Package : org.springframework.transaction.annotation
+    Definition : Activates Spring's annotation-driven transaction management.
+                 Auto-enabled by Spring Boot.
+
+================================================================================
+SECTION H: SPRING SECURITY ANNOTATIONS  [SEC]
+================================================================================
+
+91. @EnableWebSecurity
+    Package : org.springframework.security.config.annotation.web.configuration
+    Definition : Activates Spring Security's web security support on a
+                 @Configuration class. In Spring Boot 3, mostly auto-configured.
+
+92. @PreAuthorize
+    Package : org.springframework.security.access.prepost
+    Definition : Method-level security check BEFORE method execution.
+                 Evaluates a SpEL expression against the SecurityContext.
+    Examples:
+      @PreAuthorize("hasRole('ADMIN')")
+      @PreAuthorize("hasAuthority('WRITE_PRIVILEGE')")
+      @PreAuthorize("#userId == authentication.principal.id")  // owner check
+    Requires : @EnableMethodSecurity (Spring Boot 3+ / Spring Security 6+)
+
+93. @PostAuthorize
+    Package : org.springframework.security.access.prepost
+    Definition : Method-level security check AFTER method execution.
+                 Evaluates SpEL and can access the return value via returnObject.
+    Use : Verify returned resource belongs to the current user.
+    Example : @PostAuthorize("returnObject.ownerId == authentication.principal.id")
+
+94. @Secured
+    Package : org.springframework.security.access.annotation
+    Definition : Simpler method-level security; restricts access by role name.
+                 Less powerful than @PreAuthorize — no SpEL support.
+    Example : @Secured({"ROLE_ADMIN", "ROLE_MANAGER"})
+
+95. @RolesAllowed   (JSR-250 standard)
+    Package : javax.annotation.security
+    Definition : Standard Java EE annotation for role-based access.
+                 Similar to @Secured. Requires jsr250Enabled=true in
+                 @EnableMethodSecurity.
+    Example : @RolesAllowed("ADMIN")
+
+96. @EnableMethodSecurity  (Spring Security 6 / Spring Boot 3)
+    Package : org.springframework.security.config.annotation.method.configuration
+    Definition : Enables @PreAuthorize, @PostAuthorize, @Secured, @RolesAllowed
+                 at class/method level. Replaces deprecated @EnableGlobalMethodSecurity.
+
+97. @AuthenticationPrincipal
+    Package : org.springframework.security.web.bind.annotation
+    Definition : Injects the currently authenticated user (UserDetails or custom
+                 principal object) directly into a controller method parameter.
+                 Avoids manual SecurityContextHolder.getContext().getAuthentication().
+    Example:
+      @GetMapping("/profile")
+      public UserDTO getProfile(@AuthenticationPrincipal UserDetails user) {
+          return userService.getProfile(user.getUsername());
+      }
+
+98. @WithMockUser   (spring-security-test)
+    Package : org.springframework.security.test.context.support
+    Definition : Populates the SecurityContext with a mock authenticated user
+                 for unit and integration tests. Avoids real authentication setup.
+    Example : @WithMockUser(username="teja", roles={"ADMIN"})
+
+================================================================================
+SECTION I: BEAN VALIDATION (JSR-380) ANNOTATIONS  [VALID]
+================================================================================
+
+99.  @NotNull
+     Definition : Field must not be null. Does NOT reject empty strings ("").
+
+100. @NotEmpty
+     Definition : String / Collection must not be null AND not empty ("" or []).
+
+101. @NotBlank
+     Definition : String must not be null, empty, or whitespace-only.
+                  Best annotation for validating String input fields.
+
+102. @Size
+     Definition : Constrains the size of a String (length), Collection, Array, or Map.
+     Example : @Size(min=2, max=50)
+
+103. @Min / @Max
+     Definition : Numeric field must be >= min / <= max.
+
+104. @Email
+     Definition : String must be a well-formed email address.
+
+105. @Pattern
+     Definition : String must match the specified regular expression.
+     Example : @Pattern(regexp = "^[A-Z]{2,3}$")
+
+106. @Positive / @PositiveOrZero
+     Definition : Numeric value must be > 0 / >= 0.
+
+107. @Negative / @NegativeOrZero
+     Definition : Numeric value must be < 0 / <= 0.
+
+108. @Future / @FutureOrPresent
+     Definition : Date/time value must be in the future / present or future.
+
+109. @Past / @PastOrPresent
+     Definition : Date/time value must be in the past / present or past.
+
+================================================================================
+SECTION J: LOMBOK ANNOTATIONS  [LOMBOK]
+================================================================================
+  Package : lombok
+  Note: Lombok annotations generate boilerplate code at compile time via
+        annotation processing. Source code stays clean; bytecode has the methods.
+
+110. @Data
+     Definition : Bundles: @Getter + @Setter + @EqualsAndHashCode +
+                  @ToString + @RequiredArgsConstructor.
+     Warning : Avoid @EqualsAndHashCode on JPA entities with bidirectional
+               relationships (infinite recursion / hashCode instability).
+
+111. @Getter / @Setter
+     Definition : Generates getter / setter for all (class-level) or a specific
+                  field (field-level).
+
+112. @NoArgsConstructor
+     Definition : Generates a no-argument constructor. Required by JPA entities.
+
+113. @AllArgsConstructor
+     Definition : Generates a constructor with ALL fields as parameters.
+
+114. @RequiredArgsConstructor
+     Definition : Generates a constructor for all final and @NonNull fields.
+                  Perfect for Spring constructor injection:
+                    @Service
+                    @RequiredArgsConstructor
+                    public class OrderService {
+                        private final OrderRepository repo; // injected by Lombok ctor
+                    }
+
+115. @Builder
+     Definition : Implements the Builder pattern for clean object construction.
+     Example : User.builder().name("Teja").email("t@t.com").build();
+
+116. @Slf4j
+     Definition : Injects a SLF4J Logger named 'log' into the class.
+                  Equivalent to:
+                    private static final Logger log = LoggerFactory.getLogger(Foo.class);
+
+117. @ToString
+     Definition : Generates toString(). Specific fields can be included/excluded
+                  with @ToString.Include / @ToString.Exclude.
+
+118. @EqualsAndHashCode
+     Definition : Generates equals() and hashCode() based on specified fields.
+     callSuper=true : includes superclass fields.
+
+================================================================================
+QUICK INTERVIEW ANNOTATION CHEAT SHEET — ALL CATEGORIES
+================================================================================
+
+CATEGORY          | KEY ANNOTATIONS
+------------------|-------------------------------------------------------------------
+Spring Core / DI  | @Component, @Service, @Repository, @Controller, @Autowired,
+                  | @Qualifier, @Primary, @Bean, @Configuration, @Value, @Scope,
+                  | @PostConstruct, @PreDestroy, @Profile, @Lazy, @DependsOn
+Spring Boot       | @SpringBootApplication, @ConfigurationProperties,
+                  | @ConditionalOnClass, @ConditionalOnMissingBean,
+                  | @ConditionalOnProperty, @SpringBootTest
+Spring MVC / REST | @RestController, @RequestMapping, @GetMapping, @PostMapping,
+                  | @PutMapping, @PatchMapping, @DeleteMapping, @PathVariable,
+                  | @RequestParam, @RequestBody, @ResponseBody, @ResponseStatus,
+                  | @RequestHeader, @CrossOrigin, @ExceptionHandler,
+                  | @ControllerAdvice, @RestControllerAdvice, @Valid, @Validated
+AOP               | @Aspect, @Before, @After, @AfterReturning, @AfterThrowing,
+                  | @Around, @Pointcut, @EnableAspectJAutoProxy, @Order
+Hibernate / JPA   | @Entity, @Table, @Id, @GeneratedValue, @Column, @Transient,
+                  | @OneToOne, @OneToMany, @ManyToOne, @ManyToMany,
+                  | @JoinColumn, @JoinTable, @Embeddable, @Embedded,
+                  | @Lob, @Enumerated, @Version, @CreationTimestamp,
+                  | @UpdateTimestamp, @NaturalId, @Cache, @BatchSize, @NamedQuery
+Spring Data JPA   | @Query, @Param, @Modifying, @EntityGraph, @Lock,
+                  | @EnableJpaRepositories
+Transactions      | @Transactional, @EnableTransactionManagement
+Spring Security   | @EnableWebSecurity, @PreAuthorize, @PostAuthorize,
+                  | @Secured, @RolesAllowed, @EnableMethodSecurity,
+                  | @AuthenticationPrincipal, @WithMockUser
+Bean Validation   | @NotNull, @NotBlank, @NotEmpty, @Size, @Email, @Pattern,
+                  | @Min, @Max, @Positive, @PositiveOrZero, @Future, @Past
+Lombok            | @Data, @Builder, @Slf4j, @NoArgsConstructor,
+                  | @AllArgsConstructor, @RequiredArgsConstructor,
+                  | @Getter, @Setter, @ToString, @EqualsAndHashCode
+
+================================================================================
+END OF ANNOTATIONS REFERENCE GUIDE -- 2026-04-22
+================================================================================
