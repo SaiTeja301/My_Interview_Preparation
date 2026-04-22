@@ -2244,3 +2244,116 @@ Advanced     | F | Deep flatten: Course -> Module -> Lesson (two-level flatMap)
 ================================================================================
 END OF REAL-TIME SCENARIO-BASED PROBLEMS SECTION (2026-03-23)
 ================================================================================
+
+
+================================================================================
+REAL INTERVIEW QUESTION (Asked in Last Interview) -- 2026-04-22
+================================================================================
+
+Problem: Character Frequency Map → Find Non-Duplicate Characters → First Unique (Uppercase)
+------------------------------------------------------------------------------
+
+Question:
+  Given a string, use Java Streams to:
+  1. Build a frequency map of each character.
+  2. Filter out characters that appear MORE than once (keep only unique chars).
+  3. From those unique characters, find the FIRST one and print it in UPPERCASE.
+
+Code:
+  import java.util.*;
+  import java.util.stream.*;
+
+  class Main {
+      public static void main(String[] args) {
+          String str = "abcghta";
+
+          // Step 1: Build frequency map  →  {a=2, b=1, c=1, g=1, h=1, t=1}
+          Map<Character, Long> map = str.chars()
+                                        .mapToObj(c -> (char) c)
+                                        .collect(Collectors.groupingBy(
+                                            c -> c,
+                                            Collectors.counting()));
+
+          // Step 2: Keep only characters that appear exactly once (non-duplicates)
+          List<Character> list = map.entrySet()
+                                    .stream()
+                                    .filter(entry -> entry.getValue() <= 1)
+                                    .map(entry -> entry.getKey())
+                                    .collect(Collectors.toList());
+
+          // Step 3: From those, pick the FIRST character and convert to UPPERCASE
+          Optional<Character> chars = list.stream()
+                                          .map(Character::toUpperCase)
+                                          .findFirst();
+
+          System.out.println(map);    // {a=2, b=1, c=1, g=1, h=1, t=1}
+          System.out.println(list);   // [b, c, g, h, t]  (order may vary — HashMap)
+          chars.ifPresent(System.out::println);  // B  (or first unique char found)
+      }
+  }
+
+Key Concepts Tested:
+  1. str.chars()
+       - Returns an IntStream of char code points.
+       - .mapToObj(c -> (char) c) converts each int back to a Character object.
+
+  2. Collectors.groupingBy(c -> c, Collectors.counting())
+       - Groups identical characters together and counts occurrences.
+       - Result: Map<Character, Long>
+
+  3. .filter(entry -> entry.getValue() <= 1)
+       - Retains only entries where the character appears at most once.
+       - NOTE: The condition is <= 1, meaning frequency == 1 (unique chars).
+
+  4. Character::toUpperCase (method reference)
+       - Maps each Character to its uppercase equivalent.
+       - Equivalent to: .map(c -> Character.toUpperCase(c))
+
+  5. findFirst() → Optional<Character>
+       - Short-circuit terminal operation: returns the first element (if any).
+       - Returns Optional to safely handle the case of an empty stream.
+
+  6. ifPresent(System.out::println)
+       - Prints the value only if the Optional is non-empty.
+       - Avoids calling get() directly (anti-pattern).
+
+Output (for "abcghta"):
+  map  → {a=2, b=1, c=1, g=1, h=1, t=1}
+  list → [b, c, g, h, t]   ← order depends on HashMap iteration order
+  chars → B  (first element of list, uppercased)
+
+  ⚠ NOTE: HashMap does NOT guarantee insertion order.
+           Output list order may differ across JVM runs.
+           Use LinkedHashMap to guarantee encounter order:
+             .collect(Collectors.groupingBy(c -> c,
+                      LinkedHashMap::new, Collectors.counting()))
+
+Follow-up Questions an Interviewer May Ask:
+  Q: Why use str.chars().mapToObj() instead of str.toCharArray()?
+  A: str.chars() returns an IntStream. mapToObj wraps ints as Character objects
+     for use with object-based collectors. toCharArray() is an alternative but
+     requires Arrays.stream() and explicit char boxing.
+
+  Q: What is the difference between filter(entry -> entry.getValue() == 1)
+     and filter(entry -> entry.getValue() <= 1)?
+  A: For this problem both give the same result (min frequency is 1).
+     <= 1 is slightly more defensive; == 1 is more precise and preferred.
+
+  Q: What if the string has all duplicate characters?
+  A: list will be empty → list.stream().findFirst() returns Optional.empty()
+     → ifPresent does nothing. No exception thrown.
+
+  Q: How to maintain insertion (original string) order of unique characters?
+  A: Use LinkedHashMap in groupingBy, then filter in that order.
+     Or: stream str characters individually and filter using the frequency map:
+       str.chars()
+          .mapToObj(c -> (char) c)
+          .filter(c -> map.get(c) == 1)
+          .map(Character::toUpperCase)
+          .findFirst()
+          .ifPresent(System.out::println);
+     This preserves the original string's character order.
+
+================================================================================
+END OF INTERVIEW QUESTION (2026-04-22)
+================================================================================
