@@ -3186,6 +3186,581 @@ High AWS bill                       → Unused resources, wrong instance type  �
 
 
 ================================================================================
+TOPIC 26: EFS — ELASTIC FILE SYSTEM
+================================================================================
+
+1. CONCEPT EXPLANATION
+=======================
+
+Beginner:
+---------
+EFS = Shared Network File System (NFS) for AWS. Unlike EBS which attaches to ONE EC2
+instance, EFS can be mounted by MULTIPLE EC2 instances simultaneously — like a shared
+drive in an office network.
+
+  -> EBS: One disk, one EC2 (exclusive)
+  -> EFS: Shared disk, many EC2s at once (concurrent)
+
+Key Characteristics:
+  -> Fully managed NFS file system (no servers to maintain)
+  -> Automatically scales storage up/down (no capacity planning!)
+  -> Accessible across multiple AZs in a region
+  -> Standard NFS protocol — works with any Linux workload
+  -> More expensive than EBS per GB (but shared = cost efficient for large teams)
+
+Intermediate:
+-------------
+EFS vs EBS vs S3 Comparison:
++------------------+-----------------------+-----------------------+--------------------+
+| Feature          | EBS                   | EFS                   | S3                 |
++------------------+-----------------------+-----------------------+--------------------+
+| Access           | One EC2 at a time     | Multiple EC2s         | HTTP/S API         |
+| Protocol         | Block (like HDD)      | NFS (file system)     | Object (REST API)  |
+| Scope            | Zone-specific         | Region-wide (multi-AZ)| Global             |
+| Scaling          | Fixed size (resize)   | Automatic (elastic)   | Unlimited          |
+| Mount            | /dev/nvme1n1          | NFS mount point       | Via SDK/CLI        |
+| Use case         | OS, DB, single app    | Shared config, media  | Backups, archives  |
+| Cost             | ~$0.10/GB-month       | ~$0.30/GB-month       | ~$0.023/GB-month   |
++------------------+-----------------------+-----------------------+--------------------+
+
+EFS Performance Modes:
+  -> General Purpose: Low latency, for web serving, content management
+  -> Max I/O: Higher throughput, higher latency — for big data, media processing
+
+EFS Throughput Modes:
+  -> Bursting: Throughput scales with storage size (default)
+  -> Provisioned: Fixed throughput regardless of storage size
+
+Advanced:
+---------
+EFS Storage Classes (like S3 tiering):
+  -> Standard: Frequently accessed files
+  -> Standard-IA (Infrequent Access): Cheaper, for files not accessed daily
+  -> Use Lifecycle Management: Auto-move files not accessed in 30 days to Standard-IA
+
+EFS Mount on EC2:
+  # Install NFS client
+  sudo yum install -y amazon-efs-utils
+
+  # Create mount point
+  sudo mkdir /shared-data
+
+  # Mount EFS (using EFS mount helper)
+  sudo mount -t efs -o tls fs-0abc123:/  /shared-data
+
+  # Make persistent (add to /etc/fstab)
+  fs-0abc123:/ /shared-data efs defaults,tls,_netdev 0 0
+
+EFS on Multiple EC2 Instances:
+  EC2-AZ1a  --+
+               +--> EFS (shared storage) --> All instances see same files!
+  EC2-AZ1b  --+
+               |
+  EC2-AZ1c  --+
+
+2. INTERVIEW QUESTIONS
+========================
+
+Q: When would you choose EFS over EBS?
+A: Choose EFS when:
+   -> Multiple EC2 instances need to read/write the same files simultaneously
+   -> Content management system: Web servers need shared media library
+   -> Shared config files across a fleet of application servers
+   -> Machine learning: Training data accessible by multiple compute nodes
+   -> Home directories: Multiple users' files on a shared file system
+
+   Choose EBS when:
+   -> Single EC2 instance needs high-performance block storage
+   -> Database files (MySQL data directory, PostgreSQL WAL files)
+   -> OS root volume
+
+Q: What is the difference between EFS and S3?
+A: EFS: Real file system with directories, permissions, file locking.
+        Mounted like a local disk (NFS). Lower latency. Works with Linux commands.
+        Can cd, ls, cat files. Used by apps that need POSIX file system access.
+   S3:  Object store with HTTP API. No directory structure (just key prefixes).
+        Best for large scale, unlimited storage, web-accessible content.
+        Cannot be mounted directly (need s3fs-fuse, which is slow).
+   Rule: If your app code uses File/Path I/O → EFS. If using SDK → S3.
+
+Q (Scenario): You have 10 web servers serving images. Images are uploaded to
+one server but not visible on others. How do you fix this?
+A: Use EFS as shared storage!
+   -> Mount EFS on all 10 EC2 instances at /var/www/html/images
+   -> Any upload to one instance writes to EFS
+   -> All other instances see the file immediately (shared mount)
+   -> Alternative: Use S3 with pre-signed URLs (better for large scale)
+
+3. EFS ARCHITECTURE DIAGRAM
+=============================
+
+  Region: ap-south-1
+  +----------------------------------------------------------+
+  |                                                          |
+  |  AZ-1a              AZ-1b              AZ-1c            |
+  | +--------+          +--------+         +--------+       |
+  | | EC2 A  |          | EC2 B  |         | EC2 C  |       |
+  | | App    |          | App    |         | App    |       |
+  | +---+----+          +---+----+         +---+----+       |
+  |     |                   |                  |            |
+  |     +-------------------+------------------+            |
+  |                         |                               |
+  |               +---------+---------+                     |
+  |               |  EFS File System  |                     |
+  |               | (Elastic, Multi-AZ|                     |
+  |               | Shared NFS Mount) |                     |
+  |               +-------------------+                     |
+  +----------------------------------------------------------+
+
+4. BEST PRACTICES
+==================
+  -> Use EFS encryption (at rest + in transit) for sensitive shared files
+  -> Use Security Groups to restrict NFS port 2049 access
+  -> Use EFS Lifecycle Management to reduce cost (Standard-IA for cold files)
+  -> Use VPC endpoints for EFS (private connectivity, no public traffic)
+  -> Monitor with CloudWatch: BurstCreditBalance, PermittedThroughput
+
+
+================================================================================
+TOPIC 27: ELASTIC BEANSTALK — PLATFORM AS A SERVICE
+================================================================================
+
+1. CONCEPT EXPLANATION
+=======================
+
+Beginner:
+---------
+Elastic Beanstalk = PaaS (Platform as a Service) on AWS.
+You just upload your application code (JAR, WAR, ZIP) and Beanstalk handles
+EVERYTHING else: EC2 provisioning, load balancing, auto scaling, OS patching,
+monitoring, deployment.
+
+  Without Beanstalk: You manually create EC2, install Java, configure ALB,
+                     set up Auto Scaling, configure CloudWatch... hours of work.
+  With Beanstalk:    Upload your JAR → Beanstalk does it all in minutes!
+
+Supported Platforms:
+  -> Java (Spring Boot JAR/WAR)
+  -> Python, Node.js, Ruby, PHP, Go
+  -> Docker (single/multi-container)
+  -> .NET on Windows Server
+
+Intermediate:
+-------------
+Beanstalk Architecture (what it creates automatically):
+  -> EC2 instances (you choose instance type)
+  -> Application Load Balancer
+  -> Auto Scaling Group (Min/Max/Desired)
+  -> Security Groups
+  -> CloudWatch monitoring + alarms
+  -> S3 bucket for deployment artifacts
+
+Deploy Spring Boot to Beanstalk:
+  # Package your Spring Boot app
+  mvn clean package -DskipTests
+
+  # Deploy via CLI
+  eb init my-spring-app --platform java --region ap-south-1
+  eb create prod-env --instance-type t3.medium
+  eb deploy
+
+  # Or via Console:
+  # 1. Create Application → Create Environment
+  # 2. Choose: Web server environment
+  # 3. Platform: Java (Corretto 17)
+  # 4. Upload your .jar file
+  # 5. Click "Create environment" → Done!
+
+Beanstalk Environment Configuration (.ebextensions):
+  # .ebextensions/jvm.config
+  option_settings:
+    aws:elasticbeanstalk:application:environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 5000     # Beanstalk proxy expects port 5000 for Java!
+    aws:autoscaling:asg:
+      MinSize: 2
+      MaxSize: 10
+    aws:autoscaling:launchconfiguration:
+      InstanceType: t3.medium
+
+Advanced:
+---------
+Beanstalk Deployment Policies:
+  -> All at once: Deploy to all instances simultaneously (fastest, has downtime)
+  -> Rolling: Update instances in batches (no downtime, slower)
+  -> Rolling with additional batch: Launch new batch first (zero downtime)
+  -> Immutable: Launch completely new instances → swap → terminate old (safest)
+  -> Blue/Green: Deploy to new environment → swap URL (zero downtime, easy rollback)
+
+When to use Beanstalk vs ECS vs EC2 directly:
++----------------------+------------------+------------------+------------------+
+| Factor               | Elastic Beanstalk| ECS/Fargate      | EC2 (manual)     |
++----------------------+------------------+------------------+------------------+
+| Control              | Low (managed)    | Medium           | Full             |
+| Setup time           | Minutes          | Hours            | Hours/Days       |
+| Container support    | Yes (Docker)     | Native           | Manual           |
+| Cost                 | Same as EC2      | Same as EC2      | Same as EC2      |
+| Best for             | Quick prototypes,| Microservices,   | Custom OS/config |
+|                      | small-medium apps| containers       | full control     |
++----------------------+------------------+------------------+------------------+
+
+2. INTERVIEW QUESTIONS
+========================
+
+Q: What is Elastic Beanstalk and how is it different from EC2?
+A: EC2 = IaaS: You get a raw virtual machine. You install everything manually
+              (Java, web server, configure ALB, set up monitoring — everything).
+   Beanstalk = PaaS: You give it your code. It automatically provisions EC2,
+              sets up ALB, auto scaling, monitoring. You focus on code only.
+   Hidden truth: Beanstalk USES EC2 under the hood — you can still access those
+   EC2 instances via SSH if needed. You're not locked out of the infrastructure.
+
+Q: What port does Spring Boot need to run on for Elastic Beanstalk?
+A: By default, the Nginx reverse proxy in Beanstalk routes traffic to port 5000.
+   Set: server.port=5000 in application.properties, OR set via environment variable:
+   SERVER_PORT=5000 in Beanstalk configuration.
+   Beanstalk exposes port 80/443 externally → proxies to your app on port 5000.
+
+Q: When would you NOT use Elastic Beanstalk?
+A: -> Large-scale microservices architecture (use EKS/ECS instead)
+   -> Need fine-grained Kubernetes control (use EKS)
+   -> Multi-cloud strategy (Beanstalk is AWS-specific)
+   -> Need custom OS configuration or special networking setup (use EC2 directly)
+   -> High-performance, cost-optimized container workloads (use Fargate)
+
+Q (Scenario): Your company wants to quickly deploy a Spring Boot app with
+minimal DevOps overhead. What do you recommend?
+A: Elastic Beanstalk is ideal:
+   1. mvn clean package → produces app.jar
+   2. Beanstalk: Upload JAR → choose Java platform → configure env vars
+   3. Auto-provisioned: EC2 + ALB + ASG + CloudWatch in minutes
+   4. Future: As app grows, can migrate to ECS/EKS for more control
+   Beanstalk is the fastest path from code to production for Java apps on AWS.
+
+
+================================================================================
+TOPIC 28: AWS CLI — COMMAND LINE INTERFACE
+================================================================================
+
+1. CONCEPT EXPLANATION
+=======================
+
+Beginner:
+---------
+AWS CLI = Command-line tool to interact with ALL AWS services from your terminal.
+Instead of clicking through the AWS Console, you run commands.
+
+Benefits:
+  -> Automation: Script repetitive tasks (create EC2, upload to S3, etc.)
+  -> Speed: Faster than console for bulk operations
+  -> CI/CD Integration: GitHub Actions, Jenkins use CLI to deploy
+  -> Scripting: Combine with bash/python for powerful automation
+
+Installation:
+  # Windows
+  msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
+
+  # Linux/Mac
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
+  unzip awscliv2.zip && sudo ./aws/install
+
+  # Verify
+  aws --version
+
+Configure AWS CLI:
+  aws configure
+  # Prompts for:
+  # AWS Access Key ID: AKIAIOSFODNN7EXAMPLE
+  # AWS Secret Access Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+  # Default region: ap-south-1
+  # Default output format: json
+
+Intermediate:
+-------------
+Essential AWS CLI Commands:
+
+EC2 Commands:
+  # List all running EC2 instances
+  aws ec2 describe-instances --filters "Name=instance-state-name,Values=running"
+
+  # Start/Stop/Terminate instances
+  aws ec2 start-instances --instance-ids i-0abc123
+  aws ec2 stop-instances --instance-ids i-0abc123
+  aws ec2 terminate-instances --instance-ids i-0abc123
+
+  # Get instance public IP
+  aws ec2 describe-instances --instance-ids i-0abc123 \
+    --query 'Reservations[0].Instances[0].PublicIpAddress' --output text
+
+S3 Commands:
+  # List buckets
+  aws s3 ls
+
+  # Upload file
+  aws s3 cp localfile.pdf s3://my-bucket/documents/
+
+  # Sync local directory to S3
+  aws s3 sync ./build/ s3://my-bucket/ --delete
+
+  # Download file
+  aws s3 cp s3://my-bucket/file.pdf ./
+
+  # Make file public
+  aws s3api put-object-acl --bucket my-bucket --key file.pdf --acl public-read
+
+IAM Commands:
+  # List users
+  aws iam list-users
+
+  # Create user
+  aws iam create-user --user-name john-dev
+
+  # Attach policy to user
+  aws iam attach-user-policy --user-name john-dev \
+    --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+  # Create access keys
+  aws iam create-access-key --user-name john-dev
+
+EBS/Snapshot Commands:
+  # Create snapshot
+  aws ec2 create-snapshot --volume-id vol-0abc123 --description "Pre-deploy backup"
+
+  # List your snapshots
+  aws ec2 describe-snapshots --owner-ids self
+
+  # Create volume from snapshot
+  aws ec2 create-volume --snapshot-id snap-0xyz456 \
+    --availability-zone ap-south-1a --volume-type gp3
+
+RDS Commands:
+  # List RDS instances
+  aws rds describe-db-instances
+
+  # Create RDS snapshot
+  aws rds create-db-snapshot \
+    --db-instance-identifier my-prod-db \
+    --db-snapshot-identifier my-prod-db-snap-$(date +%Y%m%d)
+
+  # Describe snapshots
+  aws rds describe-db-snapshots --db-instance-identifier my-prod-db
+
+Advanced:
+---------
+AWS CLI Profiles (for multiple accounts):
+  # Configure named profile
+  aws configure --profile dev-account
+  aws configure --profile prod-account
+
+  # Use specific profile
+  aws s3 ls --profile prod-account
+  export AWS_PROFILE=prod-account  # Set for session
+
+AWS CLI Output Formatting:
+  # JSON output (default)
+  aws ec2 describe-instances --output json
+
+  # Table output (readable)
+  aws ec2 describe-instances --output table
+
+  # Text output (for scripting)
+  aws ec2 describe-instances --output text
+
+  # JMESPath query (filter specific fields)
+  aws ec2 describe-instances \
+    --query 'Reservations[*].Instances[*].[InstanceId,PublicIpAddress,State.Name]' \
+    --output table
+
+Useful Automation Scripts:
+  # Start all stopped EC2 instances tagged "Environment=dev"
+  aws ec2 describe-instances \
+    --filters "Name=tag:Environment,Values=dev" \
+              "Name=instance-state-name,Values=stopped" \
+    --query 'Reservations[*].Instances[*].InstanceId' \
+    --output text | xargs aws ec2 start-instances --instance-ids
+
+  # Delete all snapshots older than 30 days (use with caution!)
+  aws ec2 describe-snapshots --owner-ids self \
+    --query 'Snapshots[?StartTime<=`2024-01-01`].SnapshotId' \
+    --output text | xargs -n1 aws ec2 delete-snapshot --snapshot-id
+
+2. INTERVIEW QUESTIONS
+========================
+
+Q: How do you configure AWS CLI to avoid hardcoding credentials?
+A: Options (in order of preference for security):
+   1. IAM Role (best): On EC2/Lambda, attach IAM Role → CLI auto-picks credentials
+      No configuration needed! SDK/CLI reads from instance metadata service.
+   2. Environment Variables: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+      Good for CI/CD (set as secrets in GitHub Actions/Jenkins)
+   3. AWS SSO (AWS IAM Identity Center): For developers — login via browser
+      aws sso login --profile my-sso-profile
+   4. aws configure: Stored in ~/.aws/credentials (avoid for production servers)
+
+Q: How do you use AWS CLI in GitHub Actions CI/CD?
+A:
+  jobs:
+    deploy:
+      runs-on: ubuntu-latest
+      steps:
+      - name: Configure AWS credentials (OIDC - best practice)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789:role/GitHubActionsDeployRole
+          aws-region: ap-south-1
+          # No access keys needed! OIDC token-based federation
+
+      - name: Deploy JAR to S3
+        run: aws s3 cp target/app.jar s3://my-artifacts-bucket/
+
+      - name: Update ECS service
+        run: aws ecs update-service --cluster prod --service api --force-new-deployment
+
+Q: What is the --dry-run flag in AWS CLI?
+A: --dry-run checks if you HAVE PERMISSION to perform an action WITHOUT actually
+   doing it. Useful for validating IAM permissions before risky operations.
+   Example: aws ec2 run-instances --dry-run --image-id ami-xxx --instance-type t3.micro
+   Returns: "DryRunOperation" error if you have permission (confusingly, this means SUCCESS!)
+   Returns: "UnauthorizedOperation" if you DON'T have permission.
+
+
+================================================================================
+TOPIC 29: STATIC WEBSITE HOSTING ON EC2
+================================================================================
+
+1. CONCEPT EXPLANATION
+=======================
+
+Beginner:
+---------
+You can host a website on an EC2 Linux VM using the httpd (Apache HTTP Server)
+web server. This is one of the first practical AWS exercises to understand how
+EC2, Security Groups, and web serving work together.
+
+Website Types:
+  -> Static Website: Same HTML/CSS/JS for every user (no backend logic)
+     Ex: Company landing page, portfolio site, documentation
+  -> Dynamic Website: Different response per user (backend + database)
+     Ex: Gmail, Facebook, e-commerce sites
+
+Web Server = Software that "serves" web pages to browsers.
+  -> httpd (Apache): Most popular Linux web server
+  -> nginx: High-performance alternative
+  -> Tomcat: Java-specific web server for Spring Boot WAR files
+
+Intermediate:
+-------------
+Hosting a Static Website Using httpd on EC2 (Step-by-Step):
+
+Step 1: Launch EC2 (Amazon Linux 2 AMI)
+  - AMI: Amazon Linux 2
+  - Instance Type: t2.micro (free tier)
+  - Security Group: Allow HTTP port 80 (inbound from 0.0.0.0/0)
+  - Key Pair: Download .pem for SSH
+
+Step 2: SSH into EC2
+  chmod 400 my-key.pem
+  ssh -i my-key.pem ec2-user@<public-ip>
+
+Step 3: Install and Start httpd
+  sudo yum install httpd -y       # Install Apache web server
+  sudo service httpd start        # Start the web server
+  sudo systemctl enable httpd     # Auto-start on reboot
+
+Step 4: Create Web Content
+  cd /var/www/html                # Web root directory
+  sudo vi index.html              # Create your HTML file
+
+  # Example index.html content:
+  <html>
+    <head><title>My AWS Website</title></head>
+    <body>
+      <h1>Hello from AWS EC2!</h1>
+      <p>Hosted on Amazon Linux with Apache httpd</p>
+    </body>
+  </html>
+
+Step 5: Access in Browser
+  http://<EC2-public-ip>          # httpd listens on port 80
+
+IMPORTANT: Security Group MUST allow port 80 (HTTP) or you'll get "Connection timed out"
+
+Advanced:
+---------
+Automate with User Data (bootstrap on EC2 launch):
+  # Paste this in "User Data" when creating EC2 instance
+  #!/bin/bash
+  sudo yum install httpd -y
+  cd /var/www/html
+  echo "<html><h1>Auto-deployed via User Data!</h1></html>" > index.html
+  sudo service httpd start
+
+  # This script runs ONCE at first launch — zero manual SSH needed!
+
+Production Web Hosting Comparison:
++------------------+------------------+------------------+------------------+
+| Method           | Use Case         | Cost             | Complexity       |
++------------------+------------------+------------------+------------------+
+| EC2 + httpd      | Learning, custom | EC2 hourly rate  | Medium           |
+| S3 Static Site   | Pure static HTML | ~$0.023/GB       | Very Low         |
+| CloudFront+S3    | Global CDN site  | CDN + S3 pricing | Low              |
+| Elastic Beanstalk| Java apps        | EC2 rate         | Low (managed)    |
+| ECS/EKS          | Containerized    | EC2/Fargate rate | High             |
++------------------+------------------+------------------+------------------+
+
+For STATIC websites: S3 Static Hosting + CloudFront CDN is the recommended approach
+  -> No EC2 to manage, 99.99% availability, global CDN, HTTPS, very cheap
+
+For DYNAMIC Spring Boot apps: EC2 + ALB + ASG OR Elastic Beanstalk OR ECS
+
+2. INTERVIEW QUESTIONS
+========================
+
+Q: Can you explain how you would host a Spring Boot application on EC2?
+A: Step-by-step production setup:
+   1. Launch EC2 (Amazon Linux 2, t3.medium for prod, private subnet)
+   2. SSH in and install Java 17:
+      sudo amazon-linux-extras install java-openjdk17 -y
+   3. Copy JAR to EC2:
+      scp -i key.pem app.jar ec2-user@<ip>:/home/ec2-user/
+   4. Create systemd service (ensures auto-restart):
+      sudo tee /etc/systemd/system/myapp.service <<EOF
+      [Unit]
+      Description=Spring Boot App
+      After=network.target
+      [Service]
+      User=ec2-user
+      ExecStart=/usr/bin/java -jar /home/ec2-user/app.jar
+      Restart=always
+      [Install]
+      WantedBy=multi-user.target
+      EOF
+      sudo systemctl enable myapp && sudo systemctl start myapp
+   5. Add EC2 to ALB target group
+   6. Point Route 53 domain to ALB DNS name
+   7. Enable HTTPS via ACM certificate on ALB
+
+Q: What is the purpose of /var/www/html in httpd?
+A: /var/www/html is the document root (web root) for Apache httpd.
+   Any file placed here is directly served by the web server.
+   -> index.html → http://server-ip/ (default page)
+   -> about.html → http://server-ip/about.html
+   -> images/logo.png → http://server-ip/images/logo.png
+   It's equivalent to the "public" folder in modern web frameworks.
+
+Q: You launched an EC2 with httpd but can't access the website in browser. What do you check?
+A: Systematic debug checklist:
+   1. Security Group: Does it allow inbound TCP port 80 from 0.0.0.0/0?
+      (Most common cause — forgot to add HTTP rule)
+   2. httpd running? → sudo service httpd status
+      If not running: sudo service httpd start
+   3. index.html exists? → ls -la /var/www/html/
+   4. EC2 public IP correct? Copy from EC2 Console (not private IP!)
+   5. Network ACL: Subnet-level firewall also allowing port 80?
+   6. Browser: Using http:// (not https://) since only port 80 is open?
+
+
+================================================================================
 END OF NEW COMPREHENSIVE AWS DEVOPS GUIDE
 ================================================================================
 

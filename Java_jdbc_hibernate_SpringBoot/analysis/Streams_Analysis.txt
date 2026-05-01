@@ -2357,3 +2357,446 @@ Follow-up Questions an Interviewer May Ask:
 ================================================================================
 END OF INTERVIEW QUESTION (2026-04-22)
 ================================================================================
+
+
+================================================================================
+PRACTICED CODE -- DUPLICATE FREQUENCY DETECTION (2026-04-25)
+================================================================================
+
+I Have Practised The Code:
+
+// Online Java Compiler
+// Use this editor to write, compile and run your Java code online
+
+// You are given a List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);.
+// Write a Java 8 Stream-based solution to count the frequency of each element using Collectors.groupingBy and Collectors.counting. What will be the output map structure?
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+class Main {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);
+        Map<Integer,Long> mapRes = numbers.stream()
+                                  .collect(Collectors.groupingBy(num->num,
+                                  TreeMap::new,
+                                  Collectors.counting()));
+    System.out.println(mapRes);
+//     Using the same list, how would you extract only the elements that appear more than once using Streams?
+// Explain the steps involved in transforming the grouped result into the final list.
+
+ List<Integer> ResultList = mapRes.entrySet()
+                                .stream()
+                                .filter(entry-> entry.getValue()>1)
+                                .map(Map.Entry::getKey)
+                                .collect(Collectors.toList());
+System.out.println(ResultList);
+
+// 3rd Given a list of integers, write a Stream pipeline that returns a Set<Integer> of duplicate elements (elements with frequency > 1).
+   Set<Integer> sets =  numbers.stream()
+                        .collect(Collectors.groupingBy(
+                            Function.identity(),
+                            Collectors.counting()))
+                            .entrySet()
+                            .stream()
+                            .filter(entry-> entry.getValue()>1)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toSet());
+   System.out.println(sets);
+
+//   Suppose the input list is very large (millions of elements).
+// How would you modify your Stream-based approach using groupingBy and counting to maintain readability while also being mindful of performance and memory usage?
+List<Integer> ResultLists = numbers.parallelStream()
+                        .collect(Collectors.groupingBy(
+                            Function.identity(),
+                            Collectors.counting()))
+                            .entrySet()
+                            .stream()
+                            .filter(entry->entry.getValue()>1)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+  System.out.println(ResultLists);
+
+//   Instead of using Collectors.groupingBy, design an alternative Stream-based or non-Stream-based approach to find duplicate elements.
+// Compare its time and space complexity with the groupingBy + counting approach, and discuss when you would prefer one over the other.
+
+  Set<Integer> seen = new HashSet<>();
+
+  Set<Integer> InList = numbers.stream()
+                        .filter(num -> !seen.add(num))
+                        .collect(Collectors.toSet());
+
+   System.out.println("----------------");
+   System.out.println(seen);
+   System.out.println(InList);
+
+   //Normal MAP and List Approach
+
+     System.out.println("----------------");
+
+     List<Integer> ressList = new ArrayList<>();
+     Map<Integer,Integer> mapress = new HashMap<>();
+
+     for(Integer num : numbers)
+     {
+         mapress.put(num,mapress.getOrDefault(num,0)+ 1);
+     }
+
+     for(Integer num : numbers)
+     {
+         if(mapress.get(num)>1)
+         {
+            ressList.add(num);
+         }
+     }
+      System.out.println(ressList);
+
+
+//   Consider using parallelStream() for the same problem.
+// What potential issues or considerations arise when using groupingBy and counting in a parallel stream context (e.g., thread safety, performance overhead, ordering)?
+// How would you handle edge cases such as null values or extremely skewed data distributions?
+System.out.println("----------------");
+  List<Integer> clist = numbers.parallelStream()
+                        .collect(Collectors.groupingByConcurrent(num->num,
+                        Collectors.counting()
+                        )).entrySet()
+                        .stream()
+                        .filter(entryV -> entryV.getValue()>1)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+   System.out.println(clist);
+    }
+}
+
+================================================================================
+ANALYSIS OF PRACTICED CODE -- APPROACHES COMPARED (2026-04-25)
+================================================================================
+
+Problem Statement:
+  Given: List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);
+  Goal:  Find elements that appear more than once (duplicates).
+
+--------------------------------------------------------------------------------
+APPROACH 1: groupingBy + counting → TreeMap (sorted output)
+--------------------------------------------------------------------------------
+Code:
+  Map<Integer,Long> mapRes = numbers.stream()
+      .collect(Collectors.groupingBy(num -> num,
+               TreeMap::new,
+               Collectors.counting()));
+  // {1=1, 2=2, 3=1, 4=3}
+
+Key Points:
+  - TreeMap::new as map factory → output is SORTED by natural order of keys.
+  - Collectors.counting() returns Long (not int).
+  - Single-pass O(n) time; O(k) space where k = distinct elements.
+  - Then filter entrySet for getValue() > 1 → [2, 4]
+
+When to Use:
+  - When you need a sorted frequency map.
+  - When downstream processing requires a NavigableMap (ceiling, floor, range).
+
+--------------------------------------------------------------------------------
+APPROACH 2: groupingBy → entrySet filter → Set<Integer>
+--------------------------------------------------------------------------------
+Code:
+  Set<Integer> sets = numbers.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(entry -> entry.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+  // [2, 4]  (order not guaranteed — backed by HashMap)
+
+Key Points:
+  - Function.identity() is identical to num -> num but more expressive.
+  - Returns Set → automatically deduplicates (no duplicates of duplicates).
+  - Two-stream pass: first groupBy, then entrySet stream.
+
+When to Use:
+  - When you only need the SET of duplicate values, not their count.
+  - Order doesn't matter.
+
+--------------------------------------------------------------------------------
+APPROACH 3: parallelStream() + groupingBy (large dataset)
+--------------------------------------------------------------------------------
+Code:
+  List<Integer> ResultLists = numbers.parallelStream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(entry -> entry.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+Key Points:
+  - parallelStream() on the first collect step uses ForkJoinPool.
+  - groupingBy with default HashMap is NOT thread-safe for parallel streams.
+  - Safe because Collectors.groupingBy merges partial results from each thread
+    internally via combiner — it IS designed for concurrent use with collect().
+  - The second entrySet().stream() is sequential — fine for post-processing.
+
+When to Use:
+  - Input list has millions of elements.
+  - CPU-bound (no I/O inside the pipeline).
+  - Acceptable if result order is not guaranteed.
+
+⚠ CAUTION:
+  - Do NOT use parallelStream() with stateful lambda expressions.
+  - Do NOT collect into a non-thread-safe collection inside a parallel forEach.
+
+--------------------------------------------------------------------------------
+APPROACH 4: HashSet.add() trick (stateful filter) — Most Memory Efficient
+--------------------------------------------------------------------------------
+Code:
+  Set<Integer> seen = new HashSet<>();
+  Set<Integer> InList = numbers.stream()
+      .filter(num -> !seen.add(num))   // add returns false if already present
+      .collect(Collectors.toSet());
+  // seen  → {1, 2, 3, 4}   (all elements ever added)
+  // InList → {2, 4}         (elements that failed to add = duplicates)
+
+Key Points:
+  - seen.add(x) returns false if x already exists → stream keeps it as duplicate.
+  - Space: O(k) for seen + O(d) for duplicates (d = distinct duplicate values).
+  - Time: O(n) single pass.
+  - ⚠ SIDE EFFECT WARNING: Uses external mutable state (seen). NOT safe with
+    parallelStream(). Only use with sequential stream().
+  - Preferred for minimal memory footprint when you don't need the count.
+
+Complexity vs groupingBy:
+  | Approach            | Time  | Space       | Thread-Safe  |
+  |---------------------|-------|-------------|--------------|
+  | groupingBy+counting | O(n)  | O(k) full   | Yes (collect)|
+  | HashSet.add trick   | O(n)  | O(k) lean   | NO           |
+  | Normal Map+List     | O(n)  | O(k)+O(n)   | No           |
+
+--------------------------------------------------------------------------------
+APPROACH 5: Normal Map + List (Classic Imperative Approach)
+--------------------------------------------------------------------------------
+Code:
+  Map<Integer,Integer> mapress = new HashMap<>();
+  for(Integer num : numbers)
+      mapress.put(num, mapress.getOrDefault(num, 0) + 1);
+
+  List<Integer> ressList = new ArrayList<>();
+  for(Integer num : numbers)
+      if(mapress.get(num) > 1)
+          ressList.add(num);
+  // ressList → [2, 2, 4, 4, 4]  (keeps ALL occurrences, not just unique duplicates)
+
+Key Points:
+  - Two loops (two passes over the list).
+  - getOrDefault(num, 0) is a clean way to initialize count.
+  - Result includes ALL occurrences of duplicate elements, not just one entry.
+  - Most readable for junior developers; no Stream knowledge needed.
+
+When to Use:
+  - Codebase is Java 7 or older.
+  - You need ALL occurrences (not just the distinct duplicate values).
+  - Pair programming with someone unfamiliar with Streams.
+
+--------------------------------------------------------------------------------
+APPROACH 6: groupingByConcurrent + parallelStream (True Concurrent Collection)
+--------------------------------------------------------------------------------
+Code:
+  List<Integer> clist = numbers.parallelStream()
+      .collect(Collectors.groupingByConcurrent(num -> num, Collectors.counting()))
+      .entrySet().stream()
+      .filter(entryV -> entryV.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+Key Points:
+  - groupingByConcurrent returns a ConcurrentHashMap instead of HashMap.
+  - Threads write directly to the shared map concurrently (no combiner step).
+  - Faster than groupingBy in HIGHLY parallel workloads (less merge overhead).
+  - ⚠ Result order inside the map is NOT guaranteed (ConcurrentHashMap is unordered).
+  - Use groupingByConcurrent when MAXIMIZING parallel throughput, but only when
+    result ordering is irrelevant.
+
+groupingBy vs groupingByConcurrent:
+  | Feature              | groupingBy        | groupingByConcurrent     |
+  |----------------------|-------------------|--------------------------|
+  | Map type             | HashMap           | ConcurrentHashMap        |
+  | Thread-safety model  | combiner/merge    | shared concurrent writes |
+  | Order preserved?     | No (HashMap)      | No (ConcurrentHashMap)   |
+  | Parallel performance | Good              | Better for large data    |
+  | Safe with parallel?  | Yes               | Yes                      |
+
+================================================================================
+ADDITIONAL SNIPPETS -- REAL SCENARIOS & USE CASES (2026-04-25)
+================================================================================
+
+--------------------------------------------------------------------------------
+Snippet 1: Find TOP N most frequent elements
+--------------------------------------------------------------------------------
+Scenario: "Given a list of words from a search log, find the top 3 most searched terms."
+
+  List<String> searchLog = Arrays.asList("java","python","java","sql","java","python","go");
+
+  List<String> top3 = searchLog.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+      .limit(3)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+  System.out.println(top3);  // [java, python, sql] or [java, python, go]
+
+Key Concept:
+  Map.Entry.comparingByValue(Comparator.reverseOrder()) sorts entries DESC by count.
+  .limit(3) picks top N.
+
+--------------------------------------------------------------------------------
+Snippet 2: Frequency Map → Remove Singletons → Sorted by Frequency DESC
+--------------------------------------------------------------------------------
+Scenario: "From a product view log, keep only products viewed more than once and sort by popularity."
+
+  List<String> viewLog = Arrays.asList("P1","P2","P1","P3","P2","P1","P4");
+
+  Map<String, Long> popularProducts = viewLog.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(e -> e.getValue() > 1)
+      .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+      .collect(Collectors.toMap(
+          Map.Entry::getKey,
+          Map.Entry::getValue,
+          (a, b) -> a,
+          LinkedHashMap::new   // preserve sorted insertion order
+      ));
+
+  System.out.println(popularProducts);  // {P1=3, P2=2}
+
+Key Concept:
+  LinkedHashMap::new preserves the sorted order from the sorted() step.
+  Without it, toMap() uses HashMap which loses order.
+
+--------------------------------------------------------------------------------
+Snippet 3: Detect Anagram Groups
+--------------------------------------------------------------------------------
+Scenario: "Group a list of words into anagram families."
+
+  List<String> words = Arrays.asList("eat","tea","tan","ate","nat","bat");
+
+  Map<String, List<String>> anagramGroups = words.stream()
+      .collect(Collectors.groupingBy(word -> {
+          char[] chars = word.toCharArray();
+          Arrays.sort(chars);
+          return new String(chars);   // canonical key = sorted characters
+      }));
+
+  anagramGroups.forEach((key, group) -> System.out.println(group));
+  // [eat, tea, ate]
+  // [tan, nat]
+  // [bat]
+
+Key Concept:
+  The classifier function sorts characters → anagrams share the same key.
+  groupingBy automatically builds the List<String> per group.
+
+--------------------------------------------------------------------------------
+Snippet 4: Null-Safe Duplicate Detection (handle null values in list)
+--------------------------------------------------------------------------------
+Scenario: "A list may contain nulls. Find duplicate non-null elements safely."
+
+  List<Integer> dataWithNulls = Arrays.asList(1, null, 2, 2, null, 3, 4, 4);
+
+  Set<Integer> duplicatesNullSafe = dataWithNulls.stream()
+      .filter(Objects::nonNull)                 // skip null values first
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(e -> e.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+
+  System.out.println(duplicatesNullSafe);  // [2, 4]
+
+Key Concept:
+  Objects::nonNull is a clean null-guard method reference.
+  groupingBy throws NullPointerException if a null key reaches it → filter first.
+
+--------------------------------------------------------------------------------
+Snippet 5: Count Duplicates across Two Lists (Intersection Frequency)
+--------------------------------------------------------------------------------
+Scenario: "Find elements that appear in BOTH list A and list B."
+
+  List<Integer> listA = Arrays.asList(1, 2, 3, 4, 5);
+  List<Integer> listB = Arrays.asList(3, 4, 5, 6, 7);
+
+  Set<Integer> setA = new HashSet<>(listA);
+  Set<Integer> intersection = listB.stream()
+      .filter(setA::contains)
+      .collect(Collectors.toSet());
+
+  System.out.println(intersection);  // [3, 4, 5]
+
+Key Concept:
+  setA::contains is O(1) lookup → entire pipeline is O(n + m).
+  For very large lists, this is far better than nested loops O(n*m).
+
+--------------------------------------------------------------------------------
+Snippet 6: parallelStream + groupingByConcurrent — Thread-Safe Frequency Map
+--------------------------------------------------------------------------------
+Scenario: "Process millions of log entries in parallel and count IP address frequencies."
+
+  List<String> ipLogs = // ... millions of IP strings
+
+  ConcurrentMap<String, Long> ipFrequency = ipLogs.parallelStream()
+      .collect(Collectors.groupingByConcurrent(
+          Function.identity(),
+          Collectors.counting()
+      ));
+
+  // Find IPs hitting more than 1000 times (potential DDoS)
+  ipFrequency.entrySet().stream()
+      .filter(e -> e.getValue() > 1000)
+      .forEach(e -> System.out.println("Suspicious IP: " + e.getKey() + " → " + e.getValue()));
+
+Key Concept:
+  groupingByConcurrent returns ConcurrentMap — safe for parallelStream.
+  No need to synchronize externally; threads write concurrently to shared map.
+  Far more efficient than groupingBy + parallelStream for very large inputs.
+
+--------------------------------------------------------------------------------
+Snippet 7: Skewed Data — Handling one element dominating frequency
+--------------------------------------------------------------------------------
+Scenario: "Data has 1 million records but 99% are the same value. Parallel stream
+           performance degrades due to skew — use sequential for known-skewed data."
+
+  // Anti-pattern: parallel on skewed data
+  // List<String> skewed = ... (999,000 "A" + 1,000 unique values)
+  // parallelStream → all threads fight over "A" bucket → worse than sequential
+
+  // Best practice: profile first, choose accordingly
+  long distinctCount = numbers.stream().distinct().count();
+  boolean isHighlySkewed = distinctCount < numbers.size() * 0.01; // < 1% distinct
+
+  Stream<Integer> chosen = isHighlySkewed
+      ? numbers.stream()           // sequential for skewed
+      : numbers.parallelStream();  // parallel for uniform
+
+  Map<Integer, Long> freqMap = chosen
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+Key Concept:
+  Skewed data degrades parallel performance due to lock contention on hot buckets.
+  Adaptive stream selection based on data profile is production-grade thinking.
+
+================================================================================
+QUICK REFERENCE TABLE -- DUPLICATE DETECTION APPROACHES (2026-04-25)
+================================================================================
+
+Approach                     | Returns              | Ordered | Thread-Safe | Use When
+-----------------------------|----------------------|---------|-------------|----------------------------------
+groupingBy + TreeMap         | Map<K,Long> sorted   | YES     | Sequential  | Need sorted frequency map
+groupingBy + HashMap         | Map<K,Long>          | NO      | Sequential  | General frequency count
+groupingBy → Set filter      | Set<K>               | NO      | Sequential  | Just want duplicate values (set)
+parallelStream + groupingBy  | Map<K,Long>          | NO      | YES         | Large CPU-bound dataset
+groupingByConcurrent         | ConcurrentMap<K,Long>| NO      | YES         | Max parallel throughput
+HashSet.add() trick          | Set<K>               | NO      | NO          | Minimal memory, fast, sequential
+Normal Map + List loop       | List<K> (all occ.)   | YES     | NO          | All occurrences, Java 7 compat
+
+================================================================================
+END OF PRACTICED CODE SECTION (2026-04-25)
+================================================================================
