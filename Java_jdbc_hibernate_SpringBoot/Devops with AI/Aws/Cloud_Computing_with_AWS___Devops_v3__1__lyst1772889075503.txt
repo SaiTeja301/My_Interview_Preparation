@@ -505,6 +505,174 @@ Load Balancer
    -> Gateway Load Balancer
    -> Classic Load Balancer ( Legacy / outdated )
 
+8th March (Sunday)
+===================
+
+Application Load Balancer ( http & https )
+===========================================
+
+--> Create EC2 VM 1 with below following user data
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 1 </h1></html>" > index.html
+service httpd start
+
+--> Create EC2 VM 2 
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 2 </h1></html>" > index.html
+service httpd start
+
+--> Add these 2 webservers into one Target Group
+(follow live class instructions)
+
+--> Create a Application Load Balancer with Target Group (ALB)
+(follow live class instructions)
+
+==> Access Load balancer DNS in browser (You will notice the requests to our servers getting distributed in round robin technique)
+
+
+Application Load Balancer (ALB)
+===================================
+Works at OSI Layer 7
+(Application Layer)
+
+Makes routing decision based on url, headers, host, etc
+Example : Routes /api/* to one target group and /admin/* to another ..
+
+
+Network Load Balancer (ALB)
+============================
+
+Works at OSI Layer 4 (Transport layer)
+
+Ideal for real-time applications, gaming,......
+
+handles TCP, UDP and TLS traffic with very high performance and low latency
+
+
+Gateway Load Balancer
+======================
+
+ It is an AWS load balancer that distributes traffic to security appliances like firewalls for inspection before forwarding it to application servers.
+
+What GWLB does
+
+1️⃣ Traffic comes from internet
+2️⃣ GWLB sends traffic to firewall appliances
+3️⃣ Firewall inspects packets
+4️⃣ If safe → forwarded to application
+5️⃣ If malicious → blocked
+
+Practical of Autoscaling , LoadBalancer and Target group
+
+
+Why Auto Scaling?
+====================
+
+During events like Big Billion Day Sale, traffic is unpredictable.
+
+You can't manually scale fast enough.
+
+Auto Scaling helps by:
+======================
+
+Increasing instances when traffic goes up
+
+Decreasing instances when traffic goes down
+
+✅ Benefits of Auto Scaling:
+==================================
+Fault Tolerance
+
+If an instance fails, another is launched automatically.
+
+Cost Management
+
+Only run the number of servers needed, saving money during low traffic.
+
+High Availability
+
+Keeps your application running smoothly under heavy load.
+
+
+Note : Follow live class instructions for the demonstration of ASG, LBR and TG
+
+
+AWS RDS
+=======
+
+
+Database
+=========
+==> Its a tool/s/w which store data permanently
+
+==> We have relational databases ( tables --> rows and columns ) and no sql dbs ( mongo db, cassandra ( documents )
+       
+RDBMS --> oracle , SQLServer, Postgres, MySQL.........
+
+==> Every app will use database
+
+Limitations / Challenges with on_prem Database
+==============================================
+
+-> Purchase DB server License (Cost)
+
+-> Install Database server s/w 
+-> Network 
+-> Security 
+-> Backup 
+-> Administration
+
+---------------------------------------------------------------------
+
+==> To overcome the above problems we can go Cloud Providers Database
+
+==> AWS RDS is a database service from AWS which stands for Relational Database Service in AWS Cloud
+
+==> RDS is a fully managed service in AWS --> works based on "pay as you go " model
+
+RDS Lab task
+============
+
+==> Create MySQL database using RDS 
+
+==> Creation method : Standard create
+    Engine type: MySQL
+    Template: Free tier
+    db instance name identifier : teluskodb
+    public access : yes (since we are trying to access the db from outside vpc) Usually it will not be public
+    initial db name : teluskodatabase
+
+Once database is created get connected to it using MySQL workbench
+
+DB End point --> DB user name --> DB port number --> DB password
+
+==> Enable MYSQL port number 3306 in security group inbound rules which is being used in RDS
+
+==> Test the RDS by getting connected to it using workbench
+
+==> Execute some sample query to make sure its functional/working 
+
+use teluskodatabase;
+CREATE TABLE employee (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    salary DECIMAL(10,2)
+);
+INSERT INTO employee (id, name, salary)
+VALUES (1, 'Navin', 55000.00),
+       (2, 'Sana', 60000.50),
+       (3, 'Amit', 48000.25);
+
 
 
 

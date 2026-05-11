@@ -54,7 +54,7 @@ public void transfer(Account from, Account to, double amount) {
     finally {
         lock.unlock(); // MUST unlock in finally!
     }
-}
+}  
 
 *** Q4. volatile keyword - when and why?
 volatile: Guarantees visibility (read from main memory, not CPU cache)
