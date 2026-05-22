@@ -1,13 +1,11 @@
-﻿================================================================================
-GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
-================================================================================
-Generated on: November 21, 2025
+# GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
+> *# Generated on: November 21, 2025*
 
-================================================================================
 1. PROJECT SETUP AND INITIALIZATION
-================================================================================
 
-INITIAL REPOSITORY SETUP:
+## INITIAL REPOSITORY SETUP:
+
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git init
 │ Description: Initialize a new Git repository in the current directory
@@ -32,11 +30,11 @@ INITIAL REPOSITORY SETUP:
 │ When to use: After git init, to connect to remote repository
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-2. DAILY WORKFLOW COMMANDS
-================================================================================
+```
+## 2. DAILY WORKFLOW COMMANDS
 
 STATUS AND INFORMATION:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git status
 │ Description: Show the working tree status and staged changes
@@ -71,7 +69,9 @@ STATUS AND INFORMATION:
 │   git diff branch1..branch2  (compare branches)
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 STAGING AND COMMITTING:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git add <file-path>
 │ Description: Stage files for commit
@@ -107,11 +107,11 @@ STAGING AND COMMITTING:
 │ Warning: Does not include new (untracked) files
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-3. BRANCH MANAGEMENT
-================================================================================
+```
+## 3. BRANCH MANAGEMENT
 
 BRANCH OPERATIONS:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git branch
 │ Description: List all local branches
@@ -164,11 +164,11 @@ BRANCH OPERATIONS:
 │ Note: Use -D for force delete (be careful with this)
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-4. REMOTE REPOSITORY OPERATIONS
-================================================================================
+```
+## 4. REMOTE REPOSITORY OPERATIONS
 
 SYNCHRONIZATION WITH REMOTE:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git fetch
 │ Description: Download objects and refs from remote repository
@@ -206,11 +206,11 @@ SYNCHRONIZATION WITH REMOTE:
 │ Benefit: Subsequent pushes/pulls don't need origin specification
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-5. ANGULAR-SPECIFIC WORKFLOW COMMANDS
-================================================================================
+```
+## 5. ANGULAR-SPECIFIC WORKFLOW COMMANDS
 
 DEVELOPMENT WORKFLOW:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git add package.json package-lock.json
 │ Description: Stage dependency changes
@@ -238,7 +238,9 @@ DEVELOPMENT WORKFLOW:
 │ Best practice: Include corresponding test files
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 CONFIGURATION FILES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git add angular.json tsconfig*.json
 │ Description: Stage Angular configuration changes
@@ -257,11 +259,11 @@ CONFIGURATION FILES:
 │ Be careful: Don't commit sensitive production credentials
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-6. UNDOING CHANGES
-================================================================================
+```
+## 6. UNDOING CHANGES
 
 UNDOING UNCOMMITTED CHANGES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git checkout -- <file-path>
 │ Description: Discard changes in working directory for specific file
@@ -289,7 +291,9 @@ UNDOING UNCOMMITTED CHANGES:
 │ Warning: This permanently destroys all uncommitted changes
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 UNDOING COMMITTED CHANGES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git revert <commit-hash>
 │ Description: Create new commit that undoes a previous commit
@@ -308,11 +312,11 @@ UNDOING COMMITTED CHANGES:
 │ Note: Only use on commits that haven't been pushed
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-7. CONFLICT RESOLUTION
-================================================================================
+```
+## 7. CONFLICT RESOLUTION
 
 MERGE CONFLICT HANDLING:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git status
 │ Description: Check files with merge conflicts
@@ -340,11 +344,11 @@ MERGE CONFLICT HANDLING:
 │ Result: Returns to state before merge attempt
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-8. ADVANCED WORKFLOW COMMANDS
-================================================================================
+```
+## 8. ADVANCED WORKFLOW COMMANDS
 
 STASHING CHANGES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git stash
 │ Description: Temporarily store uncommitted changes
@@ -372,7 +376,9 @@ STASHING CHANGES:
 │ Output: Shows stash@{0}, stash@{1}, etc.
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 REBASING:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git rebase main
 │ Description: Rebase current branch onto main branch
@@ -391,11 +397,11 @@ REBASING:
 │ Actions: pick, squash, edit, reword, drop commits
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-9. INSPECTION AND DEBUGGING
-================================================================================
+```
+## 9. INSPECTION AND DEBUGGING
 
 FILE INSPECTION:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git show <commit-hash>
 │ Description: Show changes introduced by a specific commit
@@ -423,7 +429,9 @@ FILE INSPECTION:
 │ Benefit: Follows file through renames and moves
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 SEARCHING:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git grep <search-term>
 │ Description: Search for text within tracked files
@@ -433,11 +441,11 @@ SEARCHING:
 │ Benefit: Only searches tracked files, ignores node_modules
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-10. PROJECT-SPECIFIC GIT PATTERNS
-================================================================================
+```
+## 10. PROJECT-SPECIFIC GIT PATTERNS
 
 ANGULAR PROJECT WORKFLOW:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Daily Development Workflow:
 │ 1. git pull origin main                    (Get latest changes)
@@ -452,16 +460,18 @@ ANGULAR PROJECT WORKFLOW:
 │ 10. git branch -d feature/new-feature     (Clean up)
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 COMMIT MESSAGE CONVENTIONS:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ feat: Add new feature
-│ fix: Fix bug in existing functionality  
+│ fix: Fix bug in existing functionality
 │ docs: Update documentation
 │ style: Code style changes (formatting, etc.)
 │ refactor: Code refactoring without functionality change
 │ test: Add or update tests
 │ chore: Maintenance tasks (dependencies, build config)
-│ 
+│
 │ Examples for this project:
 │ feat: Add agency accounting routing service
 │ fix: Correct validation logic in search form
@@ -471,7 +481,9 @@ COMMIT MESSAGE CONVENTIONS:
 │ chore: Update Angular to version 20.3.7
 └─────────────────────────────────────────────────────────────────────────────
 
+```
 GITIGNORE IMPORTANT FILES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Files that should be ignored (add to .gitignore):
 │ node_modules/                   (Dependencies)
@@ -484,11 +496,11 @@ GITIGNORE IMPORTANT FILES:
 │ e2e/                          (End-to-end test artifacts)
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-11. EMERGENCY PROCEDURES
-================================================================================
+```
+## 11. EMERGENCY PROCEDURES
 
 COMMON EMERGENCY SCENARIOS:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Scenario: Accidentally committed to main instead of feature branch
 │ Solution:
@@ -518,11 +530,11 @@ COMMON EMERGENCY SCENARIOS:
 │ Warning: Only use on feature branches, never on shared main branch
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-12. COLLABORATION COMMANDS
-================================================================================
+```
+## 12. COLLABORATION COMMANDS
 
 WORKING WITH TEAM:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git fetch --prune
 │ Description: Fetch updates and remove references to deleted remote branches
@@ -550,11 +562,11 @@ WORKING WITH TEAM:
 │ Variations: Use partial names or email addresses
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-13. CONFIGURATION AND SETUP
-================================================================================
+```
+## 13. CONFIGURATION AND SETUP
 
 GIT CONFIGURATION:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git config --global user.name "Your Name"
 │ Description: Set your Git username globally
@@ -582,11 +594,11 @@ GIT CONFIGURATION:
 │ Output: Shows all config values from global and local settings
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-14. PERFORMANCE AND MAINTENANCE
-================================================================================
+```
+## 14. PERFORMANCE AND MAINTENANCE
 
 REPOSITORY MAINTENANCE:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────
 │ Command: git gc
 │ Description: Cleanup unnecessary files and optimize local repository
@@ -605,9 +617,8 @@ REPOSITORY MAINTENANCE:
 │ Output: Reports any issues found in repository
 └─────────────────────────────────────────────────────────────────────────────
 
-================================================================================
-15. SUMMARY AND BEST PRACTICES
-================================================================================
+```
+## 15. SUMMARY AND BEST PRACTICES
 
 ESSENTIAL DAILY COMMANDS:
 1. git status                    (Check current state)
@@ -641,6 +652,5 @@ TROUBLESHOOTING CHECKLIST:
 4. Review recent commits with git log --oneline
 5. If stuck, git stash and start fresh
 
-================================================================================
-END OF GIT COMMANDS REFERENCE
-================================================================================
+## END OF GIT COMMANDS REFERENCE
+

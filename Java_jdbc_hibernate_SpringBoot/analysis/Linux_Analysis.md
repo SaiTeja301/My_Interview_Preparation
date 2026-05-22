@@ -1,381 +1,343 @@
-﻿================================================================================
-LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
-Extracted from: Linux and Shell Scripting.txt (Deduplicated)
+# LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
+> *Extracted from: Linux and Shell Scripting.txt (Deduplicated)*
+
 For: DevOps Engineers | System Administrators | Java Developers
-================================================================================
 
-================================================================================
-STRUCTURED COMMAND TABLE
-================================================================================
+# STRUCTURED COMMAND TABLE
 
-| # | Command / Concept         | Description                                                     | Real-Time Usage Scenario                                                  | Priority |
-|---|---------------------------|-----------------------------------------------------------------|---------------------------------------------------------------------------|----------|
-|   |                           |                                                                 |                                                                           |          |
-|   | --- FILE & DIRECTORY ---  |                                                                 |                                                                           |          |
-| 1 | pwd                       | Print current working directory                                 | Verify deployment path before running scripts on EC2                      | ***      |
-| 2 | ls                        | List files in current directory                                 | Quick check of deployed JARs/configs on server                            | ***      |
-| 3 | ls -l                     | Long listing with permissions, owner, size, date                | Verify file ownership and permissions after deployment                    | ***      |
-| 4 | ls -lt                    | List sorted by modification time (newest first)                 | Identify latest log files or recently deployed artifacts                  | **       |
-| 5 | ls -ltr                   | List sorted by time (oldest first)                              | Find oldest backup files for cleanup                                      | **       |
-| 6 | ls -lr                    | List in reverse alphabetical order                              | Reverse sort for review                                                   | *        |
-| 7 | ls -li                    | List with inode numbers                                         | Debug hard link / soft link issues                                        | *        |
-| 8 | cd <dir>                  | Change directory                                                | Navigate to /var/log, /opt/app, /etc/nginx on servers                     | ***      |
-| 9 | cd ..                     | Go up one directory level                                       | Navigate between nested deployment directories                            | ***      |
-| 10| cd ~                      | Go to home directory of current user                            | Return to user home after deep navigation                                 | **       |
-| 11| mkdir <dir>               | Create a new directory                                          | Create log directories, deployment folders on EC2                         | ***      |
-| 12| rmdir <dir>               | Remove empty directory                                          | Clean up empty temp directories                                           | *        |
-| 13| rm <file>                 | Delete a file                                                   | Remove old deployment artifacts and temp files                            | ***      |
-| 14| rm *.txt                  | Delete all .txt files using wildcard                            | Bulk cleanup of log rotation files                                        | **       |
-| 15| rm -rf <dir>              | Force delete directory and all contents (DANGEROUS)             | Clean up failed deployments, old Docker volumes                           | ***      |
-| 16| touch <file>              | Create empty file or update timestamp                           | Create placeholder config files, lock files                               | ***      |
-| 17| cp <src> <dest>           | Copy file from source to destination                            | Backup config before editing: cp nginx.conf nginx.conf.bak                | ***      |
-| 18| mv <old> <new>            | Move or rename file/directory                                   | Rename releases: mv app-v1.jar app-v2.jar, move files between dirs       | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- FILE VIEWING ---      |                                                                 |                                                                           |          |
-| 19| cat <file>                | Display entire file content                                     | View small config files: cat application.yml                              | ***      |
-| 20| cat > <file>              | Create file and write from stdin (Ctrl+D to save)               | Quick config file creation on fresh server                                | **       |
-| 21| cat >> <file>             | Append data to existing file                                    | Add new entries to /etc/hosts or environment files                        | ***      |
-| 22| cat -n <file>             | Display file with line numbers                                  | Reference specific lines when debugging config files                      | **       |
-| 23| cat f1 f2 > f3            | Merge multiple files into one                                   | Combine split log files for analysis                                      | *        |
-| 24| tac <file>                | Display file content in reverse (bottom to top)                 | View latest entries first in append-only logs                             | *        |
-| 25| rev <file>                | Reverse characters in each line                                 | Rarely used, text manipulation edge cases                                 |          |
-| 26| head <file>               | Show first 10 lines of file                                     | Quick peek at log file headers or config structure                        | ***      |
-| 27| head -n N <file>          | Show first N lines                                              | View top N error entries: head -n 20 error.log                            | ***      |
-| 28| tail <file>               | Show last 10 lines of file                                      | Check latest log entries for errors after deployment                      | ***      |
-| 29| tail -n N <file>          | Show last N lines                                               | Review last N lines of application.log                                    | ***      |
-| 30| tail -f <file>            | Follow file in real-time (live tail)                            | Monitor live app logs: tail -f /var/log/app/spring.log                    | ***      |
-| 31| wc <file>                 | Count lines, words, bytes in file                               | Check log file size before transferring: wc -l error.log                  | **       |
-| 32| diff <f1> <f2>            | Compare two files line by line                                  | Compare config files between environments (dev vs prod)                   | **       |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- TEXT PROCESSING ---   |                                                                 |                                                                           |          |
-| 33| grep 'pattern' <file>     | Search for pattern in file (case sensitive)                     | Find errors: grep 'Exception' app.log                                     | ***      |
-| 34| grep -i 'pattern' <file>  | Case-insensitive search                                         | Search warnings: grep -i 'warning' app.log                               | ***      |
-| 35| grep -n 'pattern' <file>  | Search with line numbers                                        | Locate exact line of error: grep -n 'NullPointer' app.log                | ***      |
-| 36| grep -c 'pattern' <file>  | Count matching lines                                            | Count exceptions: grep -c 'Exception' error.log                          | **       |
-| 37| grep -w 'word' <file>     | Match exact word only                                           | Find "fail" but not "failed": grep -w 'fail' results.txt                 | **       |
-| 38| grep -i 'pattern' *       | Search across all files in directory                            | Search all logs for keyword: grep -i 'OutOfMemory' *.log                 | ***      |
-| 39| grep -r 'pattern' <dir>   | Recursive search in directories                                 | Find config across nested dirs: grep -r 'db.url' /opt/app/               | ***      |
-|   |                           |                                                                 |                                                                           |          |
-| 40| sed 's/old/new/' <file>   | Replace first occurrence per line (preview only)                | Test replacement before saving                                            | ***      |
-| 41| sed -i 's/old/new/' <file>| Replace first occurrence per line (in-place edit)               | Patch config: sed -i 's/8080/9090/' application.yml                       | ***      |
-| 42| sed -i 's/old/new/g' file | Replace ALL occurrences (global, in-place)                      | Bulk find-replace across config files in CI/CD pipeline                   | ***      |
-| 43| sed -i '5d' <file>        | Delete 5th line in file                                         | Remove unwanted header line from CSV data                                 | **       |
-| 44| sed -i '$d' <file>        | Delete last line in file                                        | Remove trailing empty line from config                                    | **       |
-| 45| sed -i '/pattern/d' file  | Delete all lines matching pattern                               | Remove debug lines: sed -i '/DEBUG/d' app.log                            | **       |
-| 46| sed -n '2,4p' <file>      | Print only lines 2 to 4                                         | Extract specific config block from large file                             | **       |
-| 47| sed -i '5i\ text' <file>  | Insert text before line 5                                       | Add environment var before line in script                                 | *        |
-| 48| sed -i '$a\ text' <file>  | Append text after last line                                     | Add new config entry to end of file                                       | *        |
-|   |                           |                                                                 |                                                                           |          |
-| 49| awk '{print $1,$4}' file  | Extract specific columns from structured text                   | Parse access.log: awk '{print $1,$9}' access.log (IP + status code)      | ***      |
-| 50| awk '/pattern/{print}'    | Print lines matching pattern                                    | Filter log entries by keyword                                             | **       |
-| 51| awk '{print NR, $0}' file | Print with line numbers                                         | Add line numbers to CSV for debugging                                     | *        |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- TEXT EDITORS ---      |                                                                 |                                                                           |          |
-| 52| vi <file>                 | Open file in vi editor (3 modes: command/insert/esc)            | Edit config files on servers: vi /etc/nginx/nginx.conf                    | ***      |
-|   |                           | i = insert mode, Esc = command mode                             |                                                                           |          |
-|   |                           | :wq = save & quit, :q! = quit without saving                   |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- FIND & LOCATE ---     |                                                                 |                                                                           |          |
-| 53| find /path -name "file"   | Search for file by name in directory tree                       | Find config: find /opt -name "application.yml"                            | ***      |
-| 54| find /path -type f -empty | Find empty files                                                | Cleanup empty placeholder files                                           | *        |
-| 55| find /path -type d -empty | Find empty directories                                          | Cleanup empty directories after old deployments                           | *        |
-| 56| locate <file>             | Fast file lookup using pre-built database                       | Quickly locate file: locate nginx.conf (run sudo updatedb first)          | **       |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- USER & GROUP MGMT --- |                                                                 |                                                                           |          |
-| 57| sudo useradd <user>       | Create new user account                                         | Create service accounts for apps: sudo useradd appuser                    | ***      |
-| 58| sudo passwd <user>        | Set/change password for user                                    | Reset password for team member on shared server                           | ***      |
-| 59| sudo userdel <user>       | Delete user account                                             | Remove departed team member's access                                      | **       |
-| 60| sudo userdel --remove usr | Delete user with home directory                                 | Full cleanup of user data                                                 | **       |
-| 61| sudo usermod -l new old   | Rename user account                                             | Rename user after name change                                             | *        |
-| 62| sudo su <user>            | Switch to another user account                                  | Switch to app service account for deployment                              | ***      |
-| 63| whoami                    | Display current logged-in user name                             | Verify which user is running deployment scripts                           | ***      |
-| 64| id <user>                 | Display user ID, group ID, and groups                           | Verify user group membership for permissions                              | **       |
-| 65| exit                      | Exit current shell/user session                                 | Return to original user after su                                          | **       |
-| 66| sudo groupadd <group>     | Create new user group                                           | Create groups for team access: sudo groupadd devops-team                  | **       |
-| 67| sudo usermod -aG grp user | Add user to group                                               | Add dev to docker group: sudo usermod -aG docker devuser                  | ***      |
-| 68| sudo gpasswd -d user grp  | Remove user from group                                          | Revoke access when team member changes role                               | *        |
-| 69| sudo visudo               | Safely edit sudoers file                                        | Grant sudo access to new DevOps team members                              | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- FILE PERMISSIONS ---  |                                                                 |                                                                           |          |
-| 70| chmod u+x <file>          | Add execute permission for user (symbolic)                      | Make deployment script executable: chmod u+x deploy.sh                    | ***      |
-| 71| chmod 755 <file>          | rwxr-xr-x (numeric: owner all, group+others read+exec)         | Standard permission for shell scripts                                     | ***      |
-| 72| chmod 644 <file>          | rw-r--r-- (default file permission)                             | Standard permission for config files                                      | **       |
-| 73| chmod 400 <file>          | r-------- (read-only for owner)                                 | Secure SSH key: chmod 400 mykey.pem (AWS requirement)                     | ***      |
-| 74| chmod 777 <file>          | rwxrwxrwx (all permissions — AVOID in production!)              | NEVER use on production servers — security risk                           | *        |
-| 75| chown user:group <file>   | Change file ownership                                           | Fix ownership after copy: sudo chown appuser:appgroup app.jar             | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- LINKS ---             |                                                                 |                                                                           |          |
-| 76| ln <orig> <link>          | Create hard link (same inode, survives original delete)         | Create backup reference to important config                               | *        |
-| 77| ln -s <orig> <link>       | Create soft/symbolic link (shortcut, breaks if original deleted)| Link current release: ln -s /opt/app-v2.jar /opt/app/current.jar          | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- ARCHIVING ---         |                                                                 |                                                                           |          |
-| 78| zip <name> <files>        | Create zip archive                                              | Archive logs: zip backup-logs *.log                                       | **       |
-| 79| zip -sf <file.zip>        | Show contents of zip file                                       | Verify archive contents before transfer                                   | *        |
-| 80| unzip <file.zip>          | Extract zip archive                                             | Unzip downloaded artifacts on server                                      | **       |
-| 81| tar -cvf name.tar dir/    | Create tar archive                                              | Archive application directory: tar -cvf app-backup.tar /opt/app/          | ***      |
-| 82| tar -xvf name.tar         | Extract tar archive                                             | Extract deployment bundle on target server                                | ***      |
-| 83| tar -czvf name.tar.gz dir/| Create compressed tar.gz archive                                | Compress and transfer logs between servers                                | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- NETWORKING ---        |                                                                 |                                                                           |          |
-| 84| ping <host>               | Check network connectivity to host                              | Verify connectivity: ping db-server.internal                              | ***      |
-| 85| curl <url>                | Send HTTP request and display response                          | Test API endpoints: curl http://localhost:8080/actuator/health             | ***      |
-| 86| wget <url>                | Download file from internet                                     | Download JDK/Tomcat: wget https://download.oracle.com/java17.tar.gz       | ***      |
-| 87| netstat                   | Display network connections and listening ports                  | Check if port 8080 is in use: netstat -tlnp | grep 8080                  | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- PACKAGE MGMT & INSTALLATION SETUP (IN-DEPTH) ---                                                                                                                    |
-|   |                           |                                                                 |                                                                           |          |
-|   | PACKAGE MANAGER MAPPING:  |                                                                 |                                                                           |          |
-|   |   Ubuntu / Debian         | ==> apt (Advanced Package Tool)                                 | Most cloud VMs on AWS/GCP use Ubuntu                                      |          |
-|   |   Amazon Linux / RHEL     | ==> yum (Yellowdog Updater Modified)                            | Default on AWS EC2 Amazon Linux AMI                                       |          |
-|   |   CentOS / Red Hat        | ==> yum or dnf                                                  | dnf is modern replacement for yum (RHEL 8+)                               |          |
-|   |   Fedora (RHEL 8+)        | ==> dnf (Dandified YUM)                                         | Faster dependency resolution than yum                                     |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- BASIC PACKAGE COMMANDS ---                                                                                                                                           |
-| 88| sudo yum install <pkg>    | Install package on RHEL/CentOS/Amazon Linux                     | Primary installer on Amazon EC2 instances                                 | ***      |
-| 89| sudo apt install <pkg>    | Install package on Ubuntu/Debian                                | Primary installer on Ubuntu cloud VMs                                     | ***      |
-| 90| sudo dnf install <pkg>    | Install package on newer RHEL/Fedora (replaces yum)             | Modern alternative: sudo dnf install maven                                | **       |
-| 91| sudo yum update -y        | Update ALL packages to latest version (RHEL family)             | Regular security patching on production servers                           | ***      |
-| 92| sudo apt update           | Refresh package index (MUST run before install on Ubuntu)       | Always run before apt install to get latest versions                      | ***      |
-| 93| sudo apt upgrade -y       | Upgrade all installed packages (Ubuntu)                         | Security patching on Ubuntu servers                                       | ***      |
-| 94| sudo yum remove <pkg>     | Uninstall a package (RHEL family)                               | Remove unwanted software for security hardening                           | **       |
-| 95| sudo apt remove <pkg>     | Uninstall a package (Ubuntu)                                    | Clean up unused services                                                  | **       |
-| 96| yum list installed        | List all installed packages (RHEL)                              | Audit installed software on server                                        | **       |
-| 97| dpkg -l                   | List all installed packages (Ubuntu/Debian)                     | Audit installed packages for compliance                                   | **       |
-| 98| yum search <keyword>      | Search for available packages by name                           | Find correct Java package: yum search java                                | *        |
-| 99| apt search <keyword>      | Search for packages on Ubuntu                                   | Find nginx version: apt search nginx                                      | *        |
-|100| rpm -qa                   | List all installed RPM packages (low-level, RHEL)               | Quick audit: rpm -qa | grep java                                         | *        |
-|   |                           |                                                                 |                                                                           |          |
-|   | ================================================================================                                                                                         |
-|   | DEVOPS SOFTWARE INSTALLATION CHEAT SHEET                                                                                                                                 |
-|   | ================================================================================                                                                                         |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL GIT ---       |                                                                 |                                                                           |          |
-|   | Amazon Linux / RHEL:      | $ sudo yum install git -y                                       | Source code management, CI/CD trigger                                     | ***      |
-|   | Ubuntu / Debian:          | $ sudo apt install git -y                                       |                                                                           |          |
-|   | Verify:                   | $ git --version                                                 |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL JAVA (JDK) ---|                                                                 |                                                                           |          |
-|   | Amazon Linux:             | $ sudo yum install java-17-amazon-corretto-devel -y             | Required for Spring Boot, Maven, Jenkins                                  | ***      |
-|   | Ubuntu / Debian:          | $ sudo apt install openjdk-17-jdk -y                            |                                                                           |          |
-|   | RHEL / CentOS:            | $ sudo yum install java-17-openjdk-devel -y                     |                                                                           |          |
-|   | Verify:                   | $ java -version                                                 |                                                                           |          |
-|   | Set JAVA_HOME:            | $ export JAVA_HOME=/usr/lib/jvm/java-17                         | Add to ~/.bashrc for persistence                                          |          |
-|   |                           | $ echo 'export JAVA_HOME=/usr/lib/jvm/java-17' >> ~/.bashrc     |                                                                           |          |
-|   |                           | $ source ~/.bashrc                                              |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL MAVEN ---     |                                                                 |                                                                           |          |
-|   | Amazon Linux / RHEL:      | $ sudo dnf install maven -y                                     | Build Spring Boot projects: mvn clean install                             | ***      |
-|   |                           | OR: $ sudo yum install maven -y                                 |                                                                           |          |
-|   | Ubuntu / Debian:          | $ sudo apt install maven -y                                     |                                                                           |          |
-|   | Verify:                   | $ mvn -version                                                  |                                                                           |          |
-|   | Set M2_HOME:              | $ export M2_HOME=/usr/share/maven                               | Add to ~/.bashrc for persistence                                          |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL DOCKER ---    |                                                                 |                                                                           |          |
-|   | Amazon Linux 2023:        | $ sudo yum install docker -y                                    | Containerize Spring Boot microservices                                    | ***      |
-|   |                           | $ sudo systemctl start docker                                   |                                                                           |          |
-|   |                           | $ sudo systemctl enable docker                                  |                                                                           |          |
-|   |                           | $ sudo usermod -aG docker ec2-user  (run docker without sudo)   |                                                                           |          |
-|   | Ubuntu:                   | $ sudo apt update                                               |                                                                           |          |
-|   |                           | $ sudo apt install docker.io -y                                 |                                                                           |          |
-|   |                           | $ sudo systemctl start docker && sudo systemctl enable docker   |                                                                           |          |
-|   |                           | $ sudo usermod -aG docker $USER                                 |                                                                           |          |
-|   | Verify:                   | $ docker --version                                              |                                                                           |          |
-|   |                           | $ docker run hello-world                                        |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL JENKINS ---   |                                                                 |                                                                           |          |
-|   | Amazon Linux / RHEL:      | $ sudo wget -O /etc/yum.repos.d/jenkins.repo \                  | CI/CD pipeline automation                                                 | ***      |
-|   |                           |   https://pkg.jenkins.io/redhat-stable/jenkins.repo              |                                                                           |          |
-|   |                           | $ sudo rpm --import https://pkg.jenkins.io/redhat-stable/...key  |                                                                           |          |
-|   |                           | $ sudo yum install jenkins -y                                    |                                                                           |          |
-|   |                           | $ sudo systemctl start jenkins                                   |                                                                           |          |
-|   |                           | $ sudo systemctl enable jenkins                                  |                                                                           |          |
-|   | Access:                   | http://<server-ip>:8080  (default Jenkins port)                  |                                                                           |          |
-|   | Initial Password:         | $ sudo cat /var/lib/jenkins/secrets/initialAdminPassword         |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL NODE.JS ---   |                                                                 |                                                                           |          |
-|   | Amazon Linux (via nvm):   | $ curl -o- https://raw.githubusercontent.com/.../install.sh | bash| Required for Angular frontend builds                                     | **       |
-|   |                           | $ nvm install 18                                                 |                                                                           |          |
-|   | Ubuntu:                   | $ sudo apt install nodejs npm -y                                 |                                                                           |          |
-|   | Verify:                   | $ node -v && npm -v                                              |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL KUBECTL ---   |                                                                 |                                                                           |          |
-|   | Any Linux:                | $ curl -LO "https://dl.k8s.io/release/.../kubectl"               | Manage Kubernetes deployments                                             | **       |
-|   |                           | $ chmod +x kubectl && sudo mv kubectl /usr/local/bin/            |                                                                           |          |
-|   | Verify:                   | $ kubectl version --client                                       |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- INSTALL TERRAFORM --- |                                                                 |                                                                           |          |
-|   | Any Linux:                | $ sudo yum install -y yum-utils                                  | Infrastructure as Code for AWS/Azure/GCP                                  | **       |
-|   |                           | $ sudo yum-config-manager --add-repo https://rpm.releases...     |                                                                           |          |
-|   |                           | $ sudo yum install terraform -y                                  |                                                                           |          |
-|   | Verify:                   | $ terraform -version                                             |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | POST-INSTALL VERIFICATION CHECKLIST:                                                                                                                                     |
-|   |   $ java -version          | Confirm JDK installed                                           |                                                                           |          |
-|   |   $ mvn -version           | Confirm Maven installed                                         |                                                                           |          |
-|   |   $ git --version          | Confirm Git installed                                           |                                                                           |          |
-|   |   $ docker --version       | Confirm Docker installed                                        |                                                                           |          |
-|   |   $ node -v                | Confirm Node.js installed                                       |                                                                           |          |
-|   |   $ kubectl version        | Confirm kubectl installed                                       |                                                                           |          |
-|   |   $ jenkins --version      | Confirm Jenkins installed                                       |                                                                           |          |
-|   |                           |                                                                 |                                                                           |          |
-|   |--- PROCESS & SYSTEM ---   |                                                                 |                                                                           |          |
-| 92| ps aux                    | List all running processes                                      | Find Java process: ps aux | grep java                                     | ***      |
-| 93| top                       | Real-time process monitor (CPU, memory)                         | Monitor server load during deployment or load testing                     | ***      |
-| 94| kill <PID>                | Terminate process by PID                                        | Kill stuck Java process: sudo kill 12345                                  | ***      |
-| 95| free                      | Display memory usage (RAM + swap)                               | Check available memory before deploying new service                       | **       |
-| 96| uname -r                  | Show kernel version                                             | Verify kernel compatibility for Docker/container runtime                  | **       |
-| 97| cat /etc/os-release       | Show OS distribution and version                                | Identify OS for correct package manager and compatibility                 | **       |
-| 98| history                   | Show command history                                            | Review what was done on server for audit/troubleshooting                  | **       |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- SERVICE MGMT ---      |                                                                 |                                                                           |          |
-| 99| systemctl start <svc>     | Start a service                                                 | Start app: sudo systemctl start docker                                    | ***      |
-|100| systemctl stop <svc>      | Stop a service                                                  | Stop old version before deploying new                                     | ***      |
-|101| systemctl restart <svc>   | Restart a service                                               | Restart after config change: systemctl restart nginx                      | ***      |
-|102| systemctl status <svc>    | Check service status                                            | Verify service running: systemctl status jenkins                          | ***      |
-|103| systemctl enable <svc>    | Enable auto-start at boot                                       | Ensure Docker starts on reboot: systemctl enable docker                   | ***      |
-|104| systemctl disable <svc>   | Disable auto-start at boot                                      | Disable unused services for security hardening                            | **       |
-|105| systemctl reload <svc>    | Reload config without restart                                   | Reload nginx after config update (zero downtime)                          | **       |
-|106| systemctl list-units      | List all active services                                        | Audit running services on server                                          | *        |
-|107| service <svc> start       | Legacy command to start service                                 | Older systems: service httpd start                                        | *        |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- SSH & SYSTEM ---      |                                                                 |                                                                           |          |
-|108| cat /etc/ssh/sshd_config  | View SSH server configuration                                   | Verify PasswordAuthentication setting for security                        | **       |
-|109| sudo vi /etc/hostname     | Change hostname permanently                                     | Set meaningful hostname for server identification                         | *        |
-|110| cat /etc/passwd           | Display all user accounts                                       | Audit user accounts on shared server                                      | **       |
-|111| cat /etc/sudoers          | View sudoers file (who has root access)                         | Security audit: verify who has sudo privileges                            | **       |
-|112| man <command>             | Display manual page for a command                               | Learn command options: man grep                                           | **       |
-|   |                           |                                                                 |                                                                           |          |
-|   | --- WEBSERVERS IN LINUX (IN-DEPTH) ---                                                                                                                                   |
-|   |                           |                                                                 |                                                                           |          |
-|   | What is a Webserver?      | Software that hosts/runs websites and serves HTTP requests      | Every web app needs a webserver (Apache, Nginx, Tomcat)                   |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | ========== APACHE HTTPD (httpd) ==========                                                                                                                               |
-|   |                           |                                                                 |                                                                           |          |
-|   | INSTALL (Amazon Linux):   | $ sudo yum install httpd -y                                     | Most widely used webserver globally                                       | ***      |
-|   | INSTALL (Ubuntu):         | $ sudo apt install apache2 -y                                   | Package name differs: httpd (RHEL) vs apache2 (Ubuntu)                    | ***      |
-|   | START:                    | $ sudo systemctl start httpd                                    | Start Apache after installation                                           | ***      |
-|   | ENABLE (auto-start):      | $ sudo systemctl enable httpd                                   | Ensure survives reboot                                                    | ***      |
-|   | STATUS:                   | $ sudo systemctl status httpd                                   | Check if Apache is running                                                | ***      |
-|   | STOP:                     | $ sudo systemctl stop httpd                                     | Stop webserver for maintenance                                            | **       |
-|   | RESTART:                  | $ sudo systemctl restart httpd                                  | Apply config changes                                                      | **       |
-|   | RELOAD (no downtime):     | $ sudo systemctl reload httpd                                   | Reload config without stopping                                            | **       |
-|   |                           |                                                                 |                                                                           |          |
-|   | DEFAULT PORT:             | 80 (HTTP) and 443 (HTTPS)                                       | Must open port 80 in AWS Security Group!                                  | ***      |
-|   | WEB CONTENT DIR:          | /var/www/html/                                                  | Place index.html here to host website                                     | ***      |
-|   | CONFIG FILE:              | /etc/httpd/conf/httpd.conf (RHEL)                               | Modify for virtual hosts, port, doc root                                  | **       |
-|   |                           | /etc/apache2/apache2.conf (Ubuntu)                              |                                                                           |          |
-|   | LOG FILES:                | /var/log/httpd/access_log                                       | Monitor who accessed your website                                         | **       |
-|   |                           | /var/log/httpd/error_log                                        | Debug webserver errors                                                    |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | QUICK SETUP STEPS:        |                                                                 |                                                                           |          |
-|   |   1. $ sudo yum install httpd -y                                | Install Apache                                                            |          |
-|   |   2. $ sudo systemctl start httpd                               | Start the service                                                         |          |
-|   |   3. $ sudo systemctl enable httpd                              | Auto-start on reboot                                                      |          |
-|   |   4. Open port 80 in AWS Security Group (Inbound Rules)         | Allow HTTP traffic                                                        |          |
-|   |   5. $ sudo vi /var/www/html/index.html                         | Create your web page                                                      |          |
-|   |   6. Access http://<EC2-Public-IP> in browser                   | Your website is live!                                                     |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | ========== NGINX (Alternative to Apache) ==========                                                                                                                      |
-|   |                           |                                                                 |                                                                           |          |
-|   | INSTALL (Amazon Linux):   | $ sudo yum install nginx -y                                     | Preferred for microservices reverse proxy                                 | ***      |
-|   | INSTALL (Ubuntu):         | $ sudo apt install nginx -y                                     |                                                                           | ***      |
-|   | START + ENABLE:           | $ sudo systemctl start nginx && sudo systemctl enable nginx     | Start Nginx and enable auto-start                                         | ***      |
-|   | CONFIG FILE:              | /etc/nginx/nginx.conf                                           | Main config for server blocks                                             | ***      |
-|   | WEB CONTENT DIR:          | /usr/share/nginx/html/ (default)                                | Place static files here                                                   | **       |
-|   | TEST CONFIG:              | $ sudo nginx -t                                                 | Validate config BEFORE restart (catches syntax errors)                    | ***      |
-|   |                           |                                                                 |                                                                           |          |
-|   | REVERSE PROXY FOR SPRING BOOT:                                                                                                                                           |
-|   |   Edit /etc/nginx/conf.d/spring-app.conf:                                                                                                                                |
-|   |   server {                |                                                                 |                                                                           |          |
-|   |       listen 80;          |                                                                 |                                                                           |          |
-|   |       server_name myapp.com;                                    |                                                                           |          |
-|   |       location / {        |                                                                 |                                                                           |          |
-|   |           proxy_pass http://localhost:8080;                     | Forward traffic to Spring Boot app on 8080                                |          |
-|   |           proxy_set_header Host $host;                          |                                                                           |          |
-|   |           proxy_set_header X-Real-IP $remote_addr;              |                                                                           |          |
-|   |       }                   |                                                                 |                                                                           |          |
-|   |   }                       |                                                                 |                                                                           |          |
-|   |   $ sudo nginx -t && sudo systemctl reload nginx               | Validate and apply                                                        |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | APACHE vs NGINX:          |                                                                 |                                                                           |          |
-|   |   Apache httpd            | Process-based, .htaccess support, good for traditional sites    | Use when: hosting PHP apps, need .htaccess                                |          |
-|   |   Nginx                   | Event-driven, lightweight, excellent reverse proxy              | Use when: microservices, load balancing, Spring Boot proxy                |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | ========== TOMCAT (Java App Server) ==========                                                                                                                           |
-|   |                           |                                                                 |                                                                           |          |
-|   | INSTALL:                  | $ wget https://downloads.apache.org/tomcat/tomcat-9/...tar.gz   | Run WAR files (Spring Boot can also use embedded Tomcat)                  | **       |
-|   |                           | $ tar -xzvf apache-tomcat-9.*.tar.gz                             |                                                                           |          |
-|   |                           | $ cd apache-tomcat-9.*/bin                                       |                                                                           |          |
-|   | START:                    | $ ./startup.sh                                                   | Starts Tomcat on port 8080                                                | **       |
-|   | STOP:                     | $ ./shutdown.sh                                                  | Gracefully stop Tomcat                                                    | **       |
-|   | DEPLOY WAR:               | Copy .war file to webapps/ directory                             | Tomcat auto-deploys WAR files placed in webapps/                          | **       |
-|   | DEFAULT PORT:             | 8080                                                             | Access: http://<IP>:8080                                                  |          |
-|   |                           |                                                                 |                                                                           |          |
-|   | REAL-TIME ARCHITECTURE (Java Full Stack on Linux):                                                                                                                        |
-|   |                           |                                                                 |                                                                           |          |
-|   |   Client (Browser)  --->  Nginx (Port 80, Reverse Proxy)                                                                                                                 |
-|   |                              |                                                                                                                                              |
-|   |                              +--> Spring Boot App (Port 8080, Embedded Tomcat)                                                                                            |
-|   |                              |                                                                                                                                              |
-|   |                              +--> Angular Frontend (Port 4200 or served as static via Nginx)                                                                               |
-|   |                           |                                                                 |                                                                           |          |
-|   | IMPORTANT PORTS TO OPEN IN AWS SECURITY GROUP:                                                                                                                            |
-|   |   22   = SSH (remote login)                                                                                                                                               |
-|   |   80   = HTTP (Apache/Nginx)                                                                                                                                              |
-|   |   443  = HTTPS (SSL/TLS)                                                                                                                                                  |
-|   |   8080 = Tomcat / Spring Boot                                                                                                                                              |
-|   |   8443 = Spring Boot HTTPS                                                                                                                                                 |
-|   |   3306 = MySQL                                                                                                                                                              |
-|   |   5432 = PostgreSQL                                                                                                                                                         |
-|   |   27017= MongoDB                                                                                                                                                            |
-|   |   6379 = Redis                                                                                                                                                               |
-|   |   9092 = Kafka                                                                                                                                                               |
-|   |   9090 = SonarQube                                                                                                                                                           |
+| # | Command / Concept | Description | Real-Time Usage Scenario | Priority |  |
+```text
+|---|---|---|---|---|---|
+| --- FILE & DIRECTORY --- |  |  |  |  |  |
 
-================================================================================
-FILE PERMISSION NUMERIC REFERENCE
-================================================================================
+```
+| 1 | pwd | Print current working directory | Verify deployment path before running scripts on EC2 | *** |  |
+| --- | --- | --- | --- | --- | --- |
+| 2 | ls | List files in current directory | Quick check of deployed JARs/configs on server | *** |  |
+| 3 | ls -l | Long listing with permissions, owner, size, date | Verify file ownership and permissions after deployment | *** |  |
+| 4 | ls -lt | List sorted by modification time (newest first) | Identify latest log files or recently deployed artifacts | ** |  |
+| 5 | ls -ltr | List sorted by time (oldest first) | Find oldest backup files for cleanup | ** |  |
+| 6 | ls -lr | List in reverse alphabetical order | Reverse sort for review | * |  |
+| 7 | ls -li | List with inode numbers | Debug hard link / soft link issues | * |  |
+| 8 | cd <dir> | Change directory | Navigate to /var/log, /opt/app, /etc/nginx on servers | *** |  |
+| 9 | cd .. | Go up one directory level | Navigate between nested deployment directories | *** |  |
+| 10 | cd ~ | Go to home directory of current user | Return to user home after deep navigation | ** |  |
+| 11 | mkdir <dir> | Create a new directory | Create log directories, deployment folders on EC2 | *** |  |
+| 12 | rmdir <dir> | Remove empty directory | Clean up empty temp directories | * |  |
+| 13 | rm <file> | Delete a file | Remove old deployment artifacts and temp files | *** |  |
+| 14 | rm *.txt | Delete all .txt files using wildcard | Bulk cleanup of log rotation files | ** |  |
+| 15 | rm -rf <dir> | Force delete directory and all contents (DANGEROUS) | Clean up failed deployments, old Docker volumes | *** |  |
+| 16 | touch <file> | Create empty file or update timestamp | Create placeholder config files, lock files | *** |  |
+| 17 | cp <src> <dest> | Copy file from source to destination | Backup config before editing: cp nginx.conf nginx.conf.bak | *** |  |
+| 18 | mv <old> <new> | Move or rename file/directory | Rename releases: mv app-v1.jar app-v2.jar, move files between dirs | *** |  |
+| --- FILE VIEWING --- |  |  |  |  |  |
+| 19 | cat <file> | Display entire file content | View small config files: cat application.yml | *** |  |
+| 20 | cat > <file> | Create file and write from stdin (Ctrl+D to save) | Quick config file creation on fresh server | ** |  |
+| 21 | cat >> <file> | Append data to existing file | Add new entries to /etc/hosts or environment files | *** |  |
+| 22 | cat -n <file> | Display file with line numbers | Reference specific lines when debugging config files | ** |  |
+| 23 | cat f1 f2 > f3 | Merge multiple files into one | Combine split log files for analysis | * |  |
+| 24 | tac <file> | Display file content in reverse (bottom to top) | View latest entries first in append-only logs | * |  |
+| 25 | rev <file> | Reverse characters in each line | Rarely used, text manipulation edge cases |  |  |
+| 26 | head <file> | Show first 10 lines of file | Quick peek at log file headers or config structure | *** |  |
+| 27 | head -n N <file> | Show first N lines | View top N error entries: head -n 20 error.log | *** |  |
+| 28 | tail <file> | Show last 10 lines of file | Check latest log entries for errors after deployment | *** |  |
+| 29 | tail -n N <file> | Show last N lines | Review last N lines of application.log | *** |  |
+| 30 | tail -f <file> | Follow file in real-time (live tail) | Monitor live app logs: tail -f /var/log/app/spring.log | *** |  |
+| 31 | wc <file> | Count lines, words, bytes in file | Check log file size before transferring: wc -l error.log | ** |  |
+| 32 | diff <f1> <f2> | Compare two files line by line | Compare config files between environments (dev vs prod) | ** |  |
+| --- TEXT PROCESSING --- |  |  |  |  |  |
+| 33 | grep 'pattern' <file> | Search for pattern in file (case sensitive) | Find errors: grep 'Exception' app.log | *** |  |
+| 34 | grep -i 'pattern' <file> | Case-insensitive search | Search warnings: grep -i 'warning' app.log | *** |  |
+| 35 | grep -n 'pattern' <file> | Search with line numbers | Locate exact line of error: grep -n 'NullPointer' app.log | *** |  |
+| 36 | grep -c 'pattern' <file> | Count matching lines | Count exceptions: grep -c 'Exception' error.log | ** |  |
+| 37 | grep -w 'word' <file> | Match exact word only | Find "fail" but not "failed": grep -w 'fail' results.txt | ** |  |
+| 38 | grep -i 'pattern' * | Search across all files in directory | Search all logs for keyword: grep -i 'OutOfMemory' *.log | *** |  |
+| 39 | grep -r 'pattern' <dir> | Recursive search in directories | Find config across nested dirs: grep -r 'db.url' /opt/app/ | *** |  |
+| 40 | sed 's/old/new/' <file> | Replace first occurrence per line (preview only) | Test replacement before saving | *** |  |
+| 41 | sed -i 's/old/new/' <file> | Replace first occurrence per line (in-place edit) | Patch config: sed -i 's/8080/9090/' application.yml | *** |  |
+| 42 | sed -i 's/old/new/g' file | Replace ALL occurrences (global, in-place) | Bulk find-replace across config files in CI/CD pipeline | *** |  |
+| 43 | sed -i '5d' <file> | Delete 5th line in file | Remove unwanted header line from CSV data | ** |  |
+| 44 | sed -i '$d' <file> | Delete last line in file | Remove trailing empty line from config | ** |  |
+| 45 | sed -i '/pattern/d' file | Delete all lines matching pattern | Remove debug lines: sed -i '/DEBUG/d' app.log | ** |  |
+| 46 | sed -n '2,4p' <file> | Print only lines 2 to 4 | Extract specific config block from large file | ** |  |
+| 47 | sed -i '5i\ text' <file> | Insert text before line 5 | Add environment var before line in script | * |  |
+| 48 | sed -i '$a\ text' <file> | Append text after last line | Add new config entry to end of file | * |  |
+| 49 | awk '{print $1,$4}' file | Extract specific columns from structured text | Parse access.log: awk '{print $1,$9}' access.log (IP + status code) | *** |  |
+| 50 | awk '/pattern/{print}' | Print lines matching pattern | Filter log entries by keyword | ** |  |
+| 51 | awk '{print NR, $0}' file | Print with line numbers | Add line numbers to CSV for debugging | * |  |
+| --- TEXT EDITORS --- |  |  |  |  |  |
+| 52 | vi <file> | Open file in vi editor (3 modes: command/insert/esc) | Edit config files on servers: vi /etc/nginx/nginx.conf | *** |  |
+| i = insert mode, Esc = command mode |  |  |  |  |  |
+| :wq = save & quit, :q! = quit without saving |  |  |  |  |  |
+| --- FIND & LOCATE --- |  |  |  |  |  |
+| 53 | find /path -name "file" | Search for file by name in directory tree | Find config: find /opt -name "application.yml" | *** |  |
+| 54 | find /path -type f -empty | Find empty files | Cleanup empty placeholder files | * |  |
+| 55 | find /path -type d -empty | Find empty directories | Cleanup empty directories after old deployments | * |  |
+| 56 | locate <file> | Fast file lookup using pre-built database | Quickly locate file: locate nginx.conf (run sudo updatedb first) | ** |  |
+| --- USER & GROUP MGMT --- |  |  |  |  |  |
+| 57 | sudo useradd <user> | Create new user account | Create service accounts for apps: sudo useradd appuser | *** |  |
+| 58 | sudo passwd <user> | Set/change password for user | Reset password for team member on shared server | *** |  |
+| 59 | sudo userdel <user> | Delete user account | Remove departed team member's access | ** |  |
+| 60 | sudo userdel --remove usr | Delete user with home directory | Full cleanup of user data | ** |  |
+| 61 | sudo usermod -l new old | Rename user account | Rename user after name change | * |  |
+| 62 | sudo su <user> | Switch to another user account | Switch to app service account for deployment | *** |  |
+| 63 | whoami | Display current logged-in user name | Verify which user is running deployment scripts | *** |  |
+| 64 | id <user> | Display user ID, group ID, and groups | Verify user group membership for permissions | ** |  |
+| 65 | exit | Exit current shell/user session | Return to original user after su | ** |  |
+| 66 | sudo groupadd <group> | Create new user group | Create groups for team access: sudo groupadd devops-team | ** |  |
+| 67 | sudo usermod -aG grp user | Add user to group | Add dev to docker group: sudo usermod -aG docker devuser | *** |  |
+| 68 | sudo gpasswd -d user grp | Remove user from group | Revoke access when team member changes role | * |  |
+| 69 | sudo visudo | Safely edit sudoers file | Grant sudo access to new DevOps team members | *** |  |
+| --- FILE PERMISSIONS --- |  |  |  |  |  |
+| 70 | chmod u+x <file> | Add execute permission for user (symbolic) | Make deployment script executable: chmod u+x deploy.sh | *** |  |
+| 71 | chmod 755 <file> | rwxr-xr-x (numeric: owner all, group+others read+exec) | Standard permission for shell scripts | *** |  |
+| 72 | chmod 644 <file> | rw-r--r-- (default file permission) | Standard permission for config files | ** |  |
+| 73 | chmod 400 <file> | r-------- (read-only for owner) | Secure SSH key: chmod 400 mykey.pem (AWS requirement) | *** |  |
+| 74 | chmod 777 <file> | rwxrwxrwx (all permissions — AVOID in production!) | NEVER use on production servers — security risk | * |  |
+| 75 | chown user:group <file> | Change file ownership | Fix ownership after copy: sudo chown appuser:appgroup app.jar | *** |  |
+| --- LINKS --- |  |  |  |  |  |
+| 76 | ln <orig> <link> | Create hard link (same inode, survives original delete) | Create backup reference to important config | * |  |
+| 77 | ln -s <orig> <link> | Create soft/symbolic link (shortcut, breaks if original deleted) | Link current release: ln -s /opt/app-v2.jar /opt/app/current.jar | *** |  |
+| --- ARCHIVING --- |  |  |  |  |  |
+| 78 | zip <name> <files> | Create zip archive | Archive logs: zip backup-logs *.log | ** |  |
+| 79 | zip -sf <file.zip> | Show contents of zip file | Verify archive contents before transfer | * |  |
+| 80 | unzip <file.zip> | Extract zip archive | Unzip downloaded artifacts on server | ** |  |
+| 81 | tar -cvf name.tar dir/ | Create tar archive | Archive application directory: tar -cvf app-backup.tar /opt/app/ | *** |  |
+| 82 | tar -xvf name.tar | Extract tar archive | Extract deployment bundle on target server | *** |  |
+| 83 | tar -czvf name.tar.gz dir/ | Create compressed tar.gz archive | Compress and transfer logs between servers | *** |  |
+| --- NETWORKING --- |  |  |  |  |  |
+| 84 | ping <host> | Check network connectivity to host | Verify connectivity: ping db-server.internal | *** |  |
+| 85 | curl <url> | Send HTTP request and display response | Test API endpoints: curl http://localhost:8080/actuator/health | *** |  |
+| 86 | wget <url> | Download file from internet | Download JDK/Tomcat: wget https://download.oracle.com/java17.tar.gz | *** |  |
+| 87 | netstat | Display network connections and listening ports | Check if port 8080 is in use: netstat -tlnp | grep 8080 | *** |
+| --- PACKAGE MGMT & INSTALLATION SETUP (IN-DEPTH) --- |  |  |  |  |  |
+| PACKAGE MANAGER MAPPING: |  |  |  |  |  |
+| Ubuntu / Debian | ==> apt (Advanced Package Tool) | Most cloud VMs on AWS/GCP use Ubuntu |  |  |  |
+| Amazon Linux / RHEL | ==> yum (Yellowdog Updater Modified) | Default on AWS EC2 Amazon Linux AMI |  |  |  |
+| CentOS / Red Hat | ==> yum or dnf | dnf is modern replacement for yum (RHEL 8+) |  |  |  |
+| Fedora (RHEL 8+) | ==> dnf (Dandified YUM) | Faster dependency resolution than yum |  |  |  |
+| --- BASIC PACKAGE COMMANDS --- |  |  |  |  |  |
+| 88 | sudo yum install <pkg> | Install package on RHEL/CentOS/Amazon Linux | Primary installer on Amazon EC2 instances | *** |  |
+| 89 | sudo apt install <pkg> | Install package on Ubuntu/Debian | Primary installer on Ubuntu cloud VMs | *** |  |
+| 90 | sudo dnf install <pkg> | Install package on newer RHEL/Fedora (replaces yum) | Modern alternative: sudo dnf install maven | ** |  |
+| 91 | sudo yum update -y | Update ALL packages to latest version (RHEL family) | Regular security patching on production servers | *** |  |
+| 92 | sudo apt update | Refresh package index (MUST run before install on Ubuntu) | Always run before apt install to get latest versions | *** |  |
+| 93 | sudo apt upgrade -y | Upgrade all installed packages (Ubuntu) | Security patching on Ubuntu servers | *** |  |
+| 94 | sudo yum remove <pkg> | Uninstall a package (RHEL family) | Remove unwanted software for security hardening | ** |  |
+| 95 | sudo apt remove <pkg> | Uninstall a package (Ubuntu) | Clean up unused services | ** |  |
+| 96 | yum list installed | List all installed packages (RHEL) | Audit installed software on server | ** |  |
+| 97 | dpkg -l | List all installed packages (Ubuntu/Debian) | Audit installed packages for compliance | ** |  |
+| 98 | yum search <keyword> | Search for available packages by name | Find correct Java package: yum search java | * |  |
+| 99 | apt search <keyword> | Search for packages on Ubuntu | Find nginx version: apt search nginx | * |  |
+| 100 | rpm -qa | List all installed RPM packages (low-level, RHEL) | Quick audit: rpm -qa | grep java | * |
+| ================================================================================ |  |  |  |  |  |
+| DEVOPS SOFTWARE INSTALLATION CHEAT SHEET |  |  |  |  |  |
+```text
+| ================================================================================ |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| --- INSTALL GIT --- |  |  |  |  |  |
 
-Number | Permission        | Symbol
--------|-------------------|--------
-0      | No permission     | ---
-1      | Execute           | --x
-2      | Write             | -w-
-3      | Write + Execute   | -wx
-4      | Read              | r--
-5      | Read + Execute    | r-x
-6      | Read + Write      | rw-
-7      | Read+Write+Execute| rwx
+```
+| Amazon Linux / RHEL: | $ sudo yum install git -y | Source code management, CI/CD trigger | *** |  |  |
+| --- | --- | --- | --- | --- | --- |
+| Ubuntu / Debian: | $ sudo apt install git -y |  |  |  |  |
+| Verify: | $ git --version |  |  |  |  |
+| --- INSTALL JAVA (JDK) --- |  |  |  |  |  |
+| Amazon Linux: | $ sudo yum install java-17-amazon-corretto-devel -y | Required for Spring Boot, Maven, Jenkins | *** |  |  |
+| Ubuntu / Debian: | $ sudo apt install openjdk-17-jdk -y |  |  |  |  |
+| RHEL / CentOS: | $ sudo yum install java-17-openjdk-devel -y |  |  |  |  |
+| Verify: | $ java -version |  |  |  |  |
+| Set JAVA_HOME: | $ export JAVA_HOME=/usr/lib/jvm/java-17 | Add to ~/.bashrc for persistence |  |  |  |
+| $ echo 'export JAVA_HOME=/usr/lib/jvm/java-17' >> ~/.bashrc |  |  |  |  |  |
+| $ source ~/.bashrc |  |  |  |  |  |
+| --- INSTALL MAVEN --- |  |  |  |  |  |
+| Amazon Linux / RHEL: | $ sudo dnf install maven -y | Build Spring Boot projects: mvn clean install | *** |  |  |
+| OR: $ sudo yum install maven -y |  |  |  |  |  |
+| Ubuntu / Debian: | $ sudo apt install maven -y |  |  |  |  |
+| Verify: | $ mvn -version |  |  |  |  |
+| Set M2_HOME: | $ export M2_HOME=/usr/share/maven | Add to ~/.bashrc for persistence |  |  |  |
+| --- INSTALL DOCKER --- |  |  |  |  |  |
+| Amazon Linux 2023: | $ sudo yum install docker -y | Containerize Spring Boot microservices | *** |  |  |
+| $ sudo systemctl start docker |  |  |  |  |  |
+| $ sudo systemctl enable docker |  |  |  |  |  |
+| $ sudo usermod -aG docker ec2-user  (run docker without sudo) |  |  |  |  |  |
+| Ubuntu: | $ sudo apt update |  |  |  |  |
+| $ sudo apt install docker.io -y |  |  |  |  |  |
+| $ sudo systemctl start docker && sudo systemctl enable docker |  |  |  |  |  |
+| $ sudo usermod -aG docker $USER |  |  |  |  |  |
+| Verify: | $ docker --version |  |  |  |  |
+| $ docker run hello-world |  |  |  |  |  |
+| --- INSTALL JENKINS --- |  |  |  |  |  |
+| Amazon Linux / RHEL: | $ sudo wget -O /etc/yum.repos.d/jenkins.repo \ | CI/CD pipeline automation | *** |  |  |
+| https://pkg.jenkins.io/redhat-stable/jenkins.repo |  |  |  |  |  |
+| $ sudo rpm --import https://pkg.jenkins.io/redhat-stable/...key |  |  |  |  |  |
+| $ sudo yum install jenkins -y |  |  |  |  |  |
+| $ sudo systemctl start jenkins |  |  |  |  |  |
+| $ sudo systemctl enable jenkins |  |  |  |  |  |
+| Access: | http://<server-ip>:8080  (default Jenkins port) |  |  |  |  |
+| Initial Password: | $ sudo cat /var/lib/jenkins/secrets/initialAdminPassword |  |  |  |  |
+| --- INSTALL NODE.JS --- |  |  |  |  |  |
+| Amazon Linux (via nvm): | $ curl -o- https://raw.githubusercontent.com/.../install.sh | bash | Required for Angular frontend builds | ** |  |
+| $ nvm install 18 |  |  |  |  |  |
+| Ubuntu: | $ sudo apt install nodejs npm -y |  |  |  |  |
+| Verify: | $ node -v && npm -v |  |  |  |  |
+| --- INSTALL KUBECTL --- |  |  |  |  |  |
+| Any Linux: | $ curl -LO "https://dl.k8s.io/release/.../kubectl" | Manage Kubernetes deployments | ** |  |  |
+| $ chmod +x kubectl && sudo mv kubectl /usr/local/bin/ |  |  |  |  |  |
+| Verify: | $ kubectl version --client |  |  |  |  |
+| --- INSTALL TERRAFORM --- |  |  |  |  |  |
+| Any Linux: | $ sudo yum install -y yum-utils | Infrastructure as Code for AWS/Azure/GCP | ** |  |  |
+| $ sudo yum-config-manager --add-repo https://rpm.releases... |  |  |  |  |  |
+| $ sudo yum install terraform -y |  |  |  |  |  |
+| Verify: | $ terraform -version |  |  |  |  |
+| POST-INSTALL VERIFICATION CHECKLIST: |  |  |  |  |  |
+| $ java -version | Confirm JDK installed |  |  |  |  |
+| $ mvn -version | Confirm Maven installed |  |  |  |  |
+| $ git --version | Confirm Git installed |  |  |  |  |
+| $ docker --version | Confirm Docker installed |  |  |  |  |
+| $ node -v | Confirm Node.js installed |  |  |  |  |
+| $ kubectl version | Confirm kubectl installed |  |  |  |  |
+| $ jenkins --version | Confirm Jenkins installed |  |  |  |  |
+| --- PROCESS & SYSTEM --- |  |  |  |  |  |
+| 92 | ps aux | List all running processes | Find Java process: ps aux | grep java | *** |
+| 93 | top | Real-time process monitor (CPU, memory) | Monitor server load during deployment or load testing | *** |  |
+| 94 | kill <PID> | Terminate process by PID | Kill stuck Java process: sudo kill 12345 | *** |  |
+| 95 | free | Display memory usage (RAM + swap) | Check available memory before deploying new service | ** |  |
+| 96 | uname -r | Show kernel version | Verify kernel compatibility for Docker/container runtime | ** |  |
+| 97 | cat /etc/os-release | Show OS distribution and version | Identify OS for correct package manager and compatibility | ** |  |
+| 98 | history | Show command history | Review what was done on server for audit/troubleshooting | ** |  |
+| --- SERVICE MGMT --- |  |  |  |  |  |
+| 99 | systemctl start <svc> | Start a service | Start app: sudo systemctl start docker | *** |  |
+| 100 | systemctl stop <svc> | Stop a service | Stop old version before deploying new | *** |  |
+| 101 | systemctl restart <svc> | Restart a service | Restart after config change: systemctl restart nginx | *** |  |
+| 102 | systemctl status <svc> | Check service status | Verify service running: systemctl status jenkins | *** |  |
+| 103 | systemctl enable <svc> | Enable auto-start at boot | Ensure Docker starts on reboot: systemctl enable docker | *** |  |
+| 104 | systemctl disable <svc> | Disable auto-start at boot | Disable unused services for security hardening | ** |  |
+| 105 | systemctl reload <svc> | Reload config without restart | Reload nginx after config update (zero downtime) | ** |  |
+| 106 | systemctl list-units | List all active services | Audit running services on server | * |  |
+| 107 | service <svc> start | Legacy command to start service | Older systems: service httpd start | * |  |
+| --- SSH & SYSTEM --- |  |  |  |  |  |
+| 108 | cat /etc/ssh/sshd_config | View SSH server configuration | Verify PasswordAuthentication setting for security | ** |  |
+| 109 | sudo vi /etc/hostname | Change hostname permanently | Set meaningful hostname for server identification | * |  |
+| 110 | cat /etc/passwd | Display all user accounts | Audit user accounts on shared server | ** |  |
+| 111 | cat /etc/sudoers | View sudoers file (who has root access) | Security audit: verify who has sudo privileges | ** |  |
+| 112 | man <command> | Display manual page for a command | Learn command options: man grep | ** |  |
+| --- WEBSERVERS IN LINUX (IN-DEPTH) --- |  |  |  |  |  |
+| What is a Webserver? | Software that hosts/runs websites and serves HTTP requests | Every web app needs a webserver (Apache, Nginx, Tomcat) |  |  |  |
+| ========== APACHE HTTPD (httpd) ========== |  |  |  |  |  |
+| INSTALL (Amazon Linux): | $ sudo yum install httpd -y | Most widely used webserver globally | *** |  |  |
+| INSTALL (Ubuntu): | $ sudo apt install apache2 -y | Package name differs: httpd (RHEL) vs apache2 (Ubuntu) | *** |  |  |
+| START: | $ sudo systemctl start httpd | Start Apache after installation | *** |  |  |
+| ENABLE (auto-start): | $ sudo systemctl enable httpd | Ensure survives reboot | *** |  |  |
+| STATUS: | $ sudo systemctl status httpd | Check if Apache is running | *** |  |  |
+| STOP: | $ sudo systemctl stop httpd | Stop webserver for maintenance | ** |  |  |
+| RESTART: | $ sudo systemctl restart httpd | Apply config changes | ** |  |  |
+| RELOAD (no downtime): | $ sudo systemctl reload httpd | Reload config without stopping | ** |  |  |
+| DEFAULT PORT: | 80 (HTTP) and 443 (HTTPS) | Must open port 80 in AWS Security Group! | *** |  |  |
+| WEB CONTENT DIR: | /var/www/html/ | Place index.html here to host website | *** |  |  |
+| CONFIG FILE: | /etc/httpd/conf/httpd.conf (RHEL) | Modify for virtual hosts, port, doc root | ** |  |  |
+| /etc/apache2/apache2.conf (Ubuntu) |  |  |  |  |  |
+| LOG FILES: | /var/log/httpd/access_log | Monitor who accessed your website | ** |  |  |
+| /var/log/httpd/error_log | Debug webserver errors |  |  |  |  |
+| QUICK SETUP STEPS: |  |  |  |  |  |
+| 1. $ sudo yum install httpd -y | Install Apache |  |  |  |  |
+| 2. $ sudo systemctl start httpd | Start the service |  |  |  |  |
+| 3. $ sudo systemctl enable httpd | Auto-start on reboot |  |  |  |  |
+| 4. Open port 80 in AWS Security Group (Inbound Rules) | Allow HTTP traffic |  |  |  |  |
+| 5. $ sudo vi /var/www/html/index.html | Create your web page |  |  |  |  |
+| 6. Access http://<EC2-Public-IP> in browser | Your website is live! |  |  |  |  |
+| ========== NGINX (Alternative to Apache) ========== |  |  |  |  |  |
+| INSTALL (Amazon Linux): | $ sudo yum install nginx -y | Preferred for microservices reverse proxy | *** |  |  |
+| INSTALL (Ubuntu): | $ sudo apt install nginx -y |  | *** |  |  |
+| START + ENABLE: | $ sudo systemctl start nginx && sudo systemctl enable nginx | Start Nginx and enable auto-start | *** |  |  |
+| CONFIG FILE: | /etc/nginx/nginx.conf | Main config for server blocks | *** |  |  |
+| WEB CONTENT DIR: | /usr/share/nginx/html/ (default) | Place static files here | ** |  |  |
+| TEST CONFIG: | $ sudo nginx -t | Validate config BEFORE restart (catches syntax errors) | *** |  |  |
+| REVERSE PROXY FOR SPRING BOOT: |  |  |  |  |  |
+| Edit /etc/nginx/conf.d/spring-app.conf: |  |  |  |  |  |
+| server { |  |  |  |  |  |
+| listen 80; |  |  |  |  |  |
+| server_name myapp.com; |  |  |  |  |  |
+| location / { |  |  |  |  |  |
+| proxy_pass http://localhost:8080; | Forward traffic to Spring Boot app on 8080 |  |  |  |  |
+| proxy_set_header Host $host; |  |  |  |  |  |
+| proxy_set_header X-Real-IP $remote_addr; |  |  |  |  |  |
+| } |  |  |  |  |  |
+| } |  |  |  |  |  |
+| $ sudo nginx -t && sudo systemctl reload nginx | Validate and apply |  |  |  |  |
+| APACHE vs NGINX: |  |  |  |  |  |
+| Apache httpd | Process-based, .htaccess support, good for traditional sites | Use when: hosting PHP apps, need .htaccess |  |  |  |
+| Nginx | Event-driven, lightweight, excellent reverse proxy | Use when: microservices, load balancing, Spring Boot proxy |  |  |  |
+| ========== TOMCAT (Java App Server) ========== |  |  |  |  |  |
+| INSTALL: | $ wget https://downloads.apache.org/tomcat/tomcat-9/...tar.gz | Run WAR files (Spring Boot can also use embedded Tomcat) | ** |  |  |
+| $ tar -xzvf apache-tomcat-9.*.tar.gz |  |  |  |  |  |
+| $ cd apache-tomcat-9.*/bin |  |  |  |  |  |
+| START: | $ ./startup.sh | Starts Tomcat on port 8080 | ** |  |  |
+| STOP: | $ ./shutdown.sh | Gracefully stop Tomcat | ** |  |  |
+| DEPLOY WAR: | Copy .war file to webapps/ directory | Tomcat auto-deploys WAR files placed in webapps/ | ** |  |  |
+| DEFAULT PORT: | 8080 | Access: http://<IP>:8080 |  |  |  |
+| REAL-TIME ARCHITECTURE (Java Full Stack on Linux): |  |  |  |  |  |
+```text
+| Client (Browser)  --->  Nginx (Port 80, Reverse Proxy) |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| +--> Spring Boot App (Port 8080, Embedded Tomcat) |  |  |  |  |  |
+| +--> Angular Frontend (Port 4200 or served as static via Nginx) |  |  |  |  |  |
+
+```
+| IMPORTANT PORTS TO OPEN IN AWS SECURITY GROUP: |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| 22   = SSH (remote login) |  |  |  |  |  |
+| 80   = HTTP (Apache/Nginx) |  |  |  |  |  |
+| 443  = HTTPS (SSL/TLS) |  |  |  |  |  |
+| 8080 = Tomcat / Spring Boot |  |  |  |  |  |
+| 8443 = Spring Boot HTTPS |  |  |  |  |  |
+| 3306 = MySQL |  |  |  |  |  |
+| 5432 = PostgreSQL |  |  |  |  |  |
+| 27017= MongoDB |  |  |  |  |  |
+| 6379 = Redis |  |  |  |  |  |
+| 9092 = Kafka |  |  |  |  |  |
+| 9090 = SonarQube |  |  |  |  |  |
+
+## FILE PERMISSION NUMERIC REFERENCE
+
+| Number | Permission | Symbol |
+```text
+|---|---|---|
+| 0 | No permission | --- |
+
+```
+| 1 | Execute | --x |
+| --- | --- | --- |
+| 2 | Write | -w- |
+| 3 | Write + Execute | -wx |
+| 4 | Read | r-- |
+| 5 | Read + Execute | r-x |
+| 6 | Read + Write | rw- |
+| 7 | Read+Write+Execute | rwx |
 
 Default file permission:      644 (rw-r--r--)
 Default directory permission: 755 (rwxr-xr-x)
 SSH key permission:           400 (r--------)
 
-================================================================================
-LINUX FILE TYPES
-================================================================================
+## LINUX FILE TYPES
 
-Symbol | Type               | Example
--------|--------------------|-------------------------
- -     | Regular file       | -rw-r--r-- app.jar
- d     | Directory          | drwxr-xr-x  config/
- l     | Symbolic link      | lrwxrwxrwx  current -> v2
+| Symbol | Type | Example |
+| --- | --- | --- |
+| - | Regular file | -rw-r--r-- app.jar |
+| d | Directory | drwxr-xr-x  config/ |
+| l | Symbolic link | lrwxrwxrwx  current -> v2 |
 
-================================================================================
-LINUX ARCHITECTURE
-================================================================================
+## LINUX ARCHITECTURE
 
 User (runs commands)
-    |
+|
 Shell (interprets commands - Bash, Zsh)
-    |
+|
 Kernel (core OS - manages CPU, RAM, I/O, hardware)
-    |
+|
 Hardware (physical CPU, RAM, disk, network)
 
-================================================================================
-FINAL SUMMARY NOTES
-================================================================================
+## FINAL SUMMARY NOTES
 
 TOP 10 MOST IMPORTANT LINUX COMMANDS FOR DEVOPS:
 1.  grep    — Log searching, error finding, pattern matching
@@ -390,22 +352,22 @@ TOP 10 MOST IMPORTANT LINUX COMMANDS FOR DEVOPS:
 10. usermod — Managing user group membership (Docker group, etc.)
 
 COMMAND CATEGORIES:
-  File Management:     ls, cd, mkdir, rm, cp, mv, touch, ln
-  File Viewing:        cat, head, tail, wc, diff, tac
-  Text Processing:     grep, sed, awk
-  Text Editors:        vi (command, insert, esc modes)
-  File Search:         find, locate
-  User Management:     useradd, userdel, usermod, passwd, su, whoami, id
-  Group Management:    groupadd, groupmod, gpasswd, lid
-  Permissions:         chmod (symbolic & numeric), chown
-  Archiving:           zip, unzip, tar
-  Networking:          ping, curl, wget, netstat
-  Package Management:  yum, apt, dnf, rpm, dpkg
-  Installation Setup:  Git, Java JDK, Maven, Docker, Jenkins, Node.js, kubectl, Terraform
-  Process Management:  ps, top, kill, free
-  Service Management:  systemctl (start, stop, restart, enable, status)
-  Webservers:          Apache httpd, Nginx (reverse proxy), Tomcat
-  System Info:         uname, cat /etc/os-release, hostname, history
+File Management:     ls, cd, mkdir, rm, cp, mv, touch, ln
+File Viewing:        cat, head, tail, wc, diff, tac
+Text Processing:     grep, sed, awk
+Text Editors:        vi (command, insert, esc modes)
+File Search:         find, locate
+User Management:     useradd, userdel, usermod, passwd, su, whoami, id
+Group Management:    groupadd, groupmod, gpasswd, lid
+Permissions:         chmod (symbolic & numeric), chown
+Archiving:           zip, unzip, tar
+Networking:          ping, curl, wget, netstat
+Package Management:  yum, apt, dnf, rpm, dpkg
+Installation Setup:  Git, Java JDK, Maven, Docker, Jenkins, Node.js, kubectl, Terraform
+Process Management:  ps, top, kill, free
+Service Management:  systemctl (start, stop, restart, enable, status)
+Webservers:          Apache httpd, Nginx (reverse proxy), Tomcat
+System Info:         uname, cat /etc/os-release, hostname, history
 
 KEY LEARNING TAKEAWAYS:
 1. Linux is the OS of choice for servers, DevOps, and cloud infrastructure.
@@ -421,6 +383,5 @@ KEY LEARNING TAKEAWAYS:
 11. For Java Full Stack: Nginx (port 80) -> Spring Boot (port 8080) is the standard architecture.
 12. Always open required ports (22, 80, 443, 8080) in AWS Security Group before testing.
 
-================================================================================
-END OF LINUX COMMANDS ANALYSIS
-================================================================================
+## END OF LINUX COMMANDS ANALYSIS
+

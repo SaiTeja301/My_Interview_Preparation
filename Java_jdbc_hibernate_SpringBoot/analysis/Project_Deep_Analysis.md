@@ -1,19 +1,19 @@
-﻿================================================================================
-PROJECT DEEP ANALYSIS - CUSTOMER LOAN MANAGEMENT SYSTEM
-For: 7+ Years Experience Level | Java Developer
-================================================================================
+# PROJECT DEEP ANALYSIS - CUSTOMER LOAN MANAGEMENT SYSTEM
+> *For: 7+ Years Experience Level | Java Developer*
 
-SECTION 1: PROJECT OVERVIEW
+## SECTION 1: PROJECT OVERVIEW
+
 Project: Customer Loan Management System (Full Stack)
 Backend: Spring Boot + Spring Data JPA + REST APIs
 Frontend: Angular (CustomerApp-UI)
 Database: MySQL/PostgreSQL (JPA/Hibernate)
 Architecture: Monolithic (can discuss microservices migration)
 
-SECTION 2: BACKEND ARCHITECTURE
+## SECTION 2: BACKEND ARCHITECTURE
 
 Project Structure:
 Customer_Management_Services/
+```text
 ├── src/main/java/com/customer/
 │   ├── controller/     → REST Controllers (API layer)
 │   ├── service/        → Business logic
@@ -28,6 +28,7 @@ Customer_Management_Services/
 │   └── data.sql        → Initial data
 └── pom.xml             → Maven dependencies
 
+```
 Key Dependencies (from pom.xml):
 - spring-boot-starter-web (REST APIs)
 - spring-boot-starter-data-jpa (Database)
@@ -38,30 +39,33 @@ Key Dependencies (from pom.xml):
 - lombok (Boilerplate reduction)
 - springdoc-openapi (Swagger/API docs)
 
-SECTION 3: API DESIGN
+## SECTION 3: API DESIGN
 
 REST API Endpoints:
-Method | Endpoint                     | Purpose
-GET    | /api/v1/customers            | Get all customers (paginated)
-GET    | /api/v1/customers/{id}       | Get customer by ID
-POST   | /api/v1/customers            | Create new customer
-PUT    | /api/v1/customers/{id}       | Update customer
-DELETE | /api/v1/customers/{id}       | Delete customer
-GET    | /api/v1/customers/{id}/loans | Get loans for customer
-POST   | /api/v1/loans                | Apply for loan
-GET    | /api/v1/loans/{id}           | Get loan details
-PUT    | /api/v1/loans/{id}/approve   | Approve loan
-PUT    | /api/v1/loans/{id}/reject    | Reject loan
-POST   | /api/auth/login              | Authentication
-POST   | /api/auth/register           | User registration
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | /api/v1/customers | Get all customers (paginated) |
+| GET | /api/v1/customers/{id} | Get customer by ID |
+| POST | /api/v1/customers | Create new customer |
+| PUT | /api/v1/customers/{id} | Update customer |
+| DELETE | /api/v1/customers/{id} | Delete customer |
+| GET | /api/v1/customers/{id}/loans | Get loans for customer |
+| POST | /api/v1/loans | Apply for loan |
+| GET | /api/v1/loans/{id} | Get loan details |
+| PUT | /api/v1/loans/{id}/approve | Approve loan |
+| PUT | /api/v1/loans/{id}/reject | Reject loan |
+| POST | /api/auth/login | Authentication |
+| POST | /api/auth/register | User registration |
 
-SECTION 4: DATABASE SCHEMA
+## SECTION 4: DATABASE SCHEMA
 
 Entity Relationships:
+```text
 Customer (1) -----> (N) Loan
 Customer (1) -----> (1) Address
 Loan (N) -----> (1) LoanType
 
+```
 Customer Table:
 - id (PK, Auto-increment)
 - firstName, lastName
@@ -80,38 +84,39 @@ Loan Table:
 - appliedDate, approvedDate
 - emi (calculated)
 
-SECTION 5: EXECUTION FLOW
+## SECTION 5: EXECUTION FLOW
 
 Request Flow:
 Client (Angular) -> HTTP Request
-     |
+|
 Controller (@RestController)
-     | @Valid validates input
+| @Valid validates input
 Service (@Service, @Transactional)
-     | Business logic + validation
+| Business logic + validation
 Repository (JpaRepository)
-     | Spring Data JPA generates SQL
+| Spring Data JPA generates SQL
 Hibernate (ORM)
-     | Converts Entity <-> SQL
+| Converts Entity <-> SQL
 Database (MySQL)
-     |
+|
 Response: Entity -> DTO -> JSON -> Client
 
 Loan Application Flow:
 1. Customer submits loan application (POST /api/v1/loans)
 2. Controller validates request DTO (@Valid)
 3. Service layer:
-   a. Verify customer exists
-   b. Check credit score eligibility
-   c. Calculate interest rate based on credit score
-   d. Calculate EMI: EMI = [P × R × (1+R)^N] / [(1+R)^N - 1]
-   e. Create Loan entity with status PENDING
-   f. Save to database
+a. Verify customer exists
+b. Check credit score eligibility
+c. Calculate interest rate based on credit score
+d. Calculate EMI: EMI = [P × R × (1+R)^N] / [(1+R)^N - 1]
+e. Create Loan entity with status PENDING
+f. Save to database
 4. Return LoanDTO with calculated EMI
 
-SECTION 6: INTERVIEW QUESTIONS ABOUT THIS PROJECT
+## SECTION 6: INTERVIEW QUESTIONS ABOUT THIS PROJECT
 
-*** Q1. Explain your project architecture and your role.
+#### Q1. Explain your project architecture and your role.
+
 Answer:
 "I built a Customer Loan Management System as a full-stack application.
 Backend uses Spring Boot with layered architecture (Controller → Service →
@@ -121,7 +126,8 @@ reactive forms and HTTP interceptors for token management. I was responsible
 for the complete backend development including database design, API development,
 exception handling, and unit testing with JUnit 5 and Mockito."
 
-*** Q2. How did you handle authentication and authorization?
+#### Q2. How did you handle authentication and authorization?
+
 Answer:
 "Implemented JWT (JSON Web Token) based authentication with Spring Security.
 Login endpoint validates credentials and returns a JWT token. Every subsequent
@@ -132,10 +138,13 @@ control restricts admin endpoints (loan approval/rejection) to ADMIN role."
 Flow:
 Login (username, password) -> Validate -> Generate JWT -> Return token
 Subsequent requests:
+```text
 Request + Bearer token -> JWTFilter -> Validate token -> Extract user
--> Set SecurityContext -> Controller processes request
+- Set SecurityContext -> Controller processes request
 
-*** Q3. How did you handle exceptions?
+```
+#### Q3. How did you handle exceptions?
+
 Answer:
 "Used @RestControllerAdvice for global exception handling. Custom exceptions
 like CustomerNotFoundException, LoanRejectedException, InvalidInputException
@@ -143,7 +152,8 @@ map to appropriate HTTP status codes (404, 400, 422). All error responses
 follow a consistent ErrorResponse DTO structure with timestamp, message,
 status code, and path."
 
-*** Q4. How did you implement pagination and sorting?
+#### Q4. How did you implement pagination and sorting?
+
 Answer:
 "Used Spring Data JPA Pageable. Controller accepts page, size, and sort
 parameters. Repository methods return Page<Entity> which is converted to
@@ -159,7 +169,8 @@ public ResponseEntity<Page<CustomerDTO>> getAll(
     return ResponseEntity.ok(customerService.findAll(pageable));
 }
 
-*** Q5. What improvements would you suggest for production?
+#### Q5. What improvements would you suggest for production?
+
 Answer:
 1. Migrate to Microservices (Customer Service, Loan Service, Auth Service)
 2. Add Redis caching for frequently accessed customer data
@@ -172,10 +183,11 @@ Answer:
 9. Container deployment with Docker + Kubernetes
 10. CI/CD pipeline with GitHub Actions
 
-SECTION 7: FRONTEND (ANGULAR) OVERVIEW
+## SECTION 7: FRONTEND (ANGULAR) OVERVIEW
 
 Angular Project Structure:
 CustomerApp-UI/
+```text
 ├── src/app/
 │   ├── components/      → UI components
 │   │   ├── dashboard/
@@ -192,6 +204,7 @@ CustomerApp-UI/
 │   ├── models/          → TypeScript interfaces
 │   └── app-routing.module.ts
 
+```
 Key Angular Concepts Used:
 - Reactive Forms with validation
 - HTTP Interceptor for JWT token injection
@@ -200,14 +213,13 @@ Key Angular Concepts Used:
 - Two-way data binding
 
 KEY QUESTIONS:
-*** 1. Project architecture explanation
-*** 2. Authentication (JWT + Spring Security)
-*** 3. Exception handling strategy
-*** 4. Pagination implementation
-*** 5. Database design decisions
-*** 6. Production improvements
-*** 7. Angular-Spring Boot integration
+1. Project architecture explanation
+2. Authentication (JWT + Spring Security)
+3. Exception handling strategy
+4. Pagination implementation
+5. Database design decisions
+6. Production improvements
+7. Angular-Spring Boot integration
 
-================================================================================
-END OF PROJECT DEEP ANALYSIS
-================================================================================
+## END OF PROJECT DEEP ANALYSIS
+
