@@ -1,6 +1,5 @@
-﻿================================================================================
-HIBERNATE / JPA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# HIBERNATE / JPA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -58,14 +57,12 @@ EAGER: Related entities loaded immediately with parent (default for @ManyToOne)
 
 @Entity
 public class Department {
-```java
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "department")
     private List<Employee> employees; // Loaded only when getEmployees() called
 
     @ManyToOne(fetch = FetchType.EAGER)
     private Company company; // Loaded immediately with Department
 }
-```
 
 LazyInitializationException:
 Occurs when accessing lazy-loaded field after Session is closed!
@@ -88,30 +85,22 @@ d.getEmployees().size(); // N queries (one per dept!)
 
 Solutions:
 1. JOIN FETCH (JPQL):
-```sql
 @Query("SELECT d FROM Department d JOIN FETCH d.employees")
 List<Department> findAllWithEmployees();
-```
 
 2. @EntityGraph:
-```text
 @EntityGraph(attributePaths = {"employees"})
 List<Department> findAll();
-```
 
 3. @BatchSize (Hibernate):
-```java
 @BatchSize(size = 20)
 private List<Employee> employees;
 // Loads employees in batches of 20 instead of 1-by-1
-```
 
 4. DTO Projection (best for read-only):
-```sql
 @Query("SELECT new com.dto.DeptDTO(d.name, COUNT(e)) " +
        "FROM Department d LEFT JOIN d.employees e GROUP BY d.name")
 List<DeptDTO> getDeptSummary();
-```
 
 #### Q5. First-level vs Second-level Cache.
 
@@ -209,7 +198,6 @@ update(): Hibernate-specific, re-attaches detached entity, exception if same ID 
 CrudRepository -> PagingAndSortingRepository -> JpaRepository
 
 public interface PolicyRepository extends JpaRepository<Policy, Long> {
-```sql
     List<Policy> findByStatusAndType(String status, String type); // Auto query
 
     @Query("SELECT p FROM Policy p WHERE p.premium > :min")
@@ -219,7 +207,6 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
     @Query("UPDATE Policy p SET p.status = :status WHERE p.id = :id")
     int updateStatus(@Param("id") Long id, @Param("status") String status);
 }
-```
 
 Flow:
 Controller -> Service -> Repository (JpaRepository)
@@ -249,20 +236,19 @@ KEY QUESTIONS:
 #### Q11. @Transactional with Hibernate - proxy mechanism.
 
 Spring creates a PROXY around @Transactional bean.
+```text
 Proxy intercepts method call -> opens Session -> begins Transaction ->
 executes method -> commit on success / rollback on exception.
 
+```
 Self-invocation problem:
-```java
 public void methodA() { this.methodB(); } // Bypasses proxy!
 @Transactional public void methodB() { ... } // No transaction!
-```
 
 Fix: Inject self, or call from different bean.
 
 #### Q12. Hibernate entity states diagram.
 
-```sql
 new Entity() -> TRANSIENT (no Session, no DB row)
      | persist() / save()
 PERSISTENT (in Session, tracked, dirty checking active)
@@ -272,24 +258,24 @@ DETACHED (has DB identity, not tracked)
 PERSISTENT (re-attached)
      | remove() / delete()
 REMOVED (scheduled for DELETE)
-```
 
 #### Q13. @ManyToMany mapping - best practices.
 
 AVOID bidirectional @ManyToMany in production.
 Use intermediate entity instead:
 
+```text
 // Instead of: Student <-> Course (ManyToMany)
 // Use: Student -> Enrollment <- Course (OneToMany + ManyToOne)
+
+```
 @Entity
 public class Enrollment {
-```java
     @ManyToOne private Student student;
     @ManyToOne private Course course;
     private LocalDate enrollDate;
     private String grade; // Extra attributes!
 }
-```
 
 #### Q14. Hibernate Query Optimization checklist.
 
@@ -307,11 +293,9 @@ public class Enrollment {
 #### Q15. Optimistic vs Pessimistic Locking.
 
 Optimistic (@Version):
-```sql
 @Version private int version;
 On update, Hibernate checks version. If changed -> OptimisticLockException.
 Retry logic needed. Good for low-contention.
-```
 
 Pessimistic:
 entityManager.find(Policy.class, id, LockModeType.PESSIMISTIC_WRITE);
@@ -336,3 +320,4 @@ Q18-Q20: Quick Hibernate.
 #### Q19. LazyInitializationException - accessing lazy outside Session. Fix: JOIN FETCH/DTO
 
 #### Q20. Spring Data JPA Specifications for dynamic queries
+

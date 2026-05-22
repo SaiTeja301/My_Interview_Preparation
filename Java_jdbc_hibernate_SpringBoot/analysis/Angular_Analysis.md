@@ -1,32 +1,5 @@
-﻿================================================================================
-ANGULAR - MASSIVE INTERVIEW PREPARATION (50 Questions)
-For: 7+ Years Experience Level | Full Stack Java Developer
-
-# ANGULAR RENDERING CYCLE FLOW:
-
-User Action (click/input)
-```text
-   ↓
-Component Event Handler
-   ↓
-Service Method Call
-   ↓
-HttpClient (Observable)
-   ↓
-HTTP Interceptor (add JWT token)
-   ↓
-Backend REST API (Spring Boot)
-   ↓
-Response Observable
-   ↓
-Zone.js detects async completion
-   ↓
-Change Detection triggered
-   ↓
-Virtual DOM diff
-   ↓
-DOM Update (only changed elements)
-```
+# ANGULAR - MASSIVE INTERVIEW PREPARATION (50 Questions)
+> *For: 7+ Years Experience Level | Full Stack Java Developer · # ANGULAR RENDERING CYCLE FLOW: · User Action (click/input) · ↓ · Component Event Handler · ↓ · Service Method Call · ↓ · HttpClient (Observable) · ↓ · HTTP Interceptor (add JWT token) · ↓ · Backend REST API (Spring Boot) · ↓ · Response Observable · ↓ · Zone.js detects async completion · ↓ · Change Detection triggered · ↓ · Virtual DOM diff · ↓ · DOM Update (only changed elements)*
 
 ## PART 1: ARCHITECTURE + FUNDAMENTALS (Q1-Q12)
 
@@ -43,6 +16,7 @@ Resolvers: Pre-fetch data before route activation
 
 #### Q2. Component lifecycle hooks — all 8.
 
+```text
 1. ngOnChanges(changes)     → @Input property changed (called before ngOnInit)
 2. ngOnInit()               → Component initialized, inputs available
 3. ngDoCheck()              → Custom change detection logic (every CD cycle!)
@@ -52,16 +26,15 @@ Resolvers: Pre-fetch data before route activation
 7. ngAfterViewChecked()     → After view + child views checked
 8. ngOnDestroy()            → Cleanup: unsubscribe, clear timers, detach listeners
 
+```
 Most Used: ngOnInit (data loading), ngOnDestroy (unsubscribe), ngOnChanges (react to inputs)
 
 @Component({...})
 export class PolicyListComponent implements OnInit, OnDestroy {
-```java
   private sub!: Subscription;
   ngOnInit() { this.sub = this.service.getPolicies().subscribe(...); }
   ngOnDestroy() { this.sub.unsubscribe(); } // CRITICAL: prevent memory leak
 }
-```
 
 #### Q3. Change Detection — Default vs OnPush.
 
@@ -81,14 +54,12 @@ changeDetection: ChangeDetectionStrategy.OnPush,
 ...
 })
 export class PolicyComponent {
-```java
   @Input() policy!: Policy; // Only re-checked if reference changes
 
   constructor(private cdr: ChangeDetectorRef) {}
 
   forceUpdate() { this.cdr.markForCheck(); }  // Manual trigger
 }
-```
 
 > **Performance: OnPush can skip 90%+ of unnecessary checks in large apps.**
 
@@ -101,8 +72,11 @@ setTimeout, setInterval, Promise.then, addEventListener,
 XMLHttpRequest, fetch, MutationObserver
 
 How it triggers Change Detection:
+```text
 1. User clicks button → addEventListener (patched by Zone.js)
 2. Handler runs → may call HTTP/timers
+
+```
 3. Zone.js detects async task completion
 4. Calls ApplicationRef.tick() → triggers Change Detection
 5. Angular traverses component tree, updates DOM
@@ -121,10 +95,12 @@ constructor(private http: HttpClient) {}
 }
 
 Injection scopes:
+```text
 providedIn: 'root'   → App-wide singleton (tree-shakable)
 providedIn: module   → Module-level singleton
 providers: [Service] → Component-level instance (new per component)
 
+```
 Injection Token (for non-class DI):
 const API_URL = new InjectionToken<string>('API_URL');
 providers: [{ provide: API_URL, useValue: 'http://api.company.com' }]
@@ -144,35 +120,39 @@ Fix: Create SharedModule, declare + export shared components
 
 #### Q7. Data binding — all 4 types.
 
+```text
 Interpolation: {{ expression }}              → Component → Template
 Property:      [property]="expression"       → Component → Template
 Event:         (event)="handler($event)"     → Template → Component
 Two-way:       [(ngModel)]="property"        → Both directions
 
+```
 Two-way binding is sugar for: [ngModel]="prop" (ngModelChange)="prop=$event"
 
 #### Q8. Structural vs Attribute directives.
 
 Structural (*): Modify DOM structure (add/remove elements)
+```text
 ngIf="condition"         → Show/hide (removes from DOM entirely)
 ngFor="let item of list" → Loop and render
 ngSwitch / *ngSwitchCase → Conditional rendering
 
+```
 Attribute: Modify appearance/behavior
+```text
 [ngClass]="{'active': isActive}"  → CSS class binding
 [ngStyle]="{'color': textColor}"  → Inline style
 [hidden]="!show"                  → CSS display:none (still in DOM!)
 
+```
 Custom Directive:
 @Directive({ selector: '[appHighlight]' })
 export class HighlightDirective {
 constructor(private el: ElementRef) {}
-```text
   @HostListener('mouseenter') onMouseEnter() {
     this.el.nativeElement.style.backgroundColor = 'yellow';
   }
 }
-```
 
 #### Q9. *ngIf vs [hidden] — DOM impact.
 
@@ -201,16 +181,16 @@ Custom Pure Pipe:
 @Pipe({ name: 'statusBadge', pure: true })
 export class StatusBadgePipe implements PipeTransform {
 transform(status: string): string {
-```text
     return status === 'ACTIVE' ? '✅ Active' : '❌ Inactive';
   }
 }
 // Template: {{ policy.status | statusBadge }}
-```
 
+```text
 pure: true (default) → Only re-evaluates when INPUT reference changes
 pure: false → Re-evaluates on EVERY change detection cycle (expensive!)
 
+```
 #### Q12. ViewChild and ContentChild.
 
 @ViewChild('myInput') inputRef!: ElementRef;
@@ -223,22 +203,21 @@ ContentChild: Access projected content (<ng-content>)
 
 #### Q13. Observable vs Promise.
 
-Feature      | Promise              | Observable
-Values       | Single               | Multiple (stream)
-Lazy         | No (eager)           | Yes (lazy)
-Cancel       | No                   | Yes (unsubscribe)
-Operators    | .then/.catch         | pipe(map, filter, etc.)
-Async/Await  | Yes                  | Yes (firstValueFrom)
+| Feature | Promise | Observable |
+| --- | --- | --- |
+| Values | Single | Multiple (stream) |
+| Lazy | No (eager) | Yes (lazy) |
+| Cancel | No | Yes (unsubscribe) |
+| Operators | .then/.catch | pipe(map, filter, etc.) |
+| Async/Await | Yes | Yes (firstValueFrom) |
 
 // Promise: one HTTP call
 fetch('/api/policies').then(res => res.json());
 
 // Observable: can emit multiple values, cancel, retry
 this.http.get<Policy[]>('/api/policies')
-```text
 .pipe(retry(3), catchError(err => of([])))
 .subscribe(data => this.policies = data);
-```
 
 #### Q14. Subject types — Subject, BehaviorSubject, ReplaySubject, AsyncSubject.
 
@@ -304,12 +283,10 @@ Methods to prevent:
 // takeUntil pattern (best for multiple subscriptions)
 private destroy$ = new Subject<void>();
 ngOnInit() {
-```text
     this.service.getData().pipe(takeUntil(this.destroy$)).subscribe(...);
     this.service.getMore().pipe(takeUntil(this.destroy$)).subscribe(...);
 }
 ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
-```
 
 // async pipe (cleanest)
 policies$ = this.policyService.getPolicies();
@@ -354,9 +331,7 @@ switchMap(term => this.api.search(term))
 #### Q24. shareReplay(1) — share + cache last value for late subscribers
 
 private policies$ = this.http.get<Policy[]>('/api/policies')
-```text
 .pipe(shareReplay(1)); // One HTTP call shared by all subscribers
-```
 
 ## PART 3: ROUTING + GUARDS + HTTP (Q25-Q35)
 
@@ -386,13 +361,11 @@ resolve: Pre-fetch data before activating route
 export class AuthGuard implements CanActivate {
 constructor(private authService: AuthService, private router: Router) {}
 canActivate(): boolean {
-```text
     if (this.authService.isLoggedIn()) return true;
     this.router.navigate(['/login']);
     return false;
   }
 }
-```
 
 #### Q27. Lazy Loading modules.
 
@@ -413,7 +386,6 @@ imports: [RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules }
 export class AuthInterceptor implements HttpInterceptor {
 constructor(private auth: AuthService) {}
 intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpResponse<any>> {
-```text
     const token = this.auth.getToken();
     const authReq = req.clone({
       setHeaders: { Authorization: `Bearer ${token}` }
@@ -427,7 +399,6 @@ intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpResponse<any
     );
   }
 }
-```
 
 Multiple Interceptors execute in ORDER of registration (chain pattern).
 
@@ -435,7 +406,6 @@ Multiple Interceptors execute in ORDER of registration (chain pattern).
 
 @Injectable({ providedIn: 'root' })
 export class PolicyService {
-```sql
   private baseUrl = '/api/v1/policies';
   constructor(private http: HttpClient) {}
 
@@ -447,7 +417,6 @@ export class PolicyService {
   }
   delete(id: number): Observable<void> { return this.http.delete<void>(`${this.baseUrl}/${id}`); }
 }
-```
 
 #### Q30. Resolvers — pre-fetch data.
 
@@ -474,10 +443,8 @@ coverages: this.fb.array([]) // Dynamic array
 
 // Custom validator
 static premiumRange(control: AbstractControl): ValidationErrors | null {
-```text
   return control.value >= 1000 && control.value <= 1000000 ? null : { premiumRange: true };
 }
-```
 
 #### Q35. AOT vs JIT compilation.
 
@@ -514,12 +481,10 @@ If service is never injected → removed from bundle entirely.
 #### Q38. Virtual Scrolling (CDK).
 
 <cdk-virtual-scroll-viewport itemSize="50" class="viewport">
-```json
   <div *cdkVirtualFor="let item of items; trackBy: trackById">
     {{ item.name }}
   </div>
 </cdk-virtual-scroll-viewport>
-```
 
 Renders only VISIBLE items in DOM (e.g., 20 out of 10,000).
 
@@ -527,9 +492,11 @@ Renders only VISIBLE items in DOM (e.g., 20 out of 10,000).
 
 XSS (Cross-Site Scripting):
 Angular auto-sanitizes HTML, style, URL, resource bindings.
+```text
 [innerHTML]="userContent" → Angular sanitizes automatically
 bypassSecurityTrustHtml() → ONLY when you trust the source
 
+```
 CSRF (Cross-Site Request Forgery):
 HttpClientXsrfModule handles XSRF token automatically
 Reads XSRF-TOKEN cookie → sends as X-XSRF-TOKEN header
@@ -563,20 +530,21 @@ or global WebMvcConfigurer with CorsRegistry
 Small apps: Service with BehaviorSubject (simple store)
 @Injectable({ providedIn: 'root' })
 export class PolicyStore {
-```java
   private policiesSubject = new BehaviorSubject<Policy[]>([]);
   policies$ = this.policiesSubject.asObservable();
   setPolicies(p: Policy[]) { this.policiesSubject.next(p); }
 }
-```
 
 Large apps: NgRx (Redux pattern)
 Store → Actions → Reducers → Selectors → Components
 
 #### Q46. Scenario: Debug slow Angular application.
 
+```text
 1. Chrome DevTools → Performance tab → record user interaction
 2. Angular DevTools → check component tree + change detection runs
+
+```
 3. Look for: too many CD cycles, large DOM, too many subscriptions
 4. Fix: OnPush, trackBy, lazy loading, virtual scroll, async pipe
 
@@ -586,12 +554,10 @@ Store → Actions → Reducers → Selectors → Components
 export class LoadingInterceptor implements HttpInterceptor {
 constructor(private loadingService: LoadingService) {}
 intercept(req, next) {
-```text
     this.loadingService.show();
     return next.handle(req).pipe(finalize(() => this.loadingService.hide()));
   }
 }
-```
 
 #### Q48. Scenario: Handle JWT token refresh.
 
@@ -654,3 +620,4 @@ No need for NgModule declarations — components self-contained.
 #### Q45. State Management
 
 ## END OF ANGULAR ANALYSIS (50 Questions)
+

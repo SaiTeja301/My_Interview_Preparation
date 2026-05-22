@@ -1,7 +1,5 @@
-﻿================================================================================
-MAVEN - COMPREHENSIVE ANALYSIS
-Interview Preparation | 7+ Years Java Full Stack
-Structured Technical Documentation
+# MAVEN - COMPREHENSIVE ANALYSIS
+> *Interview Preparation | 7+ Years Java Full Stack · Structured Technical Documentation*
 
 ## SECTION 1: OVERVIEW
 
@@ -64,7 +62,6 @@ Cached/installed JARs
 Official Maven repository (Apache)
 3. REMOTE Repository  -> Third-party org URLs (e.g., JFrog Artifactory)
 Configured in pom.xml:
-```xml
                          <repositories>
                            <repository>
                              <id>company-repo</id>
@@ -96,7 +93,6 @@ GAV Coordinates:
     <artifactId>spring-boot-starter-web</artifactId> -- Project/module name
     <version>3.5.4</version>                        -- Library version
   </dependency>
-```
 
 ## SECTION 4: MAVEN BUILD LIFECYCLE
 
@@ -120,7 +116,6 @@ Phase       Description
 validate    Validate project structure, POM correctness, dependencies
 compile     Compile source code (src/main/java -> target/classes)
 test        Run unit tests (src/test/java) using Surefire plugin
-```text
 package     Package compiled code into JAR/WAR (-> target/project.jar)
 verify      Verify project meets quality criteria (integration tests)
 install     Install JAR/WAR into LOCAL repository (~/.m2/repository)
@@ -128,13 +123,11 @@ deploy      Deploy build artifact to REMOTE repository
 
 IMPORTANT: Running a later phase executes ALL earlier phases.
 Example: mvn package = validate + compile + test + package
-```
 
 ## SECTION 5: MAVEN COMMANDS REFERENCE
 
 Command                   Description
 ------------------------  -------------------------------------------------------
-```sql
 mvn compile               Compile source code
 mvn test                  Run unit tests
 mvn package               Package into JAR/WAR
@@ -162,20 +155,22 @@ Creating Maven Project from CLI:
     -DinteractiveMode=false
 
 Maven Archetypes:
+```text
   maven-archetype-quickstart  -> For standalone Java projects
   maven-archetype-webapp      -> For web applications
-```
 
+```
 ## SECTION 6: MAVEN PROJECT STRUCTURE
 
 MyProject/
 |-- src/
-|   |-- main/
-|   |   |-- java/          (Source code)
-|   |   |-- resources/     (Config files: application.properties, XML)
+|  | -- main/ |  |
+| --- | --- | --- |
+|  |  | -- java/          (Source code) |
+|  |  | -- resources/     (Config files: application.properties, XML) |
 
 | -- webapp/        (Web resources: JSP, HTML, WEB-INF) |
-|---|
+| --- |
 | -- test/ |
 | -- java/          (Test code: JUnit/Mockito) |
 | -- resources/     (Test config files) |
@@ -184,15 +179,17 @@ MyProject/
 
 ## SECTION 7: POM.XML - DETAILED BREAKDOWN
 
-```xml
 <project>
   <!-- GAV Coordinates (unique project identity) -->
   <groupId>com.company</groupId>
   <artifactId>my-app</artifactId>
   <version>1.0.0</version>
+```text
   <packaging>jar</packaging>    <!-- jar / war / pom / ear -->
 
   <!-- Parent POM (inherit configs) -->
+
+```
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
@@ -242,14 +239,12 @@ MyProject/
     </plugins>
   </build>
 </project>
-```
 
 ## SECTION 8: POM INHERITANCE (PARENT-CHILD)
 
 Maven supports POM inheritance similar to Java class inheritance.
 
 Parent POM (packaging = pom):
-```xml
   <groupId>pwskills</groupId>
   <artifactId>Hibernate-01</artifactId>
   <version>1.1</version>
@@ -271,15 +266,19 @@ Child POM (inherits everything from parent):
     <version>1.1</version>
   </parent>
 
+```text
   <!-- INHERITS: hibernate-core, mysql-connector-j, junit -->
   <!-- INHERITS: hibernate-version, mysql-version properties -->
   <!-- Child can OVERRIDE or ADD its own extra dependencies -->
 
+```
 Real-World Use:
+```text
   Your Spring Boot app pom.xml -> <parent>spring-boot-starter-parent
   -> inherits ALL Spring managed version properties automatically.
-  No need to specify versions for Spring dependencies!
+
 ```
+  No need to specify versions for Spring dependencies!
 
 ## SECTION 9: DEPENDENCY RESOLUTION - INTERNAL FLOW
 
@@ -307,20 +306,19 @@ STEP 5: Add to Classpath
 - All resolved JARs added to compile/test/runtime classpath
 
 FAT JAR Creation (Spring Boot):
-```text
 mvn clean package
+```text
   -> compile source code
   -> run tests
   -> spring-boot-maven-plugin repackages JAR
   -> ALL dependency JARs embedded INSIDE the output JAR
   -> Result: target/project.jar (executable with java -jar)
-```
 
+```
 ## SECTION 10: INSTALLING NON-CENTRAL JARS
 
 For JARs not available in Central (e.g., Oracle JDBC driver):
 
-```xml
 mvn install:install-file \
   -Dfile=<path/to/ojdbc8.jar> \
   -DgroupId=com.oracle \
@@ -338,7 +336,6 @@ Then reference it normally in pom.xml:
 
 NOTE: Other developers must run the same install command.
 Better alternative: Host in a shared REMOTE repository (Nexus/Artifactory).
-```
 
 ## SECTION 11: JUNIT TESTING WITH MAVEN
 
@@ -350,93 +347,87 @@ Maven uses Surefire Plugin to run tests:
   mvn surefire-report:report       -> Generate HTML test report
   mvn site                         -> Generate full documentation + test results
 
+```
 Test file naming conventions:
   *Test.java, *Tests.java, Test*.java -> Auto-detected by Surefire
 
 Test report location: target/surefire-reports/
-```
 
 ## SECTION 12: INTERVIEW QUESTIONS & ANSWERS
 
 #### Q1) What is Maven?
 
-A:  Apache Maven is a build automation and project management tool for Java.
+**A:** Apache Maven is a build automation and project management tool for Java.
 It handles dependency management, compilation, testing, packaging,
 and deployment through a declarative POM (pom.xml) configuration.
 
 #### Q2) What are the 3 Maven lifecycles?
 
-A:  1. clean (3 phases) - Deletes old builds
+**A:** 1. clean (3 phases) - Deletes old builds
 2. default (23 phases) - Compiles, tests, packages, installs, deploys
 3. site (4 phases) - Generates documentation and reports
 
 #### Q3) What are Maven repositories?
 
-A:  LOCAL (.m2/repository) - cached JARs on developer machine
+**A:** LOCAL (.m2/repository) - cached JARs on developer machine
 CENTRAL (repo.maven.apache.org) - official Apache repository
 REMOTE - custom organization repositories (JFrog, Nexus)
 
 #### Q4) What is a GAV coordinate?
 
-A:  GroupId (organization) + ArtifactId (project) + Version.
+**A:** GroupId (organization) + ArtifactId (project) + Version.
 Uniquely identifies every Maven artifact worldwide.
 
 #### Q5) What is transitive dependency?
 
-A:  Dependencies of your dependencies. Maven resolves them automatically.
+**A:** Dependencies of your dependencies. Maven resolves them automatically.
 Example: spring-boot-starter-web pulls in spring-web, spring-core,
 tomcat-embed, jackson-databind, etc.
 
 #### Q6) How do you exclude a transitive dependency?
 
-A:  <dependency>
-```xml
+**A:** <dependency>
   <groupId>...</groupId>
   <artifactId>...</artifactId>
   <exclusions>
     <exclusion><groupId>...</groupId><artifactId>...</artifactId></exclusion>
   </exclusions>
 </dependency>
-```
 
 #### Q7) What is Maven POM inheritance?
 
-A:  A child POM declares a <parent> tag pointing to a parent POM.
+**A:** A child POM declares a <parent> tag pointing to a parent POM.
 The child inherits all dependencies, plugins, and properties.
 Used in multi-module projects and by Spring Boot starter-parent.
 
 #### Q8) What is the difference between mvn install and mvn deploy?
 
-A:  install: Copies JAR to LOCAL .m2/repository (developer machine only)
+**A:** install: Copies JAR to LOCAL .m2/repository (developer machine only)
 deploy: Copies JAR to REMOTE repository (shared with team/CI)
 
 #### Q9) What is spring-boot-maven-plugin?
 
-A:  Creates executable FAT JARs by packaging all dependencies inside
+**A:** Creates executable FAT JARs by packaging all dependencies inside
 the JAR. Enables running with java -jar app.jar without external
 server or classpath configuration.
 
 #### Q10) How does Maven handle version conflicts?
 
-A:  "Nearest definition wins" - the version declared closest to your
+**A:** "Nearest definition wins" - the version declared closest to your
 project in the dependency tree is used. For explicit control,
 use <dependencyManagement> or <exclusion>.
 
 #### Q11) What is mvn dependency:tree?
 
-A:  Displays the full dependency hierarchy of your project. Essential
-```text
+**A:** Displays the full dependency hierarchy of your project. Essential
 for debugging version conflicts, finding duplicate JARs, and
 understanding transitive dependencies.
-```
 
 #### Q12) What is the difference between <dependencies> and <dependencyManagement>?
 
-A:  <dependencies>: Directly adds JARs to your project.
-```xml
+**A:** <dependencies>: Directly adds JARs to your project.
 <dependencyManagement>: Declares version constraints WITHOUT adding JARs.
 Child modules can reference the dependency without specifying version.
-```
 
 ## SECTION 13: BEST PRACTICES
 
@@ -490,3 +481,4 @@ Plugins                   compiler, surefire, exec, spring-boot-maven
 Advanced                  Profiles, install-file, FAT JAR, multi-module
 
 ## END OF DOCUMENT - Maven Comprehensive Analysis
+

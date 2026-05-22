@@ -1,15 +1,12 @@
-﻿================================================================================
-JUNIT 5 & MOCKITO - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# JUNIT 5 & MOCKITO - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: ANALYSIS
 
 Resume: JUnit mentioned in resume, used for testing in Nationwide and IKEA projects.
 Coverage in Notes: Basic JUnit concepts
 Missing: JUnit 5 architecture, Mockito deep dive, BDD testing, Integration testing,
-```text
 @SpringBootTest, Test Containers, TDD approach, parameterized tests
-```
 
 ## SECTION 2: JUNIT 5 ARCHITECTURE
 
@@ -34,14 +31,15 @@ Key Annotations:
 
 #### Q1. JUnit 4 vs JUnit 5.
 
-Feature          | JUnit 4            | JUnit 5
-Annotation       | @Before/@After     | @BeforeEach/@AfterEach
-Rule             | @Rule              | @ExtendWith
-Parameterized    | @RunWith(Parameterized) | @ParameterizedTest
-Assertions       | Assert.assertEquals | Assertions.assertEquals
-Assumptions      | Assume             | Assumptions
-Min Java         | Java 5             | Java 8+
-Architecture     | Single JAR         | 3 modules
+| Feature | JUnit 4 | JUnit 5 |
+| --- | --- | --- |
+| Annotation | @Before/@After | @BeforeEach/@AfterEach |
+| Rule | @Rule | @ExtendWith |
+| Parameterized | @RunWith(Parameterized) | @ParameterizedTest |
+| Assertions | Assert.assertEquals | Assertions.assertEquals |
+| Assumptions | Assume | Assumptions |
+| Min Java | Java 5 | Java 8+ |
+| Architecture | Single JAR | 3 modules |
 
 #### Q2. Writing effective unit tests.
 
@@ -50,7 +48,6 @@ Structure: Arrange → Act → Assert (AAA)
 @Test
 @DisplayName("Should calculate premium for active policy")
 void shouldCalculatePremium() {
-```text
     // Arrange
     Policy policy = new Policy("POL-001", PolicyType.LIFE, 100000.0);
     PremiumCalculator calculator = new PremiumCalculator();
@@ -62,7 +59,6 @@ void shouldCalculatePremium() {
     assertEquals(5000.0, premium, 0.01);
     assertTrue(premium > 0, "Premium should be positive");
 }
-```
 
 ## ROUND 2 - CORE TECHNICAL (MOCKITO)
 
@@ -75,7 +71,6 @@ Stub: Pre-programmed response for specific method calls
 @ExtendWith(MockitoExtension.class)
 class PolicyServiceTest {
 
-```java
     @Mock
     private PolicyRepository policyRepository;  // Full mock
 
@@ -104,7 +99,6 @@ class PolicyServiceTest {
         verify(emailService, never()).sendEmail(any()); // Not called
     }
 }
-```
 
 #### Q4. Mockito argument matchers and verification.
 
@@ -150,7 +144,6 @@ assertEquals("Policy not found: XXX", ex.getMessage());
 // Controller test with @WebMvcTest
 @WebMvcTest(PolicyController.class)
 class PolicyControllerTest {
-```java
     @Autowired private MockMvc mockMvc;
     @MockBean private PolicyService policyService;
 
@@ -174,12 +167,10 @@ class PolicyControllerTest {
             .andExpect(status().isNotFound());
     }
 }
-```
 
 // Repository test with @DataJpaTest
 @DataJpaTest
 class PolicyRepositoryTest {
-```java
     @Autowired private PolicyRepository repo;
     @Autowired private TestEntityManager entityManager;
 
@@ -193,7 +184,6 @@ class PolicyRepositoryTest {
         assertEquals(1, active.size());
     }
 }
-```
 
 #### Q7. Parameterized Tests.
 
@@ -213,12 +203,13 @@ assertThrows(ValidationException.class, () -> service.validate(policy));
 
 #### Q8. Test coverage strategy for a Spring Boot service.
 
-Layer              | Test Type          | Tools
-Controller         | @WebMvcTest        | MockMvc, @MockBean
-Service            | Unit test          | @Mock, @InjectMocks
-Repository         | @DataJpaTest       | TestEntityManager
-Integration        | @SpringBootTest    | Full context
-API Contract       | Spring Cloud Contract | Contract tests
+| Layer | Test Type | Tools |
+| --- | --- | --- |
+| Controller | @WebMvcTest | MockMvc, @MockBean |
+| Service | Unit test | @Mock, @InjectMocks |
+| Repository | @DataJpaTest | TestEntityManager |
+| Integration | @SpringBootTest | Full context |
+| API Contract | Spring Cloud Contract | Contract tests |
 
 Target: 80%+ line coverage, 100% critical path coverage
 
@@ -227,11 +218,9 @@ Target: 80%+ line coverage, 100% critical path coverage
 @Test
 void shouldProcessAsync() throws Exception {
 CompletableFuture<String> future = asyncService.processAsync("data");
-```text
     String result = future.get(5, TimeUnit.SECONDS); // Wait with timeout
     assertEquals("PROCESSED", result);
 }
-```
 
 ## ROUND 5 - BEST PRACTICES
 
@@ -292,6 +281,7 @@ Source reviewed: Junit and Mockito Notes.txt
 - Then add modern expectation: "In production projects we use JUnit 5 + Mockito extension + slice tests for speed."
 
 5) INTERVIEW CHEAT SHEET (QUICK DECISION TABLE)
+```text
 - Pure business logic class -> JUnit unit test (no Spring context).
 - Class with collaborators -> JUnit + Mockito (@Mock, @InjectMocks).
 - Controller contract -> @WebMvcTest.
@@ -299,6 +289,7 @@ Source reviewed: Junit and Mockito Notes.txt
 - Full wiring, configuration, startup behavior -> @SpringBootTest.
 - External dependency behavior -> mock server / Testcontainers based integration tests.
 
+```
 6) SOURCE-ALIGNED CODE SNIPPETS (HIGH VALUE)
 
 6.1 Minimal JUnit style test (core idea from source)
@@ -306,14 +297,12 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class MessageUtilTest {
-```java
     @Test
     public void shouldPrintMessage() {
         MessageUtil util = new MessageUtil("Hello World");
         assertEquals("Hello World", util.printMessage());
     }
 }
-```
 
 6.2 Mockito behavior + verification (core idea from source)
 import static org.mockito.Mockito.*;
@@ -321,7 +310,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 public class PortfolioTest {
-```java
     @Test
     public void shouldCalculateMarketValue() {
         StockService stockService = mock(StockService.class);
@@ -336,20 +324,17 @@ public class PortfolioTest {
         verify(stockService, times(1)).getPrice(google);
     }
 }
-```
 
 6.3 Exception assertion pattern (must know)
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 class PolicyServiceTest {
-```text
     @Test
     void shouldThrowWhenPolicyMissing() {
         assertThrows(PolicyNotFoundException.class, () -> service.findById("X-404"));
     }
 }
-```
 
 7) TOP QUESTIONS YOU SHOULD PREPARE NEXT
 - Difference: mock vs spy vs stub with one real use case each.
@@ -376,7 +361,6 @@ This section was appended after analyzing Junit and Mockito Notes.txt.
 Answer:
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
-```text
     @Mock UserRepository repo;
     @InjectMocks UserService service;
 
@@ -388,7 +372,6 @@ class UserServiceTest {
         verify(repo).findById(1L);
     }
 }
-```
 
 #### Q2) Test exception path when entity is not found.
 
@@ -420,14 +403,12 @@ Answer:
 class SignupValidatorTest {
 SignupValidator validator = new SignupValidator();
 
-```java
     @Nested
     class EmailValidation {
         @Test void validEmail() { assertTrue(validator.isValidEmail("a@b.com")); }
         @Test void invalidEmail() { assertFalse(validator.isValidEmail("ab.com")); }
     }
 }
-```
 
 #### Q5) Verify dependency method called exact number of times.
 
@@ -524,7 +505,6 @@ assertEquals("OK-input", future.get(3, TimeUnit.SECONDS));
 Answer:
 @WebMvcTest(UserController.class)
 class UserControllerTest {
-```text
     @Autowired MockMvc mvc;
     @MockBean UserService service;
 
@@ -536,7 +516,6 @@ class UserControllerTest {
            .andExpect(jsonPath("$.name").value("Teja"));
     }
 }
-```
 
 #### Q15) Controller slice test 404 scenario.
 
@@ -553,7 +532,6 @@ mvc.perform(get("/users/99"))
 Answer:
 @DataJpaTest
 class UserRepositoryTest {
-```text
     @Autowired UserRepository repo;
 
     @Test
@@ -563,7 +541,6 @@ class UserRepositoryTest {
         assertTrue(found.isPresent());
     }
 }
-```
 
 #### Q17) Full integration test using @SpringBootTest.
 
@@ -571,7 +548,6 @@ Answer:
 @SpringBootTest
 @AutoConfigureMockMvc
 class UserIntegrationTest {
-```text
     @Autowired MockMvc mvc;
 
     @Test
@@ -581,7 +557,6 @@ class UserIntegrationTest {
            .andExpect(jsonPath("$.status").value("UP"));
     }
 }
-```
 
 #### Q18) Verify method argument with argThat custom matcher.
 
@@ -612,13 +587,12 @@ when(client.fetch())
 .thenThrow(new RuntimeException("temporary"))
 .thenReturn("SUCCESS");
 
-```text
     String result = service.fetchWithRetry();
     assertEquals("SUCCESS", result);
     verify(client, times(2)).fetch();
 }
-```
 
 ## PRACTICE CHECKPOINT - 10-Mar-2026
 
 Use these 20 questions for mock interview coding rounds.
+

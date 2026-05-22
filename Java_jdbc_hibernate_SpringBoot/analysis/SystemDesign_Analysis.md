@@ -1,6 +1,5 @@
-﻿================================================================================
-SYSTEM DESIGN - INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# SYSTEM DESIGN - INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SYSTEM DESIGN FUNDAMENTALS
 
@@ -45,6 +44,7 @@ Services: User, Product, Cart, Order, Payment, Inventory, Notification
 Pattern: Saga for distributed transactions
 
 Order Flow:
+```text
 1. User places order -> Order Service creates order (PENDING)
 2. Order Service -> Kafka "order-created" topic
 3. Payment Service consumes -> process payment -> publish "payment-completed"
@@ -52,6 +52,7 @@ Order Flow:
 5. Order Service listens -> all pass -> order CONFIRMED
 6. Notification Service -> send confirmation email/SMS
 
+```
 Failure handling: Compensating transactions via Saga pattern
 
 #### Q4. Design a Chat Application.
@@ -77,8 +78,8 @@ Event Source -> Kafka "notification-requests" -> Notification Service
      ├── SMS Worker (Twilio)
      ├── Push Worker (FCM/APNs)
      └── In-App Worker (WebSocket)
-```
 
+```
 Priority queue for urgent vs batch notifications
 Template engine for message formatting
 Rate limiting per user to prevent spam
@@ -130,13 +131,19 @@ Event Producer -> Kafka "notification-requests"
 |
 Notification Orchestrator (reads from Kafka)
 |
+```text
 +-> Template Engine (Freemarker/Thymeleaf)
 +-> Priority Queue (urgent vs batch)
+
+```
 |
+```text
 +-> Email Worker (AWS SES/SendGrid) -> "email-results" topic
 +-> SMS Worker (Twilio) -> "sms-results" topic
 +-> Push Worker (FCM/APNs) -> "push-results" topic
 +-> In-App Worker (WebSocket) -> "inapp-results" topic
+
+```
 |
 Result Tracker (reads results, stores delivery status)
 
@@ -192,9 +199,11 @@ If count > limit -> reject
 
 #### Q13. Consistent Hashing.
 
+```text
 Problem: Hash(key) % N servers -> adding/removing server remaps ALL keys
 Solution: Consistent hashing ring -> only K/N keys remapped
 
+```
 Virtual nodes: Each server has multiple positions on ring
 Ensures even distribution when servers added/removed
 
@@ -215,3 +224,4 @@ Q14-Q20 Quick System Design:
 #### Q19. CDN (Content Delivery Network): Edge caching, origin server, cache invalidation
 
 #### Q20. Hot spot detection and Solutions (celebrity problem): cache, rate limit
+

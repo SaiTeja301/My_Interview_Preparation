@@ -1,6 +1,5 @@
-﻿================================================================================
-PROJECT DEEP ANALYSIS - CUSTOMER LOAN MANAGEMENT SYSTEM
-For: 7+ Years Experience Level | Java Developer
+# PROJECT DEEP ANALYSIS - CUSTOMER LOAN MANAGEMENT SYSTEM
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: PROJECT OVERVIEW
 
@@ -28,8 +27,8 @@ Customer_Management_Services/
 │   ├── application.properties
 │   └── data.sql        → Initial data
 └── pom.xml             → Maven dependencies
-```
 
+```
 Key Dependencies (from pom.xml):
 - spring-boot-starter-web (REST APIs)
 - spring-boot-starter-data-jpa (Database)
@@ -43,27 +42,30 @@ Key Dependencies (from pom.xml):
 ## SECTION 3: API DESIGN
 
 REST API Endpoints:
-Method | Endpoint                     | Purpose
-GET    | /api/v1/customers            | Get all customers (paginated)
-GET    | /api/v1/customers/{id}       | Get customer by ID
-POST   | /api/v1/customers            | Create new customer
-PUT    | /api/v1/customers/{id}       | Update customer
-DELETE | /api/v1/customers/{id}       | Delete customer
-GET    | /api/v1/customers/{id}/loans | Get loans for customer
-POST   | /api/v1/loans                | Apply for loan
-GET    | /api/v1/loans/{id}           | Get loan details
-PUT    | /api/v1/loans/{id}/approve   | Approve loan
-PUT    | /api/v1/loans/{id}/reject    | Reject loan
-POST   | /api/auth/login              | Authentication
-POST   | /api/auth/register           | User registration
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | /api/v1/customers | Get all customers (paginated) |
+| GET | /api/v1/customers/{id} | Get customer by ID |
+| POST | /api/v1/customers | Create new customer |
+| PUT | /api/v1/customers/{id} | Update customer |
+| DELETE | /api/v1/customers/{id} | Delete customer |
+| GET | /api/v1/customers/{id}/loans | Get loans for customer |
+| POST | /api/v1/loans | Apply for loan |
+| GET | /api/v1/loans/{id} | Get loan details |
+| PUT | /api/v1/loans/{id}/approve | Approve loan |
+| PUT | /api/v1/loans/{id}/reject | Reject loan |
+| POST | /api/auth/login | Authentication |
+| POST | /api/auth/register | User registration |
 
 ## SECTION 4: DATABASE SCHEMA
 
 Entity Relationships:
+```text
 Customer (1) -----> (N) Loan
 Customer (1) -----> (1) Address
 Loan (N) -----> (1) LoanType
 
+```
 Customer Table:
 - id (PK, Auto-increment)
 - firstName, lastName
@@ -136,9 +138,11 @@ control restricts admin endpoints (loan approval/rejection) to ADMIN role."
 Flow:
 Login (username, password) -> Validate -> Generate JWT -> Return token
 Subsequent requests:
+```text
 Request + Bearer token -> JWTFilter -> Validate token -> Extract user
 - Set SecurityContext -> Controller processes request
 
+```
 #### Q3. How did you handle exceptions?
 
 Answer:
@@ -158,14 +162,12 @@ current page info."
 
 @GetMapping
 public ResponseEntity<Page<CustomerDTO>> getAll(
-```text
     @RequestParam(defaultValue = "0") int page,
     @RequestParam(defaultValue = "10") int size,
     @RequestParam(defaultValue = "id") String sortBy) {
     Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
     return ResponseEntity.ok(customerService.findAll(pageable));
 }
-```
 
 #### Q5. What improvements would you suggest for production?
 
@@ -201,8 +203,8 @@ CustomerApp-UI/
 │   ├── guards/          → Auth guard (route protection)
 │   ├── models/          → TypeScript interfaces
 │   └── app-routing.module.ts
-```
 
+```
 Key Angular Concepts Used:
 - Reactive Forms with validation
 - HTTP Interceptor for JWT token injection
@@ -220,3 +222,4 @@ KEY QUESTIONS:
 7. Angular-Spring Boot integration
 
 ## END OF PROJECT DEEP ANALYSIS
+

@@ -1,10 +1,8 @@
-﻿================================================================================
-```bash
-          AWS & DEVOPS — COMPLETE INTERVIEW PREPARATION GUIDE
-          Target: 2–5 Years Experienced Java/Backend Engineers
+# AWS & DEVOPS — COMPLETE INTERVIEW PREPARATION GUIDE
+> *Target: 2–5 Years Experienced Java/Backend Engineers*
+
           Source: Telusko Devops v3 Course Notes + Real-World Scenarios
-================================================================================
-```
+
 
 ## TABLE OF CONTENTS
 
@@ -74,7 +72,7 @@ Advanced:
 Cloud Service Models:
 
 | Model | What Provider Gives | What You Manage | AWS Example |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | IaaS (Infra as Service) | Servers, Network, | OS, Middleware, App, Data | EC2, EBS, VPC |
 | Storage |  |  |  |
 | PaaS (Platform as Svc) | OS + Runtime + | App code & Data only | Elastic Beanstalk |
@@ -92,7 +90,7 @@ Cloud Deployment Models:
 
 ## Q: What is the difference between IaaS, PaaS, and SaaS?
 
-A: IaaS gives you the raw infrastructure (EC2) — you manage everything above OS.
+**A:** IaaS gives you the raw infrastructure (EC2) — you manage everything above OS.
 PaaS gives you the platform (Elastic Beanstalk) — you only write application code.
 SaaS gives you working software (Zoom) — you just consume it.
 
@@ -101,16 +99,16 @@ Real example: If you build a Spring Boot app:
 - PaaS: Elastic Beanstalk deploys your JAR automatically
 - SaaS: You'd use Gmail instead of building email yourself
 
-Q: Why would a company choose AWS over on-premises?
-A: 1. No upfront CapEx — pay for what you use (OpEx model)
+#### Q: Why would a company choose AWS over on-premises?
+**A:** 1. No upfront CapEx — pay for what you use (OpEx model)
 2. Scale instantly — Auto Scaling handles traffic spikes
 3. Global reach — Deploy to 30+ regions in minutes
 4. Managed services — Focus on business logic, not infrastructure
 5. Built-in HA — Multi-AZ deployments for 99.99% uptime
 6. Security compliance — SOC2, PCI-DSS, HIPAA certified
 
-Q (Scenario): Your company has seasonal traffic (10x during Black Friday). How does cloud help?
-A: With on-premises, you'd buy servers for peak load — wasteful 11 months of the year.
+#### Q (Scenario): Your company has seasonal traffic (10x during Black Friday). How does cloud help?
+**A:** With on-premises, you'd buy servers for peak load — wasteful 11 months of the year.
 With AWS Auto Scaling:
 - Normal: 2 EC2 instances (t3.medium)
 - Black Friday: Automatically scale to 20 instances
@@ -125,21 +123,34 @@ With AWS Auto Scaling:
 v
 
 | AWS Cloud |
+```text
 |---|
 | +------------------+ |
+
+```
 | IaaS: EC2, EBS |
+```text
+| --- |
 | +------------------+ |
+
+```
 | PaaS: Beanstalk |
+```text
+| --- |
 | +------------------+ |
+
+```
 | SaaS: WorkMail |
+```text
+| --- |
 | +------------------+ |
+
+```
 |  |
 
 v
 DATA CENTER (Physical)
-```bash
 AWS Manages Hardware
-```
 
 ## TOPIC 2: AWS GLOBAL INFRASTRUCTURE
 
@@ -147,14 +158,14 @@ AWS Manages Hardware
 
 ## Beginner:
 
-```bash
 AWS has data centers spread ALL OVER THE WORLD organized into:
+```text
   -> REGIONS: A geographical area (e.g., Mumbai, US-East, Singapore)
   -> AVAILABILITY ZONES (AZs): 1 or more data centers within a region
   -> Edge Locations: CDN nodes for CloudFront (faster content delivery)
 
-AWS spans 39+ Geographic Regions, 123+ Availability Zones globally.
 ```
+AWS spans 39+ Geographic Regions, 123+ Availability Zones globally.
 
 Intermediate:
 
@@ -188,11 +199,19 @@ ARCHITECTURE DIAGRAM — Multi-AZ Setup:
 Mumbai Region (ap-south-1)
 
 | AZ-1a              AZ-1b              AZ-1c |  |  |  |  |
+```text
 |---|---|---|---|---|
 | +----------+       +----------+       +----------+ |  |  |  |  |
+
+```
 | EC2 App1 |  | EC2 App2 |  | EC2 App3 |
+```text
+| --- | --- | --- | --- | --- |
 | +----------+       +----------+       +----------+ |  |  |  |  |
+
+```
 | RDS |  | RDS |  |  |
+| --- | --- | --- | --- | --- |
 | PRIMARY | <===> | STANDBY |  |  |
 | +----------+       +----------+       +----------+ |  |  |  |  |
 |  |  |  |  |  |
@@ -207,25 +226,25 @@ INTERNET USERS
 
 ## Q: What is the difference between a Region and an Availability Zone?
 
-A: Region = Geographical area (e.g., Mumbai).
+**A:** Region = Geographical area (e.g., Mumbai).
 AZ = One or more data centers within a region separated physically.
 Region has 2-6 AZs. AZs within region connected via high-speed private fiber.
 Data never leaves region without your explicit action.
 
-Q: Why would you deploy across multiple AZs?
-A: For HIGH AVAILABILITY. If one AZ has a power outage, flood, or hardware failure,
+#### Q: Why would you deploy across multiple AZs?
+**A:** For HIGH AVAILABILITY. If one AZ has a power outage, flood, or hardware failure,
 your app continues running in other AZs. Load Balancer detects failed AZ and
 routes traffic only to healthy AZs. SLA improves from 99.9% to 99.99%.
 
-Q (Scenario): Your RDS database went down and your app is failing. What happened and how do you fix it?
-A: Likely the primary RDS instance failed. If Multi-AZ was enabled, AWS would have
+#### Q (Scenario): Your RDS database went down and your app is failing. What happened and how do you fix it?
+**A:** Likely the primary RDS instance failed. If Multi-AZ was enabled, AWS would have
 auto-failed over to standby (60-120 seconds downtime). If NOT Multi-AZ:
 - Manual restore from latest snapshot (minutes to hours of downtime)
 - Lesson: Always enable Multi-AZ for production RDS
 - Better: Use Aurora which has 6-way replication across 3 AZs
 
-Q: How do you choose which AWS Region to deploy in?
-A: Consider:
+#### Q: How do you choose which AWS Region to deploy in?
+**A:** Consider:
 1. Latency: Choose region closest to your end users
 2. Compliance: Data must stay in specific country (GDPR = eu-west-1)
 3. Service availability: Not all services in all regions
@@ -260,7 +279,7 @@ Intermediate:
 #### EC2 Instance Types:
 
 | Family | Purpose | Example | Use Case |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | t3 (General) | Burstable | t3.micro, medium | Dev/Test, low-traffic |
 | m5 (General) | Balanced | m5.large, xlarge | General web apps |
 | c5 (Compute Opt) | High CPU | c5.2xlarge | API servers,batch |
@@ -286,25 +305,21 @@ EC2 VM Creation Steps:
 7. Select Key Pair (download .pem file for SSH access)
 8. Launch!
 
-```bash
 SSH to EC2:
   chmod 400 my-key.pem
   ssh -i my-key.pem ec2-user@<public-ip>      # Amazon Linux
   ssh -i my-key.pem ubuntu@<public-ip>         # Ubuntu
-```
 
 Advanced:
 
 #### User Data (bootstrap scripts at launch time):
 
-```bash
 #!/bin/bash
 sudo yum install httpd -y
 cd /var/www/html
 echo "<html><h1>Spring Boot App Server</h1></html>" > index.html
 service httpd start
 # This runs ONCE at first boot only
-```
 
 EC2 Auto Scaling (horizontal scaling):
 - Launch Template: Defines instance config (AMI, type, SG, key pair)
@@ -318,14 +333,14 @@ EC2 Auto Scaling (horizontal scaling):
 
 ## Q: What is the difference between stopping and terminating an EC2 instance?
 
-A: STOPPING: Like hibernating — instance is shut down but EBS data preserved.
+**A:** STOPPING: Like hibernating — instance is shut down but EBS data preserved.
 You can restart; data intact. EBS charges still apply. Public IP changes.
 TERMINATING: Like deleting — instance is gone. Root EBS deleted by default.
 Cannot be recovered. No more charges.
 Key: Terminated instances can be recovered within 7 days if termination protection was on.
 
-Q: You have a Spring Boot app on EC2. How do you handle high traffic automatically?
-A:
+#### Q: You have a Spring Boot app on EC2. How do you handle high traffic automatically?
+**A:**
 1. Create AMI from your configured EC2 instance
 2. Create Launch Template using that AMI
 3. Create Auto Scaling Group (Min:2, Max:10, Desired:3)
@@ -334,23 +349,23 @@ A:
 - When traffic spikes: ASG launches new instances, ALB distributes load
 - When traffic drops: ASG terminates extra instances (saves cost)
 
-Q: What is the difference between Reserved, On-Demand, and Spot instances?
-A: On-Demand: Pay per hour, no commitment. Best for: unpredictable workloads.
+#### Q: What is the difference between Reserved, On-Demand, and Spot instances?
+**A:** On-Demand: Pay per hour, no commitment. Best for: unpredictable workloads.
 Reserved:  1-3 year commitment, 40-75% cheaper. Best for: steady-state prod apps.
 Spot:      Up to 90% cheaper, but AWS can interrupt with 2-min warning.
 Best for: batch jobs, ML training, CI/CD build agents.
 
 My production setup: Reserved instances for core servers + Spot for batch workers.
 
-Q (Scenario): Your EC2 instance lost its public IP after restart. Why?
-A: Public IPs in AWS are DYNAMIC — they change every time you stop/start an instance.
+#### Q (Scenario): Your EC2 instance lost its public IP after restart. Why?
+**A:** Public IPs in AWS are DYNAMIC — they change every time you stop/start an instance.
 Solutions:
 - Use Elastic IP: A fixed public IP that stays with instance through restarts
 - Use Load Balancer + DNS: ALB DNS name is static, even if instance IPs change
 - Use Route 53: Map your domain to the ALB DNS name
 
-Q (Tricky): Can you attach multiple Security Groups to one EC2 instance?
-A: YES! You can attach up to 5 security groups per instance. AWS evaluates ALL
+#### Q (Tricky): Can you attach multiple Security Groups to one EC2 instance?
+**A:** YES! You can attach up to 5 security groups per instance. AWS evaluates ALL
 rules across all groups — uses the most permissive combined ruleset.
 Inbound: Allows if ANY group allows it.
 Outbound: Allows if ANY group allows it.
@@ -359,28 +374,20 @@ Outbound: Allows if ANY group allows it.
 
 ## # Deploy Spring Boot JAR to EC2
 
-```bash
 scp -i key.pem app.jar ec2-user@<ip>:/home/ec2-user/
 ssh -i key.pem ec2-user@<ip> "nohup java -jar app.jar --server.port=8080 &"
-```
 
 # Check if app is running
-```text
 curl http://<ec2-public-ip>:8080/actuator/health
-```
 
 # Install Java on Amazon Linux 2
-```bash
 sudo amazon-linux-extras install java-openjdk17 -y
-```
 
 # Create systemd service for Spring Boot (production setup)
-```bash
 sudo tee /etc/systemd/system/myapp.service << EOF
 [Unit]
 Description=My Spring Boot App
 After=network.target
-```
 
 [Service]
 User=ec2-user
@@ -391,12 +398,10 @@ RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
-```bash
 EOF
 
 sudo systemctl enable myapp
 sudo systemctl start myapp
-```
 
 ### 4. ARCHITECTURE DIAGRAM — EC2 with ALB & Auto Scaling
 
@@ -406,28 +411,28 @@ sudo systemctl start myapp
 v
 
 | Application Load |
-|---|
+| --- |
 | Balancer (ALB) |
 | DNS: app.myco.com |
 |  |
 |  |
 
 v       v        v
-```text
 +----+  +----+  +----+
-| EC2|  | EC2|  | EC2|   Auto Scaling Group
-| AZ1|  | AZ2|  | AZ3|   (Min:2, Max:10)
+| EC2 |  | EC2 |  | EC2 | Auto Scaling Group |
+| --- | --- | --- | --- | --- | --- |
+| AZ1 |  | AZ2 |  | AZ3 | (Min:2, Max:10) |
 +----+  +----+  +----+
   |       |        |
   +-------+--------+
           |
           v
       +-------+
-      |  RDS  |
-      | MySQL |
-      | Multi-AZ|
+| RDS |
+| --- |
+| MySQL |
+| Multi-AZ |
       +-------+
-```
 
 ### 5. BEST PRACTICES
 
@@ -469,7 +474,7 @@ Intermediate:
 EBS Volume Types:
 
 | Type | Use Case | IOPS | Storage Range |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | gp3 (General Purpose) | Most workloads | Up to 16,000 IOPS | 1 GiB - 16 TiB |
 | gp2 (General Purpose) | Legacy workloads | 3 IOPS/GiB, burst 3000 | 1 GiB - 16 TiB |
 | io2 (Provisioned IOPS) | Databases, latency | Up to 256,000 IOPS | 4 GiB - 64 TiB |
@@ -496,25 +501,23 @@ Advanced:
 
 ## Q: What happens to your EBS data when you stop vs terminate an EC2 instance?
 
-A: STOP: Root EBS is preserved. You pay for EBS storage even when instance is stopped.
+**A:** STOP: Root EBS is preserved. You pay for EBS storage even when instance is stopped.
 TERMINATE: Root EBS is DELETED by default (DeleteOnTermination=true).
 Additional volumes: preserved by default (DeleteOnTermination=false).
 
 > **Best practice for prod: Change root volume's DeleteOnTermination to FALSE before launching.**
 
-Q: How do you migrate data from one AZ to another?
-A:
+#### Q: How do you migrate data from one AZ to another?
+**A:**
 1. Create a snapshot of the EBS volume (regional)
 2. Create a new EBS volume from snapshot in target AZ
 3. Attach it to the EC2 instance in target AZ
 Commands:
-```bash
 aws ec2 create-snapshot --volume-id vol-xxx --description "migration"
 aws ec2 create-volume --snapshot-id snap-xxx --availability-zone ap-south-1b
-```
 
-Q: What is the difference between EBS and instance store?
-A: EBS: Persistent storage — survives stop/start of EC2. Network-attached. Can detach/reattach.
+#### Q: What is the difference between EBS and instance store?
+**A:** EBS: Persistent storage — survives stop/start of EC2. Network-attached. Can detach/reattach.
 Instance Store: Ephemeral storage — data LOST on stop or termination. Physically attached SSD.
 Faster I/O, but no persistence. Use for temp data, cache.
 Production choice: Always use EBS. Use instance store only for cache (Redis-comparable speed).
@@ -526,28 +529,20 @@ Production choice: Always use EBS. Use instance store only for cache (Redis-comp
 lsblk
 
 # Format new EBS volume
-```bash
 sudo mkfs -t ext4 /dev/nvme1n1
-```
 
 # Create mount directory and mount
-```bash
 sudo mkdir /data
 sudo mount /dev/nvme1n1 /data
-```
 
 # Make mount persistent (survives reboots) - edit /etc/fstab
 echo '/dev/nvme1n1 /data ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
 
 # Create snapshot via CLI
-```bash
 aws ec2 create-snapshot --volume-id vol-0abc123 --description "Pre-deployment backup"
-```
 
 # List snapshots
-```bash
 aws ec2 describe-snapshots --owner-ids self
-```
 
 ## TOPIC 5: S3 — SIMPLE STORAGE SERVICE
 
@@ -576,7 +571,7 @@ Intermediate:
 #### S3 Storage Classes (choose based on access frequency):
 
 | Storage Class | Retrieval | Cost | Use Case |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Standard | Milliseconds | Highest storage $ | Frequently used |
 | Standard-IA (Infreq) | Milliseconds | Lower storage $ | Monthly backups |
 | One Zone-IA | Milliseconds | Cheaper (1 AZ only) | Recreatable data |
@@ -611,8 +606,7 @@ Pre-signed URL Use Case:
 
 ## Q: How do you integrate S3 with a Spring Boot application?
 
-A:
-```xml
+**A:**
 // Maven dependency
 <dependency>
   <groupId>software.amazon.awssdk</groupId>
@@ -662,26 +656,24 @@ public class S3FileService {
         }
     }
 }
-```
 
-Q: A user uploaded a wrong file to S3. How do you restore the previous version?
-A:
+#### Q: A user uploaded a wrong file to S3. How do you restore the previous version?
+**A:**
 - If S3 Versioning is ENABLED on the bucket:
 1. Go to S3 Console → Bucket → Object → Versions tab
 2. Identify previous version ID
 3. Restore by copying old version to current (or delete the newer version)
 CLI: aws s3api list-object-versions --bucket my-bucket --prefix filename
-```bash
         aws s3api delete-object --bucket my-bucket --key filename --version-id LATEST_VERSION_ID
+```text
 -> If versioning NOT enabled: Object is gone. Only restore from external backup.
 -> Lesson: Always enable versioning on production S3 buckets!
-```
 
-Q: How do you make an S3 bucket serve a static website?
-A:
+```
+#### Q: How do you make an S3 bucket serve a static website?
+**A:**
 1. Enable Static Website Hosting in bucket properties
 2. Add Bucket Policy to allow public read:
-```json
    {
      "Version": "2012-10-17",
      "Statement": [{
@@ -694,10 +686,9 @@ A:
 3. Upload index.html and error.html
 4. Access via: http://my-bucket.s3-website-ap-south-1.amazonaws.com
 5. Use CloudFront CDN in front for HTTPS + better performance
-```
 
-Q (Scenario): S3 upload costs are too high. What do you optimize?
-A:
+#### Q (Scenario): S3 upload costs are too high. What do you optimize?
+**A:**
 1. Use S3 Intelligent-Tiering — auto-moves infrequent objects to cheaper tiers
 2. Set lifecycle policies: Standard → Standard-IA (30 days) → Glacier (90 days)
 3. Enable S3 Transfer Acceleration for large files from far-away users
@@ -709,38 +700,26 @@ A:
 
 ## # List buckets
 
-```bash
 aws s3 ls
-```
 
 # Upload file
-```bash
 aws s3 cp localfile.pdf s3://my-bucket/documents/
-```
 
 # Upload entire directory
-```bash
 aws s3 sync ./build/ s3://my-bucket/ --delete
-```
 
 # Download file
-```bash
 aws s3 cp s3://my-bucket/documents/file.pdf ./
-```
 
 # Set lifecycle policy
-```bash
 aws s3api put-bucket-lifecycle-configuration \
   --bucket my-bucket \
   --lifecycle-configuration file://lifecycle.json
-```
 
 # Enable versioning
-```bash
 aws s3api put-bucket-versioning \
   --bucket my-bucket \
   --versioning-configuration Status=Enabled
-```
 
 ## TOPIC 6: IAM — IDENTITY & ACCESS MANAGEMENT
 
@@ -765,7 +744,6 @@ Intermediate:
 
 #### IAM Policy Structure:
 
-```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -784,7 +762,6 @@ Intermediate:
     }
   ]
 }
-```
 
 IAM Role Use Cases:
 - EC2 Role: EC2 instance can access S3, RDS without hardcoded credentials
@@ -820,15 +797,17 @@ IAM Best Practices:
 
 ## Q: What is the difference between IAM User, Group, and Role?
 
-A: User: Individual identity (developer "haider"). Long-term credentials.
+**A:** User: Individual identity (developer "haider"). Long-term credentials.
 Group: Collection of users. Attach policy to group → all users get that policy.
 Example: "Developers" group with EC2ReadOnly + S3FullAccess policies.
 Role: Temporary identity. NO username/password. Assumed by services or users.
+```text
 EC2 assumes a role to access S3 → no hardcoded credentials in code.
 Cross-account access → Account A user assumes role in Account B.
 
-Q: How does IAM Role work with EC2 to access S3 without credentials?
-A:
+```
+#### Q: How does IAM Role work with EC2 to access S3 without credentials?
+**A:**
 1. Create IAM Role with policy: "Allow s3:GetObject on my-bucket/*"
 2. Attach role to EC2 instance (Instance Profile)
 3. EC2 instance metadata service (IMDS) provides temporary credentials
@@ -838,18 +817,20 @@ In Spring Boot:
 - Just use S3Client.builder().build() — SDK picks up IAM Role credentials automatically!
 - NEVER store AWS_ACCESS_KEY or AWS_SECRET in application.properties
 
-Q (Tricky): Can IAM policy deny override an allow?
-A: YES! DENY always overrides ALLOW in IAM evaluation.
+#### Q (Tricky): Can IAM policy deny override an allow?
+**A:** YES! DENY always overrides ALLOW in IAM evaluation.
 Evaluation order:
+```text
 1. Explicit DENY → DENIED (always wins)
 2. Explicit ALLOW → ALLOWED
 3. No match → DENIED (default deny)
 
+```
 Use case: You allow a group S3FullAccess but want to protect prod bucket:
 Add explicit DENY for s3:DeleteObject on "prod-bucket/*" → prevents any deletion.
 
-Q (Scenario): Developer accidentally pushed AWS access keys to GitHub. What do you do?
-A: IMMEDIATE RESPONSE (security incident):
+#### Q (Scenario): Developer accidentally pushed AWS access keys to GitHub. What do you do?
+**A:** IMMEDIATE RESPONSE (security incident):
 1. Immediately rotate/delete the leaked access keys in IAM console
 2. Check CloudTrail for any suspicious API calls using those keys
 3. If credentials were used maliciously: check all resources for changes
@@ -865,13 +846,18 @@ A: IMMEDIATE RESPONSE (security incident):
 ## AWS Account
 
 |  |  |  |  |  |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | ROOT USER (MFA enabled, no access keys) |  |  |  |  |
 |  |  |  |  |  |
 | IAM USERS          IAM GROUPS          IAM ROLES |  |  |  |  |
+```text
 | +----------+       +-------------+     +------------------+ |  |  |  |  |
+| --- | --- | --- | --- | --- |
 | haider | ----> | Developers | --> | EC2-S3-Role |
+
+```
 | tejaswi |  | ReadOnly SG |  | Lambda-CW-Role |
+| --- | --- | --- | --- | --- |
 | admin |  | Admins |  | CI-Deploy-Role |
 | +----------+       +-------------+     +------------------+ |  |  |  |  |
 |  |  |  |  |  |
@@ -941,15 +927,15 @@ VPC Flow Logs: Capture network traffic metadata (useful for security analysis, t
 
 ## Q: Why use private subnets for application servers?
 
-A: Security! EC2 instances in private subnets:
+**A:** Security! EC2 instances in private subnets:
 - Have NO public IP (not directly accessible from internet)
 - Only accessible through Load Balancer (public subnet) or VPN/Bastion
 - If an instance is compromised, attacker can't reach it from internet
 - Database servers in private subnets = impossible to access from outside
 Attack surface is dramatically reduced.
 
-Q: What is the difference between Security Group and NACL?
-A: Security Group:
+#### Q: What is the difference between Security Group and NACL?
+**A:** Security Group:
 - Operates at INSTANCE level
 - STATEFUL: If you allow inbound on port 8080, return traffic is auto-allowed
 - Rules: ALLOW only (no deny rules)
@@ -972,22 +958,27 @@ Block specific port for specific instance using SG.
 Internet Gateway (IGW)
 |
 +------------------------------------------VPC: 10.0.0.0/16---+
-|                                                               |
-|  PUBLIC SUBNETS                     PRIVATE SUBNETS          |
+|  |  |  |  |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC SUBNETS                     PRIVATE SUBNETS |  |  |  |  |  |  |  |  |
+| +------------------+ +----------+  +----------+ +----------+ |  |  |  |  |  |  |  |  |
+|  | ALB     NAT-GW |  | Bastion |  | EC2 App1 |  | EC2 App2 |  |
+|  | 10.0.1.0/24 (1a) |  | (SSH) |  | 10.0.3.0 |  | 10.0.4.0 |  |
+| +--------+---------+ +----------+  +----+-----+ +----+-----+ |  |  |  |  |  |  |  |  |
+|  |  |  |  |  |  |  |  |  |
+|  | DATABASE SUBNETS |  |  |  |  |  |  |  |
 ```text
-  | +------------------+ +----------+  +----------+ +----------+ |
-  | | ALB     NAT-GW   | | Bastion  |  | EC2 App1 | | EC2 App2 | |
-  | | 10.0.1.0/24 (1a) | | (SSH)    |  | 10.0.3.0 | | 10.0.4.0 | |
-  | +--------+---------+ +----------+  +----+-----+ +----+-----+ |
-  |          |                              |             |       |
-  |          |           DATABASE SUBNETS   |             |       |
-  |          |          +-----------+ +------------+      |       |
-  |          +--------> | RDS (1a)  | | RDS (1b)   |      |       |
+|  | +-----------+ +------------+ |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
+| +--------> | RDS (1a) |  | RDS (1b) |  |  |
+
+```
   |                     | PRIMARY   | | STANDBY    |      |       |
+```text
   |                     +-----------+ +------------+      |       |
   +-----------------------------------------------------------+---+
-```
 
+```
 ## TOPIC 8: LOAD BALANCER & AUTO SCALING
 
 ### 1. CONCEPT EXPLANATION
@@ -997,29 +988,36 @@ Internet Gateway (IGW)
 LOAD BALANCER = Traffic distributor. When 1000 users hit your app at once, instead
 of 1 server trying to handle all, a Load Balancer splits traffic across multiple servers.
 
+```text
 Without LB: 1 server → crashes under heavy load ("Single Point of Failure")
 With LB: 5 servers → each handles 200 requests → high availability!
 
+```
 Problems solved by Load Balancer:
+```text
 - Single Point of Failure → Distributes across multiple servers
 - Server Overload → Spreads load evenly
 - Slow responses → Failed server removed from rotation automatically
 - Maintenance → Remove server from LB, upgrade, add back (zero downtime)
 
-```bash
+```
 AWS Load Balancer Types:
+```text
   -> ALB (Application LB): HTTP/HTTPS, Layer 7, path-based routing
   -> NLB (Network LB): TCP/UDP, Layer 4, ultra-high performance
   -> GLB (Gateway LB): For third-party firewalls (e.g., Cisco, Palo Alto)
   -> Classic LB: Legacy (avoid for new apps)
-```
 
+```
 Intermediate:
 
 #### ALB Features:
 
+```text
 - Path-based routing: /api/* → API servers, /static/* → S3/CDN
 - Host-based routing: api.app.com → API fleet, admin.app.com → admin servers
+
+```
 - Health checks: Remove unhealthy targets automatically
 - Sticky sessions: Route same user to same server (for session state)
 - SSL termination: ALB handles HTTPS, forwards HTTP to backend (saves CPU)
@@ -1056,7 +1054,7 @@ ASG + Lifecycle Hooks:
 
 ## Q: How does Auto Scaling + ALB achieve zero-downtime deployment?
 
-A: Rolling Deployment via ASG:
+**A:** Rolling Deployment via ASG:
 1. ASG launches new instances with new AMI/config
 2. New instances pass health checks
 3. ALB adds new instances to target group
@@ -1065,17 +1063,15 @@ A: Rolling Deployment via ASG:
 6. Old instances terminated
 Result: Old and new run in parallel briefly → zero user impact!
 
-Q: Your application is getting hot during business hours and cold at night. How do you handle this?
-A: Scheduled Auto Scaling:
+#### Q: Your application is getting hot during business hours and cold at night. How do you handle this?
+**A:** Scheduled Auto Scaling:
 - Business hours (8 AM - 8 PM): Min=5, Max=20, Desired=10
 - Night time: Min=2, Max=5, Desired=2
 - Add Target Tracking on top for unexpected spikes during hours
-```bash
 AWS Scheduled Actions + Target Tracking together = cost-optimized + responsive
-```
 
-Q (Scenario): Users are complaining that some requests are slow but others are fast. What could be wrong with your ALB setup?
-A: Likely causes:
+#### Q (Scenario): Users are complaining that some requests are slow but others are fast. What could be wrong with your ALB setup?
+**A:** Likely causes:
 1. Uneven load distribution: Check ALB access logs — is traffic going to all targets?
 2. Unhealthy instance still getting traffic: Check target group health status
 3. Hot partition in database: Check RDS CloudWatch metrics
@@ -1092,16 +1088,19 @@ Fix: Enable cross-zone load balancing on ALB (distributes evenly across all AZs)
 |
 
 |  |
-||
+| --- |
+|  |
 
 v  v  v  v   (Round Robin / Least Connections)
 [EC2][EC2][EC2][EC2]   ← Target Group
 
 Path-based Routing Example:
+```text
 /api/*      → Target Group: Backend API servers (EC2)
 /admin/*    → Target Group: Admin servers (EC2, smaller fleet)
 /static/*   → Forward to S3 / CloudFront
 
+```
 ## TOPIC 9: RDS — RELATIONAL DATABASE SERVICE
 
 ### 1. CONCEPT EXPLANATION
@@ -1127,7 +1126,7 @@ Intermediate:
 #### Multi-AZ vs Read Replica:
 
 | Feature | Multi-AZ | Read Replica |
-|---|---|---|
+| --- | --- | --- |
 | Purpose | High Availability (HA) | Read Scalability |
 | Replication | Synchronous | Asynchronous |
 | Failover | Automatic (60-120 sec) | Manual promotion |
@@ -1136,6 +1135,7 @@ Intermediate:
 
 RDS in Spring Boot:
 # application.yml
+```yaml
 spring:
 datasource:
 url: jdbc:mysql://mydb.xyz.ap-south-1.rds.amazonaws.com:3306/appdb
@@ -1151,7 +1151,7 @@ ddl-auto: validate
 show-sql: false                # Disable in production
 
 Advanced:
-
+```
 #### Amazon Aurora:
 
 - AWS Cloud-native database
@@ -1170,7 +1170,7 @@ RDS Proxy:
 
 ## Q: How do you handle database connection pooling in production Spring Boot on AWS?
 
-A:
+**A:**
 1. Use HikariCP (Spring Boot default) with proper configuration:
 maximum-pool-size: Based on (RDS max_connections / number of EC2 instances)
 For db.t3.large with 100 max connections, 5 EC2 instances:
@@ -1178,18 +1178,21 @@ pool-size = 100/5 = 20 connections per instance
 2. For Lambda-based apps: Use RDS Proxy (manages connection pooling externally)
 3. Monitor: RDS DatabaseConnections metric in CloudWatch — alert if > 80% of max
 
-Q: Production database is slow. How do you diagnose?
-A:
+#### Q: Production database is slow. How do you diagnose?
+**A:**
+```text
 1. Check RDS CloudWatch: CPU > 70%? → Need bigger instance class
 2. Check Read IOPS / Write IOPS: Exceeding provisioned IOPS? → Upgrade to io2
+
+```
 3. Enable Performance Insights: Identifies top SQL queries consuming resources
 4. Check "DatabaseConnections": Too many connections? → Connection pool misconfigured
 5. Slow Query Log: Enable, export to CloudWatch Logs, find queries > 1 second
 6. Check Read/Write ratio: High reads? → Add Read Replica, route read queries to it
 7. Consider Aurora if still constrained — it handles much higher workloads
 
-Q: How do you perform zero-downtime database migration on RDS?
-A:
+#### Q: How do you perform zero-downtime database migration on RDS?
+**A:**
 1. Create Read Replica of production RDS
 2. Run schema migration on read replica first (AWS DMS or Flyway)
 3. Test application against read replica
@@ -1216,6 +1219,7 @@ Intermediate:
 
 #### Lambda Triggers (events that invoke Lambda):
 
+```text
 - API Gateway: HTTP request → Lambda (serverless REST API)
 - S3: File uploaded → Lambda (image resizing, virus scan, ETL)
 - SQS: Message in queue → Lambda (async processing)
@@ -1224,6 +1228,7 @@ Intermediate:
 - SNS: Notification → Lambda (fan-out pattern)
 - ALB: HTTP request → Lambda (web app without EC2)
 
+```
 Lambda Java Cold Start Problem:
 - First invocation: JVM initialization = 2-10 seconds delay (cold start)
 - Subsequent invocations: Warm start = milliseconds
@@ -1251,10 +1256,10 @@ Lambda with SQS (Event-Driven Processing):
 
 ## Q: When would you use Lambda vs EC2?
 
-A:
+**A:**
 
 | Factor | Lambda | EC2 |
-|---|---|---|
+| --- | --- | --- |
 | Runtime per request | Seconds to 15 min | Unlimited |
 | Scaling | Automatic, instant | ASG (slower, minutes) |
 | Cost model | Per invocation (idle=free) | Per hour (running) |
@@ -1266,10 +1271,9 @@ A:
 Use Lambda for: S3 triggers, SQS processing, scheduled cron, API Gateway APIs
 Use EC2 for: Spring Boot REST API, long-running processing, websockets
 
-Q: How do you deploy a Spring Boot app as a Lambda function?
-A: Use AWS Lambda Spring Boot Starter (AWS Labs):
+#### Q: How do you deploy a Spring Boot app as a Lambda function?
+**A:** Use AWS Lambda Spring Boot Starter (AWS Labs):
 
-```xml
 // pom.xml
 <dependency>
   <groupId>com.amazonaws.serverless</groupId>
@@ -1292,7 +1296,6 @@ public class StreamLambdaHandler implements RequestStreamHandler {
         handler.proxyStream(in, out, ctx);
     }
 }
-```
 
 3. SERVERLESS ARCHITECTURE DIAGRAM
 
@@ -1309,9 +1312,11 @@ v                      v
 [ RDS via RDS Proxy ]   [ DynamoDB ]
 
 Event-Driven:
+```text
 [ S3: File Upload ] --> [ Lambda: ImageProcessor ] --> [ S3: Processed ]
 [ SQS Queue       ] --> [ Lambda: OrderProcessor ] --> [ RDS: Orders DB ]
 
+```
 ## TOPIC 11: ECS & EKS — CONTAINER ORCHESTRATION
 
 ### 1. CONCEPT EXPLANATION
@@ -1321,7 +1326,6 @@ Event-Driven:
 When you have Docker containers, how do you manage 100 containers across 10 servers?
 Container Orchestration solves this!
 
-```bash
 AWS Options:
   -> ECS (Elastic Container Service): AWS-native container orchestration
      - Simpler, tightly integrated with AWS
@@ -1331,7 +1335,6 @@ AWS Options:
      - Industry-standard, portable across clouds
      - More complex, more powerful, more control
      - Can migrate to any cloud (vendor-neutral)
-```
 
 Intermediate:
 
@@ -1344,7 +1347,6 @@ Intermediate:
 - Fargate: Serverless compute for containers (no EC2 management)
 
 ECS Task Definition (Spring Boot):
-```json
 {
   "family": "policy-service",
   "networkMode": "awsvpc",
@@ -1367,7 +1369,6 @@ ECS Task Definition (Spring Boot):
     }
   }]
 }
-```
 
 EKS = Kubernetes on AWS:
 - AWS manages the control plane (API server, etcd, scheduler)
@@ -1379,10 +1380,10 @@ EKS = Kubernetes on AWS:
 
 ## Q: What is the difference between ECS and EKS?
 
-A:
+**A:**
 
 | Feature | ECS | EKS |
-|---|---|---|
+| --- | --- | --- |
 | Learning curve | Lower | Higher (Kubernetes) |
 | AWS integration | Native, tighter | Standard K8s |
 | Portability | AWS only | Any cloud (K8s universal) |
@@ -1390,8 +1391,8 @@ A:
 | Complexity | Simpler | More complex, more powerful |
 | Use if | AWS-only strategy | Multi-cloud or K8s standard |
 
-Q: How do you configure secrets (DB passwords) for ECS containers?
-A: Use AWS Secrets Manager integration in Task Definition (shown above).
+#### Q: How do you configure secrets (DB passwords) for ECS containers?
+**A:** Use AWS Secrets Manager integration in Task Definition (shown above).
 NEVER put passwords in environment variables directly!
 1. Store secret in AWS Secrets Manager (encrypted, versioned, rotatable)
 2. Reference in Task Definition "secrets" section with ARN
@@ -1405,16 +1406,16 @@ NEVER put passwords in environment variables directly!
 ## Beginner:
 
 CloudWatch = AWS's eyes and ears. It collects metrics, logs, and events from all
-```bash
 AWS services. You can create dashboards, set alarms, and automate responses.
 
+```text
   -> Metrics: Numeric data points (CPU%, NetworkIn, Requests per second)
   -> Logs: Textual log data (application logs, access logs)
   -> Alarms: Notify or trigger actions when metric exceeds threshold
   -> Dashboards: Real-time visualization of metrics
   -> Events/EventBridge: Respond to changes in AWS services
-```
 
+```
 Intermediate:
 
 #### Key Metrics to Monitor in Production:
@@ -1459,7 +1460,6 @@ Sending Spring Boot Logs to CloudWatch:
 # Use CloudWatch Logs agent OR AWS SDK appender
 
 # Use AWS CloudWatch Appender (pom.xml)
-```xml
 <dependency>
   <groupId>ca.pjer</groupId>
   <artifactId>logback-awslogs-appender</artifactId>
@@ -1473,13 +1473,12 @@ Sending Spring Boot Logs to CloudWatch:
   <logRegion>ap-south-1</logRegion>
   <maxBatchLogEvents>50</maxBatchLogEvents>
 </appender>
-```
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: Your Spring Boot app on EC2 is throwing 500 errors. How do you debug it?
 
-A:
+**A:**
 Step-by-step with CloudWatch:
 1. CloudWatch Metrics: Check ALB HTTPCode_Target_5XX_Count spike
 2. CloudWatch Logs: Go to /spring-boot/policy-service log group
@@ -1489,8 +1488,8 @@ Step-by-step with CloudWatch:
 6. Correlate with Deployment: Did 500s start after last code deployment?
 7. Fix and re-deploy
 
-Q: How do you set up automated scaling based on a custom metric?
-A:
+#### Q: How do you set up automated scaling based on a custom metric?
+**A:**
 1. Application publishes custom metric to CloudWatch:
 CloudWatchClient cw = CloudWatchClient.create();
 PutMetricDataRequest request = PutMetricDataRequest.builder()
@@ -1518,8 +1517,11 @@ Result: System scales based on business load, not just CPU!
 - FIFO Queue: Exactly-once delivery, strict ordering (300 TPS max)
 
 SNS (Simple Notification Service) = Pub/Sub messaging. Push-based.
+```text
 - Publisher → Topic → Subscribers (push to subscribers immediately)
 - One message → Many subscribers (fan-out)
+
+```
 - Subscribers: SQS, Lambda, HTTP, email, SMS, mobile push
 
 SNS + SQS Fan-Out Pattern (most common):
@@ -1543,14 +1545,14 @@ InventorySvc EmailSvc AnalyticsSvc
 
 ## Q: When would you use SQS vs SNS?
 
-A: SQS: When ONE consumer processes each message. Point-to-point.
+**A:** SQS: When ONE consumer processes each message. Point-to-point.
 E.g., Order processing queue — one service consumes each order.
 SNS: When MULTIPLE consumers need the same message. Pub/Sub.
 E.g., Order placed event → inventory + email + analytics all need to know.
 SNS + SQS Fan-Out: BEST PRACTICE — SNS fans out, SQS buffers for each consumer.
 
-Q: How do you handle failed messages in SQS?
-A: Dead Letter Queue (DLQ):
+#### Q: How do you handle failed messages in SQS?
+**A:** Dead Letter Queue (DLQ):
 1. Create main SQS Queue
 2. Create DLQ (another SQS Queue)
 3. Configure: After 3 failed processing attempts → move to DLQ
@@ -1558,7 +1560,6 @@ A: Dead Letter Queue (DLQ):
 5. Investigate DLQ messages → fix bug → redrive back to main queue
 
 In Spring Boot with SQS:
-```java
 @SqsListener("my-queue")
 public void processMessage(OrderEvent event) {
     try {
@@ -1568,7 +1569,6 @@ public void processMessage(OrderEvent event) {
         throw e;  // Re-throw so SQS knows processing failed → DLQ eventually
     }
 }
-```
 
 ## TOPIC 14: ROUTE 53 — DNS & DOMAIN MANAGEMENT
 
@@ -1576,13 +1576,18 @@ public void processMessage(OrderEvent event) {
 
 ## Route 53 = AWS's scalable DNS service + domain registrar.
 
+```text
 DNS = Translates domain names → IP addresses.
 myapp.com → 52.34.212.45 (ALB IP)
 
+```
 Key Record Types:
+```text
 - A Record: Domain → IPv4 address
 - AAAA Record: Domain → IPv6 address
 - CNAME: Domain → another domain (alias)
+
+```
 - Alias: AWS-specific. Map domain to ALB, CloudFront, S3, Beanstalk
 - MX Record: Mail server routing
 
@@ -1590,15 +1595,18 @@ Route 53 Routing Policies:
 - Simple: One record, one target (basic)
 - Weighted: 80% to v1, 20% to v2 (Canary deployments!)
 - Latency-Based: Route to region with lowest latency to user
+```text
 - Failover: Primary → backup if primary health check fails (DR)
 - Geolocation: Indian users → Mumbai region, US users → us-east-1
+
+```
 - Geoproximity: Route by distance, with bias setting
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: How do you implement Blue-Green deployment at DNS level?
 
-A:
+**A:**
 1. Blue environment (active) at: blue.myapp.internal
 2. Green environment (new): green.myapp.internal
 3. Route 53 Weighted routing: myapp.com → 100% to blue initially
@@ -1608,8 +1616,8 @@ A:
 7. Full cutover: myapp.com → 100% green
 8. Rollback: Change weight back to 100% blue (seconds to take effect)
 
-Q: What is the difference between CNAME and ALIAS record in Route 53?
-A: CNAME: Points one domain to another domain.
+#### Q: What is the difference between CNAME and ALIAS record in Route 53?
+**A:** CNAME: Points one domain to another domain.
 Cannot be used for root domain (myapp.com has to be something.myapp.com).
 ALIAS: AWS-specific extension. Root domain CAN be aliased to AWS resources.
 No charge for Alias queries (CNAME queries cost money).
@@ -1630,10 +1638,8 @@ Benefits:
 - Automation: CI/CD can create/destroy infrastructure automatically
 - Documentation: Code IS the documentation of your infrastructure
 
-```bash
 AWS CloudFormation = AWS native IaC (YAML/JSON templates)
 Terraform = Open-source IaC by HashiCorp (HCL language, multi-cloud)
-```
 
 Intermediate:
 
@@ -1675,19 +1681,16 @@ SecurityGroupIds:
 - !Ref AppSecurityGroup
 UserData:
 Fn::Base64: !Sub |
-```text
           #!/bin/bash
           java -jar /app/policy-service-${AppVersion}.jar
 
 Outputs:
   InstanceIP:
     Value: !GetAtt AppInstance.PublicIp
-```
 
 Terraform Example (equivalent):
 provider "aws" {
 region = "ap-south-1"
-```text
 }
 
 variable "instance_type" {
@@ -1729,16 +1732,15 @@ terraform {
     region = "ap-south-1"
   }
 }
-```
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: What is the difference between CloudFormation and Terraform?
 
-A:
+**A:**
 
 | Feature | CloudFormation | Terraform |
-|---|---|---|
+| --- | --- | --- |
 | Language | YAML / JSON | HCL (HashiCorp Config) |
 | Multi-cloud | AWS only | AWS, Azure, GCP, etc. |
 | State management | AWS manages state | You manage (S3 backend) |
@@ -1748,8 +1750,8 @@ A:
 
 My preference: Terraform for multi-cloud, CloudFormation for AWS-only shops.
 
-Q: How do you handle Terraform state in a team environment?
-A:
+#### Q: How do you handle Terraform state in a team environment?
+**A:**
 1. Store state in S3 backend (never local file in team environment)
 2. Enable DynamoDB table for state locking (prevents concurrent modifications)
 3. Use Terraform workspaces for different environments (dev, staging, prod)
@@ -1763,13 +1765,11 @@ key            = "services/policy-api/terraform.tfstate"
 region         = "ap-south-1"
 dynamodb_table = "terraform-state-lock"  # Prevents concurrent apply
 encrypt        = true
-```text
   }
 }
-```
 
-Q (Tricky): CloudFormation update fails halfway. What happens?
-A: CloudFormation ROLLS BACK automatically to previous stable state!
+#### Q (Tricky): CloudFormation update fails halfway. What happens?
+**A:** CloudFormation ROLLS BACK automatically to previous stable state!
 - ROLLBACK_IN_PROGRESS → ROLLBACK_COMPLETE
 - All changes since last successful deployment are reversed
 - Atomic operation: either all succeed or all roll back
@@ -1850,7 +1850,6 @@ run: mvn jacoco:check -Djacoco.minimum.coverage=0.80
 env:
 SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 run: |
-```bash
       mvn sonar:sonar \
         -Dsonar.projectKey=policy-service \
         -Dsonar.host.url=https://sonarqube.company.com \
@@ -1922,7 +1921,6 @@ deploy-to-kubernetes:
   - name: Verify Deployment
     run: |
       curl -f https://api.company.com/actuator/health || exit 1
-```
 
 Advanced:
 
@@ -1959,7 +1957,7 @@ ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
 
 ## Q: Explain your end-to-end CI/CD pipeline from your Nationwide project.
 
-A: Our pipeline had these stages:
+**A:** Our pipeline had these stages:
 1. Developer pushes feature branch, creates PR
 2. GitHub Actions triggers CI:
 - Maven build + JUnit tests (must pass 100%)
@@ -1980,8 +1978,8 @@ A: Our pipeline had these stages:
 6. Splunk and Kibana for post-deployment monitoring
 7. Any error rate spike → automatic rollback via Harness
 
-Q: What happens if a Docker image has a critical vulnerability found by Twistlock/Trivy?
-A: The pipeline FAILS at the security scan stage. No deployment happens.
+#### Q: What happens if a Docker image has a critical vulnerability found by Twistlock/Trivy?
+**A:** The pipeline FAILS at the security scan stage. No deployment happens.
 Process:
 1. Developer gets notification with CVE details
 2. If vulnerability is in dependency: Update to patched version in pom.xml
@@ -1990,10 +1988,9 @@ Process:
 5. If no fix available: Risk waiver process with security team
 This is called "Shift Left Security" — catch vulnerabilities before they reach prod!
 
-Q: How do you implement rollback in Kubernetes if a deployment fails?
-A:
+#### Q: How do you implement rollback in Kubernetes if a deployment fails?
+**A:**
 # Automatic rollback on health check failure
-```bash
 kubectl rollout undo deployment/policy-service
 
 # List rollout history
@@ -2005,7 +2002,6 @@ kubectl rollout undo deployment/policy-service --to-revision=3
 # In GitHub Actions: monitor with timeout
 kubectl rollout status deployment/policy-service --timeout=300s || \
   kubectl rollout undo deployment/policy-service
-```
 
 3. CI/CD PIPELINE DIAGRAM
 
@@ -2015,7 +2011,6 @@ kubectl rollout status deployment/policy-service --timeout=300s || \
 v
 [ GitHub / Git ]
 |
-```text
   +------+------ Pull Request? ------+
   |                                  |
   v                                  v
@@ -2056,7 +2051,6 @@ Harness / ArgoCD / kubectl
        +-- Monitor (Splunk, Kibana) for 15 min
        |
        +-- Auto-rollback if error rate spikes
-```
 
 ## TOPIC 17: DOCKER — CONTAINERIZATION
 
@@ -2064,16 +2058,16 @@ Harness / ArgoCD / kubectl
 
 ## Beginner:
 
-```bash
 Docker = Package your app + dependencies + config into a portable "container".
+```text
 "Works on my machine" → With Docker, works everywhere!
 
   -> Image: Blueprint (like a class in Java). Built from Dockerfile.
   -> Container: Running instance of image (like an object).
   -> Registry: Repository for images (Harbor, ECR, Docker Hub).
   -> Dockerfile: Instructions to build an image.
-```
 
+```
 Why Docker for Java?
 - Java version isolation: One server can run Java 11 and Java 17 simultaneously
 - Dependency isolation: Different apps with conflicting library versions
@@ -2085,7 +2079,6 @@ Intermediate:
 #### Docker Commands (essential):
 
 # Build image
-```bash
   docker build -t policy-service:1.0 .
   docker build -t policy-service:1.0 --build-arg ENV=prod .
 
@@ -2185,24 +2178,26 @@ Docker Compose (multi-container development):
   networks:
     app-network:
       driver: bridge
-```
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: How do you optimize Docker image size for Spring Boot?
 
-A:
+**A:**
 1. Use minimal base image: eclipse-temurin:17-jre-alpine (not JDK!)
 Full JDK: 400MB+ vs JRE Alpine: ~100MB
 2. Multi-stage build: Compile in full Maven image, copy only JAR to runtime image
 3. Spring Boot Layered JARs: Separate dependencies (rarely change) from app code
+```text
 - Dependencies layer cached in Docker → only app layer rebuilds on code change
 - Docker build time: 5 min → 30 seconds!
+
+```
 4. .dockerignore file: Exclude target/, .git/, *.md from build context
 5. Single RUN command: Chain apt-get operations (reduces layers)
 
-Q: How does Docker networking work? How do containers communicate?
-A: Docker networks:
+#### Q: How does Docker networking work? How do containers communicate?
+**A:** Docker networks:
 bridge (default): Containers on same host can communicate
 host: Container shares host's network stack (fastest but security risk)
 overlay: For Swarm/Kubernetes — cross-host communication
@@ -2215,9 +2210,8 @@ Within docker-compose:
 Outside world to container:
 - Port mapping: -p 8080:8080 (host_port:container_port)
 
-Q (Scenario): Container is running but app is constantly restarting. How do you debug?
-A:
-```bash
+#### Q (Scenario): Container is running but app is constantly restarting. How do you debug?
+**A:**
 docker ps                        # Check restart count column
 docker logs policy-svc           # See what's causing crash
 docker logs policy-svc --tail 50 # Last 50 lines
@@ -2229,36 +2223,42 @@ Common causes for Spring Boot:
 3. Missing env variable: NullPointerException in @Value annotation
 4. OOM: Container runs out of memory (set -Xmx properly)
 5. App starts but health check fails: /actuator/health returns 503
-```
 
 3. DOCKER ARCHITECTURE DIAGRAM
 
 ## Developer Machine
 
-```text
   +------------------+              Registry
-  |  Dockerfile      |              (Harbor/ECR)
-  |       |          |              +----------+
-  |  docker build    |  docker push |  Images  |
-  |       |          |  ---------> |  Tags    |
-  |  Local Image     |              +----+-----+
+| Dockerfile | (Harbor/ECR) |  |
+```text
+| --- | --- | --- |
+|  |  | +----------+ |
+
+```
+| docker build | docker push | Images |
+```text
+|  |  | ---------> | Tags |
+| --- | --- | --- | --- |
+| Local Image | +----+-----+ |  |  |
   +------------------+                   |
+
+```
                                          | docker pull
   EC2 / Kubernetes Worker Node            |
   +------------------------------------------+
-  |                                          |
-  |  Docker Engine (Runtime)                 |
-  |  +-------------+ +-------------+         |
-  |  | policy-svc  | | mysql       |         |
-  |  | Container   | | Container   |         |
-  |  | (Image:v1.0)| | (Image:8.0) |         |
-  |  +------+------+ +------+------+         |
-  |         |               |                |
-  |  Docker Bridge Network  |                |
-  |  +-----------------------------------------+  |
-  |         HOST OS                          |
+|  |  |  |  |  |
+| --- | --- | --- | --- | --- |
+| Docker Engine (Runtime) |  |  |  |  |
+| +-------------+ +-------------+ |  |  |  |  |
+|  | policy-svc |  | mysql |  |
+|  | Container |  | Container |  |
+|  | (Image:v1.0) |  | (Image:8.0) |  |
+| +------+------+ +------+------+ |  |  |  |  |
+|  |  |  |  |  |
+| Docker Bridge Network |  |  |  |  |
+| +-----------------------------------------+ |  |  |  |  |
+| HOST OS |  |  |  |  |
   +------------------------------------------+
-```
 
 ## TOPIC 18: KUBERNETES — CONTAINER ORCHESTRATION
 
@@ -2413,7 +2413,6 @@ averageUtilization: 60
 
 Key kubectl Commands:
 # Apply YAML files
-```bash
 kubectl apply -f deployment.yaml
 kubectl apply -f k8s/  # Apply all files in directory
 
@@ -2437,13 +2436,12 @@ kubectl scale deployment policy-service --replicas=5 -n production
 kubectl set image deployment/policy-service policy-service=harbor/policy-service:1.1
 kubectl rollout status deployment/policy-service
 kubectl rollout undo deployment/policy-service  # Rollback
-```
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: What is the difference between Deployment and StatefulSet?
 
-A: Deployment: For stateless apps (Spring Boot API, nginx).
+**A:** Deployment: For stateless apps (Spring Boot API, nginx).
 Pods are interchangeable — any pod can serve any request.
 Random pod names: policy-service-abc, policy-service-xyz
 Rolling update: Replace one by one
@@ -2455,8 +2453,8 @@ Stable storage: Each pod gets its own PersistentVolume (not shared)
 
 Rule: Spring Boot API → Deployment. MySQL, Kafka → StatefulSet.
 
-Q: What is the difference between Readiness Probe and Liveness Probe?
-A: Readiness Probe:
+#### Q: What is the difference between Readiness Probe and Liveness Probe?
+**A:** Readiness Probe:
 - "Is this pod ready to receive traffic?"
 - If FAILS: Pod removed from Service endpoints (no traffic sent)
 - Pod stays running, just not serving traffic
@@ -2470,26 +2468,30 @@ Liveness Probe:
 > **Best practice: Both probes should use /actuator/health endpoints**
 
 Spring Boot:
+```text
 - /actuator/health/readiness → ReadinessState (ACCEPTING_TRAFFIC)
 - /actuator/health/liveness → LivenessState (CORRECT)
 
-Q (Scenario): A pod keeps crashing. How do you debug?
-A:
+```
+#### Q (Scenario): A pod keeps crashing. How do you debug?
+**A:**
 1. kubectl get pods -n production     # See CrashLoopBackOff status
 2. kubectl describe pod <pod-name>    # See Events section — what caused crash
 3. kubectl logs <pod-name>            # Current pod logs
 4. kubectl logs <pod-name> --previous # Previous pod instance logs (before crash)
+```text
 5. Check: OOMKilled? → Increase memory limits
 6. Check: Exit code 1? → Application error — check logs for exception
 7. Check: Exit code 137? → OOM kill by OS
 8. Add debug env var: JAVA_OPTS=-Xmx512m → check if it's memory issue
 
+```
 3. KUBERNETES ARCHITECTURE
 
 ## KUBERNETES CLUSTER (EKS)
 
 |  |  |  |  |  |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | Control Plane (Managed by AWS) |  |  |  |  |
 | +--------------------------------------------------+ |  |  |  |  |
 | API Server | etcd | Scheduler | Controller Manager |  |
@@ -2534,13 +2536,11 @@ Security Rating >= A
 Reliability Rating >= A
 
 SonarQube in Maven Pipeline:
-```text
 mvn clean verify sonar:sonar \
   -Dsonar.projectKey=policy-service \
   -Dsonar.host.url=https://sonarqube.company.com \
   -Dsonar.login=${SONAR_TOKEN} \
   -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-```
 
 2. TWISTLOCK / PRISMA CLOUD — Container Security
 
@@ -2567,11 +2567,13 @@ twistcli images scan --address https://twistlock.company.com \
 - Reports with exact code location + fix recommendation
 
 How it works:
+```text
 JVM with Contrast Agent → Runs integration tests → Agent instruments code
 - Detects SQL injection attempt in test → Reports vulnerability with line number
 
+```
 Interview Q: What is the difference between SAST, DAST, and IAST?
-A: SAST (Static): Analyze source code without running (SonarQube, Checkmarx)
+**A:** SAST (Static): Analyze source code without running (SonarQube, Checkmarx)
 Fast, early in pipeline, no running app needed.
 False positives possible (reported issue may not be exploitable).
 
@@ -2615,6 +2617,7 @@ Cons: Double infrastructure cost during deployment, database migrations tricky
 - Rollback anytime if issues detected
 
 Traffic split:
+```text
 100% → OLD version        v1.0
 ↓ Canary phase
 90% → OLD version (v1.0)
@@ -2624,6 +2627,7 @@ Traffic split:
 ↓ Monitor 15 min
 100% → NEW version (v2.0)
 
+```
 Kubernetes Canary with Deployments:
 # policy-service (stable): 9 replicas
 # policy-service-canary:   1 replica
@@ -2631,9 +2635,11 @@ Kubernetes Canary with Deployments:
 # Both deployments have that label → 90%/10% naturally
 
 Route 53 Weighted Routing for Canary:
+```text
 myapi.com → 90% BLUE load balancer (1.0)
 myapi.com → 10% GREEN load balancer (2.0)
 
+```
 3. ROLLING UPDATE
 
 ## -> Kubernetes default deployment strategy
@@ -2656,7 +2662,7 @@ New  New  New  New  New     (done)
 | Feature           | Blue-Green       | Canary           | Rolling Update   |
 
 | Deployment speed | Fast | Slow (gradual) | Medium |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Risk | Low | Lowest | Medium |
 | Rollback speed | Instant | Fast | Manual/Slow |
 | Infrastructure | 2x cost | 1.1x cost | 1x cost |
@@ -2665,7 +2671,7 @@ New  New  New  New  New     (done)
 | Use case | Major releases | Feature testing | Regular updates |
 
 INTERVIEW Q: Which deployment strategy did you use in your Nationwide project?
-A: We used a combination:
+**A:** We used a combination:
 1. GitHub Actions build + test (all commits)
 2. Canary deployment via Harness for feature releases:
 - 10% traffic to new version monitoring error rates in Splunk
@@ -2682,6 +2688,7 @@ A: We used a combination:
 
 ## Architecture:
 
+```text
 Spring Boot App → Logstash → Elasticsearch → Kibana
 
 Spring Boot logs (JSON format) → Logstash
@@ -2689,9 +2696,9 @@ Logstash → parses, enriches, filters → Elasticsearch
 Elasticsearch → stores and indexes logs
 Kibana → visualizes, dashboards, alerting
 
+```
 Spring Boot JSON Logging (for ELK):
 # pom.xml
-```xml
 <dependency>
   <groupId>net.logstash.logback</groupId>
   <artifactId>logstash-logback-encoder</artifactId>
@@ -2711,7 +2718,6 @@ log.info("Processing policy claim",
   kv("amount", amount));
 # Output: {"claimId":"CLM123","userId":"USR456","amount":5000,"message":"Processing"}
 # Queryable in Kibana by any field!
-```
 
 2. SPLUNK
 
@@ -2741,13 +2747,13 @@ index=policy-service sourcetype=json level=ERROR
 
 Spring Boot actuator for Prometheus:
 <!-- pom.xml -->
-```xml
 <dependency>
   <groupId>io.micrometer</groupId>
   <artifactId>micrometer-registry-prometheus</artifactId>
 </dependency>
 
 # application.yml
+```yaml
 management:
   endpoints:
     web:
@@ -2757,7 +2763,7 @@ management:
     export:
       prometheus:
         enabled: true
-
+```
 # Custom business metrics in Spring Boot
 @Component
 public class OrderMetrics {
@@ -2777,10 +2783,9 @@ public class OrderMetrics {
         ordersProcessed.increment();
     }
 }
-```
 
 INTERVIEW Q: How do you correlate logs across microservices?
-A: Distributed Tracing using Correlation ID / Trace ID:
+**A:** Distributed Tracing using Correlation ID / Trace ID:
 1. API Gateway generates unique traceId per request
 2. Pass traceId in HTTP header: X-Trace-Id: abc123
 3. Each service logs with MDC (Mapped Diagnostic Context):
@@ -2851,7 +2856,6 @@ Root Cause Analysis:
 
 Fix:
 # Before (buggy code):
-```java
 @RequestMapping("/process")
 public Response process() {
     Connection conn = dataSource.getConnection();  // Gets connection
@@ -2870,7 +2874,6 @@ public Response process() {
 try (Connection conn = dataSource.getConnection()) {
     // ...
 }  // Auto-closed here
-```
 
 Immediate Relief:
 - Increased max pool size temporarily (but not the fix!)
@@ -2884,20 +2887,17 @@ SCENARIO 2: Memory Leak Causing OOM in Production Kubernetes Pod
 ## Situation: Pods keep dying with OOMKilled, HPA keeps scaling up pods.
 
 Diagnosis:
-```bash
 kubectl describe pod policy-service-xxx
 # Last State: Terminated, Reason: OOMKilled, Exit Code: 137
 
 Kubernetes memory metrics (Prometheus/Grafana):
 → Memory growing from 500MB to 1.2GB over 2 hours then crash
-```
 
 Root Cause:
 - Spring Boot caching (@Cacheable) with no eviction policy
 - Cache growing infinitely in memory
 
 Fix:
-```java
 @Bean
 public CacheManager cacheManager() {
     CaffeineCacheManager cacheManager = new CaffeineCacheManager();
@@ -2907,7 +2907,6 @@ public CacheManager cacheManager() {
         .recordStats());             // Enable metrics
     return cacheManager;
 }
-```
 
 Kubernetes config fix:
 resources:
@@ -2940,7 +2939,6 @@ key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 - Dependencies cached: 25 min → 8 min
 
 2. Parallel tests:
-```text
    mvn -T 4 test   # 4 parallel threads
    → Tests: 8 min → 3 min
 
@@ -2951,7 +2949,6 @@ key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
    DOCKER_BUILDKIT=1 docker build --cache-from harbor/.../policy-service:latest .
 
 Result: 25 min → 6 min total pipeline time!
-```
 
 SCENARIO 4: Auto Scaling Not Working During Traffic Spike
 
@@ -2967,7 +2964,6 @@ Fix:
 - Target: 1000 requests per target per minute
 - When ASG receives 1000+ requests per instance → scale out
 
-```bash
 aws autoscaling put-scaling-policy \
   --policy-name request-count-scaling \
   --auto-scaling-group-name my-asg \
@@ -2980,7 +2976,6 @@ aws autoscaling put-scaling-policy \
         "ResourceLabel": "app/my-alb/xxx/targetgroup/my-tg/yyy"
       }
     }'
-```
 
 Lesson: Use the RIGHT metric for scaling (CPU, Memory, Request Count, Queue Depth
 — whichever is the actual bottleneck for your application)!
@@ -2994,7 +2989,7 @@ TABLE 1: EC2 vs Lambda
 | Factor                    | EC2                    | Lambda                 |
 
 | Management | You manage OS/patching | Fully managed |
-|---|---|---|
+| --- | --- | --- |
 | Startup time | Minutes (new instance) | Milliseconds (warm) |
 | Cold start | N/A | 2-10s (Java) |
 | Max runtime | Unlimited | 15 minutes max |
@@ -3011,7 +3006,7 @@ TABLE 2: RDS vs Aurora vs DynamoDB
 | Factor           | RDS            | Aurora                 | DynamoDB           |
 
 | Type | SQL | SQL (MySQL/PG compat) | NoSQL |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Scalability | Vertical + RR | Auto storage, 15 RR | Unlimited |
 | Replication | Multi-AZ (2) | 6-way, 3 AZs | Global tables |
 | Serverless | No | Aurora Serverless v2 | YES (pay per req) |
@@ -3026,7 +3021,7 @@ TABLE 3: SQS vs SNS vs EventBridge
 | Feature          | SQS         | SNS            | EventBridge          |
 
 | Pattern | Queue (pull) | Pub/Sub (push) | Event bus (routing) |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Persistence | Up to 14 days | No (if no sub) | 24 hours |
 | Subscribers | One consumer | Multiple | Multiple rules |
 | Filtering | No | Basic | Advanced (JSON) |
@@ -3040,7 +3035,7 @@ TABLE 4: CloudFormation vs Terraform vs CDK
 | Feature          | CloudFormation   | Terraform        | AWS CDK           |
 
 | Language | YAML/JSON | HCL | Python/Java/TS |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Multi-cloud | No (AWS only) | YES | No (AWS only) |
 | State management | AWS managed | S3 backend | CloudFormation |
 | Rollback | Automatic | Manual | CloudFormation |
@@ -3053,16 +3048,16 @@ TOP 20 MUST-KNOW AWS INTERVIEW QUESTIONS
 
 ## Q1: Explain the AWS Shared Responsibility Model.
 
-A: AWS = Security OF the cloud (hardware, network, facilities)
+**A:** AWS = Security OF the cloud (hardware, network, facilities)
 You = Security IN the cloud (app, data, IAM, encryption, OS patches on EC2)
 
 Q2: What is the difference between EBS, S3, and EFS?
-A: EBS: Block storage, attached to ONE EC2, zone-specific, fast (like HDD)
+**A:** EBS: Block storage, attached to ONE EC2, zone-specific, fast (like HDD)
 S3: Object storage, HTTP API, unlimited scale, no EC2 needed
 EFS: Network file system, shared across MULTIPLE EC2 instances (like NFS)
 
 Q3: How do you secure an S3 bucket?
-A:
+**A:**
 1. Block Public Access (account level) — prevents accidental public exposure
 2. Bucket Policy: Allow only specific IAM roles/users
 3. Enable Encryption: SSE-S3, SSE-KMS, or SSE-C
@@ -3072,39 +3067,44 @@ A:
 7. Pre-signed URLs: Temporary access instead of permanent permissions
 
 Q4: What is the difference between NACLs and Security Groups?
-A: SG: Instance-level, stateful, ALLOW only, attached to instance
+**A:** SG: Instance-level, stateful, ALLOW only, attached to instance
 NACL: Subnet-level, stateless, ALLOW + DENY, numbered rules evaluated in order
 
 Q5: How does EC2 Auto Scaling work?
-A: ASG monitors CloudWatch metrics. When CPU > threshold → launch new instances.
+```text
+**A:** ASG monitors CloudWatch metrics. When CPU > threshold → launch new instances.
 New instances registered with ALB → traffic distributed automatically.
 When CPU drops → terminate excess instances.
 
+```
 Q6: What is IAM Role and when to use it?
-A: Role = temporary identity assumed by AWS services.
+**A:** Role = temporary identity assumed by AWS services.
+```text
 EC2 assumes role → access S3 without hardcoded credentials.
 Lambda assumes role → write logs to CloudWatch.
 CI/CD assumes role → deploy to ECS/EKS.
+
+```
 ALWAYS prefer IAM Roles over access keys!
 
 Q7: How do multi-AZ RDS work?
-A: Primary DB in AZ-1a, synchronous standby in AZ-1b.
+**A:** Primary DB in AZ-1a, synchronous standby in AZ-1b.
 All writes to primary, synchronously replicated to standby.
 Primary fails → DNS automatically updates to standby in 60-120 seconds.
 Application reconnects to same endpoint URL (transparent failover).
 
 Q8: What is the difference between Horizontal and Vertical Scaling?
-A: Vertical (Scale Up): Bigger EC2 instance (t3.micro → m5.xlarge). Has limits.
+**A:** Vertical (Scale Up): Bigger EC2 instance (t3.micro → m5.xlarge). Has limits.
 Horizontal (Scale Out): More instances. AKA "Auto Scaling". Preferred!
 Horizontal: No single point of failure, scales infinitely, costs linearly.
 
 Q9: Explain blue-green vs canary deployment.
-A: Blue-Green: Two full environments, switch all traffic at once. Instant rollback.
+**A:** Blue-Green: Two full environments, switch all traffic at once. Instant rollback.
 Canary: Gradual traffic shift (5% → 100%). Real user testing. Catch issues early.
 Both achieve zero downtime. Canary is slower but lower risk.
 
 Q10: How do you handle secrets in production Spring Boot on AWS?
-A:
+**A:**
 1. AWS Secrets Manager: Store DB passwords, API keys (encrypted, versioned, rotatable)
 2. Reference in ECS Task Definition or K8s ExternalSecrets operator
 3. Spring Boot: Use AWS Secrets Manager Spring Boot Starter
@@ -3112,29 +3112,32 @@ spring.config.import=aws-secretsmanager:/myapp/prod/db
 4. NEVER in application.properties, NEVER in CI/CD env vars, NEVER in Docker image
 
 Q11: What is VPC peering and when do you need it?
-A: VPC Peering = private network connection between two VPCs.
+**A:** VPC Peering = private network connection between two VPCs.
 Traffic doesn't go over internet (more secure, lower latency).
 Use case: Shared services VPC (monitoring, logging) accessed by multiple app VPCs.
 Limitation: Non-transitive (A-B peered, B-C peered, A cannot reach C!)
 
 Q12: How do you troubleshoot a Lambda function that times out?
-A:
+**A:**
 1. Check CloudWatch Logs: Did it reach the timeout point? What was it doing?
+```text
 2. Check Duration metric: Consistently near timeout limit → increase timeout
 3. Identify bottleneck: Waiting for RDS? → Use connection pooling (RDS Proxy)
 4. Waiting for HTTP call? → Set proper HTTP timeouts, use async
 5. Cold start? → Enable Provisioned Concurrency or use SnapStart (Java)
+
+```
 6. X-Ray tracing: Enable to see per-subsegment timing breakdown
 
 Q13: What is CDN and how does CloudFront help?
-A: CDN (Content Delivery Network): Cache content at edge locations globally.
+**A:** CDN (Content Delivery Network): Cache content at edge locations globally.
 CloudFront: AWS CDN with 400+ edge locations worldwide.
 Instead of users fetching from S3 in Mumbai (for user in US):
 - CloudFront caches content at US edge location → 10ms vs 300ms latency!
 Also: HTTPS termination, WAF protection, DDoS protection (Shield).
 
 Q14: How do you implement distributed caching in Spring Boot on AWS?
-A: Amazon ElastiCache (Redis or Memcached):
+**A:** Amazon ElastiCache (Redis or Memcached):
 1. Spring Boot + spring-boot-starter-data-redis
 2. application.yml: spring.redis.host=my-cluster.cache.amazonaws.com
 3. @Cacheable("policies") on service methods
@@ -3142,7 +3145,7 @@ A: Amazon ElastiCache (Redis or Memcached):
 - ElastiCache handles Redis cluster management, Multi-AZ, replicas.
 
 Q15: How do you deploy a Spring Boot microservices architecture on AWS?
-A:
+**A:**
 API Gateway → ALB → EKS Cluster (Java Microservices as K8s Deployments)
 
 Services communicate via:
@@ -3155,20 +3158,18 @@ Secrets: AWS Secrets Manager + Kubernetes External Secrets operator
 Monitoring: CloudWatch Container Insights + Prometheus/Grafana + X-Ray tracing
 
 Q16: What happens when your EC2 instance runs out of disk space?
-A:
+**A:**
 1. Detect: CloudWatch alarm on DiskSpaceUtilization > 85%
 2. Quick fix: Delete unnecessary log files, temp files
-```bash
    sudo du -sh /var/log/* | sort -rh | head -20
 3. Proper fix: Expand EBS volume (can increase in-place without downtime)
    aws ec2 modify-volume --volume-id vol-xxx --size 100
    sudo growpart /dev/xvda 1
    sudo resize2fs /dev/xvda1
 4. Long-term: Rotate logs to S3, proper log retention policy
-```
 
 Q17: How do you implement log rotation in Spring Boot on Kubernetes?
-A:
+**A:**
 1. App logs to stdout/stderr (not file) — K8s captures automatically
 2. K8s log rotation: /etc/logrotate.d/containers (configured at node level)
 3. Fluent Bit DaemonSet: Collects logs from all pods → forwards to CloudWatch/ELK
@@ -3176,7 +3177,7 @@ A:
 NEVER log to files inside containers (lost when pod dies!)
 
 Q18: What is AWS X-Ray and when do you use it?
-A: AWS X-Ray = Distributed tracing service.
+**A:** AWS X-Ray = Distributed tracing service.
 Traces requests across multiple microservices.
 Shows exactly where time is spent: Lambda → RDS → S3 → DynamoDB.
 Identifies bottlenecks with timing breakdown per subsegment.
@@ -3184,7 +3185,7 @@ Spring Boot: Add xray-sdk dependency + @SegmentBeginning annotation.
 Use when: Performance issues in microservices, debugging cross-service failures.
 
 Q19: What are AWS Reserved Instances and when should you buy them?
-A: Reserved = 1 or 3 year commitment for specific instance type = 40-75% savings.
+**A:** Reserved = 1 or 3 year commitment for specific instance type = 40-75% savings.
 When to buy: Production workloads that run 24/7, predictable capacity needs.
 Types:
 - Standard: Specific instance type, maximum discount
@@ -3193,20 +3194,24 @@ Types:
 Rule: If instance runs > 40% of time, Reserved is cheaper than On-Demand.
 
 Q20: Your Spring Boot application's response time suddenly increased from 200ms to 5s. How do you diagnose?
-A: Systematic approach:
+**A:** Systematic approach:
 1. CloudWatch: Check ALB TargetResponseTime metric — when did it spike?
 2. Correlated deployment? Check deployment history — did release coincide?
 3. CloudWatch RDS: Check ReadLatency, WriteLatency — DB slow?
 4. EC2 CPU: High CPU? → Compute bound → need more instances or bigger type
 5. CloudWatch Logs: Check for new ERROR patterns, long GC pauses (Java)
+```text
 6. Thread dumps: kubectl exec → jstack <pid> → find blocked threads
 7. Heap analysis: If OOM pressure → GC overhead → jmap, heap dump
 8. Database: Enable slow query log → identify queries > 1 second
+
+```
 9. External dependencies: Circuit breaker open? Downstream service slow?
 10. Fix and canary deploy → monitor response time recovery
 
 ## BONUS: TROUBLESHOOTING QUICK REFERENCE
 
+```text
 PROBLEM → LIKELY CAUSE → QUICK FIX
 
 App returns 502 Bad Gateway         → EC2/pod health check failing          → Check app logs
@@ -3219,15 +3224,14 @@ S3 upload fails: 403                → IAM permissions missing               �
 RDS connection refused              → Security Group port 3306 not open      → Add SG rule for EC2 SG
 Lambda timeout                      → DB query too slow, no connection pool  → Add RDS Proxy
 Auto Scaling not scaling            → Wrong metric (CPU instead of requests) → Change scaling metric
-```bash
 Docker container exits immediately  → App crash, missing env vars            → docker logs <container>
 Kubernetes pod OOMKilled            → Memory limit too low or memory leak    → Increase limit + fix leak
 CI/CD pipeline fails at push        → Registry auth expired                 → Rotate credentials
 Terraform apply fails               → State lock not released               → Clear DynamoDB lock entry
 Maven build slow in CI              → No dependency cache                   → Add actions/cache step
 High AWS bill                       → Unused resources, wrong instance type  → Trusted Advisor + tagging
-```
 
+```
 ## TOPIC 26: EFS — ELASTIC FILE SYSTEM
 
 ### 1. CONCEPT EXPLANATION
@@ -3253,7 +3257,7 @@ Intermediate:
 #### EFS vs EBS vs S3 Comparison:
 
 | Feature | EBS | EFS | S3 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Access | One EC2 at a time | Multiple EC2s | HTTP/S API |
 | Protocol | Block (like HDD) | NFS (file system) | Object (REST API) |
 | Scope | Zone-specific | Region-wide (multi-AZ) | Global |
@@ -3280,7 +3284,6 @@ Advanced:
 
 EFS Mount on EC2:
 # Install NFS client
-```bash
 sudo yum install -y amazon-efs-utils
 
 # Create mount point
@@ -3291,7 +3294,6 @@ sudo mount -t efs -o tls fs-0abc123:/  /shared-data
 
 # Make persistent (add to /etc/fstab)
 fs-0abc123:/ /shared-data efs defaults,tls,_netdev 0 0
-```
 
 EFS on Multiple EC2 Instances:
 EC2-AZ1a  --+
@@ -3304,7 +3306,7 @@ EC2-AZ1c  --+
 
 ## Q: When would you choose EFS over EBS?
 
-A: Choose EFS when:
+**A:** Choose EFS when:
 - Multiple EC2 instances need to read/write the same files simultaneously
 - Content management system: Web servers need shared media library
 - Shared config files across a fleet of application servers
@@ -3316,8 +3318,8 @@ Choose EBS when:
 - Database files (MySQL data directory, PostgreSQL WAL files)
 - OS root volume
 
-Q: What is the difference between EFS and S3?
-A: EFS: Real file system with directories, permissions, file locking.
+#### Q: What is the difference between EFS and S3?
+**A:** EFS: Real file system with directories, permissions, file locking.
 Mounted like a local disk (NFS). Lower latency. Works with Linux commands.
 Can cd, ls, cat files. Used by apps that need POSIX file system access.
 S3:  Object store with HTTP API. No directory structure (just key prefixes).
@@ -3325,9 +3327,9 @@ Best for large scale, unlimited storage, web-accessible content.
 Cannot be mounted directly (need s3fs-fuse, which is slow).
 Rule: If your app code uses File/Path I/O → EFS. If using SDK → S3.
 
-Q (Scenario): You have 10 web servers serving images. Images are uploaded to
+#### Q (Scenario): You have 10 web servers serving images. Images are uploaded to
 one server but not visible on others. How do you fix this?
-A: Use EFS as shared storage!
+**A:** Use EFS as shared storage!
 - Mount EFS on all 10 EC2 instances at /var/www/html/images
 - Any upload to one instance writes to EFS
 - All other instances see the file immediately (shared mount)
@@ -3338,7 +3340,7 @@ A: Use EFS as shared storage!
 ## Region: ap-south-1
 
 |  |  |  |  |  |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | AZ-1a              AZ-1b              AZ-1c |  |  |  |  |
 | +--------+          +--------+         +--------+ |  |  |  |  |
 | EC2 A |  | EC2 B |  | EC2 C |
@@ -3396,7 +3398,6 @@ Intermediate:
 
 Deploy Spring Boot to Beanstalk:
 # Package your Spring Boot app
-```text
 mvn clean package -DskipTests
 
 # Deploy via CLI
@@ -3410,7 +3411,6 @@ eb deploy
 # 3. Platform: Java (Corretto 17)
 # 4. Upload your .jar file
 # 5. Click "Create environment" → Done!
-```
 
 Beanstalk Environment Configuration (.ebextensions):
 # .ebextensions/jvm.config
@@ -3431,13 +3431,15 @@ Advanced:
 - All at once: Deploy to all instances simultaneously (fastest, has downtime)
 - Rolling: Update instances in batches (no downtime, slower)
 - Rolling with additional batch: Launch new batch first (zero downtime)
+```text
 - Immutable: Launch completely new instances → swap → terminate old (safest)
 - Blue/Green: Deploy to new environment → swap URL (zero downtime, easy rollback)
 
+```
 When to use Beanstalk vs ECS vs EC2 directly:
 
 | Factor | Elastic Beanstalk | ECS/Fargate | EC2 (manual) |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Control | Low (managed) | Medium | Full |
 | Setup time | Minutes | Hours | Hours/Days |
 | Container support | Yes (Docker) | Native | Manual |
@@ -3449,33 +3451,34 @@ When to use Beanstalk vs ECS vs EC2 directly:
 
 ## Q: What is Elastic Beanstalk and how is it different from EC2?
 
-A: EC2 = IaaS: You get a raw virtual machine. You install everything manually
+**A:** EC2 = IaaS: You get a raw virtual machine. You install everything manually
 (Java, web server, configure ALB, set up monitoring — everything).
 Beanstalk = PaaS: You give it your code. It automatically provisions EC2,
 sets up ALB, auto scaling, monitoring. You focus on code only.
 Hidden truth: Beanstalk USES EC2 under the hood — you can still access those
 EC2 instances via SSH if needed. You're not locked out of the infrastructure.
 
-Q: What port does Spring Boot need to run on for Elastic Beanstalk?
-A: By default, the Nginx reverse proxy in Beanstalk routes traffic to port 5000.
-```text
+#### Q: What port does Spring Boot need to run on for Elastic Beanstalk?
+**A:** By default, the Nginx reverse proxy in Beanstalk routes traffic to port 5000.
 Set: server.port=5000 in application.properties, OR set via environment variable:
 SERVER_PORT=5000 in Beanstalk configuration.
 Beanstalk exposes port 80/443 externally → proxies to your app on port 5000.
-```
 
-Q: When would you NOT use Elastic Beanstalk?
-A: -> Large-scale microservices architecture (use EKS/ECS instead)
+#### Q: When would you NOT use Elastic Beanstalk?
+**A:** -> Large-scale microservices architecture (use EKS/ECS instead)
 - Need fine-grained Kubernetes control (use EKS)
 - Multi-cloud strategy (Beanstalk is AWS-specific)
 - Need custom OS configuration or special networking setup (use EC2 directly)
 - High-performance, cost-optimized container workloads (use Fargate)
 
-Q (Scenario): Your company wants to quickly deploy a Spring Boot app with
+#### Q (Scenario): Your company wants to quickly deploy a Spring Boot app with
 minimal DevOps overhead. What do you recommend?
-A: Elastic Beanstalk is ideal:
+**A:** Elastic Beanstalk is ideal:
+```text
 1. mvn clean package → produces app.jar
 2. Beanstalk: Upload JAR → choose Java platform → configure env vars
+
+```
 3. Auto-provisioned: EC2 + ALB + ASG + CloudWatch in minutes
 4. Future: As app grows, can migrate to ECS/EKS for more control
 Beanstalk is the fastest path from code to production for Java apps on AWS.
@@ -3486,10 +3489,8 @@ Beanstalk is the fastest path from code to production for Java apps on AWS.
 
 ## Beginner:
 
-```bash
 AWS CLI = Command-line tool to interact with ALL AWS services from your terminal.
 Instead of clicking through the AWS Console, you run commands.
-```
 
 Benefits:
 - Automation: Script repetitive tasks (create EC2, upload to S3, etc.)
@@ -3502,23 +3503,19 @@ Installation:
 msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi
 
 # Linux/Mac
-```bash
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o awscliv2.zip
 unzip awscliv2.zip && sudo ./aws/install
 
 # Verify
 aws --version
-```
 
 Configure AWS CLI:
-```bash
 aws configure
 # Prompts for:
 # AWS Access Key ID: AKIAIOSFODNN7EXAMPLE
 # AWS Secret Access Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
 # Default region: ap-south-1
 # Default output format: json
-```
 
 Intermediate:
 
@@ -3526,7 +3523,6 @@ Intermediate:
 
 EC2 Commands:
 # List all running EC2 instances
-```bash
 aws ec2 describe-instances --filters "Name=instance-state-name,Values=running"
 
 # Start/Stop/Terminate instances
@@ -3537,11 +3533,9 @@ aws ec2 terminate-instances --instance-ids i-0abc123
 # Get instance public IP
 aws ec2 describe-instances --instance-ids i-0abc123 \
   --query 'Reservations[0].Instances[0].PublicIpAddress' --output text
-```
 
 S3 Commands:
 # List buckets
-```bash
 aws s3 ls
 
 # Upload file
@@ -3555,11 +3549,9 @@ aws s3 cp s3://my-bucket/file.pdf ./
 
 # Make file public
 aws s3api put-object-acl --bucket my-bucket --key file.pdf --acl public-read
-```
 
 IAM Commands:
 # List users
-```bash
 aws iam list-users
 
 # Create user
@@ -3571,11 +3563,9 @@ aws iam attach-user-policy --user-name john-dev \
 
 # Create access keys
 aws iam create-access-key --user-name john-dev
-```
 
 EBS/Snapshot Commands:
 # Create snapshot
-```bash
 aws ec2 create-snapshot --volume-id vol-0abc123 --description "Pre-deploy backup"
 
 # List your snapshots
@@ -3584,11 +3574,9 @@ aws ec2 describe-snapshots --owner-ids self
 # Create volume from snapshot
 aws ec2 create-volume --snapshot-id snap-0xyz456 \
   --availability-zone ap-south-1a --volume-type gp3
-```
 
 RDS Commands:
 # List RDS instances
-```bash
 aws rds describe-db-instances
 
 # Create RDS snapshot
@@ -3598,14 +3586,12 @@ aws rds create-db-snapshot \
 
 # Describe snapshots
 aws rds describe-db-snapshots --db-instance-identifier my-prod-db
-```
 
 Advanced:
 
 #### AWS CLI Profiles (for multiple accounts):
 
 # Configure named profile
-```bash
   aws configure --profile dev-account
   aws configure --profile prod-account
 
@@ -3627,11 +3613,9 @@ AWS CLI Output Formatting:
   aws ec2 describe-instances \
     --query 'Reservations[*].Instances[*].[InstanceId,PublicIpAddress,State.Name]' \
     --output table
-```
 
 Useful Automation Scripts:
 # Start all stopped EC2 instances tagged "Environment=dev"
-```bash
 aws ec2 describe-instances \
   --filters "Name=tag:Environment,Values=dev" \
             "Name=instance-state-name,Values=stopped" \
@@ -3642,25 +3626,22 @@ aws ec2 describe-instances \
 aws ec2 describe-snapshots --owner-ids self \
   --query 'Snapshots[?StartTime<=`2024-01-01`].SnapshotId' \
   --output text | xargs -n1 aws ec2 delete-snapshot --snapshot-id
-```
 
 ### 2. INTERVIEW QUESTIONS
 
 ## Q: How do you configure AWS CLI to avoid hardcoding credentials?
 
-A: Options (in order of preference for security):
+**A:** Options (in order of preference for security):
 1. IAM Role (best): On EC2/Lambda, attach IAM Role → CLI auto-picks credentials
 No configuration needed! SDK/CLI reads from instance metadata service.
 2. Environment Variables: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 Good for CI/CD (set as secrets in GitHub Actions/Jenkins)
 3. AWS SSO (AWS IAM Identity Center): For developers — login via browser
-```bash
    aws sso login --profile my-sso-profile
 4. aws configure: Stored in ~/.aws/credentials (avoid for production servers)
-```
 
-Q: How do you use AWS CLI in GitHub Actions CI/CD?
-A:
+#### Q: How do you use AWS CLI in GitHub Actions CI/CD?
+**A:**
 jobs:
 deploy:
 runs-on: ubuntu-latest
@@ -3678,8 +3659,8 @@ run: aws s3 cp target/app.jar s3://my-artifacts-bucket/
 - name: Update ECS service
 run: aws ecs update-service --cluster prod --service api --force-new-deployment
 
-Q: What is the --dry-run flag in AWS CLI?
-A: --dry-run checks if you HAVE PERMISSION to perform an action WITHOUT actually
+#### Q: What is the --dry-run flag in AWS CLI?
+**A:** --dry-run checks if you HAVE PERMISSION to perform an action WITHOUT actually
 doing it. Useful for validating IAM permissions before risky operations.
 Example: aws ec2 run-instances --dry-run --image-id ami-xxx --instance-type t3.micro
 Returns: "DryRunOperation" error if you have permission (confusingly, this means SUCCESS!)
@@ -3717,21 +3698,16 @@ Step 1: Launch EC2 (Amazon Linux 2 AMI)
 - Key Pair: Download .pem for SSH
 
 Step 2: SSH into EC2
-```bash
 chmod 400 my-key.pem
 ssh -i my-key.pem ec2-user@<public-ip>
-```
 
 Step 3: Install and Start httpd
-```bash
 sudo yum install httpd -y       # Install Apache web server
 sudo service httpd start        # Start the web server
 sudo systemctl enable httpd     # Auto-start on reboot
-```
 
 Step 4: Create Web Content
 cd /var/www/html                # Web root directory
-```bash
 sudo vi index.html              # Create your HTML file
 
 # Example index.html content:
@@ -3742,7 +3718,6 @@ sudo vi index.html              # Create your HTML file
     <p>Hosted on Amazon Linux with Apache httpd</p>
   </body>
 </html>
-```
 
 Step 5: Access in Browser
 http://<EC2-public-ip>          # httpd listens on port 80
@@ -3754,7 +3729,6 @@ Advanced:
 #### Automate with User Data (bootstrap on EC2 launch):
 
 # Paste this in "User Data" when creating EC2 instance
-```bash
 #!/bin/bash
 sudo yum install httpd -y
 cd /var/www/html
@@ -3762,12 +3736,11 @@ echo "<html><h1>Auto-deployed via User Data!</h1></html>" > index.html
 sudo service httpd start
 
 # This script runs ONCE at first launch — zero manual SSH needed!
-```
 
 Production Web Hosting Comparison:
 
 | Method | Use Case | Cost | Complexity |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | EC2 + httpd | Learning, custom | EC2 hourly rate | Medium |
 | S3 Static Site | Pure static HTML | ~$0.023/GB | Very Low |
 | CloudFront+S3 | Global CDN site | CDN + S3 pricing | Low |
@@ -3783,10 +3756,9 @@ For DYNAMIC Spring Boot apps: EC2 + ALB + ASG OR Elastic Beanstalk OR ECS
 
 ## Q: Can you explain how you would host a Spring Boot application on EC2?
 
-A: Step-by-step production setup:
+**A:** Step-by-step production setup:
 1. Launch EC2 (Amazon Linux 2, t3.medium for prod, private subnet)
 2. SSH in and install Java 17:
-```bash
    sudo amazon-linux-extras install java-openjdk17 -y
 3. Copy JAR to EC2:
    scp -i key.pem app.jar ec2-user@<ip>:/home/ec2-user/
@@ -3806,18 +3778,20 @@ A: Step-by-step production setup:
 5. Add EC2 to ALB target group
 6. Point Route 53 domain to ALB DNS name
 7. Enable HTTPS via ACM certificate on ALB
-```
 
-Q: What is the purpose of /var/www/html in httpd?
-A: /var/www/html is the document root (web root) for Apache httpd.
+#### Q: What is the purpose of /var/www/html in httpd?
+**A:** /var/www/html is the document root (web root) for Apache httpd.
 Any file placed here is directly served by the web server.
+```text
 - index.html → http://server-ip/ (default page)
 - about.html → http://server-ip/about.html
 - images/logo.png → http://server-ip/images/logo.png
+
+```
 It's equivalent to the "public" folder in modern web frameworks.
 
-Q: You launched an EC2 with httpd but can't access the website in browser. What do you check?
-A: Systematic debug checklist:
+#### Q: You launched an EC2 with httpd but can't access the website in browser. What do you check?
+**A:** Systematic debug checklist:
 1. Security Group: Does it allow inbound TCP port 80 from 0.0.0.0/0?
 (Most common cause — forgot to add HTTP rule)
 2. httpd running? → sudo service httpd status
@@ -3871,7 +3845,6 @@ ENTRYPOINT ["java", "-jar", "app.jar",
 "-Xms512m", "-Xmx1024m",
 "--spring.profiles.active=prod"]
 
-```bash
 Docker Commands:
 docker build -t policy-service:1.0 .
 docker run -d -p 8080:8080 --name policy-svc policy-service:1.0
@@ -3899,7 +3872,6 @@ services:
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
-```
 
 #### Q2. AWS EC2 and S3 from resume experience.
 
@@ -3915,7 +3887,6 @@ S3 (Simple Storage Service):
 Spring Boot integration:
 @Service
 public class S3FileService {
-```java
     @Autowired private AmazonS3 s3Client;
     private final String bucket = "policy-documents";
 
@@ -3930,7 +3901,6 @@ public class S3FileService {
         return s3Client.getObject(bucket, key);
     }
 }
-```
 
 ## ROUND 2 - CI/CD PIPELINE
 
@@ -3963,7 +3933,6 @@ run: contrast-scan --project policy-service
 run: docker build -t policy-service:${{ github.sha }} .
 - name: Push to Harbor
 run: |
-```bash
       docker tag policy-service:${{ github.sha }} harbor.company.com/policy-service:${{ github.sha }}
       docker push harbor.company.com/policy-service:${{ github.sha }}
 
@@ -3973,12 +3942,13 @@ deploy:
   steps:
   - name: Deploy to Kubernetes
     run: kubectl set image deployment/policy-svc policy-svc=harbor.company.com/policy-service:${{ github.sha }}
-```
 
 Pipeline Flow:
+```text
 Code Push -> Build (Maven) -> Unit Tests -> SonarQube -> Security Scan
 - Docker Build -> Push to Registry (Harbor) -> Deploy to K8s
 
+```
 #### Q4. SonarQube for code quality (from resume).
 
 SonarQube checks:
@@ -3994,9 +3964,7 @@ Quality Gate:
 - Duplication < 3%
 
 Maven integration:
-```text
 mvn sonar:sonar -Dsonar.host.url=http://sonarqube:9000
-```
 
 ## ROUND 3 - ADVANCED
 
@@ -4104,3 +4072,4 @@ KEY QUESTIONS:
 8. Container security (Twistlock/Contrast)
 
 ## END OF FILE
+

@@ -1,21 +1,16 @@
-﻿================================================================================
-SHELL SCRIPTING (BASH) - COMPREHENSIVE INTERVIEW & REVISION GUIDE
-Extracted from: Linux and Shell Scripting.txt (Deduplicated)
-For: DevOps Engineers | System Administrators | Java Full Stack Developers
-
-# WHAT IS SHELL SCRIPTING?
-
-- A shell script is a file containing a set of Linux commands for automated execution.
-- Extension: .sh (e.g., deploy.sh, backup.sh)
-- Bash (Bourne Again Shell) is the most common shell (/bin/bash)
-- Used to automate daily routine tasks in DevOps, CI/CD, server management.
+# SHELL SCRIPTING (BASH) - COMPREHENSIVE INTERVIEW & REVISION GUIDE
+> *Extracted from: Linux and Shell Scripting.txt (Deduplicated) · For: DevOps Engineers | System Administrators | Java Full Stack Developers · # WHAT IS SHELL SCRIPTING? · - A shell script is a file containing a set of Linux commands for automated execution. · - Extension: .sh (e.g., deploy.sh, backup.sh) · - Bash (Bourne Again Shell) is the most common shell (/bin/bash) · - Used to automate daily routine tasks in DevOps, CI/CD, server management.*
 
 ## STRUCTURED CONCEPT TABLE
 
 | # | Command / Concept | Description | Real-Time Usage Scenario | Priority |
+```text
 |---|---|---|---|---|
 | --- BASICS --- |  |  |  |  |
+
+```
 | 1 | Shebang (#! /bin/bash) | First line of script - tells OS which interpreter to use | Always add shebang for portability across servers | *** |
+| --- | --- | --- | --- | --- |
 | 2 | sh <script.sh> | Execute a shell script | Run deployment: sh deploy.sh | *** |
 | 3 | bash <script.sh> | Execute with bash interpreter explicitly | When shebang missing: bash build.sh | *** |
 | 4 | chmod +x <script.sh> | Make script executable | chmod +x deploy.sh; then run with ./deploy.sh | *** |
@@ -248,11 +243,16 @@ For: DevOps Engineers | System Administrators | Java Full Stack Developers
 | CRON SYNTAX: |  |  |  |  |
 | * * * * * <command> |  |  |  |  |
 | +-- Day of week (0-6, Sun=0) |  |  |  |  |
+```text
 | +---- Month (1-12) |  |  |  |  |
+| --- | --- | --- | --- | --- |
 | +------ Day of month (1-31) |  |  |  |  |
 | +-------- Hour (0-23) |  |  |  |  |
 | +---------- Minute (0-59) |  |  |  |  |
+
+```
 | CRON EXAMPLES: |  |  |  |  |
+| --- | --- | --- | --- | --- |
 | 0 5 * * * | Every day at 5:00 AM | Daily backup job |  |  |
 | 0 17 * * * | Every day at 5:00 PM | End-of-day reports |  |  |
 | 0 8 1 * * | 1st of every month at 8 AM | Monthly cleanup/billing |  |  |
@@ -288,7 +288,6 @@ echo "========================================="
 
 # Check if JAR file exists
 JAR_FILE="/opt/releases/${APP_NAME}-${VERSION}.jar"
-```text
     if [ -f "$JAR_FILE" ]; then
         echo "Found: $JAR_FILE"
         cp $JAR_FILE /opt/app/current.jar
@@ -299,7 +298,6 @@ JAR_FILE="/opt/releases/${APP_NAME}-${VERSION}.jar"
         exit 1
     fi
 }
-```
 
 # Validate arguments
 if [ $# -lt 2 ]; then
@@ -312,7 +310,6 @@ fi
 if [ "$ENV" == "prod" ]; then
 echo "WARNING: Production deployment - proceed? (y/n)"
 read CONFIRM
-```text
     if [ "$CONFIRM" == "y" ]; then
         deploy
     else
@@ -322,7 +319,6 @@ read CONFIRM
 else
     deploy
 fi
-```
 
 ## FINAL SUMMARY NOTES
 
@@ -374,3 +370,4 @@ COMMON DEVOPS AUTOMATION PATTERNS:
 5. Log Rotation:   find + rm + cron (delete logs older than 30 days)
 
 ## END OF SHELL SCRIPTING ANALYSIS
+

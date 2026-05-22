@@ -1,14 +1,18 @@
-﻿================================================================================
-LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
-Extracted from: Linux and Shell Scripting.txt (Deduplicated)
+# LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
+> *Extracted from: Linux and Shell Scripting.txt (Deduplicated)*
+
 For: DevOps Engineers | System Administrators | Java Developers
 
 # STRUCTURED COMMAND TABLE
 
 | # | Command / Concept | Description | Real-Time Usage Scenario | Priority |  |
+```text
 |---|---|---|---|---|---|
 | --- FILE & DIRECTORY --- |  |  |  |  |  |
+
+```
 | 1 | pwd | Print current working directory | Verify deployment path before running scripts on EC2 | *** |  |
+| --- | --- | --- | --- | --- | --- |
 | 2 | ls | List files in current directory | Quick check of deployed JARs/configs on server | *** |  |
 | 3 | ls -l | Long listing with permissions, owner, size, date | Verify file ownership and permissions after deployment | *** |  |
 | 4 | ls -lt | List sorted by modification time (newest first) | Identify latest log files or recently deployed artifacts | ** |  |
@@ -128,9 +132,14 @@ For: DevOps Engineers | System Administrators | Java Developers
 | 100 | rpm -qa | List all installed RPM packages (low-level, RHEL) | Quick audit: rpm -qa | grep java | * |
 | ================================================================================ |  |  |  |  |  |
 | DEVOPS SOFTWARE INSTALLATION CHEAT SHEET |  |  |  |  |  |
+```text
 | ================================================================================ |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
 | --- INSTALL GIT --- |  |  |  |  |  |
+
+```
 | Amazon Linux / RHEL: | $ sudo yum install git -y | Source code management, CI/CD trigger | *** |  |  |
+| --- | --- | --- | --- | --- | --- |
 | Ubuntu / Debian: | $ sudo apt install git -y |  |  |  |  |
 | Verify: | $ git --version |  |  |  |  |
 | --- INSTALL JAVA (JDK) --- |  |  |  |  |  |
@@ -268,10 +277,15 @@ For: DevOps Engineers | System Administrators | Java Developers
 | DEPLOY WAR: | Copy .war file to webapps/ directory | Tomcat auto-deploys WAR files placed in webapps/ | ** |  |  |
 | DEFAULT PORT: | 8080 | Access: http://<IP>:8080 |  |  |  |
 | REAL-TIME ARCHITECTURE (Java Full Stack on Linux): |  |  |  |  |  |
+```text
 | Client (Browser)  --->  Nginx (Port 80, Reverse Proxy) |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
 | +--> Spring Boot App (Port 8080, Embedded Tomcat) |  |  |  |  |  |
 | +--> Angular Frontend (Port 4200 or served as static via Nginx) |  |  |  |  |  |
+
+```
 | IMPORTANT PORTS TO OPEN IN AWS SECURITY GROUP: |  |  |  |  |  |
+| --- | --- | --- | --- | --- | --- |
 | 22   = SSH (remote login) |  |  |  |  |  |
 | 80   = HTTP (Apache/Nginx) |  |  |  |  |  |
 | 443  = HTTPS (SSL/TLS) |  |  |  |  |  |
@@ -287,9 +301,13 @@ For: DevOps Engineers | System Administrators | Java Developers
 ## FILE PERMISSION NUMERIC REFERENCE
 
 | Number | Permission | Symbol |
+```text
 |---|---|---|
 | 0 | No permission | --- |
+
+```
 | 1 | Execute | --x |
+| --- | --- | --- |
 | 2 | Write | -w- |
 | 3 | Write + Execute | -wx |
 | 4 | Read | r-- |
@@ -299,14 +317,12 @@ For: DevOps Engineers | System Administrators | Java Developers
 
 Default file permission:      644 (rw-r--r--)
 Default directory permission: 755 (rwxr-xr-x)
-```bash
 SSH key permission:           400 (r--------)
-```
 
 ## LINUX FILE TYPES
 
 | Symbol | Type | Example |
-|---|---|---|
+| --- | --- | --- |
 | - | Regular file | -rw-r--r-- app.jar |
 | d | Directory | drwxr-xr-x  config/ |
 | l | Symbolic link | lrwxrwxrwx  current -> v2 |
@@ -368,3 +384,4 @@ KEY LEARNING TAKEAWAYS:
 12. Always open required ports (22, 80, 443, 8080) in AWS Security Group before testing.
 
 ## END OF LINUX COMMANDS ANALYSIS
+

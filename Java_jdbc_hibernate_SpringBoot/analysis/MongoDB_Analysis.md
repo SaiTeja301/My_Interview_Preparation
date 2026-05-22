@@ -1,6 +1,5 @@
-﻿================================================================================
-MONGODB - MASSIVE INTERVIEW PREPARATION (50 Questions)
-For: 7+ Years Experience Level | Java Full Stack Developer
+# MONGODB - MASSIVE INTERVIEW PREPARATION (50 Questions)
+> *For: 7+ Years Experience Level | Java Full Stack Developer*
 
 ## MONGODB ARCHITECTURE
 
@@ -14,6 +13,7 @@ Use cases in microservices:
 - User sessions/profiles (flexible schema)
 - Search indexes for SOPA-like aggregation
 
+```text
 SQL                → MongoDB
 Database           → Database
 Table              → Collection
@@ -24,6 +24,7 @@ Primary Key        → _id (auto-generated ObjectId)
 Index              → Index (B-Tree, same concept)
 GROUP BY           → Aggregation Pipeline
 
+```
 ## PART 1: FUNDAMENTALS (Q1-Q12)
 
 #### Q1. What is MongoDB? When to use it over RDBMS?
@@ -71,17 +72,18 @@ ObjectId = 12 bytes:
 3 bytes: Incrementing counter
 
 ObjectId("507f1f77bcf86cd799439011")
+```text
 ^^^^^^^^                   → timestamp
 ^^^^^^^^^^         → random
 ^^^^^^   → counter
 
+```
 No central authority needed — globally unique across machines.
 Can extract creation time: new ObjectId().getTimestamp()
 
 #### Q4. Document design — embedded vs referenced.
 
 EMBEDDED (denormalized): Nest related data inside document
-```json
 {
   "_id": ObjectId("..."),
   "policyNumber": "P123",
@@ -99,10 +101,8 @@ EMBEDDED (denormalized): Nest related data inside document
 ✅ Atomic updates (single document = single transaction)
 ❌ Duplication if same customer in many policies
 ❌ Document size limit (16 MB)
-```
 
 REFERENCED (normalized): Store reference (_id) to another collection
-```sql
 // policies collection
 { "_id": ObjectId("p1"), "customerId": ObjectId("c1"), ... }
 // customers collection
@@ -111,13 +111,14 @@ REFERENCED (normalized): Store reference (_id) to another collection
 ✅ No duplication
 ✅ Independent updates
 ❌ Requires $lookup (like JOIN) or multiple queries
-```
 
 Rule of thumb:
+```text
 1:1 or 1:few → Embed
 1:many (unbounded) → Reference
 many:many → Reference with array of IDs
 
+```
 Production: Embed data you read together, reference data accessed independently.
 
 #### Q5. Collections — capped vs regular.
@@ -149,14 +150,12 @@ properties: {
 policyNumber: { bsonType: "string", description: "required string" },
 status: { enum: ["ACTIVE", "LAPSED", "CANCELLED"] },
 premium: { bsonType: "decimal", minimum: 0 }
-```text
       }
     }
   },
   validationLevel: "strict",    // "off", "moderate", "strict"
   validationAction: "error"     // "warn" or "error"
 });
-```
 
 From MongoDB 3.6+: JSON Schema validation gives structure without losing flexibility.
 
@@ -289,10 +288,8 @@ Limitation: Basic text search. For production, use:
 #### Q22. Regex queries.
 
 db.policies.find({ policyNumber: { $regex: /^P1/, $options: "i" } })
-```text
 // Starts with "P1", case-insensitive
 // WARNING: Regex without anchor (^) cannot use index → full scan!
-```
 
 #### Q23. Geospatial queries (for location-based services).
 
@@ -308,12 +305,10 @@ Multikey: Auto-created for array fields
 Text: db.products.createIndex({ description: "text" })
 Hashed: db.users.createIndex({ email: "hashed" })  // for sharding
 TTL: db.sessions.createIndex({ createdAt: 1 }, { expireAfterSeconds: 3600 })
-```sql
   // Auto-delete documents after 1 hour (sessions, tokens, temp data)
 Unique: db.policies.createIndex({ policyNumber: 1 }, { unique: true })
 Sparse: Only index documents that have the field (skip nulls)
 Partial: db.orders.createIndex({ total: 1 }, { partialFilterExpression: { status: "ACTIVE" } })
-```
 
 #### Q26. explain() — query optimization.
 
@@ -334,24 +329,26 @@ Good: IXSCAN (index scan)
 Index: { status: 1, city: 1, premium: -1 }
 
 Can support queries:
+```text
 ✅ { status: "ACTIVE" }                        → uses index (prefix)
 ✅ { status: "ACTIVE", city: "Hyderabad" }     → uses index
 ✅ { status: "ACTIVE", city: "Hyd" }.sort({premium: -1})  → fully covered
 
+```
 Cannot support:
+```text
 ❌ { city: "Hyderabad" }                        → prefix not matched
 ❌ { premium: { $gt: 50000 } }                  → prefix not matched
 
+```
 ESR Rule (Equality, Sort, Range):
 Put equality filters first, then sort fields, then range filters.
 
 #### Q28. Covered query (index-only query).
 
-```text
 // If index = { policyNumber: 1, status: 1 }
 db.policies.find({ policyNumber: "P123" }, { status: 1, _id: 0 })
 // All fields from index → no document fetch (PROJECTION_COVERED)
-```
 
 #### Q29. Index intersection — MongoDB can combine two single-field indexes.
 
@@ -384,17 +381,22 @@ Primary: Handles ALL writes. Reads by default.
 Secondary: Replicates from Primary via oplog. Can serve reads.
 
 Failover:
+```text
 Primary goes down → election among Secondaries
 Secondary with most recent oplog wins → becomes new Primary
+
+```
 Automatic failover in ~10 seconds
 
 Oplog (operations log): Capped collection recording all write operations
 Secondaries tail the oplog and replay operations
 
 Driver behavior:
+```text
 Write to Primary → ack with w: "majority" → guaranteed on 2/3 nodes
 Read from Secondary → readPreference: "secondaryPreferred"
 
+```
 #### Q35. Sharding — horizontal scaling.
 
 Sharding distributes data across multiple servers (shards).
@@ -425,7 +427,6 @@ Client → mongos → determine which shard(s) → route query → aggregate res
 // Entity
 @Document(collection = "policies")
 public class Policy {
-```java
     @Id private String id;                        // Maps to _id
     @Indexed(unique = true) private String policyNumber;
     @Field("cust") private Customer customer;      // Custom field name
@@ -434,25 +435,23 @@ public class Policy {
     @CreatedDate private LocalDateTime createdAt;
     @LastModifiedDate private LocalDateTime updatedAt;
 }
-```
 
 // Repository
 public interface PolicyRepository extends MongoRepository<Policy, String> {
-```text
     List<Policy> findByStatus(String status);
     List<Policy> findByPremiumGreaterThan(BigDecimal amount);
     @Query("{ 'customer.city': ?0, 'status': 'ACTIVE' }")
     List<Policy> findActivePoliciesByCity(String city);
 }
-```
 
 // application.yml
+```yaml
 spring:
 data:
 mongodb:
 uri: mongodb://localhost:27017/insurance
 database: insurance
-
+```
 #### Q37. MongoTemplate — for complex queries.
 
 @Autowired private MongoTemplate mongoTemplate;
@@ -490,12 +489,14 @@ AggregationResults<CityReport> results = mongoTemplate.aggregate(agg, "policies"
 
 #### Q43. When would you use MongoDB alongside SQL Server in microservices?
 
+```text
 Policy Service → SQL Server (ACID, relational, financial data)
 Audit Service → MongoDB (high write, flexible schema, append-only)
 Product Catalog → MongoDB (varied attributes, nested categories)
 Session Store → MongoDB TTL collection (auto-expire)
 Search Service → MongoDB Atlas Search or Elasticsearch
 
+```
 #### Q44. How to handle MongoDB in a Saga pattern?
 
 Same as RDBMS: Each service has own DB (polyglot persistence).
@@ -570,3 +571,4 @@ Pattern: MongoDB (source of truth) → sync to Elasticsearch (for search)
 #### Q44. MongoDB in Saga pattern
 
 ## END OF MONGODB ANALYSIS (50 Questions)
+

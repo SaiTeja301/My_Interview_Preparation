@@ -1,11 +1,5 @@
-﻿================================================================================
-SPRING BOOT ENTERPRISE BACKEND ARCHITECTURE
-COMPLETE ANALYSIS FROM BEGINNER TO EXPERT
-Interview Preparation Guide
-
-# Based on: ess-odadmin-service Enterprise Project
-
-Spring Boot Version: 3.5.7 | Java Version: 21
+# SPRING BOOT ENTERPRISE BACKEND ARCHITECTURE
+> *COMPLETE ANALYSIS FROM BEGINNER TO EXPERT · Interview Preparation Guide · # Based on: ess-odadmin-service Enterprise Project · Spring Boot Version: 3.5.7 | Java Version: 21*
 
 ## TABLE OF CONTENTS
 
@@ -95,12 +89,10 @@ KEY FEATURES:
 YOUR PROJECT EXAMPLE:
 @SpringBootApplication
 public class EssOdadminServiceApplication {
-```java
     public static void main(String[] args) {
         SpringApplication.run(EssOdadminServiceApplication.class, args);
     }
 }
-```
 
 INTERNAL WORKING:
 1. @SpringBootApplication triggers auto-configuration
@@ -142,40 +134,55 @@ YOUR PROJECT USES:
 │                        CLIENT (Browser/Mobile/API)              │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ HTTP Request
+
+```
                                 ▼
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SECURITY FILTER CHAIN                        │
 │                   (UserFilter, CorsFilter)                       │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ Authenticated Request
+
+```
                                 ▼
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CONTROLLER LAYER                              │
 │    (AgencyAcctRoutingController, R2BContractAgentController)    │
 │         @RestController - Handles HTTP requests                  │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ DTO Objects
+
+```
                                 ▼
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SERVICE LAYER                                │
 │   (AgencyAcctRoutingServiceImpl, R2BContractAgentServiceImpl)   │
 │        @Service - Business Logic & Transaction Management        │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ Entity Objects
+
+```
                                 ▼
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    REPOSITORY LAYER                              │
 │     (AgencyAcctRoutingRepo, ApplicationUsersRepo)               │
 │       @Repository - Database Operations via JPA                  │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ SQL Queries
+
+```
                                 ▼
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                       DATABASE                                   │
 │                    (Oracle Database)                             │
 └─────────────────────────────────────────────────────────────────┘
-```
 
+```
 1.5 MONOLITHIC VS MICROSERVICES ARCHITECTURE
 
 ## MONOLITHIC ARCHITECTURE:
@@ -205,39 +212,37 @@ YOUR PROJECT AS MICROSERVICE:
 ## DETAILED REQUEST FLOW:
 
 1. CLIENT REQUEST
-```text
    └─► HTTP POST /agency-acct-routings
        Headers: X-User-Id: "john123"
        Body: {"agntNbr": "12345", "entpsId": "E001", "userId": "john123"}
-```
 
 2. CORS FILTER (CorsFilter.java)
 ```text
    └─► Sets CORS headers
    └─► Allows cross-origin requests
-```
 
+```
 3. SECURITY FILTER (UserFilter.java)
 ```text
    └─► Extracts X-User-Id header
    └─► Validates user exists in database
    └─► Creates SecurityContext
    └─► Sets authentication token
-```
 
+```
 4. DISPATCHER SERVLET
 ```text
    └─► Routes request to appropriate controller
    └─► Calls AgencyAcctRoutingController
-```
 
+```
 5. CONTROLLER (AgencyAcctRoutingController.java)
 ```text
    └─► @PostMapping receives request
    └─► Deserializes JSON to AgencyAcctRoutingDTO
    └─► Calls service layer
-```
 
+```
 6. SERVICE (AgencyAcctRoutingServiceImpl.java)
 ```text
    └─► Validates business rules
@@ -245,21 +250,21 @@ YOUR PROJECT AS MICROSERVICE:
    └─► Checks for duplicates
    └─► Converts DTO to Entity
    └─► Calls repository
-```
 
+```
 7. REPOSITORY (AgencyAcctRoutingRepo.java)
 ```text
    └─► JpaRepository handles database operations
    └─► Hibernate generates SQL
    └─► Executes INSERT statement
-```
 
+```
 8. DATABASE (Oracle)
 ```text
    └─► Stores data
    └─► Returns generated ID
-```
 
+```
 9. RESPONSE FLOW (Reverse)
 ```text
    └─► Repository returns Entity
@@ -267,8 +272,8 @@ YOUR PROJECT AS MICROSERVICE:
    └─► Controller returns ResponseEntity
    └─► Jackson serializes to JSON
    └─► HTTP 201 Created sent to client
-```
 
+```
 ## PART 2: ENTERPRISE SPRING BOOT PROJECT STRUCTURE
 
 YOUR PROJECT STRUCTURE:
@@ -335,16 +340,16 @@ YOUR PROJECT STRUCTURE:
 │   └── ExceptionConstants.java
 │
 └── EssOdadminServiceApplication.java  # Main class
-```
 
+```
 src/main/resources/
 ```text
 ├── application.properties       # Common configuration
 ├── application-dev.properties   # Development environment
 ├── application-prod.properties  # Production environment
 └── application-pt.properties    # Performance testing
-```
 
+```
 FOLDER PURPOSE EXPLANATION:
 
 ## 1. Controller/ - Presentation Layer
@@ -396,12 +401,10 @@ REAL-TIME USAGE: Error messages, config values
 
 @SpringBootApplication
 public class EssOdadminServiceApplication {
-```java
     public static void main(String[] args) {
         SpringApplication.run(EssOdadminServiceApplication.class, args);
     }
 }
-```
 
 INTERNAL WORKING STEP-BY-STEP:
 
@@ -409,64 +412,65 @@ STEP 1: JVM Starts
 ```text
 └─► main() method is entry point
 └─► Java Virtual Machine loads class
-```
 
+```
 STEP 2: SpringApplication.run() executes
 ```text
 └─► Creates SpringApplication instance
 └─► Detects application type (SERVLET, REACTIVE, NONE)
 └─► Your app: SERVLET (web application)
-```
 
+```
 STEP 3: Environment Preparation
 ```text
 └─► Loads application.properties
 └─► Loads environment-specific properties (dev, prod)
 └─► Processes environment variables
-```
 
+```
 STEP 4: ApplicationContext Creation
 ```text
 └─► Creates AnnotationConfigServletWebServerApplicationContext
 └─► This is the IoC container
-```
 
+```
 STEP 5: Bean Definition Loading
 ```text
 └─► Scans packages for @Component, @Service, @Repository, @Controller
 └─► Registers bean definitions (not instances yet)
-```
 
+```
 STEP 6: Auto-configuration
 ```text
 └─► Detects classpath dependencies
 └─► Creates default beans for:
+
+```
     - DataSource (Oracle connection)
     - EntityManagerFactory (Hibernate)
     - SecurityFilterChain
     - DispatcherServlet
-```
 
 STEP 7: Bean Instantiation
 ```text
 └─► Creates singleton beans
 └─► Injects dependencies
 └─► Calls @PostConstruct methods
-```
 
+```
 STEP 8: Embedded Server Start
 ```text
 └─► Creates embedded Tomcat
 └─► Deploys DispatcherServlet
 └─► Opens port 8080
-```
 
+```
 STEP 9: Application Ready
 ```text
 └─► Publishes ApplicationReadyEvent
 └─► Application ready to receive requests
-```
 
+```
 3.2 @SPRINGBOOTAPPLICATION INTERNAL WORKING
 
 ## @SpringBootApplication is a combination of THREE annotations:
@@ -475,22 +479,22 @@ STEP 9: Application Ready
 ```text
 ├── Equivalent to @Configuration
 └── Marks class as source of bean definitions
-```
 
+```
 @EnableAutoConfiguration
 ```text
 ├── Enables Spring Boot auto-configuration
 ├── Reads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 └── Creates beans for detected libraries
-```
 
+```
 @ComponentScan
 ```text
 ├── Scans current package and sub-packages
 ├── Detects @Component, @Service, @Repository, @Controller
 └── In your case: scans com.nw.odAdmin_service and below
-```
 
+```
 3.3 COMPONENT SCANNING PROCESS
 
 ## SCANNING ORDER:
@@ -519,57 +523,47 @@ COMPONENTS FOUND IN YOUR PROJECT:
 ```text
    └─► Constructor called
    └─► Object created in memory
-```
 
+```
 2. POPULATE PROPERTIES
 ```text
    └─► @Autowired dependencies injected
    └─► Field injection, setter injection, constructor injection
-```
 
-3. BEAN NAME AWARE
-```text
-   └─► setBeanName() called if implements BeanNameAware
 ```
+3. BEAN NAME AWARE
+   └─► setBeanName() called if implements BeanNameAware
 
 4. BEAN FACTORY AWARE
-```text
    └─► setBeanFactory() called if implements BeanFactoryAware
-```
 
 5. APPLICATION CONTEXT AWARE
-```text
    └─► setApplicationContext() called if implements ApplicationContextAware
-```
 
 6. PRE-INITIALIZATION
 ```text
    └─► @PostConstruct methods called
    └─► BeanPostProcessor.postProcessBeforeInitialization()
-```
 
+```
 7. INITIALIZATION
 ```text
    └─► afterPropertiesSet() if implements InitializingBean
    └─► Custom init method if specified
-```
 
-8. POST-INITIALIZATION
-```text
-   └─► BeanPostProcessor.postProcessAfterInitialization()
 ```
+8. POST-INITIALIZATION
+   └─► BeanPostProcessor.postProcessAfterInitialization()
 
 9. BEAN READY
-```text
    └─► Bean available for use
-```
 
 10. DESTRUCTION (on shutdown)
 ```text
     └─► @PreDestroy called
     └─► destroy() if implements DisposableBean
-```
 
+```
 ## PART 4: CONTROLLER LAYER DEEP EXPLANATION
 
 4.1 @RESTCONTROLLER VS @CONTROLLER
@@ -589,10 +583,8 @@ YOUR PROJECT EXAMPLE:
 @RestController
 @RequestMapping("/agency-acct-routings")
 public class AgencyAcctRoutingController {
-```text
     // All methods return JSON directly
 }
-```
 
 4.2 REQUEST MAPPING ANNOTATIONS
 
@@ -612,15 +604,14 @@ AgencyAcctRoutingController:
 ├── GET    /agency-acct-routings/search   → retrieveAgencyAcctRouting()
 ├── GET    /agency-acct-routings          → retrieveAllAgencyAcctRouting()
 └── DELETE /agency-acct-routings/{id}     → deleteAllAgencyAcctRoutingDetails()
-```
 
+```
 4.3 CONTROLLER METHOD ANALYSIS
 
 ## EXAMPLE - YOUR saveAgencyAcctRouting METHOD:
 
 @PostMapping
 public ResponseEntity<AgencyAcctRoutingDTO> saveAgencyAcctRouting(
-```text
     @RequestBody AgencyAcctRoutingDTO agencyAcctRoutingDTO)
     throws AgencyAcctRoutingException {
 
@@ -634,7 +625,6 @@ public ResponseEntity<AgencyAcctRoutingDTO> saveAgencyAcctRouting(
     else
         return new ResponseEntity<>(result, HttpStatus.FOUND);
 }
-```
 
 ANNOTATION BREAKDOWN:
 
@@ -643,103 +633,91 @@ ANNOTATION BREAKDOWN:
 ├── Maps to HTTP POST method
 ├── URL: /agency-acct-routings (from class-level @RequestMapping)
 └── Typically used for creating new resources
-```
 
+```
 @RequestBody
 ```text
 ├── Deserializes JSON request body to Java object
 ├── Uses Jackson ObjectMapper internally
 └── Content-Type: application/json expected
-```
 
+```
 ResponseEntity<T>
 ```text
 ├── Wraps response body and HTTP status
 ├── Provides fine-grained control over response
 └── Can set headers, status codes
-```
 
+```
 4.4 PARAMETER ANNOTATIONS
 
 ## @PathVariable - Extract value from URL path
 
 Example: @DeleteMapping("/{id}")
-```sql
 public void delete(@PathVariable Long id)
 URL: /agency-acct-routings/123 → id = 123
-```
 
 @RequestParam - Extract query parameters
 Example: @GetMapping("/search")
-```java
 public List<DTO> search(@RequestParam String agntNbr)
 URL: /search?agntNbr=12345 → agntNbr = "12345"
-```
 
 YOUR EXAMPLE:
 @GetMapping("/search")
 public ResponseEntity<List<AgencyAcctRoutingDTO>> retrieveAgencyAcctRouting(
-```text
 @RequestParam(value="agntNbr", required=false) String agntNbr,
 @RequestParam(value="entpsId", required=false) String entpsId,
 @RequestParam(value="userId", required=false) String userId)
-```
 
 4.5 REQUEST LIFECYCLE INTERNALLY
 
 ## HTTP Request → Controller Flow:
 
 1. HTTP Request Received
-```text
    └─► Tomcat receives HTTP request
-```
 
 2. Filter Chain Execution
-```text
    └─► CorsFilter → UserFilter → DispatcherServlet
-```
 
 3. DispatcherServlet
 ```text
    └─► Central controller in Spring MVC
    └─► Delegates to HandlerMapping
-```
 
+```
 4. HandlerMapping
 ```text
    └─► Finds matching @RequestMapping
    └─► Returns HandlerExecutionChain
-```
 
+```
 5. HandlerAdapter
 ```text
    └─► Invokes controller method
    └─► Handles parameter resolution
-```
 
+```
 6. Argument Resolution
 ```text
    └─► @RequestBody: RequestResponseBodyMethodProcessor
    └─► @PathVariable: PathVariableMethodArgumentResolver
    └─► @RequestParam: RequestParamMethodArgumentResolver
-```
 
+```
 7. Method Execution
 ```text
    └─► Controller method invoked
    └─► Business logic executed
-```
 
+```
 8. Return Value Handling
 ```text
    └─► ResponseEntity processed
    └─► JSON serialization via Jackson
-```
 
-9. Response Sent
-```text
-   └─► HTTP response returned to client
 ```
+9. Response Sent
+   └─► HTTP response returned to client
 
 ## PART 5: SERVICE LAYER DEEP EXPLANATION
 
@@ -768,8 +746,8 @@ WHY INTERFACE + IMPLEMENTATION?
 ├── Semantically indicates business service
 ├── No difference from @Component at runtime
 └── Helps with readability and organization
-```
 
+```
 INTERNAL WORKING:
 1. Component scan finds @Service class
 2. Creates bean definition with name (lowercase first letter)
@@ -781,7 +759,6 @@ INTERNAL WORKING:
 ## public interface AgencyAcctRoutingService {
 
 AgencyAcctRoutingDTO saveAgentAcctRouting(AgencyAcctRoutingDTO dto)
-```text
         throws AgencyAcctRoutingException;
     List<AgencyAcctRoutingDTO> retrieveAgencyAcctRouting(
         String agntNbr, String entpsId, String userId)
@@ -789,7 +766,6 @@ AgencyAcctRoutingDTO saveAgentAcctRouting(AgencyAcctRoutingDTO dto)
     List<AgencyAcctRoutingDTO> retrieveAllAgencyAcctRouting();
     void deleteAllAgencyAcctRoutingDetails(List<Long> ids);
 }
-```
 
 PURPOSE:
 - Defines contract for service operations
@@ -802,7 +778,6 @@ PURPOSE:
 
 public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
 
-```java
     @Autowired
     private AgencyAcctRoutingRepo agencyAcctRoutingRepo;
     @Autowired
@@ -850,7 +825,6 @@ public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
         }
     }
 }
-```
 
 5.5 TRANSACTION MANAGEMENT
 
@@ -860,12 +834,10 @@ YOUR EXAMPLE:
 @Override
 @Transactional
 public void deleteAllAgencyAcctRoutingDetails(List<Long> ids) {
-```text
     for(Long id : ids) {
         agencyAcctRoutingRepo.deleteById(id);
     }
 }
-```
 
 INTERNAL WORKING:
 1. Spring creates proxy around method
@@ -902,7 +874,6 @@ SPRING DATA JPA:
 
 extends JpaRepository<AgencyAcctRouting, Long> {
 
-```sql
     // Spring Data JPA generates queries from method names
     List<AgencyAcctRouting> findByAgntNbrAndEntpsIdAndUserId(
         String agntNbr, String entpsId, String userId);
@@ -915,7 +886,6 @@ extends JpaRepository<AgencyAcctRouting, Long> {
     @Query("SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr LIKE :agntNbr")
     List<AgencyAcctRouting> findByAgntNbrLike(@Param("agntNbr") String agntNbr);
 }
-```
 
 6.3 JPAREPOSITORY INTERNAL WORKING
 
@@ -929,8 +899,8 @@ CRUD METHODS:
 ├── deleteById(id)         → DELETE by ID
 ├── count()                → COUNT(*)
 └── existsById(id)         → EXISTS check
-```
 
+```
 INTERNAL WORKING:
 1. Spring creates proxy implementation at startup
 2. Method invocation intercepted by proxy
@@ -943,21 +913,15 @@ INTERNAL WORKING:
 ## Method Name → Generated Query:
 
 findByAgntNbr(String agntNbr)
-```text
 └─► SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr = ?1
-```
 
 findByAgntNbrAndEntpsId(String agntNbr, String entpsId)
-```text
 └─► SELECT a FROM AgencyAcctRouting a
     WHERE a.agntNbr = ?1 AND a.entpsId = ?2
-```
 
 existsByUserId(String userId)
-```text
 └─► SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END
     FROM AgencyAcctRouting a WHERE a.userId = ?1
-```
 
 KEYWORDS:
 - findBy: Query starter
@@ -993,7 +957,6 @@ YOUR ENTITY EXAMPLE:
 @Table(name = "AGENCY_ACCT_ROUTING")
 public class AgencyAcctRouting implements Serializable {
 
-```java
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE,
                     generator = "agency_acct_routing_seq")
@@ -1009,7 +972,6 @@ public class AgencyAcctRouting implements Serializable {
 
     // Getters and Setters
 }
-```
 
 7.2 JPA ANNOTATIONS EXPLAINED
 
@@ -1019,43 +981,43 @@ public class AgencyAcctRouting implements Serializable {
 ├── Marks class as JPA entity
 ├── Required for ORM mapping
 └── Must have no-arg constructor
-```
 
+```
 @Table(name = "AGENCY_ACCT_ROUTING")
 ```text
 ├── Specifies table name
 ├── Optional if class name matches table
 └── Can specify schema, catalog
-```
 
+```
 @Id
 ```text
 ├── Marks primary key field
 ├── Required for every entity
 └── Must be unique
-```
 
+```
 @GeneratedValue
 ```text
 ├── Auto-generates primary key
 ├── Strategies: AUTO, IDENTITY, SEQUENCE, TABLE
 └── SEQUENCE used with Oracle (your case)
-```
 
+```
 @SequenceGenerator
 ```text
 ├── Defines database sequence
 ├── allocationSize: IDs to pre-allocate
 └── Used with Oracle for performance
-```
 
+```
 @Column
 ```text
 ├── Maps field to column
 ├── Optional if names match
 └── Can specify name, length, nullable
-```
 
+```
 7.3 HIBERNATE ORM MAPPING FLOW
 
 ## SAVE OPERATION FLOW:
@@ -1064,14 +1026,10 @@ public class AgencyAcctRouting implements Serializable {
 AgencyAcctRouting entity = new AgencyAcctRouting();
 
 2. EntityManager.persist(entity) called
-```text
    └─► Hibernate manages entity
-```
 
 3. Transaction commit triggers flush
-```text
    └─► Dirty checking performed
-```
 
 4. SQL INSERT generated
 INSERT INTO AGENCY_ACCT_ROUTING (AGNT_NBR, ENTPS_ID, USER_ID)
@@ -1087,9 +1045,7 @@ FIND OPERATION FLOW:
 1. findById(1L) called
 
 2. Hibernate checks first-level cache
-```text
    └─► Return if found in session
-```
 
 3. If not cached, generate SELECT
 SELECT * FROM AGENCY_ACCT_ROUTING WHERE ID = ?
@@ -1122,8 +1078,8 @@ PURPOSE:
 ├── Managed by Hibernate
 ├── Should not expose to API directly
 └── Contains database-specific logic
-```
 
+```
 DTO (AgencyAcctRoutingDTO):
 ```text
 ├── Plain Java object (POJO)
@@ -1131,11 +1087,10 @@ DTO (AgencyAcctRoutingDTO):
 ├── Used for API request/response
 ├── Contains UI-specific fields
 └── Can aggregate multiple entities
-```
 
+```
 YOUR DTO EXAMPLE:
 public class AgencyAcctRoutingDTO {
-```java
     private Long id;
     private String agntNbr;
     private String entpsId;
@@ -1145,7 +1100,6 @@ public class AgencyAcctRoutingDTO {
     private String status;   // "CREATED", "EXISTS", "NOT_FOUND"
     private String message;  // Human-readable message
 }
-```
 
 8.3 WHY DTO IS USED
 
@@ -1172,13 +1126,11 @@ Database → Repository → Entity → Service → DTO → Controller → JSON �
 
 @Configuration
 public class ModelMapperConfig {
-```java
     @Bean
     ModelMapper mapper() {
         return new ModelMapper();
     }
 }
-```
 
 USAGE IN SERVICE:
 // DTO to Entity
@@ -1190,10 +1142,8 @@ AgencyAcctRoutingDTO dto = mapper.map(entity, AgencyAcctRoutingDTO.class);
 // List conversion
 List<AgencyAcctRoutingDTO> dtoList = mapper.map(
 entityList,
-```text
     new TypeToken<List<AgencyAcctRoutingDTO>>(){}.getType()
 );
-```
 
 ## PART 9: JWT AUTHENTICATION DEEP EXPLANATION
 
@@ -1243,37 +1193,33 @@ secret
 ```text
    └─► POST /login
    └─► Credentials: username, password
-```
 
+```
 2. BACKEND VALIDATES CREDENTIALS
 ```text
    └─► Check against database
    └─► Generate JWT token
-```
 
-3. TOKEN RETURNED TO CLIENT
-```text
-   └─► Response: { "token": "eyJhbG..." }
 ```
+3. TOKEN RETURNED TO CLIENT
+   └─► Response: { "token": "eyJhbG..." }
 
 4. CLIENT STORES TOKEN
-```text
    └─► Local storage / Session storage
-```
 
 5. CLIENT SENDS TOKEN IN HEADER
 ```text
    └─► Header: X-User-Id: john123
    └─► (Your project uses simplified header-based auth)
-```
 
+```
 6. BACKEND VALIDATES TOKEN
 ```text
    └─► UserFilter extracts X-User-Id
    └─► Validates user exists in database
    └─► Creates SecurityContext
-```
 
+```
 9.4 YOUR PROJECT'S AUTHENTICATION
 
 ## Your project uses simplified header-based authentication:
@@ -1284,7 +1230,6 @@ String userId = request.getHeader("X-User-Id");
 if(userId != null) {
 ApplicationUsers user = userService.getUserById(userId);
 
-```text
     if(user != null) {
         UsernamePasswordAuthenticationToken auth =
             new UsernamePasswordAuthenticationToken(user, null, null);
@@ -1293,7 +1238,6 @@ ApplicationUsers user = userService.getUserById(userId);
         throw new UnauthorizedException("Unauthorized");
     }
 }
-```
 
 This is a trust-based authentication where:
 - Client sends user ID in header
@@ -1324,7 +1268,6 @@ CORE COMPONENTS:
 @EnableMethodSecurity
 public class SecurityConfig {
 
-```java
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -1359,38 +1302,29 @@ public class SecurityConfig {
         return new UserFilter();
     }
 }
-```
 
 10.3 SECURITY FILTER CHAIN
 
 ## Filter execution order in your project:
 
 1. CorsFilter (Ordered.HIGHEST_PRECEDENCE)
-```text
    └─► Sets CORS headers
-```
 
 2. UserFilter (before UsernamePasswordAuthenticationFilter)
 ```text
    └─► Extracts X-User-Id header
    └─► Validates user
    └─► Sets authentication
-```
 
-3. SecurityContextPersistenceFilter
-```text
-   └─► Manages security context
 ```
+3. SecurityContextPersistenceFilter
+   └─► Manages security context
 
 4. ExceptionTranslationFilter
-```text
    └─► Handles security exceptions
-```
 
 5. FilterSecurityInterceptor
-```text
    └─► Checks authorization
-```
 
 10.4 AUTHENTICATION VS AUTHORIZATION
 
@@ -1428,7 +1362,6 @@ YOUR USERFILTER:
 @Component
 public class UserFilter extends OncePerRequestFilter {
 
-```java
     @Override
     protected void doFilterInternal(
         HttpServletRequest request,
@@ -1438,16 +1371,15 @@ public class UserFilter extends OncePerRequestFilter {
         // Filter logic here
     }
 }
-```
 
 11.2 FILTER EXECUTION FLOW
 
 ## COMPLETE FLOW IN YOUR PROJECT:
 
 REQUEST ARRIVES
-```text
       │
       ▼
+```text
 ┌─────────────────────────────┐
 │       CorsFilter            │
 │  ─────────────────────────  │
@@ -1456,7 +1388,10 @@ REQUEST ARRIVES
 │  3. Continue chain          │
 └─────────────────────────────┘
       │
+
+```
       ▼
+```text
 ┌─────────────────────────────┐
 │       UserFilter            │
 │  ─────────────────────────  │
@@ -1467,7 +1402,10 @@ REQUEST ARRIVES
 │  5. Continue chain          │
 └─────────────────────────────┘
       │
+
+```
       ▼
+```text
 ┌─────────────────────────────┐
 │    DispatcherServlet        │
 │  ─────────────────────────  │
@@ -1475,15 +1413,14 @@ REQUEST ARRIVES
 │  2. Execute business logic  │
 │  3. Return response         │
 └─────────────────────────────┘
-```
 
+```
 11.3 YOUR USERFILTER ANALYSIS
 
 ## @Override
 
 protected void doFilterInternal(HttpServletRequest request,
 HttpServletResponse response, FilterChain filterChain)
-```text
     throws ServletException, IOException {
 
     String url = request.getRequestURL().toString();
@@ -1529,7 +1466,6 @@ HttpServletResponse response, FilterChain filterChain)
         }
     }
 }
-```
 
 11.4 SETTING SECURITY CONTEXT
 
@@ -1537,7 +1473,6 @@ HttpServletResponse response, FilterChain filterChain)
 
 UsernamePasswordAuthenticationToken auth) {
 
-```text
     // Add request details to authentication
     auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
@@ -1554,7 +1489,6 @@ UsernamePasswordAuthenticationToken auth) {
         new HttpSessionSecurityContextRepository()
     ).saveContext(sc, request, response);
 }
-```
 
 INTERNAL WORKING:
 1. WebAuthenticationDetailsSource extracts IP, session ID
@@ -1586,26 +1520,20 @@ All authenticated users have same access.
 @PreAuthorize("hasRole('ADMIN')")
 @DeleteMapping("/{id}")
 public ResponseEntity<String> delete(@PathVariable Long id) {
-```sql
     // Only ADMIN can delete
 }
-```
 
 @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 @GetMapping
 public List<DTO> getAll() {
-```text
     // USER and ADMIN can read
 }
-```
 
 @PreAuthorize("#userId == authentication.principal.userId")
 @GetMapping("/user/{userId}")
 public DTO getByUser(@PathVariable String userId) {
-```text
     // User can only access their own data
 }
-```
 
 12.3 URL-BASED AUTHORIZATION
 
@@ -1631,48 +1559,40 @@ exception/
 ├── NotFoundException.java            # Resource not found
 ├── UnauthorizedException.java        # Authentication failed
 └── ...
-```
 
-Controller/
-```text
-└── GlobalExceptionHandler.java       # Central handler
 ```
+Controller/
+└── GlobalExceptionHandler.java       # Central handler
 
 13.2 CUSTOM EXCEPTION CLASSES
 
 ## // Base business exception
 
 public class AgencyAcctRoutingException extends Exception {
-```java
     private String message;
 
     public AgencyAcctRoutingException(String message) {
         this.message = message;
     }
 }
-```
 
 // Not found exception
 public class NotFoundException extends Exception {
-```java
     private String message;
 
     public NotFoundException(String message) {
         this.message = message;
     }
 }
-```
 
 // Unauthorized exception
 public class UnauthorizedException extends Exception {
-```java
     private String message;
 
     public UnauthorizedException(String message) {
         this.message = message;
     }
 }
-```
 
 13.3 @CONTROLLERADVICE AND @EXCEPTIONHANDLER
 
@@ -1680,7 +1600,6 @@ public class UnauthorizedException extends Exception {
 
 public class GlobalExceptionHandler {
 
-```java
     @ExceptionHandler(AlreadyExistException.class)
     public ResponseEntity<ErrorResponseDTO> handleAlreadyExists(
         AlreadyExistException exception) {
@@ -1725,13 +1644,11 @@ public class GlobalExceptionHandler {
             .body(error);
     }
 }
-```
 
 13.4 ERROR RESPONSE DTO
 
 ## public class ErrorResponseDTO {
 
-```java
     private LocalDateTime timestamp;
     private String message;
     private String details;
@@ -1745,37 +1662,28 @@ public class GlobalExceptionHandler {
     }
     // Getters and setters
 }
-```
 
 13.5 EXCEPTION HANDLING FLOW
 
 ## WHEN EXCEPTION OCCURS:
 
 1. Exception thrown in service/controller
-```text
 throw new NotFoundException("User not found");
-```
 
 2. Spring looks for @ExceptionHandler
 ```text
    └─► First checks controller-level handlers
    └─► Then checks @ControllerAdvice classes
-```
 
-3. Matching handler invoked
-```text
-   └─► handleNotFound() method called
 ```
+3. Matching handler invoked
+   └─► handleNotFound() method called
 
 4. Handler creates response
-```text
    └─► ErrorResponseDTO created
-```
 
 5. Response returned to client
-```text
    └─► HTTP 404 with JSON error body
-```
 
 ## PART 14: CONFIGURATION LAYER DEEP EXPLANATION
 
@@ -1806,18 +1714,15 @@ YOUR EXAMPLES:
 @Configuration
 public class ModelMapperConfig {
 
-```java
     @Bean
     ModelMapper mapper() {
         return new ModelMapper();
     }
 }
-```
 
 @Configuration
 public class SecurityConfig {
 
-```java
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -1835,47 +1740,42 @@ public class SecurityConfig {
         return new UserFilter();
     }
 }
-```
 
 14.3 BEAN CREATION INTERNAL WORKING
 
 ## BEAN CREATION PROCESS:
 
 1. CONFIGURATION CLASS LOADED
-```text
    └─► ModelMapperConfig.class loaded
-```
 
 2. @BEAN METHODS IDENTIFIED
-```text
    └─► mapper() method found
-```
 
 3. BEAN DEFINITION REGISTERED
 ```text
    └─► Name: "mapper"
    └─► Type: ModelMapper.class
    └─► Scope: singleton (default)
-```
 
+```
 4. DEPENDENCIES RESOLVED
 ```text
    └─► Check if bean has dependencies
    └─► Create dependencies first
-```
 
+```
 5. BEAN INSTANTIATED
 ```text
    └─► mapper() method called
    └─► new ModelMapper() returned
-```
 
+```
 6. BEAN STORED IN CONTAINER
 ```text
    └─► Singleton stored in ApplicationContext
    └─► Available for injection
-```
 
+```
 ## PART 15: DATABASE INTEGRATION DEEP EXPLANATION
 
 15.1 YOUR DATABASE CONFIGURATION
@@ -1930,8 +1830,8 @@ spring.jpa.show-sql=false
 ┌──────────────────────────▼─────────────────────────────────┐
 │                  DATABASE (Oracle)                         │
 └────────────────────────────────────────────────────────────┘
-```
 
+```
 15.3 JPA ENTITY LIFECYCLE
 
 ## ENTITY STATES:
@@ -1941,28 +1841,28 @@ spring.jpa.show-sql=false
    └─► Just created with 'new'
    └─► Not associated with persistence context
    └─► No database row
-```
 
+```
 2. MANAGED (Persistent)
 ```text
    └─► Associated with persistence context
    └─► Changes tracked (dirty checking)
    └─► Synchronized with database on flush/commit
-```
 
+```
 3. DETACHED
 ```text
    └─► Was managed, now disconnected
    └─► Changes not tracked
    └─► Can be re-attached with merge()
-```
 
+```
 4. REMOVED
 ```text
    └─► Scheduled for deletion
    └─► Will be deleted on flush/commit
-```
 
+```
 15.4 TRANSACTION LIFECYCLE
 
 ## @Transactional METHOD EXECUTION:
@@ -1972,28 +1872,28 @@ spring.jpa.show-sql=false
    └─► TransactionInterceptor intercepts call
    └─► getTransaction() creates new transaction
    └─► Connection obtained from pool
-```
 
+```
 2. METHOD EXECUTES
 ```text
    └─► Business logic runs
    └─► EntityManager operations
    └─► SQL queued
-```
 
+```
 3. AFTER METHOD (SUCCESS)
 ```text
    └─► flush() - Write changes to database
    └─► commit() - Commit transaction
    └─► Connection returned to pool
-```
 
+```
 4. AFTER METHOD (EXCEPTION)
 ```text
    └─► rollback() - Undo changes
    └─► Connection returned to pool
-```
 
+```
 ## PART 16: COMPLETE END-TO-END ENTERPRISE REQUEST FLOW
 
 COMPLETE FLOW DIAGRAM:
@@ -2006,7 +1906,10 @@ COMPLETE FLOW DIAGRAM:
 │     Body: {"agntNbr":"12345", "entpsId":"E001", "userId":"john123"}        │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 1. HTTP Request
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         EMBEDDED TOMCAT                                      │
 │     - Accepts TCP connection on port 8080                                    │
@@ -2014,7 +1917,10 @@ COMPLETE FLOW DIAGRAM:
 │     - Creates HttpServletRequest/Response                                    │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 2. Servlet Request
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         CORS FILTER                                          │
 │     - Sets Access-Control-Allow-Origin: *                                    │
@@ -2024,7 +1930,10 @@ COMPLETE FLOW DIAGRAM:
 │     - Else: continue chain                                                   │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 3. CORS Validated
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                         USER FILTER                                          │
 │     - Extract X-User-Id header: "john123"                                    │
@@ -2035,7 +1944,10 @@ COMPLETE FLOW DIAGRAM:
 │     - If not found: throw UnauthorizedException                              │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 4. Authenticated
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      DISPATCHER SERVLET                                      │
 │     - Receives authenticated request                                         │
@@ -2043,14 +1955,20 @@ COMPLETE FLOW DIAGRAM:
 │     - HandlerAdapter prepares to invoke                                      │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 5. Route to Controller
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                ARGUMENT RESOLVER                                             │
 │     - @RequestBody: Jackson deserializes JSON to AgencyAcctRoutingDTO        │
 │     - Creates: AgencyAcctRoutingDTO{agntNbr="12345", entpsId="E001"...}     │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 6. DTO Created
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │           AGENCY ACCT ROUTING CONTROLLER                                     │
 │     @PostMapping                                                             │
@@ -2059,7 +1977,10 @@ COMPLETE FLOW DIAGRAM:
 │     }                                                                        │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 7. Call Service
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │        AGENCY ACCT ROUTING SERVICE IMPL                                      │
 │                                                                              │
@@ -2088,7 +2009,10 @@ COMPLETE FLOW DIAGRAM:
 │     return response;                                                         │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 8. Return DTO
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │           CONTROLLER (continued)                                             │
 │     AgencyAcctRoutingDTO result = service.saveAgentAcctRouting(dto);        │
@@ -2096,7 +2020,10 @@ COMPLETE FLOW DIAGRAM:
 │         return new ResponseEntity<>(result, HttpStatus.CREATED);             │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 9. ResponseEntity
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │               RETURN VALUE HANDLER                                           │
 │     - HttpEntityMethodProcessor handles ResponseEntity                       │
@@ -2105,7 +2032,10 @@ COMPLETE FLOW DIAGRAM:
 │     - Sets Content-Type: application/json                                    │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 10. JSON Response
+
+```
                                         ▼
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              CLIENT                                          │
 │     HTTP/1.1 201 Created                                                     │
@@ -2120,8 +2050,8 @@ COMPLETE FLOW DIAGRAM:
 │         "message": "AgencyAcctRouting number is Created"                     │
 │     }                                                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
-```
 
+```
 ## PART 17: DEPENDENCY INJECTION INTERNAL WORKING
 
 17.1 WHAT IS DEPENDENCY INJECTION
@@ -2133,21 +2063,17 @@ dependencies from external sources rather than creating them internally.
 
 WITHOUT DI:
 public class AgencyAcctRoutingServiceImpl {
-```java
     // Tight coupling - creates own dependency
     private AgencyAcctRoutingRepo repo = new AgencyAcctRoutingRepo();
 }
-```
 
 WITH DI:
 @Service
 public class AgencyAcctRoutingServiceImpl {
-```java
     // Loose coupling - receives dependency
     @Autowired
     private AgencyAcctRoutingRepo repo;
 }
-```
 
 17.2 IOC CONTAINER
 
@@ -2172,7 +2098,6 @@ YOUR PROJECT'S APPLICATIONCONTEXT:
 @Service
 public class AgencyAcctRoutingServiceImpl {
 
-```java
     private final AgencyAcctRoutingRepo repo;
     private final ModelMapper mapper;
 
@@ -2184,26 +2109,22 @@ public class AgencyAcctRoutingServiceImpl {
         this.mapper = mapper;
     }
 }
-```
 
 2. FIELD INJECTION:
 @Service
 public class AgencyAcctRoutingServiceImpl {
 
-```java
     @Autowired
     private AgencyAcctRoutingRepo repo;
 
     @Autowired
     private ModelMapper mapper;
 }
-```
 
 3. SETTER INJECTION:
 @Service
 public class AgencyAcctRoutingServiceImpl {
 
-```java
     private AgencyAcctRoutingRepo repo;
 
     @Autowired
@@ -2211,47 +2132,34 @@ public class AgencyAcctRoutingServiceImpl {
         this.repo = repo;
     }
 }
-```
 
 17.4 BEAN LIFECYCLE
 
 ## BEAN LIFECYCLE PHASES:
 
 1. INSTANTIATION
-```text
    └─► Spring creates bean instance
-```
 
 2. POPULATE PROPERTIES
-```text
    └─► @Autowired fields injected
-```
 
 3. BEAN NAME AWARE
-```text
    └─► setBeanName() if implements BeanNameAware
-```
 
 4. BEAN FACTORY AWARE
-```text
    └─► setBeanFactory() if implements BeanFactoryAware
-```
 
 5. PRE-INITIALIZATION
-```text
    └─► BeanPostProcessor.postProcessBeforeInitialization()
-```
 
 6. INITIALIZATION
 ```text
    └─► @PostConstruct method
    └─► afterPropertiesSet() if implements InitializingBean
-```
 
-7. POST-INITIALIZATION
-```text
-   └─► BeanPostProcessor.postProcessAfterInitialization()
 ```
+7. POST-INITIALIZATION
+   └─► BeanPostProcessor.postProcessAfterInitialization()
 
 8. BEAN READY FOR USE
 
@@ -2259,8 +2167,8 @@ public class AgencyAcctRoutingServiceImpl {
 ```text
    └─► @PreDestroy method
    └─► destroy() if implements DisposableBean
-```
 
+```
 17.5 BEAN SCOPES
 
 ## SINGLETON (Default):
@@ -2307,22 +2215,22 @@ DataSourceAutoConfiguration:
 ├── @ConditionalOnClass(DataSource.class) ✓
 ├── Creates HikariDataSource bean
 └── Configures connection pool
-```
 
+```
 JpaRepositoriesAutoConfiguration:
 ```text
 ├── @ConditionalOnClass(JpaRepository.class) ✓
 ├── Creates EntityManagerFactory
 └── Enables repository proxies
-```
 
+```
 SecurityAutoConfiguration:
 ```text
 ├── @ConditionalOnClass(WebSecurityConfigurerAdapter.class) ✓
 ├── Creates default security
 └── Overridden by your SecurityConfig
-```
 
+```
 18.2 DISPATCHERSERVLET INTERNAL WORKING
 
 ## DISPATCHERSERVLET FLOW:
@@ -2333,34 +2241,26 @@ SecurityAutoConfiguration:
 ```text
    └─► RequestMappingHandlerMapping matches URL to controller method
    └─► Returns HandlerExecutionChain
-```
 
-3. getHandlerAdapter() - Get adapter
-```text
-   └─► RequestMappingHandlerAdapter handles @RequestMapping
 ```
+3. getHandlerAdapter() - Get adapter
+   └─► RequestMappingHandlerAdapter handles @RequestMapping
 
 4. applyPreHandle() - Run interceptors
-```text
    └─► Before controller execution
-```
 
 5. handle() - Invoke controller
 ```text
    └─► Argument resolution
    └─► Method invocation
    └─► Return value handling
-```
 
-6. applyPostHandle() - Post processing
-```text
-   └─► After controller, before view
 ```
+6. applyPostHandle() - Post processing
+   └─► After controller, before view
 
 7. processDispatchResult() - Render response
-```text
    └─► Handle ModelAndView or ResponseEntity
-```
 
 18.3 REQUEST MAPPING FLOW
 
@@ -2372,28 +2272,28 @@ SecurityAutoConfiguration:
 ```text
    └─► Scans all @Controller classes
    └─► Builds mapping: URL pattern → Handler method
-```
 
+```
 3. Mapping lookup:
 ```text
    └─► Pattern: /agency-acct-routings
    └─► HTTP Method: POST
    └─► Match: AgencyAcctRoutingController.saveAgencyAcctRouting()
-```
 
+```
 4. HandlerExecutionChain:
 ```text
    └─► Handler: controller method
    └─► Interceptors: security, logging, etc.
-```
 
+```
 5. Method invocation:
 ```text
    └─► Resolve arguments
    └─► Call method
    └─► Process return value
-```
 
+```
 ## PART 19: PERFORMANCE OPTIMIZATION
 
 19.1 CACHING
@@ -2402,25 +2302,19 @@ SecurityAutoConfiguration:
 
 @Cacheable("users")
 public ApplicationUsers getUserById(String userId) {
-```text
     // Result cached with key = userId
     return applicationUsersRepo.findByUserId(userId).orElse(null);
 }
-```
 
 @CacheEvict(value = "users", key = "#userId")
 public void updateUser(String userId, UserDTO dto) {
-```sql
     // Removes user from cache after update
 }
-```
 
 @CachePut(value = "users", key = "#result.userId")
 public ApplicationUsers saveUser(ApplicationUsers user) {
-```text
     // Updates cache with new value
 }
-```
 
 19.2 CONNECTION POOLING
 
@@ -2445,12 +2339,10 @@ WHY CONNECTION POOLING?
 @Entity
 public class ApplicationUsers {
 
-```java
     @OneToMany(fetch = FetchType.LAZY)
     private List<UserApplication> applications;
     // Loaded only when accessed
 }
-```
 
 BENEFITS:
 - Reduces initial query load
@@ -2522,54 +2414,57 @@ BEGINNER LEVEL:
 
 ## Q1: What is Spring Boot?
 
-A: Spring Boot is a framework built on top of Spring that simplifies configuration
+**A:** Spring Boot is a framework built on top of Spring that simplifies configuration
 and deployment. It provides auto-configuration, embedded servers, and
 production-ready features out of the box.
 
 Q2: What is the difference between @Controller and @RestController?
-A: @RestController = @Controller + @ResponseBody. @Controller returns view names
-```text
+**A:** @RestController = @Controller + @ResponseBody. @Controller returns view names
 for MVC, while @RestController returns data directly as JSON/XML.
-```
 
 Q3: What is @Autowired?
-A: @Autowired is used for dependency injection. Spring automatically injects the
+**A:** @Autowired is used for dependency injection. Spring automatically injects the
 required bean into the annotated field, constructor, or setter method.
 
 Q4: What is the purpose of application.properties?
-A: It contains configuration properties for the Spring Boot application like
+**A:** It contains configuration properties for the Spring Boot application like
 database connection, server port, logging levels, etc.
 
 Q5: What is JPA?
-A: Java Persistence API is a specification for ORM (Object-Relational Mapping).
+**A:** Java Persistence API is a specification for ORM (Object-Relational Mapping).
 It maps Java objects to database tables and provides CRUD operations.
 
 INTERMEDIATE LEVEL:
 
 ## Q6: Explain the Spring Boot request flow.
 
-A: Request → Filter Chain → DispatcherServlet → HandlerMapping →
+```text
+**A:** Request → Filter Chain → DispatcherServlet → HandlerMapping →
 HandlerAdapter → Controller → Service → Repository → Database →
+
+```
 Response flows back through the same layers.
 
 Q7: What is @Transactional and how does it work?
-A: @Transactional manages database transactions. Spring creates a proxy around
+**A:** @Transactional manages database transactions. Spring creates a proxy around
 the method, begins a transaction before execution, and commits on success
 or rolls back on exception.
 
 Q8: Explain Spring Data JPA method naming convention.
-A: Spring Data JPA generates queries from method names:
+**A:** Spring Data JPA generates queries from method names:
+```text
 - findByAgntNbr → SELECT ... WHERE agntNbr = ?
 - findByAgntNbrAndEntpsId → SELECT ... WHERE agntNbr = ? AND entpsId = ?
 - existsByUserId → SELECT CASE WHEN COUNT > 0 THEN true END
 
+```
 Q9: What is the difference between Entity and DTO?
-A: Entity maps to database table with JPA annotations, managed by Hibernate.
+**A:** Entity maps to database table with JPA annotations, managed by Hibernate.
 DTO is a plain object for data transfer, used for API request/response,
 can have additional fields not in database.
 
 Q10: How does Spring Security work?
-A: Spring Security uses a filter chain. Requests pass through filters like
+**A:** Spring Security uses a filter chain. Requests pass through filters like
 CorsFilter, AuthenticationFilter. Filters validate credentials, set
 SecurityContext, and authorize access to endpoints.
 
@@ -2577,58 +2472,58 @@ ADVANCED LEVEL:
 
 ## Q11: Explain Spring Boot auto-configuration mechanism.
 
-A: @EnableAutoConfiguration reads META-INF/spring/...AutoConfiguration.imports,
+**A:** @EnableAutoConfiguration reads META-INF/spring/...AutoConfiguration.imports,
 loads auto-configuration classes. Each class has @Conditional annotations
 that check classpath, beans, properties. If conditions met, beans created.
 
 Q12: What is the bean lifecycle in Spring?
-A: Instantiation → Property Population → BeanNameAware → BeanFactoryAware →
+```text
+**A:** Instantiation → Property Population → BeanNameAware → BeanFactoryAware →
 ApplicationContextAware → @PostConstruct → InitializingBean.afterPropertiesSet →
 BeanPostProcessor.postProcessAfterInitialization → Ready →
-```text
 @PreDestroy → DisposableBean.destroy
-```
 
+```
 Q13: Explain @ControllerAdvice exception handling.
-A: @ControllerAdvice creates a global exception handler. @ExceptionHandler
+**A:** @ControllerAdvice creates a global exception handler. @ExceptionHandler
 methods handle specific exceptions. When exception thrown, Spring finds
 matching handler, executes it, and returns error response.
 
 Q14: How does connection pooling work with HikariCP?
-A: HikariCP maintains a pool of database connections. When code needs a
+**A:** HikariCP maintains a pool of database connections. When code needs a
 connection, it borrows from pool. After use, connection returns to pool.
 This avoids expensive connection creation for every request.
 
 Q15: Explain JPA entity states.
-A: Transient (new, not managed), Managed (in persistence context, tracked),
+**A:** Transient (new, not managed), Managed (in persistence context, tracked),
 Detached (was managed, now disconnected), Removed (scheduled for deletion).
 
 SENIOR ARCHITECT LEVEL:
 
 ## Q16: How would you design a microservices authentication system?
 
-A: Use API Gateway as single entry point. Gateway validates JWT tokens.
+**A:** Use API Gateway as single entry point. Gateway validates JWT tokens.
 Internal services trust gateway. Use OAuth 2.0 for token issuance.
 Implement refresh token rotation. Store tokens in Redis for validation.
 
 Q17: How do you handle distributed transactions in microservices?
-A: Avoid distributed transactions when possible. Use Saga pattern:
+**A:** Avoid distributed transactions when possible. Use Saga pattern:
 - Choreography: Services emit events, others react
 - Orchestration: Central coordinator manages steps
 Use eventual consistency with compensating transactions.
 
 Q18: Explain your approach to API versioning.
-A: Options: URL versioning (/v1/api), Header versioning (Accept: v1),
+**A:** Options: URL versioning (/v1/api), Header versioning (Accept: v1),
 Query parameter (?version=1). URL versioning is most common and clear.
 Use API Gateway for routing. Deprecate old versions gradually.
 
 Q19: How would you implement caching strategy?
-A: Multi-level caching: L1 (application cache), L2 (distributed cache like Redis).
+**A:** Multi-level caching: L1 (application cache), L2 (distributed cache like Redis).
 Cache-aside pattern: Check cache first, load from DB if miss, update cache.
 Use cache eviction on write operations. Set appropriate TTL.
 
 Q20: Describe your approach to logging and monitoring.
-A: Structured logging with correlation IDs for request tracing.
+**A:** Structured logging with correlation IDs for request tracing.
 ELK stack (Elasticsearch, Logstash, Kibana) for log aggregation.
 Prometheus + Grafana for metrics. Spring Boot Actuator for health checks.
 Distributed tracing with Zipkin or Jaeger.
@@ -2637,7 +2532,7 @@ SCENARIO-BASED QUESTIONS:
 
 ## Q21: Service is slow under high load. How do you diagnose and fix?
 
-A: 1. Check application metrics (CPU, memory, threads)
+**A:** 1. Check application metrics (CPU, memory, threads)
 2. Analyze database query performance (slow query log)
 3. Check connection pool settings (max connections, timeout)
 4. Enable SQL logging to identify N+1 queries
@@ -2645,7 +2540,7 @@ A: 1. Check application metrics (CPU, memory, threads)
 6. Consider horizontal scaling with load balancer
 
 Q22: Database deadlock occurring. How do you resolve?
-A: 1. Enable deadlock detection logging
+**A:** 1. Enable deadlock detection logging
 2. Identify the conflicting queries
 3. Ensure consistent lock ordering across transactions
 4. Reduce transaction scope and duration
@@ -2653,7 +2548,7 @@ A: 1. Enable deadlock detection logging
 6. Consider read replicas for read-heavy operations
 
 Q23: Memory leak suspected. How do you investigate?
-A: 1. Monitor heap usage with Actuator/JMX
+**A:** 1. Monitor heap usage with Actuator/JMX
 2. Take heap dump during high memory usage
 3. Analyze with Eclipse MAT or VisualVM
 4. Look for objects with high retention
@@ -2661,7 +2556,7 @@ A: 1. Monitor heap usage with Actuator/JMX
 6. Review entity relationships for circular references
 
 Q24: API returning different results for same request. How to debug?
-A: 1. Check if request has any caching (browser, CDN, server)
+**A:** 1. Check if request has any caching (browser, CDN, server)
 2. Verify database state (check for concurrent modifications)
 3. Review logging for request processing
 4. Check for race conditions in concurrent code
@@ -2681,3 +2576,4 @@ Key Technologies Used:
 - Oracle Database
 - ModelMapper
 - JUnit 5 / Mockito
+

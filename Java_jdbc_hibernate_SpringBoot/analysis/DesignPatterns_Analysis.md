@@ -1,6 +1,5 @@
-﻿================================================================================
-DESIGN PATTERNS - INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# DESIGN PATTERNS - INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: DESIGN PATTERNS CATEGORIES
 
@@ -19,7 +18,6 @@ Use: ObjectMapper, ConnectionPool, ConfigManager
 
 // Double-checked locking (thread-safe, lazy)
 public class AppConfig {
-```java
     private static volatile AppConfig instance;
     private AppConfig() {} // private constructor
 
@@ -34,18 +32,15 @@ public class AppConfig {
         return instance;
     }
 }
-```
 
 // Bill Pugh approach (best - uses class loading guarantee)
 public class AppConfig {
-```java
     private AppConfig() {}
     private static class Holder {
         private static final AppConfig INSTANCE = new AppConfig();
     }
     public static AppConfig getInstance() { return Holder.INSTANCE; }
 }
-```
 
 // Enum Singleton (simplest, serialization-safe)
 public enum AppConfig { INSTANCE; }
@@ -62,7 +57,6 @@ public class SMSNotification implements Notification { ... }
 public class PushNotification implements Notification { ... }
 
 public class NotificationFactory {
-```java
     public static Notification create(String type) {
         switch (type) {
             case "EMAIL": return new EmailNotification();
@@ -72,7 +66,6 @@ public class NotificationFactory {
         }
     }
 }
-```
 
 Production: BeanFactory in Spring is a Factory pattern implementation.
 
@@ -84,14 +77,12 @@ Purpose: Construct complex objects step by step. Immutable objects.
 
 @Builder // Lombok generates builder
 public class PolicyRequest {
-```java
     private String policyId;
     private String customerName;
     private double premium;
     private LocalDate startDate;
     private List<String> coverages;
 }
-```
 
 PolicyRequest req = PolicyRequest.builder()
 .policyId("POL-001")
@@ -110,26 +101,22 @@ Purpose: One-to-many dependency. When one object changes, all dependents notifie
 Spring Events:
 // Event
 public class OrderPlacedEvent extends ApplicationEvent {
-```java
     private final Order order;
     public OrderPlacedEvent(Object source, Order order) {
         super(source);
         this.order = order;
     }
 }
-```
 
 // Publisher
 @Service
 public class OrderService {
-```java
     @Autowired private ApplicationEventPublisher publisher;
     public void placeOrder(Order order) {
         orderRepo.save(order);
         publisher.publishEvent(new OrderPlacedEvent(this, order));
     }
 }
-```
 
 // Subscribers
 @EventListener
@@ -154,25 +141,20 @@ double calculatePrice(double basePrice, int quantity);
 
 @Component("regular")
 public class RegularPricing implements PricingStrategy {
-```java
     public double calculatePrice(double basePrice, int qty) {
         return basePrice * qty;
     }
 }
-```
 
 @Component("premium")
 public class PremiumPricing implements PricingStrategy {
-```java
     public double calculatePrice(double basePrice, int qty) {
         return basePrice * qty * 0.85; // 15% discount
     }
 }
-```
 
 @Service
 public class OrderService {
-```java
     @Autowired
     private Map<String, PricingStrategy> strategies; // Spring injects all
 
@@ -180,7 +162,6 @@ public class OrderService {
         return strategies.get(customerType).calculatePrice(price, qty);
     }
 }
-```
 
 #### Q6. Proxy Pattern (Spring AOP uses this).
 
@@ -198,7 +179,6 @@ Purpose: Define algorithm skeleton, let subclasses override specific steps.
 Spring: JdbcTemplate, RestTemplate, JmsTemplate
 
 public abstract class DataProcessor {
-```java
     public final void process() {        // Template method
         readData();
         transformData();
@@ -210,7 +190,6 @@ public abstract class DataProcessor {
     protected void validateData() { /* default */ }
     protected abstract void saveData();
 }
-```
 
 ## ROUND 4 - SCENARIO-BASED
 
@@ -260,7 +239,6 @@ interface PaymentProcessor { Response process(PaymentRequest req); }
 
 // Adapter:
 class PaymentAdapter implements PaymentProcessor {
-```java
     private OldPaymentGateway gateway;
     public Response process(PaymentRequest req) {
         String xml = convertToXml(req);
@@ -268,7 +246,6 @@ class PaymentAdapter implements PaymentProcessor {
         return parseResponse(result);
     }
 }
-```
 
 Spring: HandlerAdapter, MessageConverter
 
@@ -279,11 +256,9 @@ Add behavior dynamically without modifying original class.
 interface DataSource { String readData(); void writeData(String data); }
 class FileDataSource implements DataSource { ... }
 class EncryptionDecorator implements DataSource {
-```java
     private DataSource wrappee;
     public String readData() { return decrypt(wrappee.readData()); }
 }
-```
 
 Java I/O: BufferedReader(new FileReader(new File("path")))
 
@@ -318,3 +293,4 @@ Q14-Q20 Quick Patterns:
 #### Q19. Abstract Factory: Factory of factories
 
 #### Q20. Dependency Injection: Pattern, not just Spring feature
+

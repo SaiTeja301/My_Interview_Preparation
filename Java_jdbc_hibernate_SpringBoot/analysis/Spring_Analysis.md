@@ -1,6 +1,5 @@
-﻿================================================================================
-SPRING FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# SPRING FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -30,20 +29,16 @@ DI (Dependency Injection): IOC pattern where dependencies injected by container.
 
 Without DI:
 class OrderService {
-```java
     private PaymentService ps = new PaymentService(); // tight coupling!
 }
-```
 
 With DI:
 @Service
 class OrderService {
-```java
     private final PaymentService ps;
     @Autowired // Spring injects PaymentService
     public OrderService(PaymentService ps) { this.ps = ps; }
 }
-```
 
 Types of DI:
 1. Constructor Injection (RECOMMENDED): Mandatory dependencies, immutable
@@ -95,14 +90,12 @@ Most used: @PostConstruct and @PreDestroy
 
 @Service
 public class CacheService {
-```java
     @PostConstruct
     public void init() { loadCache(); } // Runs after DI
 
     @PreDestroy
     public void cleanup() { clearCache(); } // Runs before shutdown
 }
-```
 
 #### Q5. Spring AOP (Aspect-Oriented Programming).
 
@@ -119,7 +112,6 @@ Code:
 @Aspect
 @Component
 public class PerformanceAspect {
-```java
     @Around("execution(* com.service.*.*(..))")
     public Object measureTime(ProceedingJoinPoint pjp) throws Throwable {
         long start = System.currentTimeMillis();
@@ -130,7 +122,6 @@ public class PerformanceAspect {
         return result;
     }
 }
-```
 
 Internal: Spring AOP uses JDK Dynamic Proxy (interfaces) or CGLIB Proxy (classes).
 
@@ -181,12 +172,10 @@ public class PostgresDataSource implements DataSource { }
 
 @Service
 public class ReportService {
-```java
     @Autowired
     @Qualifier("mysqlDS") // Overrides @Primary
     private DataSource dataSource;
 }
-```
 
 #### Q8. Spring Profiles.
 
@@ -196,11 +185,9 @@ spring.profiles.active=dev
 @Configuration
 @Profile("prod")
 public class ProdConfig {
-```java
     @Bean
     public DataSource dataSource() { return productionDS(); }
 }
-```
 
 ## ROUND 4 - SCENARIO-BASED
 
@@ -211,9 +198,11 @@ public class ProdConfig {
 a. Proxy intercepts the call
 b. TransactionManager.getTransaction() - starts txn
 c. Target method executes
+```text
 d. No exception -> TransactionManager.commit()
 e. RuntimeException -> TransactionManager.rollback()
 
+```
 Flow:
 Caller -> Proxy (AOP) -> Transaction Begin -> Target Method -> Commit/Rollback
 
@@ -259,9 +248,11 @@ Level 2: earlySingletonObjects (partially initialized, exposed early)
 Level 3: singletonFactories (ObjectFactory to create early reference)
 
 Flow:
+```text
 Creating A -> needs B -> Creating B -> needs A -> Level 3 returns early A ref
 - B completes -> A completes -> both in Level 1
 
+```
 Best Fix: Refactor to remove circular dependency (extract common logic)
 Alternative: @Lazy on one dependency
 
@@ -270,10 +261,12 @@ Alternative: @Lazy on one dependency
 @Autowired: Injects byType first.
 If multiple beans of same type: Ambiguity!
 Resolution order:
+```text
 1. @Qualifier("beanName") → explicit name match
 2. @Primary → marked as default
 3. Variable name matching → if variable name matches bean name
 
+```
 #### Q13. Spring AOP - JDK Proxy vs CGLIB Proxy.
 
 JDK Dynamic Proxy: For interfaces (default in Spring)
@@ -297,8 +290,11 @@ In production: Always use ApplicationContext (via @SpringBootApplication)
 
 Scenario: Service A (@Transactional REQUIRED) calls Service B (@Transactional REQUIRES_NEW)
 
+```text
 A begins txn-1 -> calls B -> B suspends txn-1, starts txn-2
 - B completes, commits txn-2 -> A resumes txn-1
+
+```
 - If A fails, txn-1 rolls back but txn-2 stays committed!
 
 Use case: Audit logging in REQUIRES_NEW should persist even if main txn rolls back.
@@ -311,10 +307,8 @@ Use case: Audit logging in REQUIRES_NEW should persist even if main txn rolls ba
 @Async
 public CompletableFuture<Report> generateReport(Long id) {
 Report r = reportService.buildReport(id);
-```text
     return CompletableFuture.completedFuture(r);
 }
-```
 
 Default pool: SimpleAsyncTaskExecutor (no pooling - BAD!)
 Custom pool: Define ThreadPoolTaskExecutor bean
@@ -323,9 +317,11 @@ Custom pool: Define ThreadPoolTaskExecutor bean
 
 @Cacheable("policies") -> First call: executes method, caches result
 - Subsequent calls: returns cached value
+```text
 @CacheEvict("policies") -> Removes from cache
 @CachePut("policies") -> Always executes, updates cache
 
+```
 Providers: ConcurrentHashMap (default), Redis, EhCache, Caffeine
 
 @Cacheable(value = "policies", key = "#id", unless = "#result == null")
@@ -370,7 +366,6 @@ Immutability                Mutable objects        Immutable objects
 Spring Recommendation       Optional deps          Mandatory deps *
 
 Setter Injection - XML Example:
-```java
 <bean id="msg" class="com.demo.MessageGenerator">
   <property name="name" value="Teja"/>
   <property name="id" value="10"/>
@@ -382,10 +377,8 @@ public class MessageGenerator {
     public void setName(String name) { this.name = name; }
     public void setId(int id) { this.id = id; }
 }
-```
 
 Constructor Injection - XML Example:
-```java
 <bean id="msg" class="com.demo.MessageGenerator">
   <constructor-arg name="name" value="Teja"/>
   <constructor-arg name="id" value="10"/>
@@ -397,17 +390,15 @@ public class MessageGenerator {
         this.name = name; this.id = id;
     }
 }
-```
 
 Interview Q: What happens when BOTH Setter and Constructor inject the same field?
-A: Setter Injection OVERRIDES Constructor Injection. Setter runs AFTER
+**A:** Setter Injection OVERRIDES Constructor Injection. Setter runs AFTER
 constructor, so the last-set value wins.
 
 A.2  COLLECTION INJECTION (XML-Based)
 
 Spring supports injecting Java collections via XML:
 
-```text
 <bean id="emp" class="com.demo.Employee">
   <!-- Array / List (maintains order, allows duplicates) -->
   <property name="skills">
@@ -441,17 +432,14 @@ Spring supports injecting Java collections via XML:
 </bean>
 
 For injecting bean references in collections: use <ref bean="beanId"/>
-```
 
 A.3  NULL INJECTION
 
 To explicitly inject null:
-```text
   <property name="address"><null/></property>
 
 Without <null/>, omitting a property leaves it at its Java default
 (null for objects, 0 for int, false for boolean).
-```
 
 ## SECTION B: IoC CONTAINER TYPES - DETAILED
 
@@ -478,7 +466,6 @@ byName           Matches bean ID with property name.
 byType           Matches by data type. Fails if multiple beans of same type.
 Use autowire-candidate="false" to exclude beans.
 constructor      Like byType but applied to constructor parameters.
-```text
 @Autowired       Annotation-based. Default is byType. Use @Qualifier
                  to resolve ambiguity. Works on field, setter, constructor.
 
@@ -487,7 +474,6 @@ Ambiguity Resolution Priority:
   2. @Primary - marks default bean
   3. autowire-candidate="false" - excludes a bean (XML)
   4. Variable name matches bean name - implicit byName fallback
-```
 
 ## SECTION D: ANNOTATION REFERENCE TABLE
 
@@ -495,20 +481,17 @@ D.1  STEREOTYPE ANNOTATIONS
 
 Annotation        Purpose                       Extra Capability
 ----------------  ----------------------------  ----------------------------
-```java
 @Component        Generic Spring bean           Basic bean registration
 @Service          Business / Service layer      + Transaction mgmt (AOP)
 @Repository       DAO / Persistence layer       + Exception translation
                                                 (SQLException -> Spring DAE)
 @Controller       Web / Presentation layer      + HTTP request handling
 @RestController   REST API controller           = @Controller + @ResponseBody
-```
 
 D.2  DI ANNOTATIONS
 
 Annotation          Description
 ------------------  ---------------------------------------------------------
-```text
 @Autowired          Injects dependency by type. Field/setter/constructor.
 @Qualifier("id")    Resolves ambiguity with @Autowired.
 @Primary            Marks bean as default for autowiring.
@@ -518,26 +501,22 @@ Annotation          Description
 @Inject             JSR-330 equivalent of @Autowired.
 @Named("name")      JSR-330 equivalent of @Component + @Qualifier.
 @Resource           JSR-250. Field/setter only. Resolves byName first.
-```
 
 D.3  CONFIGURATION ANNOTATIONS
 
 Annotation              Description
 ----------------------  -------------------------------------------------
-```java
 @Configuration          Class as source of bean definitions (=XML file).
 @Bean                   Method return value is a Spring bean.
 @ComponentScan          Tells Spring which packages to scan.
 @PropertySource         Loads .properties file into environment.
 @ImportResource         Imports XML config into Java config.
 @Import                 Imports another @Configuration class.
-```
 
 D.4  LIFECYCLE ANNOTATIONS
 
 Annotation          Description
 ------------------  ---------------------------------------------------------
-```text
 @PostConstruct      Runs AFTER constructor + DI. Custom init logic.
 @PreDestroy         Runs BEFORE bean destruction / container shutdown.
 @Scope              Defines bean scope (singleton, prototype, etc.)
@@ -547,7 +526,6 @@ Annotation          Description
 
 <context:annotation-config/> activates processing for:
 @Required, @Autowired, @PostConstruct, @PreDestroy, @Resource
-```
 
 ## SECTION E: BEAN LIFECYCLE - COMPLETE INTERNAL FLOW
 
@@ -563,8 +541,11 @@ Java Class Lifecycle          Spring Bean Lifecycle
 8. Bean Destroyed by Container
 
 Detailed Flow:
+```text
 Bean Definition Read -> Bean Instantiation (Constructor)
 - DI (Setter/Field/Constructor) -> BeanNameAware.setBeanName()
+
+```
 - BeanPostProcessor.postProcessBeforeInitialization()
 - @PostConstruct / afterPropertiesSet() / init-method
 - BeanPostProcessor.postProcessAfterInitialization()
@@ -572,7 +553,6 @@ Bean Definition Read -> Bean Instantiation (Constructor)
 - Bean Destroyed
 
 Real-Time Example (VoterVerification):
-```typescript
 @Component("voterVerification")
 @PropertySource("classpath:Voter.Properties")
 public class VoterVerification {
@@ -591,14 +571,12 @@ public class VoterVerification {
         name = null; age = 0.0f; dateVerification = null;
     }
 }
-```
 
 ## SECTION F: CONFIGURATION APPROACHES - DETAILED
 
 F.1  XML-BASED CONFIGURATION
 
 applicationContext.xml:
-```text
   <beans xmlns="http://www.springframework.org/schema/beans" ...>
     <bean id="emp" class="com.demo.Employee">
       <property name="name" value="Teja"/>
@@ -612,27 +590,26 @@ Layered XML (Production Pattern):
     - <import resource="controller-beans.xml"/>
     - <import resource="service-beans.xml"/>
     - <import resource="persistence-beans.xml"/>
-```
 
 F.2  ANNOTATION-DRIVEN CONFIGURATION
 
 Minimal XML for scanning:
-```java
   <context:component-scan base-package="com.demo"/>
   <context:property-placeholder location="classpath:app.properties"/>
 
 Java classes use @Service, @Repository, @Autowired etc.
-```
 
 F.3  PURE JAVA CONFIGURATION (100% Code - Foundation of Spring Boot)
 
 Rules:
+```text
 1. User classes -> @Component/@Service/@Repository + @ComponentScan
 2. Third-party classes -> @Bean methods inside @Configuration class
+
+```
 3. Bootstrap with AnnotationConfigApplicationContext
 
 Example:
-```java
 @Configuration
 @ComponentScan(basePackages = "com.demo")
 public class AppConfig {
@@ -642,7 +619,6 @@ public class AppConfig {
 
 ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
 MyService service = ctx.getBean(MyService.class);
-```
 
 F.4  HYBRID CONFIGURATION (XML + Annotations)
 
@@ -650,7 +626,6 @@ XML for infrastructure (DataSource, PropertyPlaceholder).
 Annotations for business beans (@Service, @Repository).
 
 persistence-beans.xml:
-```text
   <bean id="hikariDS" class="com.zaxxer.hikari.HikariDataSource">
     <property name="jdbcUrl" value="dollar{jdbc.url}"/>
     <property name="username" value="dollar{jdbc.user}"/>
@@ -659,12 +634,10 @@ persistence-beans.xml:
 applicationContext.xml:
   <import resource="persistence-beans.xml"/>
   <context:component-scan base-package="com"/>
-```
 
 F.5  P-NAMESPACE and C-NAMESPACE (XML Shortcuts - Rarely Used)
 
 p-namespace (setter shortcut):
-```text
   <bean id="emp" class="Employee" p:eno="10" p:ename="sachin" p:dept-ref="dept"/>
 
 c-namespace (constructor shortcut):
@@ -673,7 +646,6 @@ c-namespace (constructor shortcut):
 Limitations:
 - No collection injection support (List, Set, Map)
 - Cannot resolve constructor overloading ambiguity
-```
 
 ## SECTION G: LAYERED ARCHITECTURE - VO / DTO / BO / DAO PATTERN
 
@@ -692,9 +664,12 @@ BO     Business Object        Same as DTO + business-specific fields.
 Used for business logic and DB operations.
 
 Flow:
+```text
 UI sends String data -> VO
 Controller converts VO -> DTO (parses types)
 Service converts DTO -> BO (adds business fields)
+
+```
 DAO persists BO to database
 Reverse flow for read operations
 
@@ -707,14 +682,12 @@ baseName_language_country.properties
 e.g., App_en_US.properties, App_hi_IN.properties, App_te_IN.properties
 
 Configuration:
-```text
   <bean id="messageSource" class="...ResourceBundleMessageSource">
     <property name="basenames"><list><value>App</value></list></property>
   </bean>
 
 Access:
   context.getMessage("greet.msg", new Object[]{"Teja"}, Locale.US);
-```
 
 ## SECTION I: BEST PRACTICES (FROM SOURCE FILE PATTERNS)
 
@@ -730,3 +703,4 @@ Access:
 10. Avoid field injection in production (hard to mock in tests)
 
 ## END OF SPRING FRAMEWORK DEEP DIVE ANALYSIS - Appended March 2026
+

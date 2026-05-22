@@ -1,6 +1,5 @@
-﻿================================================================================
-COLLECTIONS FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# COLLECTIONS FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE FILE ANALYSIS
 
@@ -49,10 +48,10 @@ Iterable(I)
                       ├── ArrayBlockingQueue(C)
                       ├── LinkedBlockingQueue(C)
                       └── PriorityBlockingQueue(C)
-```
 
-```text
+```
 Map(I) [NOT part of Collection hierarchy]
+```text
   ├── HashMap(C) ★ Most used
   │     └── LinkedHashMap(C)
   ├── TreeMap(C) → implements NavigableMap
@@ -61,8 +60,8 @@ Map(I) [NOT part of Collection hierarchy]
   ├── WeakHashMap(C)
   ├── IdentityHashMap(C)
   └── EnumMap(C)
-```
 
+```
 ## SECTION 3: 5 INTERVIEW ROUNDS
 
 ## ROUND 1 – BASIC + RESUME DISCUSSION
@@ -88,24 +87,28 @@ LinkedList:
 - Implements both List and Deque interfaces
 
 When to use:
+```text
 ArrayList → Read-heavy (95% of cases in production)
 LinkedList → Frequent insertions/deletions at both ends (Queue operations)
 
+```
 Internal Structure Diagram:
 ArrayList:
 ```text
   ┌────┬────┬────┬────┬────┬────┬────┬────┬────┬────┐
   │ E0 │ E1 │ E2 │ E3 │ E4 │ E5 │null│null│null│null│
   └────┴────┴────┴────┴────┴────┴────┴────┴────┴────┘
-  size=6, capacity=10
+
 ```
+  size=6, capacity=10
 
 LinkedList:
+```text
 null ← [E0] ⇌ [E1] ⇌ [E2] ⇌ [E3] → null
 ↑ head                  ↑ tail
 
+```
 Code Example:
-```text
 // In IKEA inventory service - product list rarely changes, frequent reads
 List<Product> products = new ArrayList<>(500); // pre-size for efficiency
 
@@ -119,7 +122,6 @@ Production Scenario:
 In merchandise planning, loading ~50K product items into a list.
 ArrayList with initial capacity pre-set outperformed LinkedList by 4x
 due to cache locality and no per-element overhead.
-```
 
 #### Q2. Explain HashMap vs TreeMap vs LinkedHashMap.
 
@@ -135,15 +137,14 @@ Answer:
   │ Thread-safe     │ No         │ No           │ No             │
   │ Implements      │ Map        │ NavigableMap │ Map            │
   └─────────────────┴────────────┴──────────────┴────────────────┘
-```
 
+```
 When to use:
 - HashMap: General purpose, fastest lookups (insurance policy cache)
 - TreeMap: Sorted data (date-sorted claims, price ranges)
 - LinkedHashMap: LRU Cache implementation, maintain insertion order
 
 LRU Cache with LinkedHashMap:
-```java
 public class LRUCache<K, V> extends LinkedHashMap<K, V> {
     private final int maxSize;
 
@@ -159,7 +160,6 @@ public class LRUCache<K, V> extends LinkedHashMap<K, V> {
 }
 
 LRUCache<String, Policy> cache = new LRUCache<>(1000);
-```
 
 #### Q3. HashSet internals – how does it prevent duplicates?
 
@@ -169,7 +169,6 @@ HashSet is backed by a HashMap internally.
 - A dummy static Object (PRESENT) is used as the value
 
 Internal implementation:
-```sql
 private transient HashMap<E,Object> map;
 private static final Object PRESENT = new Object();
 
@@ -181,15 +180,20 @@ Duplicate Prevention Flow:
 add("Teja")
      ↓
 map.put("Teja", PRESENT)
+```text
      ↓
 hashCode("Teja") → compute bucket index
      ↓
 Bucket empty? → Insert, return true (no duplicate)
+
+```
 Bucket has entry?
+```text
      ↓
 key.equals(existingKey)? → true → Replace value → return PRESENT (duplicate!)
                          → false → Add to chain → return null (no duplicate)
 
+```
 CRITICAL: For custom objects in HashSet, you MUST override
 both hashCode() and equals() methods!
 
@@ -210,7 +214,6 @@ public class Employee {
         return this.id == ((Employee) obj).id;
     }
 }
-```
 
 ## ROUND 2 – CORE TECHNICAL DEEP DIVE
 
@@ -247,8 +250,8 @@ Operations:
   │   - Uses LongAdder-like counter cells                   │
   │   - Approximate for concurrent use                      │
   └────────────────────────────────────────────────────────┘
-```
 
+```
 Why NOT Hashtable or synchronizedMap:
 - Hashtable: Locks entire table for ANY operation → bottleneck
 - synchronizedMap: Same locking issue as Hashtable
@@ -264,17 +267,15 @@ Why NOT Hashtable or synchronizedMap:
   │ Collections.synchron.. │ ~800ms     │
   │ Hashtable              │ ~850ms     │
   └────────────────────────┴────────────┘
-```
 
+```
 Production Usage (Insurance Claims):
 ConcurrentHashMap<String, ClaimStatus> activeClaimsMap =
-```text
     new ConcurrentHashMap<>(10000);
 
 // Thread-safe compute
 activeClaimsMap.computeIfAbsent(claimId,
     id -> claimService.loadClaimStatus(id));
-```
 
 #### Q5. Comparable vs Comparator – when and why?
 
@@ -291,10 +292,9 @@ Answer:
   │                 │ Arrays.sort()        │ TreeMap, TreeSet      │
   │Java 8           │ -                    │ Lambda, Method Ref    │
   └─────────────────┴──────────────────────┴──────────────────────┘
-```
 
+```
 Code Example:
-```java
 // Comparable - natural ordering by ID
 public class Employee implements Comparable<Employee> {
     private int id;
@@ -317,7 +317,6 @@ Comparator<Employee> byNameThenSalary = byName
 // Usage
 employees.sort(bySalaryDesc);
 TreeMap<Employee, String> sortedMap = new TreeMap<>(byName);
-```
 
 ## ROUND 3 – ADVANCED + INTERNAL WORKING
 
@@ -337,7 +336,6 @@ Fail-Safe Iterators:
 - May not reflect latest modifications
 
 Code Example - Fail-Fast:
-```text
 List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
 Iterator<String> it = list.iterator();
 while (it.hasNext()) {
@@ -364,7 +362,6 @@ In event notification system, concurrent modification of listener
 list caused ConcurrentModificationException. Fixed by using
 CopyOnWriteArrayList for the listener registry (listeners change rarely,
 iteration happens frequently).
-```
 
 #### Q7. BlockingQueue – types and usage.
 
@@ -381,7 +378,6 @@ Types:
 Producer-Consumer Pattern:
 BlockingQueue<Task> queue = new ArrayBlockingQueue<>(100);
 
-```java
 // Producer thread
 public void produce(Task task) throws InterruptedException {
     queue.put(task); // Blocks if queue is full!
@@ -395,14 +391,15 @@ public void consume() throws InterruptedException {
 
 Flowchart:
 Producer Thread(s)
+```text
      ↓ put()
 ┌──────────────────────┐
 │  BlockingQueue [100]  │ → Blocks producer if full
 └──────────────────────┘
      ↓ take()
 Consumer Thread(s) → Blocks consumer if empty
-```
 
+```
 ## ROUND 4 – SCENARIO-BASED + DEBUGGING
 
 #### Q8. Scenario: You need to handle 1M records efficiently.
@@ -437,7 +434,6 @@ LinkedList: ~40MB overhead (Node objects)
 HashMap: ~48MB overhead (Entry objects + array)
 
 Production Code (batch processing):
-```text
 List<Policy> policies = loadPolicies(); // 1M records
 
 int batchSize = 10000;
@@ -446,17 +442,17 @@ for (int i = 0; i < policies.size(); i += batchSize) {
         Math.min(i + batchSize, policies.size()));
     processBatch(batch); // Process in DB batches
 }
-```
 
 #### Q9. Why do we need to override equals() and hashCode() together?
 
 Answer:
 CONTRACT:
+```text
 1. If a.equals(b) → a.hashCode() == b.hashCode() (MUST)
 2. If a.hashCode() == b.hashCode() → a.equals(b) may or may not be true
 
+```
 Breaking the contract:
-```java
 // Only override equals, NOT hashCode
 public class Employee {
     int id; String name;
@@ -482,7 +478,6 @@ Fix:
 public int hashCode() {
     return Objects.hash(id);
 }
-```
 
 ## ROUND 5 – SYSTEM DESIGN + ARCHITECTURE
 
@@ -491,7 +486,6 @@ public int hashCode() {
 Answer:
 Implementation using LinkedHashMap + ReentrantReadWriteLock:
 
-```java
 public class ThreadSafeLRUCache<K, V> {
     private final int maxSize;
     private final Map<K, V> cache;
@@ -534,6 +528,7 @@ public class ThreadSafeLRUCache<K, V> {
 
 Flowchart:
 get(key)
+```text
      ↓
 Acquire readLock → Multiple readers allowed
      ↓
@@ -541,14 +536,17 @@ LinkedHashMap.get(key) → Moves to tail (most recent)
      ↓
 Release readLock → Return value
 
+```
 put(key, value)
+```text
      ↓
 Acquire writeLock → Exclusive access
      ↓
 LinkedHashMap.put() → If size > maxSize → Remove eldest
      ↓
-Release writeLock
+
 ```
+Release writeLock
 
 ## SECTION 4: KEY QUESTIONS QUICK REFERENCE
 
@@ -578,13 +576,11 @@ Use TreeMap: Need sorted keys (range queries)
 Use LinkedHashMap: Need insertion order (LRU cache implementation)
 
 LRU Cache with LinkedHashMap:
-```java
 new LinkedHashMap<>(capacity, 0.75f, true) { // accessOrder=true
     protected boolean removeEldestEntry(Map.Entry eldest) {
         return size() > capacity;
     }
 };
-```
 
 #### Q16. CopyOnWriteArrayList vs synchronized ArrayList.
 
@@ -691,10 +687,12 @@ iterating:
 - lower(e): Returns the greatest element strictly less than 'e'.
 
 Example: Set = [25, 50, 75, 100, 125, 150]
+```text
 - ceiling(60) -> 75
 - floor(60) -> 50
 - higher(100) -> 125
 
+```
 ## 3. ITERATORS RETROSPECTIVE
 
 Enumeration (Legacy 1.0) ***
@@ -736,7 +734,6 @@ Here are the most frequently asked hands-on coding scenarios for Collections:
 1. Sorting a Map by Values (Java 8+) ***
 Frequently asked to test Java 8 Streams and Map sorting skills.
 
-```java
 public void sortMapByValue() {
     Map<String, Integer> unsortedMap = new HashMap<>();
     unsortedMap.put("Apple", 50);
@@ -759,12 +756,10 @@ public void sortMapByValue() {
     System.out.println(sortedMap);
     // Output: {Orange=20, Grapes=40, Apple=50, Banana=80}
 }
-```
 
 2. Fail-Fast vs Fail-Safe Iteration Demo ***
 Shows how ArrayList fails concurrently while CopyOnWriteArrayList succeeds.
 
-```java
 public void failFastVsFailSafe() {
     // 1. Fail-Fast Example (Throws ConcurrentModificationException)
     List<String> arrayList = new ArrayList<>(Arrays.asList("A", "B", "C"));
@@ -793,12 +788,10 @@ public void failFastVsFailSafe() {
     }
     System.out.println("CopyOnWriteArrayList size after iteration: " + copyList.size()); // 4
 }
-```
 
 3. Producer-Consumer using BlockingQueue ***
 Demonstrates thread-safe queuing without manual wait()/notify() blocks.
 
-```java
 public void testProducerConsumer() {
     BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(5);
 
@@ -831,12 +824,10 @@ public void testProducerConsumer() {
     new Thread(producer).start();
     new Thread(consumer).start();
 }
-```
 
 4. Finding Word Frequency using Map ***
 A common string array/list question mapped to Collections.
 
-```java
 public void findWordFrequency() {
     String[] words = {"java", "spring", "java", "kafka", "spring", "java"};
 
@@ -859,12 +850,10 @@ public void findWordFrequency() {
     System.out.println(frequencyMap);
     // Output: {spring=2, java=3, kafka=1}
 }
-```
 
 5. TreeMap with Custom Comparator (Reverse String Ordering) ***
 Testing knowledge of custom sorting on Map keys.
 
-```java
 public void treeMapCustomOrder() {
     // Sorts keys in reverse alphabetical order
     TreeMap<String, Integer> reverseMap = new TreeMap<>(Comparator.reverseOrder());
@@ -885,14 +874,12 @@ public void treeMapCustomOrder() {
     System.out.println(lengthMap.keySet());
     // Output: [Java, Programming, Architecture]
 }
-```
 
 ## 6. LRU CACHE IMPLEMENTATION (USING LINKEDHASHMAP)
 
 A very common interview question. Instead of writing a doubly-linked list
 and HashMap from scratch, you can elegantly use LinkedHashMap.
 
-```java
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -924,14 +911,12 @@ public class LRUCache<K, V> extends LinkedHashMap<K, V> {
         // Output: [3, 1, 4]
     }
 }
-```
 
 ## 7. CUSTOM CLASS AS HASHMAP KEY (EQUALS & HASHCODE)
 
 Interviewers will ask you to create a custom key for a Map to test your
 understanding of the equals() and hashCode() contract.
 
-```java
 class Employee {
     private int id;
     private String name;
@@ -964,14 +949,12 @@ public void customKeyTest() {
     // this new identical object will successfully retrieve the value.
     System.out.println(map.get(new Employee(101, "John"))); // Output: IT
 }
-```
 
 ## 8. CONCURRENTHASHMAP (JAVA 8 METHODS: COMPUTE & MERGE)
 
 Shows you know how to perform atomic operations in ConcurrentHashMap without
 explicit synchronization blocks.
 
-```java
 public void concurrentMapOperations() {
     ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
     map.put("Apple", 10);
@@ -988,14 +971,12 @@ public void concurrentMapOperations() {
     System.out.println(map);
     // Output: {Apple=45, Banana=50}
 }
-```
 
 ## 9. PRIORITYQUEUE (FINDING TOP K ELEMENTS)
 
 Often asked in Data Structure rounds: "Find the top K largest elements in an array".
 Using a Min-Heap (PriorityQueue) of size K achieves O(N log K) time complexity.
 
-```java
 public void findTopKElements() {
     int[] nums = {10, 4, 3, 20, 15, 8, 30};
     int k = 3;
@@ -1014,13 +995,11 @@ public void findTopKElements() {
     System.out.println("Top " + k + " largest elements: " + minHeap);
     // Output: [15, 20, 30] (Order in the heap isn't strictly sorted, but it contains the top 3)
 }
-```
 
 ## 10. GROUPING & PARTITIONING COLLECTIONS (JAVA 8 STREAMS)
 
 Testing your ability to transform Collections using Streams.
 
-```java
 class Student {
     String name;
     int score;
@@ -1050,23 +1029,19 @@ public void streamGrouping() {
             Collectors.mapping(Student::getName, Collectors.toList())
         ));
 }
-```
 
 ## 11-25. ADDITIONAL COLLECTIONS CODE SNIPPETS (15 MORE EXAMPLES)
 
 11. Remove Elements during Iteration Safely ***
 Do not use foreach loops. Use Iterator.remove() or Java 8 removeIf().
-```java
 public void safeRemoval() {
     List<String> list = new ArrayList<>(Arrays.asList("A", "B", "C"));
     list.removeIf(val -> val.equals("B")); // Best Java 8+ approach
     System.out.println(list); // [A, C]
 }
-```
 
 12. Convert Array to ArrayList (The Mutable Way) ***
 Arrays.asList() returns a fixed-size list.
-```java
 public void arrayToList() {
     String[] arr = {"X", "Y"};
     // WRONG: Arrays.asList(arr).add("Z"); // UnsupportedOperationException
@@ -1074,67 +1049,58 @@ public void arrayToList() {
     List<String> list = new ArrayList<>(Arrays.asList(arr));
     list.add("Z"); // Safe
 }
-```
 
 13. Convert Primitive Array to List ***
 Cannot use Arrays.asList(int[]) directly.
-```java
 public void primitiveToList() {
     int[] primitives = {1, 2, 3};
     // Java 8 approach
     List<Integer> list = Arrays.stream(primitives).boxed().collect(Collectors.toList());
 }
-```
 
 14. Convert List to Map (Handling Duplicates) ***
 Handling collisions when mapping List to Map keys.
-```java
 public void listToMap() {
     List<String> list = Arrays.asList("A", "B", "A");
     Map<String, Integer> map = list.stream()
         .collect(Collectors.toMap(
             Function.identity(),
+```text
             val -> 1,
             (existing, replacement) -> existing + replacement // Merge function for duplicates
+
+```
         ));
 }
-```
 
 15. Create Unmodifiable/Immutable Collections ***
-```java
 public void immutableCollections() {
     // Pre-Java 9
     List<String> unmodifiable = Collections.unmodifiableList(new ArrayList<>(Arrays.asList("A")));
     // Java 9+
     List<String> immutable = List.of("A", "B"); // Nulls NOT allowed
 }
-```
 
 16. Intersection of Two Sets ***
 Using retainAll() to find common elements.
-```java
 public void setIntersection() {
     Set<Integer> s1 = new HashSet<>(Arrays.asList(1, 2, 3));
     Set<Integer> s2 = new HashSet<>(Arrays.asList(2, 3, 4));
     s1.retainAll(s2); // Intersects s1 with s2. modifies s1.
     System.out.println(s1); // [2, 3]
 }
-```
 
 17. Union of Two Sets ***
 Using addAll() to combine sets securely.
-```java
 public void setUnion() {
     Set<Integer> s1 = new HashSet<>(Arrays.asList(1, 2));
     Set<Integer> s2 = new HashSet<>(Arrays.asList(2, 3));
     s1.addAll(s2); // Union, modifies s1
     System.out.println(s1); // [1, 2, 3]
 }
-```
 
 18. Synchronizing a Map Manually ***
 Legacy wrapper alternative to ConcurrentHashMap.
-```java
 public void syncMap() {
     Map<String, String> syncMap = Collections.synchronizedMap(new HashMap<>());
     // Warning: Must synchronize externally on iterations!
@@ -1144,11 +1110,9 @@ public void syncMap() {
         }
     }
 }
-```
 
 19. Using Deque as a Stack ***
 Stack class is legacy. ArrayDeque is faster and non-synchronized.
-```java
 public void dequeAsStack() {
     Deque<String> stack = new ArrayDeque<>();
     stack.push("A");
@@ -1156,37 +1120,29 @@ public void dequeAsStack() {
     System.out.println(stack.pop()); // B
     System.out.println(stack.peek()); // A
 }
-```
 
 20. Checking if an Array or Collection has Duplicates ***
-```java
 public boolean hasDuplicates(List<Integer> list) {
     Set<Integer> set = new HashSet<>(list);
     return set.size() < list.size(); // If smaller, duplicates existed
 }
-```
 
 21. Reverse an ArrayList ***
-```java
 public void reverseList() {
     List<Integer> list = new ArrayList<>(Arrays.asList(1, 2, 3));
     Collections.reverse(list);
     System.out.println(list); // [3, 2, 1]
 }
-```
 
 22. Sort a List of Objects by Multiple Fields ***
-```java
 class Person { String name; int age; }
 public void multiLevelSort(List<Person> people) {
     people.sort(Comparator.comparing(Person::getName)    // First by Name
                           .thenComparing(Person::getAge)); // Then by Age
 }
-```
 
 23. Flattening a List of Lists ***
 Using Java 8 flatMap.
-```java
 public void flattenLists() {
     List<List<Integer>> nestedLists = Arrays.asList(Arrays.asList(1, 2), Arrays.asList(3, 4));
     List<Integer> flatList = nestedLists.stream()
@@ -1194,10 +1150,8 @@ public void flattenLists() {
         .collect(Collectors.toList());
     System.out.println(flatList); // [1, 2, 3, 4]
 }
-```
 
 24. Find the First Non-Repeating Character in a String (Using LinkedHashMap) ***
-```java
 public Character firstNonRepeating(String text) {
     Map<Character, Integer> counts = new LinkedHashMap<>(); // Maintains insertion order
     for (char c : text.toCharArray()) counts.merge(c, 1, Integer::sum);
@@ -1207,17 +1161,14 @@ public Character firstNonRepeating(String text) {
     }
     return null;
 }
-```
 
 25. Removing Duplicates from an ArrayList while Preserving Order ***
-```java
 public void removeDuplicatesKeepOrder() {
     List<Integer> listWithDupes = Arrays.asList(1, 2, 2, 3, 1, 4);
     // LinkedHashSet keeps order and removes duplicates
     List<Integer> cleanList = new ArrayList<>(new LinkedHashSet<>(listWithDupes));
     System.out.println(cleanList); // [1, 2, 3, 4]
 }
-```
 
 ## COLLECTIONS DEEP ANALYSIS UPDATE - 10-Mar-2026
 
@@ -1278,7 +1229,6 @@ Source reviewed: Java_Notes.txt (Collections coverage mostly around Collection/L
 import java.util.*;
 
 class Employee {
-```java
     private final int id;
     private final String name;
 
@@ -1300,10 +1250,8 @@ class Employee {
         return Objects.hash(id, name);
     }
 }
-```
 
 public class Demo {
-```java
     public static void main(String[] args) {
         Set<Employee> set = new HashSet<>();
         set.add(new Employee(1, "Teja"));
@@ -1311,13 +1259,11 @@ public class Demo {
         System.out.println(set.size()); // 1
     }
 }
-```
 
 7.2 Comparable vs Comparator (single natural order vs custom order)
 import java.util.*;
 
 class Student implements Comparable<Student> {
-```java
     int id;
     String name;
     int marks;
@@ -1338,10 +1284,8 @@ class Student implements Comparable<Student> {
         return id + "-" + name + "-" + marks;
     }
 }
-```
 
 public class Demo {
-```java
     public static void main(String[] args) {
         List<Student> list = new ArrayList<>();
         list.add(new Student(3, "Ram", 72));
@@ -1351,19 +1295,20 @@ public class Demo {
         Collections.sort(list); // Comparable -> by id
         System.out.println(list);
 
+```text
         list.sort(Comparator.comparingInt((Student s) -> s.marks)
                 .thenComparing(s -> s.name)); // Comparator -> marks, then name
+
+```
         System.out.println(list);
     }
 }
-```
 
 7.3 Fail-fast vs fail-safe iterator behavior
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Demo {
-```java
     public static void main(String[] args) {
         List<Integer> failFast = new ArrayList<>(Arrays.asList(10, 20, 30));
         try {
@@ -1381,13 +1326,11 @@ public class Demo {
         System.out.println(failSafe); // [10, 20, 30, 99]
     }
 }
-```
 
 7.4 Top-K largest elements using PriorityQueue (very common)
 import java.util.*;
 
 public class Demo {
-```java
     public static List<Integer> topK(int[] input, int k) {
         PriorityQueue<Integer> minHeap = new PriorityQueue<>();
         for (int value : input) {
@@ -1404,13 +1347,11 @@ public class Demo {
         System.out.println(topK(input, 3)); // [15, 20, 30] order may vary
     }
 }
-```
 
 7.5 Most frequent element using HashMap frequency count
 import java.util.*;
 
 public class Demo {
-```java
     public static int mostFrequent(int[] input) {
         Map<Integer, Integer> frequency = new HashMap<>();
         for (int value : input) {
@@ -1428,14 +1369,12 @@ public class Demo {
         return answer;
     }
 }
-```
 
 7.6 Grouping and partitioning with Streams
 import java.util.*;
 import java.util.stream.Collectors;
 
 class Candidate {
-```text
     String name;
     String track;
     int score;
@@ -1446,10 +1385,8 @@ class Candidate {
         this.score = score;
     }
 }
-```
 
 public class Demo {
-```java
     public static void main(String[] args) {
         List<Candidate> list = Arrays.asList(
                 new Candidate("A", "Java", 82),
@@ -1467,13 +1404,11 @@ public class Demo {
         System.out.println(partitioned.get(true).size());
     }
 }
-```
 
 7.7 LRU cache using LinkedHashMap (asked in system design + core Java)
 import java.util.*;
 
 class LRUCache<K, V> extends LinkedHashMap<K, V> {
-```java
     private final int capacity;
 
     LRUCache(int capacity) {
@@ -1486,10 +1421,8 @@ class LRUCache<K, V> extends LinkedHashMap<K, V> {
         return size() > capacity;
     }
 }
-```
 
 public class Demo {
-```java
     public static void main(String[] args) {
         LRUCache<Integer, String> cache = new LRUCache<>(3);
         cache.put(1, "A");
@@ -1500,13 +1433,11 @@ public class Demo {
         System.out.println(cache.keySet()); // [3, 1, 4]
     }
 }
-```
 
 7.8 ConcurrentHashMap safe update pattern
 import java.util.concurrent.*;
 
 public class Demo {
-```java
     public static void main(String[] args) {
         ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
         map.put("java", 1);
@@ -1515,7 +1446,6 @@ public class Demo {
         System.out.println(map); // {java=2, spring=1}
     }
 }
-```
 
 8) INTERVIEW RAPID-FIRE DIFFERENCES (MEMORIZE)
 - HashMap vs Hashtable: Hashtable synchronized and legacy; HashMap preferred in single-thread/externally managed scenarios.
@@ -1585,7 +1515,6 @@ E.1 Frequency counting using merge (cleaner than containsKey)
 import java.util.*;
 
 public class Demo {
-```java
     public static Map<String, Integer> frequency(List<String> words) {
         Map<String, Integer> map = new HashMap<>();
         for (String word : words) {
@@ -1594,13 +1523,11 @@ public class Demo {
         return map;
     }
 }
-```
 
 E.2 Safe removal while iterating (avoid ConcurrentModificationException)
 import java.util.*;
 
 public class Demo {
-```java
     public static void main(String[] args) {
         List<Integer> values = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5));
         Iterator<Integer> iterator = values.iterator();
@@ -1612,13 +1539,11 @@ public class Demo {
         System.out.println(values); // [1, 3, 5]
     }
 }
-```
 
 E.3 TreeMap range queries (floor/ceiling/lower/higher)
 import java.util.*;
 
 public class Demo {
-```java
     public static void main(String[] args) {
         TreeMap<Integer, String> map = new TreeMap<>();
         map.put(10, "A");
@@ -1631,13 +1556,11 @@ public class Demo {
         System.out.println(map.higherKey(20));  // 30
     }
 }
-```
 
 E.4 Immutable key pattern for HashMap correctness
 import java.util.*;
 
 final class UserKey {
-```java
     private final int id;
     private final String email;
 
@@ -1659,21 +1582,21 @@ final class UserKey {
         return Objects.hash(id, email);
     }
 }
-```
 
 E.5 Concurrent counter with ConcurrentHashMap
 import java.util.concurrent.*;
 
 public class Demo {
-```java
     public static void main(String[] args) {
         ConcurrentHashMap<String, Integer> counts = new ConcurrentHashMap<>();
+```text
         counts.compute("java", (key, value) -> value == null ? 1 : value + 1);
         counts.compute("java", (key, value) -> value == null ? 1 : value + 1);
+
+```
         System.out.println(counts); // {java=2}
     }
 }
-```
 
 F) 7-DAY COLLECTIONS PREP PLAN (SHORT)
 - Day 1: List/Set/Map decision rules + complexity memorization.
@@ -1687,3 +1610,4 @@ F) 7-DAY COLLECTIONS PREP PLAN (SHORT)
 ## VISIBLE CHECKPOINT 2 - 10-Mar-2026
 
 If this line is visible, this newest deep analysis append is present in the same file.
+

@@ -1,6 +1,5 @@
-﻿================================================================================
-RABBITMQ - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# RABBITMQ - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: ANALYSIS
 
@@ -47,9 +46,12 @@ Producer -> exchange -> queue1 (email service)
 - queue3 (audit service)
 
 Topic Exchange (pattern matching):
+```text
 Producer -> exchange(routing_key="order.created.premium")
 Queue binding: "order.created.*" -> receives message
 Queue binding: "order.#" -> receives all order messages
+
+```
 = one word, # = zero or more words
 
 ## ROUND 2 - CORE TECHNICAL
@@ -64,7 +66,6 @@ spring.rabbitmq.password=guest
 
 @Configuration
 public class RabbitConfig {
-```java
     @Bean
     public TopicExchange orderExchange() {
         return new TopicExchange("order-exchange");
@@ -81,19 +82,16 @@ public class RabbitConfig {
             .to(orderExchange()).with("order.payment.*");
     }
 }
-```
 
 Producer:
 @Service
 public class OrderProducer {
-```java
     @Autowired private RabbitTemplate rabbitTemplate;
     public void sendOrderEvent(OrderEvent event) {
         rabbitTemplate.convertAndSend("order-exchange",
             "order.payment.created", event);
     }
 }
-```
 
 Consumer:
 @RabbitListener(queues = "payment-queue")
@@ -106,7 +104,6 @@ paymentService.process(event);
 Manual Acknowledgment:
 @RabbitListener(queues = "payment-queue", ackMode = "MANUAL")
 public void handlePayment(OrderEvent event, Channel channel,
-```text
                            @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
     try {
         paymentService.process(event);
@@ -115,7 +112,6 @@ public void handlePayment(OrderEvent event, Channel channel,
         channel.basicNack(tag, false, true); // Requeue
     }
 }
-```
 
 Publisher Confirms (producer-side reliability):
 spring.rabbitmq.publisher-confirm-type=correlated
@@ -133,14 +129,12 @@ Manual review
 
 @Bean
 public Queue mainQueue() {
-```text
     return QueueBuilder.durable("main-queue")
         .withArgument("x-dead-letter-exchange", "dlx")
         .withArgument("x-dead-letter-routing-key", "dlq")
         .withArgument("x-message-ttl", 60000) // 60s TTL
         .build();
 }
-```
 
 #### Q6. RabbitMQ clustering and High Availability.
 
@@ -169,3 +163,4 @@ KEY QUESTIONS:
 6. Publisher Confirms
 
 ## END OF RABBITMQ ANALYSIS
+

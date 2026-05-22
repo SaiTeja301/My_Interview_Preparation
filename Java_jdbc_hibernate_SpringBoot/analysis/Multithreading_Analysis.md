@@ -1,6 +1,5 @@
-﻿================================================================================
-MULTITHREADING & CONCURRENCY - INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# MULTITHREADING & CONCURRENCY - INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -32,11 +31,13 @@ Integer result = future.get(); // Blocks until done
 
 #### Q2. Thread Lifecycle.
 
+```text
 NEW -> (start()) -> RUNNABLE -> (scheduler) -> RUNNING
 RUNNING -> (sleep/wait) -> WAITING/TIMED_WAITING -> (notify/timeout) -> RUNNABLE
 RUNNING -> (synchronized block) -> BLOCKED -> (lock acquired) -> RUNNABLE
 RUNNING -> (completed) -> TERMINATED
 
+```
 ## ROUND 2 - CORE TECHNICAL
 
 #### Q3. synchronized vs ReentrantLock.
@@ -48,7 +49,6 @@ Code:
 private final ReentrantLock lock = new ReentrantLock(true); // fair lock
 public void transfer(Account from, Account to, double amount) {
 lock.lock();
-```text
     try {
         from.debit(amount);
         to.credit(amount);
@@ -59,7 +59,6 @@ lock.lock();
         lock.unlock(); // MUST unlock in finally!
     }
 }
-```
 
 #### Q4. volatile keyword - when and why?
 
@@ -73,10 +72,8 @@ Code:
 private volatile boolean running = true; // visible to all threads
 public void stop() { running = false; } // immediately visible
 public void run() {
-```text
     while (running) { doWork(); } // reads from main memory
 }
-```
 
 #### Q5. Executor Framework - ThreadPoolExecutor.
 
@@ -91,6 +88,7 @@ Flow:
 Task submitted
 |
 corePoolSize threads busy?
+```text
 |-- No -> Create core thread
 |-- Yes -> Queue full?
 |-- No -> Add to queue
@@ -98,6 +96,7 @@ corePoolSize threads busy?
 |-- No -> Create new thread
 |-- Yes -> Apply rejection policy
 
+```
 Rejection Policies:
 AbortPolicy (default): throws RejectedExecutionException
 CallerRunsPolicy: caller thread runs the task
@@ -113,10 +112,8 @@ executor.setMaxPoolSize(50);
 executor.setQueueCapacity(100);
 executor.setRejectedExecutionHandler(new CallerRunsPolicy());
 executor.setThreadNamePrefix("claim-processor-");
-```text
     return executor;
 }
-```
 
 ## ROUND 3 - ADVANCED
 
@@ -130,9 +127,11 @@ CompletableFuture<List<Document>> cf2 = CompletableFuture
 
 // Combine results
 CompletableFuture<ClaimSummary> combined = cf1
+```text
 .thenCombine(cf2, (details, docs) -> new ClaimSummary(details, docs))
 .exceptionally(ex -> { log.error("Failed", ex); return fallback(); });
 
+```
 // Wait for all
 CompletableFuture.allOf(cf1, cf2).thenRun(() -> log.info("All done")).join();
 
@@ -145,23 +144,24 @@ Semaphore: Controls access to N resources (permits)
 Code (CountDownLatch):
 CountDownLatch latch = new CountDownLatch(3);
 // 3 services must initialize before main starts
+```text
 service1.init(() -> latch.countDown());
 service2.init(() -> latch.countDown());
 service3.init(() -> latch.countDown());
+
+```
 latch.await(); // Main waits here until count = 0
 
 Code (Semaphore - connection pool):
 Semaphore pool = new Semaphore(10); // max 10 connections
 public Connection getConnection() throws InterruptedException {
 pool.acquire(); // blocks if 10 connections in use
-```java
     return createConnection();
 }
 public void releaseConnection(Connection conn) {
     conn.close();
     pool.release();
 }
-```
 
 ## ROUND 4 - SCENARIO-BASED
 
@@ -184,10 +184,8 @@ private static final Object LOCK_B = new Object();
 public void method1() {
 synchronized(LOCK_A) {
 synchronized(LOCK_B) { /* work */ }
-```text
     }
 }
-```
 
 #### Q9. Producer-Consumer pattern with BlockingQueue.
 
@@ -195,30 +193,25 @@ BlockingQueue<Task> queue = new ArrayBlockingQueue<>(100);
 
 // Producer
 executor.submit(() -> {
-```text
     while (true) {
         Task task = generateTask();
         queue.put(task); // blocks if queue full
     }
 });
-```
 
 // Consumer
 executor.submit(() -> {
-```text
     while (true) {
         Task task = queue.take(); // blocks if queue empty
         processTask(task);
     }
 });
-```
 
 ## ROUND 5 - SYSTEM DESIGN
 
 #### Q10. Design a rate limiter using concurrency primitives.
 
 public class RateLimiter {
-```java
     private final Semaphore semaphore;
     private final ScheduledExecutorService scheduler;
 
@@ -234,7 +227,6 @@ public class RateLimiter {
         return semaphore.tryAcquire();
     }
 }
-```
 
 KEY QUESTIONS:
 1. Thread vs Runnable vs Callable
@@ -258,18 +250,18 @@ corePoolSize,      // Min threads always alive
 maximumPoolSize,   // Max threads
 keepAliveTime,     // Idle thread timeout
 TimeUnit.SECONDS,
-```text
     new LinkedBlockingQueue<>(100), // Work queue
     Executors.defaultThreadFactory(),
     new ThreadPoolExecutor.CallerRunsPolicy() // Rejection policy
 );
-```
 
 Flow:
+```text
 Task submitted -> core threads busy? -> queue task
 Queue full? -> create new thread (up to max)
 Max reached + queue full? -> rejection policy
 
+```
 Rejection Policies:
 AbortPolicy: Throws RejectedExecutionException (default)
 CallerRunsPolicy: Caller thread executes task (back-pressure)
@@ -278,12 +270,15 @@ DiscardOldestPolicy: Drops oldest queued task
 
 #### Q12. CompletableFuture chaining patterns.
 
+```text
 CompletableFuture.supplyAsync(() -> fetchUser(id))    // async
 .thenApply(user -> enrichUser(user))               // sync transform
 .thenCompose(user -> fetchOrders(user.getId()))     // async chain
 .thenCombine(fetchDiscounts(), (orders, disc) -> applyDiscount(orders, disc))
 .thenAccept(result -> sendNotification(result))    // consume
 .exceptionally(ex -> { log.error(ex); return fallback(); })
+
+```
 .get(5, TimeUnit.SECONDS);                         // block with timeout
 
 allOf: Wait for ALL futures
@@ -311,9 +306,11 @@ Use: Config cache (many reads, rare writes)
 
 #### Q15. Deadlock - detection, prevention, example.
 
+```text
 Thread 1: lock(A) -> lock(B)
 Thread 2: lock(B) -> lock(A) // DEADLOCK!
 
+```
 Prevention:
 1. Lock ordering: Always acquire locks in same order
 2. tryLock with timeout: Give up if can't acquire
@@ -363,3 +360,4 @@ MUST remove in finally to prevent memory leaks in thread pools!
 Thread.startVirtualThread(() -> process());
 1M virtual threads possible (vs ~1K platform threads)
 Game changer for I/O-bound applications
+

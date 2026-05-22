@@ -1,7 +1,5 @@
-﻿================================================================================
-SQL & DBMS - MASSIVE INTERVIEW PREPARATION (50 Questions)
-For: 7+ Years Experience Level | Java Full Stack Developer
-Based on: Insurance (National) + Retail (ICA/IKEA) Project Context
+# SQL & DBMS - MASSIVE INTERVIEW PREPARATION (50 Questions)
+> *For: 7+ Years Experience Level | Java Full Stack Developer · Based on: Insurance (National) + Retail (ICA/IKEA) Project Context*
 
 ## DATABASE ARCHITECTURE IN PROJECTS
 
@@ -22,9 +20,11 @@ No cross-service JOINs — use Kafka events for data sharing.
 
 #### Q1. SQL Query Execution Order (internal processing).
 
+```text
 Written order:  SELECT → FROM → WHERE → GROUP BY → HAVING → ORDER BY
 Execution order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT
 
+```
 Flow:
 FROM policies p JOIN customers c ON p.customer_id = c.id
 ↓ (load tables, perform join)
@@ -110,14 +110,16 @@ Root Node [50]
      └── Internal [70, 85]
           ├── Leaf [50, 55, 65] → row pointers
           └── Leaf [70, 75, 80, 85, 90] → row pointers
-```
 
+```
 Lookup: O(log n) — traverse from root to leaf
+```text
 WHERE id = 35: Root → left child → second leaf → found!
 
 Range: Leaf nodes are linked → efficient range scans
 WHERE id BETWEEN 20 AND 45: Navigate to leaf [20] → scan right → stop at [45]
 
+```
 Insert/Delete: May cause node splits/merges to maintain balance
 
 #### Q5. EXPLAIN / EXPLAIN ANALYZE — query optimization.
@@ -389,9 +391,7 @@ SELECT * FROM policies WHERE id > 10000 ORDER BY id LIMIT 20;
 Spring Data JPA:
 Pageable pageable = PageRequest.of(page, size, Sort.by("id"));
 Page<Policy> result = policyRepo.findAll(pageable);
-```text
 // Internally uses OFFSET → fine for small-medium datasets
-```
 
 #### Q24. INSERT ... ON CONFLICT (UPSERT).
 
@@ -602,3 +602,4 @@ FROM yearly;
 #### Q39. LEFT JOIN to find missing records
 
 ## END OF SQL & DBMS ANALYSIS (50 Questions)
+

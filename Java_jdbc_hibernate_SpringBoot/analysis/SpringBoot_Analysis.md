@@ -1,6 +1,5 @@
-﻿================================================================================
-SPRING BOOT - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# SPRING BOOT - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -42,25 +41,21 @@ Flow:
 1. @EnableAutoConfiguration triggers AutoConfigurationImportSelector
 2. Reads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
 3. Each auto-config class has @Conditional annotations:
-```java
 @ConditionalOnClass: Only if class on classpath
 @ConditionalOnMissingBean: Only if user hasn't defined bean
 @ConditionalOnProperty: Only if property set
-```
 
 Example (DataSource auto-config):
 @ConditionalOnClass(DataSource.class) // HikariCP on classpath?
 @ConditionalOnMissingBean(DataSource.class) // User hasn't defined one?
 @AutoConfiguration
 public class DataSourceAutoConfiguration {
-```java
     @Bean
     public HikariDataSource dataSource(DataSourceProperties props) {
         return props.initializeDataSourceBuilder()
             .type(HikariDataSource.class).build();
     }
 }
-```
 
 Debug auto-config: --debug flag or spring.autoconfigure.exclude
 
@@ -77,6 +72,7 @@ Activation: spring.profiles.active=dev (or --spring.profiles.active=prod)
 public class ProdSecurityConfig { ... }
 
 Multi-profile YAML:
+```yaml
 spring:
 profiles:
 active: dev
@@ -92,7 +88,7 @@ activate:
 on-profile: prod
 server:
 port: 443
-
+```
 #### Q5. Spring Boot Actuator.
 
 Endpoint             | Purpose
@@ -113,14 +109,12 @@ management.endpoint.health.show-details=always
 Custom Health:
 @Component
 public class DatabaseHealthIndicator implements HealthIndicator {
-```java
     @Override
     public Health health() {
         if (isDatabaseUp()) return Health.up().withDetail("db", "Running").build();
         return Health.down().withDetail("db", "Not reachable").build();
     }
 }
-```
 
 ## ROUND 3 - ADVANCED
 
@@ -129,7 +123,6 @@ public class DatabaseHealthIndicator implements HealthIndicator {
 @RestControllerAdvice (Global Exception Handler):
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-```java
     @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ErrorResponse handleNotFound(ResourceNotFoundException ex) {
@@ -146,7 +139,6 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(400, "Validation failed", errors);
     }
 }
-```
 
 Flow:
 Client Request -> Controller -> throws Exception
@@ -178,7 +170,6 @@ logging.pattern.console={"time":"%d","level":"%p","logger":"%logger","msg":"%m"}
 @RestController
 @RequestMapping("/api/v1/policies")
 public class PolicyController {
-```sql
     @GetMapping
     public ResponseEntity<Page<PolicyDTO>> getAll(Pageable pageable) {
         return ResponseEntity.ok(policyService.findAll(pageable));
@@ -208,7 +199,6 @@ public class PolicyController {
         return ResponseEntity.noContent().build();
     }
 }
-```
 
 ## Best Practices:
 
@@ -235,8 +225,8 @@ com.company.project/
     ├── security/         (Security config, JWT)
     ├── util/             (Utility classes)
     └── Application.java  (Main class)
-```
 
+```
 KEY QUESTIONS:
 1. Spring vs Spring Boot
 2. @SpringBootApplication breakdown
@@ -264,7 +254,6 @@ Exclude: @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
 
 @ConfigurationProperties(prefix = "app.policy")
 public class PolicyConfig {
-```java
     private String defaultType;
     private int maxRetries;
     private Duration timeout; // Spring parses "5s", "2m", "1h"
@@ -274,7 +263,6 @@ public class PolicyConfig {
 // app.policy.default-type=LIFE
 // app.policy.max-retries=3
 // app.policy.timeout=30s
-```
 
 #### Q12. Spring Boot Starter - how to create custom starter.
 
@@ -357,7 +345,6 @@ DataSource     No pool found
 
 Manual DataSource Configuration (Overriding Auto-Config):
 1. Exclude auto-config:
-```xml
    @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
 
 2. Create @Bean method in @Configuration class:
@@ -392,11 +379,11 @@ Switching Connection Pools (HikariCP to Tomcat JDBC):
     <groupId>org.apache.tomcat</groupId>
     <artifactId>tomcat-jdbc</artifactId>
   </dependency>
-```
 
 ## SECTION B: CONFIGURATION - PROPERTIES vs YAML DETAILED
 
 application.properties (Flat Key-Value):
+```properties
 server.port=8080
 spring.application.name=MyApp
 spring.datasource.url=jdbc:mysql:///testschema
@@ -425,19 +412,20 @@ Multi-document          Not supported           Supported (--- separator)
 Profile-specific        application-dev.props   Can embed in same file
 Collection support      Comma-separated         Native list/map syntax
 Spring Boot Priority    Loaded AFTER yml        Loaded first
-
+```
 ## SECTION C: SPRING EXPRESSION LANGUAGE (SpEL) - DEEP DIVE
 
 SpEL enables runtime expression evaluation within Spring beans.
 
 Syntax:
 dollar{key}    = Property file value injection.
-```typescript
                   @Value("dollar{server.port}") -> reads from application.properties
   #{expression} = SpEL runtime expression.
+```text
                   @Value("#{beanName.field}") -> reads from another bean.
                   @Value("#{10 + 20}") -> computed result = 30.
 
+```
 Cross-Bean Computation Example:
   // Bean 1: ItemsInfo (reads from properties)
   @Component("item")
@@ -468,7 +456,6 @@ SpEL Evaluation Flow:
   5. Evaluates expression: 10 + 20 + 30 = 60.0.
   6. Injects result into billAmount field.
   7. This happens during BeanPostProcessor phase.
-```
 
 ## SECTION D: JSR-330 - NON-INVASIVE PROGRAMMING
 
@@ -477,7 +464,6 @@ Requires javax.inject dependency.
 
 JSR-330 Annotation   Spring Equivalent         Notes
 ------------------   ----------------------    ----------------------------------
-```java
 @Inject              @Autowired                Field/constructor/setter. No
                                                "required" attribute.
 @Named("name")       @Component + @Qualifier   Names bean AND resolves ambiguity
@@ -505,12 +491,10 @@ Configuration:
   application.properties: course.choose=java
   applicationContext.xml:  <alias name="dollar{course.choose}" alias="courseId"/>
   -> "courseId" resolves to "java" bean dynamically.
-```
 
 ## SECTION E: REST API DEVELOPMENT - CODE EXAMPLES
 
 REST Controller with Full CRUD:
-```sql
   @RestController
   @RequestMapping("/api/customers")
   public class CustomerRestController {
@@ -560,7 +544,6 @@ API Endpoints (from source file project):
   POST http://localhost:8080/Spr/customers/insert
   PUT  http://localhost:8080/Spr/customers/updateCustomerById?id=4
   DELETE http://localhost:8080/Spr/customers/deleteCustomerById?id=6
-```
 
 ## SECTION F: SPRING BOOT COLLECTION INJECTION (YAML)
 
@@ -568,6 +551,7 @@ Spring Boot supports injecting complex data from application.yml
 into beans using @ConfigurationProperties.
 
 application.yml Example:
+```yaml
 employee:
 empName: Aravind
 empId: 21
@@ -585,7 +569,6 @@ pan: PAN1234XYZ
 passport: PAS1234XYZ
 
 Java Bean:
-```java
 @Component
 @ConfigurationProperties(prefix = "employee")
 public class Employee {
@@ -597,7 +580,6 @@ public class Employee {
     // getters and setters
 }
 ```
-
 ## SECTION G: SPRING BOOT JDBC PROJECT - COMPLETE LAYERED ARCHITECTURE
 
 Project Architecture Flow:
@@ -605,7 +587,6 @@ Project Architecture Flow:
 REST CLIENT (Postman / Browser)
 | HTTP GET/POST/PUT/DELETE
 v
-```java
 @RestController Layer (REST API)
 - @GetMapping, @PostMapping, @PutMapping, @DeleteMapping
 - @RequestParam, @PathVariable, @RequestBody
@@ -628,6 +609,7 @@ v
 MySQL Database (via HikariCP DataSource auto-configured from yml/props)
 
 application.yml (Spring Boot DataSource):
+```yaml
   spring:
     datasource:
       url: jdbc:mysql:///testschema
@@ -635,12 +617,12 @@ application.yml (Spring Boot DataSource):
       password: 2580
       driver-class-name: com.mysql.cj.jdbc.Driver
 ```
-
 ## SECTION H: EXECUTION FLOW DIAGRAMS
 
 Spring Boot DI Flow:
 APP START -> @SpringBootApplication triggers ComponentScan
 |
+```text
 |-> Finds @Named/@Component beans in packages
 |-> @ImportResource loads applicationContext.xml (if present)
 |      --> <alias name="dollar{course.choose}" alias="courseId"/>
@@ -648,14 +630,18 @@ APP START -> @SpringBootApplication triggers ComponentScan
 |-> Start Embedded Tomcat (if web starter present)
 --> APPLICATION READY
 
+```
 REST API Request Flow:
 Client HTTP Request
 - DispatcherServlet (Front Controller)
 - HandlerMapping: finds matching @RequestMapping
 - @RestController method invoked
 - @RequestParam/@PathVariable extracted
+```text
 - @RequestBody deserialized (Jackson JSON -> Java)
 - Service Layer called -> DAO Layer called -> DB query
+
+```
 - ResponseEntity returned
 - HTTP Response (JSON body + status code)
 
@@ -713,7 +699,6 @@ transactions, performance monitoring) and cannot be cleanly modularized
 using OOP alone.
 
 PROBLEM WITHOUT AOP (code pollution):
-```java
 @Service
 public class OrderService {
     public void placeOrder(Order order) {
@@ -740,10 +725,8 @@ public class OrderService {
 }
 PROBLEM: Business logic is buried under cross-cutting concerns.
          Same boilerplate repeated in PaymentService, UserService, etc.
-```
 
 WITH AOP:
-```java
 @Service
 public class OrderService {
     public void placeOrder(Order order) {
@@ -754,7 +737,6 @@ public class OrderService {
     }
 }
 // Logging, Security, Performance -> handled separately in Aspect classes
-```
 
 HOW AOP SOLVES IT:
 - Extracts cross-cutting concerns into Aspect classes
@@ -781,7 +763,7 @@ The other is IoC (Inversion of Control / Dependency Injection).
 ANSWER:
 
 | CONCEPT | DEFINITION |
-|---|---|
+| --- | --- |
 | Aspect | A class that contains cross-cutting concern logic. |
 | Annotated with @Aspect. Example: LoggingAspect.java |  |
 | Advice | The ACTUAL ACTION to take at a join point. |
@@ -809,7 +791,6 @@ Think of a TOLL BOOTH on a highway:
 - Installing the toll booth = Weaving
 
 CODE EXAMPLE:
-```java
 @Aspect                         // <-- This class is an Aspect
 @Component
 public class LoggingAspect {
@@ -817,17 +798,19 @@ public class LoggingAspect {
     @Pointcut("execution(* com.app.service.*.*(..))")  // <-- Pointcut
     public void serviceLayer() {}                        // pointcut method
 
+```text
     @Before("serviceLayer()")   // <-- Advice (Before type)
     public void logBefore(JoinPoint joinPoint) {          // <-- JoinPoint param
+
+```
         System.out.println("Method called: " +
             joinPoint.getSignature().getName());
     }
 }
-```
 
 INTERVIEW TRAP:
-Q: "Can Spring AOP intercept field access or constructor calls?"
-A: NO! Spring AOP only supports METHOD EXECUTION join points.
+#### Q: "Can Spring AOP intercept field access or constructor calls?"
+**A:** NO! Spring AOP only supports METHOD EXECUTION join points.
 AspectJ supports more (field access, constructor call, etc.)
 
 ## SECTION 2: TYPES OF ADVICE
@@ -837,7 +820,7 @@ AspectJ supports more (field access, constructor call, etc.)
 ANSWER:
 
 | TYPE | WHEN IT RUNS | USE CASE |
-|---|---|---|
+| --- | --- | --- |
 | @Before | Before method executes | Auth checks, logging |
 | @After | After method (always, like finally) | Cleanup, audit |
 | @AfterReturning | After method returns successfully | Log return value |
@@ -848,7 +831,6 @@ ANSWER:
 Runs BEFORE the target method. Cannot prevent method execution
 (unless exception thrown). Gets JoinPoint to inspect method details.
 
-```java
 @Before("execution(* com.app.service.*.*(..))")
 public void logMethodEntry(JoinPoint joinPoint) {
     String methodName = joinPoint.getSignature().getName();
@@ -866,25 +848,21 @@ public void checkAuthorization(JoinPoint joinPoint) {
         throw new AccessDeniedException("Unauthorized access!");
     }
 }
-```
 
 @After ADVICE:
 Runs AFTER method execution REGARDLESS of outcome (success or exception).
 Like a finally block. Cannot access return value.
 
-```java
 @After("execution(* com.app.service.*.*(..))")
 public void logMethodExit(JoinPoint joinPoint) {
     log.info("<<< EXITING: {}", joinPoint.getSignature().getName());
     // Cleanup resources, release locks, audit trail, etc.
 }
-```
 
 @AfterReturning ADVICE:
 Runs only when method RETURNS SUCCESSFULLY. Can access the return value
 using the 'returning' attribute.
 
-```java
 @AfterReturning(
     pointcut = "execution(* com.app.service.OrderService.placeOrder(..))",
     returning = "result"  // binds return value to this param name
@@ -903,13 +881,11 @@ public void trackSuccessfulPayment(Object paymentResult) {
     metricsService.incrementSuccessfulPayments();
     log.info("Payment processed: {}", paymentResult);
 }
-```
 
 @AfterThrowing ADVICE:
 Runs only when method THROWS AN EXCEPTION. Can access the exception
 using the 'throwing' attribute.
 
-```java
 @AfterThrowing(
     pointcut = "execution(* com.app.service.*.*(..))",
     throwing = "ex"    // binds exception to this param name
@@ -921,14 +897,12 @@ public void handleException(JoinPoint joinPoint, Exception ex) {
 }
 
 NOTE: @AfterThrowing does NOT suppress the exception. It propagates.
-```
 
 @Around ADVICE (Most Powerful):
 Wraps the method. You control WHEN and IF the method runs.
 Must call proceed() to execute the target method.
 Can modify input args, modify return values, suppress exceptions.
 
-```java
 @Around("execution(* com.app.service.*.*(..))")
 public Object measurePerformance(ProceedingJoinPoint pjp) throws Throwable {
     long start = System.currentTimeMillis();
@@ -948,21 +922,21 @@ public Object measurePerformance(ProceedingJoinPoint pjp) throws Throwable {
 
 IMPORTANT: @Around uses ProceedingJoinPoint (not JoinPoint) because
            it needs the proceed() method to invoke the target.
-```
 
 EXECUTION ORDER (when multiple advice applied to same method):
-```text
 @Around (before proceed)
+```text
   -> @Before
   -> TARGET METHOD EXECUTES
   -> @AfterReturning OR @AfterThrowing
+
+```
 @After
 @Around (after proceed returns)
-```
 
 INTERVIEW TRAP:
-Q: "When to use @Around vs @Before + @AfterReturning?"
-A: Use @Around when you need to measure time (need before AND after),
+#### Q: "When to use @Around vs @Before + @AfterReturning?"
+**A:** Use @Around when you need to measure time (need before AND after),
 retry logic (call proceed multiple times), or modify args/result.
 Use @Before/@AfterReturning when concerns are independent.
 
@@ -1000,7 +974,6 @@ execution(* com.app.service.*.get*(..))
 
 5. Methods with specific param type:
 execution(* com.app.service.*.*(Long, ..))
-```java
    // first arg is Long, rest can be anything
 
 6. Methods with NO params:
@@ -1017,14 +990,12 @@ execution(* com.app.service.*.*(Long, ..))
 9. Within a specific type:
    within(com.app.service.*)
    // any method within any class in service package
-```
 
 10. Bean name pattern:
 bean(orderService)     // specific bean
 bean(*Service)         // any bean ending with "Service"
 
 COMBINING POINTCUTS (Logical Operators):
-```java
 // AND: method in service package AND annotated with @Transactional
 @Pointcut("within(com.app.service..*) && @annotation(org.springframework.transaction.annotation.Transactional)")
 public void transactionalServiceMethods() {}
@@ -1036,10 +1007,8 @@ public void serviceOrRepository() {}
 // NOT: exclude specific method
 @Pointcut("within(com.app.service..*) && !execution(* com.app.service.*.findById(..))")
 public void serviceExceptFindById() {}
-```
 
 REUSABLE POINTCUT DEFINITION:
-```java
 @Aspect
 @Component
 public class PointcutDefinitions {
@@ -1060,11 +1029,10 @@ public class PointcutDefinitions {
 // Used in another Aspect:
 @Before("com.app.aspect.PointcutDefinitions.serviceLayer()")
 public void logServiceMethods(JoinPoint jp) { ... }
-```
 
 INTERVIEW TRAP:
-Q: "What's the difference between within() and execution()?"
-A: execution() matches method signatures (return type, name, params).
+#### Q: "What's the difference between within() and execution()?"
+**A:** execution() matches method signatures (return type, name, params).
 within() matches based on the type (class/package) the method is in.
 within(com.app.service.*) = any method in any class in service package.
 execution(* com.app.service.*.*(..)) = same effect here, but
@@ -1105,18 +1073,17 @@ CGLIB Proxy (extends OrderServiceImpl, overrides all non-final methods)
 
 WHICH ONE DOES SPRING CHOOSE?
 
+```text
 Target implements interface? -> YES -> JDK Dynamic Proxy (DEFAULT)
 - NO  -> CGLIB Proxy
 
+```
 Force CGLIB always:
-```text
 @EnableAspectJAutoProxy(proxyTargetClass = true)  // in config class
 OR
 spring.aop.proxy-target-class=true  // in application.properties
-```
 
 CODE (Proxy in action):
-```java
 @Service
 public class ProductService {  // No interface
     public String getProduct(Long id) { return "Product-" + id; }
@@ -1125,10 +1092,8 @@ public class ProductService {  // No interface
 // Spring creates CGLIB proxy for ProductService
 // When you call productService.getProduct(1L) in controller,
 // it actually calls CGLIB proxy -> advice applied -> then actual method
-```
 
 INJECTION TRICK:
-```java
 @Autowired
 private ProductService productService;  // CGLIB proxy injected here
 // NOT the actual ProductService instance!
@@ -1136,10 +1101,8 @@ private ProductService productService;  // CGLIB proxy injected here
 Check proxy type at runtime:
 System.out.println(productService.getClass());
 // Output: class com.app.service.ProductService$$EnhancerBySpringCGLIB$$...
-```
 
 SELF-INVOCATION PROBLEM (CRITICAL INTERVIEW QUESTION):
-```java
 @Service
 public class OrderService {
 
@@ -1173,11 +1136,10 @@ SOLUTIONS:
    @EnableAspectJAutoProxy(exposeProxy = true)
    // Then in method:
    ((OrderService) AopContext.currentProxy()).processPayment(order);
-```
 
 INTERVIEW TRAP:
-Q: "Can Spring AOP intercept private methods?"
-A: NO. Proxies override or implement interface methods. Private methods
+#### Q: "Can Spring AOP intercept private methods?"
+**A:** NO. Proxies override or implement interface methods. Private methods
 are not visible to subclasses (CGLIB) or interfaces (JDK proxy).
 If you annotate a private method with @Transactional, it's silently
 IGNORED with no error. Use AspectJ for private method interception.
@@ -1189,7 +1151,7 @@ IGNORED with no error. Use AspectJ for private method interception.
 ANSWER:
 
 | FEATURE | SPRING AOP | ASPECTJ |
-|---|---|---|
+| --- | --- | --- |
 | Weaving Type | Runtime (Proxy-based) | Compile-time or |
 | Load-time |  |  |
 | JoinPoint Types | Method execution ONLY | Method, field access, |
@@ -1238,20 +1200,15 @@ bytecode modification.
 #### Q7. Implement a Logging Aspect (Real-Time Example)
 
 SCENARIO: Log every service method call with method name, arguments,
-```text
 return value, and execution time across the entire application.
-```
 
 DEPENDENCY (pom.xml):
-```xml
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-aop</artifactId>
 </dependency>
-```
 
 IMPLEMENTATION:
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1292,7 +1249,6 @@ public class LoggingAspect {
         }
     }
 }
-```
 
 > **OUTPUT (Console):**
 
@@ -1303,7 +1259,6 @@ public class LoggingAspect {
 
 SCENARIO: Alert if any service method takes more than 2 seconds.
 
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1336,14 +1291,12 @@ public class PerformanceMonitoringAspect {
         return result;
     }
 }
-```
 
 #### Q9. Exception Handling Aspect (Real-Time Example)
 
 SCENARIO: Catch all service exceptions, log them with context, send alert
 to monitoring system (Slack/PagerDuty), wrap in custom exception.
 
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1373,13 +1326,11 @@ public class ExceptionHandlingAspect {
         alertService.sendCriticalAlert(alert);
     }
 }
-```
 
 > **NOTE: @AfterThrowing does NOT stop exception propagation.**
 
 Use @Around if you want to catch + return fallback value instead.
 
-```java
 // @Around with exception suppression (fallback pattern)
 @Around("execution(* com.app.service.InventoryService.*(..))")
 public Object withFallback(ProceedingJoinPoint pjp) throws Throwable {
@@ -1390,23 +1341,19 @@ public Object withFallback(ProceedingJoinPoint pjp) throws Throwable {
         return InventoryResponse.defaultResponse();  // fallback value
     }
 }
-```
 
 #### Q10. Security / Authorization Aspect (Real-Time Example)
 
 SCENARIO: Create custom @Secured annotation and use AOP to enforce role checks.
 
 CUSTOM ANNOTATION:
-```java
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequiresRole {
     String value();  // e.g., "ADMIN", "MANAGER"
 }
-```
 
 ASPECT:
-```java
 @Aspect
 @Component
 public class SecurityAspect {
@@ -1428,10 +1375,8 @@ public class SecurityAspect {
                  joinPoint.getSignature().getName(), requiredRole);
     }
 }
-```
 
 USAGE IN SERVICE:
-```java
 @Service
 public class AdminService {
 
@@ -1445,12 +1390,10 @@ public class AdminService {
         return userRepository.findAll();
     }
 }
-```
 
 #### Q11. API Request/Response Tracking Aspect
 
 SCENARIO: Track every incoming REST API request (URL, method, user, response time)
-```java
         for audit and analytics purposes.
 
 @Aspect
@@ -1486,7 +1429,6 @@ public class ApiTrackingAspect {
         return response;
     }
 }
-```
 
 ## SECTION 7: COMPLETE MINI REAL-TIME PROJECT EXAMPLE
 
@@ -1511,10 +1453,9 @@ com.ecommerce/
   │   ├── Order.java
   │   └── OrderResponse.java
   └── EcommerceApplication.java
-```
 
+```
 1. CUSTOM ANNOTATION:
-```java
 package com.ecommerce.annotation;
 
 @Target(ElementType.METHOD)
@@ -1522,10 +1463,8 @@ package com.ecommerce.annotation;
 public @interface RequiresRole {
     String value() default "USER";
 }
-```
 
 2. ORDER MODEL:
-```java
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -1543,10 +1482,8 @@ public class OrderResponse {
     private String status;
     private String message;
 }
-```
 
 3. ORDER SERVICE (PURE BUSINESS LOGIC - no cross-cutting concerns):
-```java
 @Service
 @Slf4j
 public class OrderService {
@@ -1579,10 +1516,8 @@ public class OrderService {
         );
     }
 }
-```
 
 4. ORDER CONTROLLER:
-```java
 @RestController
 @RequestMapping("/api/v1/orders")
 @Slf4j
@@ -1611,10 +1546,8 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 }
-```
 
 5. LOGGING ASPECT:
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1650,10 +1583,8 @@ public class LoggingAspect {
         return result;
     }
 }
-```
 
 6. PERFORMANCE MONITORING ASPECT:
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1678,10 +1609,8 @@ public class PerformanceAspect {
         return result;
     }
 }
-```
 
 7. SECURITY ASPECT:
-```java
 @Aspect
 @Component
 @Slf4j
@@ -1712,10 +1641,8 @@ public class SecurityAspect {
                  jp.getSignature().getName(), current);
     }
 }
-```
 
 8. MAIN APPLICATION:
-```java
 @SpringBootApplication
 @EnableAspectJAutoProxy   // Enables AOP proxy creation
 public class EcommerceApplication {
@@ -1723,24 +1650,22 @@ public class EcommerceApplication {
         SpringApplication.run(EcommerceApplication.class, args);
     }
 }
-```
 
 9. OUTPUT (when POST /api/v1/orders is called with Order body):
 [SECURITY] Access GRANTED to placeOrder for role USER
 [LOG]  >>> ENTERING OrderController.placeOrder | ARGS: [Order{id=1, product='Book', qty=2}]
 [LOG]  >>> ENTERING OrderService.placeOrder | ARGS: [Order{id=1, product='Book', qty=2}]
 [PERF] OrderService.placeOrder() completed in 12ms
-[LOG]  <<< EXITING  OrderService.placeOrder | RESULT: OrderResponse{status=SUCCESS} | TIME: 12ms
-[LOG]  <<< EXITING  OrderController.placeOrder | RESULT: <201 CREATED OrderResponse{...}> | TIME: 14ms
+| [LOG]  <<< EXITING  OrderService.placeOrder | RESULT: OrderResponse{status=SUCCESS} | TIME: 12ms |
+| --- | --- | --- |
+| [LOG]  <<< EXITING  OrderController.placeOrder | RESULT: <201 CREATED OrderResponse{...}> | TIME: 14ms |
 
 HTTP RESPONSE: 201 Created
-```json
 {
   "orderId": 1,
   "status": "SUCCESS",
   "message": "Order placed for Book"
 }
-```
 
 FLOW EXPLANATION:
 Request -> [SecurityAspect checks @RequiresRole]
@@ -1758,10 +1683,8 @@ Response returned to client
 #### Q13. How does @Transactional internally use AOP?
 
 ANSWER:
-```text
 @Transactional is a perfect example of Spring's built-in AOP usage.
 It is NOT magic - it is implemented using the exact same proxy mechanism.
-```
 
 INTERNAL FLOW:
 1. Spring detects @Transactional on bean or method
@@ -1781,7 +1704,6 @@ ON SUCCESS:
 ON EXCEPTION (matching rollbackFor):
 - transactionManager.rollback()  // ROLLBACK
 
-```java
 @Service
 public class OrderService {
     @Transactional(
@@ -1812,10 +1734,8 @@ public Object handleTransaction(ProceedingJoinPoint pjp) throws Throwable {
         throw ex;
     }
 }
-```
 
 INTERVIEW TRAP - @Transactional self-invocation:
-```java
 @Service
 public class OrderService {
     public void processOrders() {
@@ -1825,7 +1745,6 @@ public class OrderService {
     @Transactional
     public void saveOrder() { ... }  // Proxy bypassed by this.saveOrder()
 }
-```
 
 #### Q14. Explain the Order of Execution of Multiple Aspects.
 
@@ -1837,7 +1756,6 @@ DEFAULT BEHAVIOR (no @Order):
 Order is UNDEFINED when multiple aspects apply. Do not rely on it.
 
 WITH @Order:
-```java
 @Aspect
 @Component
 @Order(1)  // HIGHEST priority (runs first in Before, last in After)
@@ -1852,19 +1770,22 @@ public class LoggingAspect { ... }
 @Component
 @Order(3)  // LOWEST priority (runs last in Before, first in After)
 public class PerformanceAspect { ... }
-```
 
 EXECUTION ORDER with @Order(1) Security, @Order(2) Logging, @Order(3) Perf:
 REQUEST:
-```json
+```text
   @Before Security (Order 1) -> runs first
   @Before Logging  (Order 2) -> runs second
   @Before Perf     (Order 3) -> runs third
+
+```
   [TARGET METHOD EXECUTES]
+```text
   @After  Perf     (Order 3) -> runs first after
   @After  Logging  (Order 2) -> runs second after
   @After  Security (Order 1) -> runs last
 
+```
 Think of it like NESTED WRAPPERS:
 Security {
   Logging {
@@ -1875,7 +1796,6 @@ Security {
 }
 
 Lower @Order number = Outermost layer = First Before, Last After
-```
 
 PRACTICAL EXAMPLE:
 ```text
@@ -1884,9 +1804,9 @@ PRACTICAL EXAMPLE:
 @Order(3)  AuditAspect      -> Audit after logging
 @Order(100) PerformanceAspect -> Performance last (should not block others)
 
+```
 Use Ordered.HIGHEST_PRECEDENCE  (-2147483648) and
     Ordered.LOWEST_PRECEDENCE   (+2147483647) constants as anchors.
-```
 
 #### Q15. Proxy-Based AOP vs Compile-Time Weaving - When to choose?
 
@@ -1941,8 +1861,11 @@ b. Do any of their @Pointcut expressions match this bean's methods?
 4. If YES:
 a. Collect all matching advisors (Advice + Pointcut pairs)
 b. Create proxy:
+```text
 - If bean implements interface -> JDK Dynamic Proxy
 - Otherwise -> CGLIB subclass
+
+```
 c. Return PROXY instead of original bean
 
 5. The proxy is stored in ApplicationContext
@@ -1951,7 +1874,6 @@ c. Return PROXY instead of original bean
 6. All @Autowired injections get the PROXY
 
 CONFIGURATION TO ENABLE:
-```text
 @EnableAspectJAutoProxy  // registeres AnnotationAwareAspectJAutoProxyCreator
 
 Spring Boot auto-enables this when spring-boot-starter-aop is on classpath
@@ -1964,7 +1886,6 @@ DEBUGGING PROXY:
 //    means CGLIB proxy
 // -> com.sun.proxy.$Proxy42
 //    means JDK Dynamic Proxy
-```
 
 ## SECTION 9: BEST PRACTICES & ANTI-PATTERNS
 
@@ -1990,7 +1911,6 @@ When you need both "before" and "after" logic (like timing),
 use @Around instead of @Before + @After to keep context (start time).
 
 5. USE CUSTOM ANNOTATIONS FOR TARGETED INTERCEPTION:
-```java
    @annotation(com.app.annotation.Auditable) is cleaner than broad
    execution() patterns. Makes it explicit what gets intercepted.
 
@@ -2026,7 +1946,6 @@ DON'T'S (Anti-Patterns):
 6. DON'T use AOP to replace proper design:
    If you find yourself advising 30 methods with complex conditional logic,
    reconsider your service layer design.
-```
 
 > **PERFORMANCE CONSIDERATIONS:**
 
@@ -2051,7 +1970,7 @@ WHEN NOT TO USE AOP:
 CLEAN ARCHITECTURE WITH AOP:
 
 | Layer | Aspect Applied |
-|---|---|
+| --- | --- |
 | Controller | API request logging, response tracking, auth check |
 | Service | Transaction, performance monitoring, audit logging |
 | Repository | Query logging (via Spring Data), retry on failure |
@@ -2059,74 +1978,72 @@ CLEAN ARCHITECTURE WITH AOP:
 
 ## SECTION 10: QUICK-FIRE INTERVIEW Q&A REFERENCE
 
-Q: What is a JoinPoint?
-A: A point in execution where advice can be applied. In Spring AOP, always
+#### Q: What is a JoinPoint?
+**A:** A point in execution where advice can be applied. In Spring AOP, always
 a method execution. JoinPoint object provides method name, args, target.
 
-Q: What is the difference between JoinPoint and ProceedingJoinPoint?
-A: JoinPoint: read-only access to method info. Used in @Before, @After.
+#### Q: What is the difference between JoinPoint and ProceedingJoinPoint?
+**A:** JoinPoint: read-only access to method info. Used in @Before, @After.
 ProceedingJoinPoint: extends JoinPoint, adds proceed() method.
 Used ONLY in @Around to actually invoke the target method.
 
-Q: Can we have multiple @Before advices for same method?
-A: YES. Multiple advices from same or different aspects can apply.
+#### Q: Can we have multiple @Before advices for same method?
+**A:** YES. Multiple advices from same or different aspects can apply.
 Order is controlled by @Order.
 
-Q: What is Weaving?
-A: Process of applying aspects to target objects. Runtime for Spring AOP
+#### Q: What is Weaving?
+**A:** Process of applying aspects to target objects. Runtime for Spring AOP
 (proxy creation), Compile-time for AspectJ (bytecode modification).
 
-Q: Does Spring AOP work without @EnableAspectJAutoProxy?
-A: In Spring Boot, YES. AopAutoConfiguration enables it automatically
+#### Q: Does Spring AOP work without @EnableAspectJAutoProxy?
+**A:** In Spring Boot, YES. AopAutoConfiguration enables it automatically
 when spring-boot-starter-aop is on classpath.
 In plain Spring, you need @EnableAspectJAutoProxy or XML config.
 
-Q: Can AOP intercept a method annotated with @Transactional from SAME class?
-A: NO. Self-invocation problem. The @Transactional advice is also proxy-based.
-```java
+#### Q: Can AOP intercept a method annotated with @Transactional from SAME class?
+**A:** NO. Self-invocation problem. The @Transactional advice is also proxy-based.
    this.method() bypasses proxy, so transaction is not applied.
 
-Q: What is the "target" in JoinPoint?
-A: The actual object being proxied (not the proxy).
+#### Q: What is the "target" in JoinPoint?
+**A:** The actual object being proxied (not the proxy).
    joinPoint.getTarget() returns original bean instance.
    joinPoint.getThis()   returns the proxy instance.
 
-Q: What happens if @Around advice doesn't call proceed()?
-A: The target method is NEVER executed. This is intentional design
+#### Q: What happens if @Around advice doesn't call proceed()?
+**A:** The target method is NEVER executed. This is intentional design
    (used in rate limiting, circuit breaker, caching to skip method call).
 
-Q: Can we apply multiple aspects to same method?
-A: YES. Aspects are applied in order based on @Order.
+#### Q: Can we apply multiple aspects to same method?
+**A:** YES. Aspects are applied in order based on @Order.
    Lower number = higher priority (outermost in @Around chain).
 
-Q: Why can't Spring AOP intercept private methods?
-A: CGLIB creates a subclass - private methods are not accessible to subclass.
+#### Q: Why can't Spring AOP intercept private methods?
+**A:** CGLIB creates a subclass - private methods are not accessible to subclass.
    JDK proxy implements interface - private methods not in interface.
    Use AspectJ compile-time weaving for private method interception.
 
-Q: What is the difference between @After and @AfterReturning?
-A: @After runs always (like finally block) - no access to return value.
+#### Q: What is the difference between @After and @AfterReturning?
+**A:** @After runs always (like finally block) - no access to return value.
    @AfterReturning runs only on successful return, CAN access return value
    via 'returning' attribute.
 
-Q: Can @AfterThrowing suppress exceptions?
-A: NO. It only observes exceptions but cannot suppress them.
+#### Q: Can @AfterThrowing suppress exceptions?
+**A:** NO. It only observes exceptions but cannot suppress them.
    Use @Around with try-catch to suppress/replace exceptions.
 
-Q: What is proxy-target-class=true in Spring AOP?
-A: Forces CGLIB proxy even when target implements interface.
+#### Q: What is proxy-target-class=true in Spring AOP?
+**A:** Forces CGLIB proxy even when target implements interface.
    Default: Spring uses JDK proxy if interface present.
    spring.aop.proxy-target-class=true overrides this.
 
-Q: How does Spring @Cacheable work internally?
-A: Same as @Transactional - uses AOP proxy. When @Cacheable method is called:
+#### Q: How does Spring @Cacheable work internally?
+**A:** Same as @Transactional - uses AOP proxy. When @Cacheable method is called:
    CacheInterceptor checks cache for key. If hit: return cached value (skips
    method). If miss: proceed(), store result in cache, return result.
 
-Q: What is @DeclareParents in AOP?
-A: Introduction advice. Adds NEW methods/interfaces to existing beans
+#### Q: What is @DeclareParents in AOP?
+**A:** Introduction advice. Adds NEW methods/interfaces to existing beans
    without modifying them. Example: Add Auditable interface to all Services.
-```
 
 COMMON INTERVIEW SCENARIOS:
 SCENARIO 1: "Add logging to all REST endpoints without modifying controllers"
@@ -2177,10 +2094,8 @@ Package : org.springframework.stereotype
 Definition : Generic stereotype to mark a class as a Spring-managed bean.
 Auto-detected via component scanning and registered in the
 ApplicationContext. Root annotation for @Service, @Repository,
-```text
              @Controller.
 Use : Utility/helper classes not fitting any specific layer role.
-```
 
 2.  @Service
 Package : org.springframework.stereotype
@@ -2223,11 +2138,9 @@ Package : org.springframework.beans.factory.annotation
 Definition : Used alongside @Autowired when multiple beans of the same type
 exist. Specifies which bean to inject by its name.
 Example:
-```java
 @Autowired
 @Qualifier("mysqlDataSource")
 private DataSource dataSource;
-```
 
 8.  @Primary
 Package : org.springframework.context.annotation
@@ -2256,11 +2169,9 @@ Package : org.springframework.beans.factory.annotation
 Definition : Injects a scalar value from application.properties, environment
 variables, or SpEL expression.
 Examples:
-```text
 @Value("${app.name}")               // from properties
 @Value("${server.port:8080}")        // with default
 @Value("#{systemProperties['os']}")  // SpEL
-```
 
 12. @PropertySource
 Package : org.springframework.context.annotation
@@ -2311,10 +2222,8 @@ Package : org.springframework.context.annotation
 Definition : Registers a bean only when the specified Spring profile is active.
 Activation: spring.profiles.active=dev  in application.properties.
 Example:
-```java
 @Bean @Profile("prod")
 public DataSource prodDataSource() { ... }
-```
 
 20. @Conditional
 Package : org.springframework.context.annotation
@@ -2326,12 +2235,13 @@ Base for all @ConditionalOn* variants used in auto-configuration.
 21. @SpringBootApplication
 Package : org.springframework.boot.autoconfigure
 Definition : Meta-annotation bundling three annotations:
-```java
+```text
   @SpringBootConfiguration  -> marks class as config source
   @EnableAutoConfiguration  -> activates auto-configuration
   @ComponentScan            -> scans from root package
-Entry point of every Spring Boot application.
+
 ```
+Entry point of every Spring Boot application.
 
 22. @EnableAutoConfiguration
 Package : org.springframework.boot.autoconfigure
@@ -2367,13 +2277,11 @@ Package : org.springframework.boot.context.properties
 Definition : Binds external configuration (application.properties / YAML)
 to a Java POJO using a prefix. Provides type-safe config.
 Example:
-```java
 @ConfigurationProperties(prefix = "app.mail")
 public class MailProperties {
     private String host;
     private int port;   // binds app.mail.host and app.mail.port
 }
-```
 
 28. @EnableConfigurationProperties
 Package : org.springframework.boot.context.properties
@@ -2440,9 +2348,7 @@ Use : Typically on POST/PUT methods.
 40. @ResponseBody
 Package : org.springframework.web.bind.annotation
 Definition : Serializes method return value directly to HTTP response body.
-```text
 @RestController applies this globally; no per-method usage needed.
-```
 
 41. @ResponseStatus
 Package : org.springframework.web.bind.annotation
@@ -2531,10 +2437,8 @@ Package : org.aspectj.lang.annotation
 Definition : Declares a reusable, named pointcut expression.
 Keeps advice annotations DRY (no repeated expressions).
 Example:
-```java
 @Pointcut("execution(* com.app.service.*.*(..))")
 public void serviceLayer() {}
-```
 
 56. @EnableAspectJAutoProxy
 Package : org.springframework.context.annotation
@@ -2555,9 +2459,7 @@ Hibernate-specific: org.hibernate.annotations
 
 58. @Entity
 Definition : Marks a Java class as a JPA-managed persistent entity.
-```text
 Mapped to a database table. Requires a no-arg constructor and @Id.
-```
 
 59. @Table
 Definition : Specifies database table name, schema, and unique constraints.
@@ -2594,32 +2496,26 @@ Definition : Maps one entity owning a collection of another entity.
 The FK is on the child (many) side.
 Attributes : mappedBy (child field name), cascade, fetch (LAZY default), orphanRemoval.
 Example:
-```java
 @OneToMany(mappedBy="department", cascade=CascadeType.ALL, fetch=FetchType.LAZY)
 private List<Employee> employees;
-```
 
 66. @ManyToOne
 Definition : Owning side of many-to-one. The FK column is in this entity's table.
 Attributes : fetch (EAGER default — change to LAZY!), cascade, optional.
 Example:
-```java
 @ManyToOne(fetch=FetchType.LAZY)
 @JoinColumn(name="dept_id")
 private Department department;
-```
 
 67. @ManyToMany
 Definition : Maps a many-to-many relationship. Requires a join table in the DB.
 Attributes : mappedBy (non-owning side), cascade, fetch (LAZY default).
 Example:
-```java
 @ManyToMany
 @JoinTable(name="student_course",
     joinColumns=@JoinColumn(name="student_id"),
     inverseJoinColumns=@JoinColumn(name="course_id"))
 private List<Course> courses;
-```
 
 68. @JoinColumn
 Definition : Specifies the FK column for @ManyToOne / @OneToOne associations.
@@ -2649,9 +2545,11 @@ BLOB for byte[]). Used for document content, images, etc.
 74. @Enumerated
 Definition : Maps a Java Enum to a DB column.
 Values:
+```text
 EnumType.ORDINAL : stores enum ordinal int  → FRAGILE (avoid)
 EnumType.STRING  : stores enum name String  → PREFERRED
 
+```
 75. @Temporal  (deprecated in JPA 2.2+ in favour of java.time)
 Definition : Maps java.util.Date / Calendar to DATE, TIME, or TIMESTAMP.
 
@@ -2702,13 +2600,14 @@ Parsed and validated at startup (fail-fast).
 Package : org.springframework.data.jpa.repository
 Definition : Declares a custom JPQL or native SQL query on a repository method.
 Attributes:
+```text
 value         -> JPQL or SQL string
 nativeQuery=true -> treats value as native SQL
+
+```
 Example:
-```sql
 @Query("SELECT e FROM Employee e WHERE e.department = :dept")
 List<Employee> findByDepartment(@Param("dept") String dept);
-```
 
 84. @Param
 Package : org.springframework.data.repository.query
@@ -2721,12 +2620,10 @@ Definition : Required for @Query methods performing UPDATE or DELETE (DML).
 Without it, Spring Data throws InvalidDataAccessApiUsageException.
 Must be paired with @Transactional.
 Example:
-```sql
 @Modifying
 @Transactional
 @Query("UPDATE Employee e SET e.salary = :sal WHERE e.id = :id")
 int updateSalary(@Param("id") Long id, @Param("sal") double sal);
-```
 
 86. @EnableJpaRepositories
 Package : org.springframework.data.jpa.repository.config
@@ -2738,11 +2635,9 @@ Package : org.springframework.data.jpa.repository
 Definition : Overrides the default fetch plan for a specific query.
 Fetches LAZY associations eagerly to avoid N+1 SELECT problem.
 Example:
-```sql
 @EntityGraph(attributePaths = {"orders", "orders.items"})
 @Query("SELECT c FROM Customer c WHERE c.id = :id")
 Optional<Customer> findWithOrdersById(@Param("id") Long id);
-```
 
 88. @Lock
 Package : org.springframework.data.jpa.repository
@@ -2778,21 +2673,17 @@ Auto-enabled by Spring Boot.
 91. @EnableWebSecurity
 Package : org.springframework.security.config.annotation.web.configuration
 Definition : Activates Spring Security's web security support on a
-```text
 @Configuration class. In Spring Boot 3, mostly auto-configured.
-```
 
 92. @PreAuthorize
 Package : org.springframework.security.access.prepost
 Definition : Method-level security check BEFORE method execution.
 Evaluates a SpEL expression against the SecurityContext.
 Examples:
-```text
   @PreAuthorize("hasRole('ADMIN')")
   @PreAuthorize("hasAuthority('WRITE_PRIVILEGE')")
   @PreAuthorize("#userId == authentication.principal.id")  // owner check
 Requires : @EnableMethodSecurity (Spring Boot 3+ / Spring Security 6+)
-```
 
 93. @PostAuthorize
 Package : org.springframework.security.access.prepost
@@ -2811,10 +2702,8 @@ Example : @Secured({"ROLE_ADMIN", "ROLE_MANAGER"})
 Package : javax.annotation.security
 Definition : Standard Java EE annotation for role-based access.
 Similar to @Secured. Requires jsr250Enabled=true in
-```text
              @EnableMethodSecurity.
 Example : @RolesAllowed("ADMIN")
-```
 
 96. @EnableMethodSecurity  (Spring Security 6 / Spring Boot 3)
 Package : org.springframework.security.config.annotation.method.configuration
@@ -2827,20 +2716,16 @@ Definition : Injects the currently authenticated user (UserDetails or custom
 principal object) directly into a controller method parameter.
 Avoids manual SecurityContextHolder.getContext().getAuthentication().
 Example:
-```java
 @GetMapping("/profile")
 public UserDTO getProfile(@AuthenticationPrincipal UserDetails user) {
     return userService.getProfile(user.getUsername());
 }
-```
 
 98. @WithMockUser   (spring-security-test)
 Package : org.springframework.security.test.context.support
 Definition : Populates the SecurityContext with a mock authenticated user
-```text
              for unit and integration tests. Avoids real authentication setup.
 Example : @WithMockUser(username="teja", roles={"ADMIN"})
-```
 
 ## SECTION I: BEAN VALIDATION (JSR-380) ANNOTATIONS  [VALID]
 
@@ -2890,11 +2775,9 @@ annotation processing. Source code stays clean; bytecode has the methods.
 
 110. @Data
 Definition : Bundles: @Getter + @Setter + @EqualsAndHashCode +
-```text
              @ToString + @RequiredArgsConstructor.
 Warning : Avoid @EqualsAndHashCode on JPA entities with bidirectional
           relationships (infinite recursion / hashCode instability).
-```
 
 111. @Getter / @Setter
 Definition : Generates getter / setter for all (class-level) or a specific
@@ -2909,13 +2792,11 @@ Definition : Generates a constructor with ALL fields as parameters.
 114. @RequiredArgsConstructor
 Definition : Generates a constructor for all final and @NonNull fields.
 Perfect for Spring constructor injection:
-```java
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository repo; // injected by Lombok ctor
 }
-```
 
 115. @Builder
 Definition : Implements the Builder pattern for clean object construction.
@@ -2924,9 +2805,7 @@ Example : User.builder().name("Teja").email("t@t.com").build();
 116. @Slf4j
 Definition : Injects a SLF4J Logger named 'log' into the class.
 Equivalent to:
-```java
 private static final Logger log = LoggerFactory.getLogger(Foo.class);
-```
 
 117. @ToString
 Definition : Generates toString(). Specific fields can be included/excluded
@@ -2939,7 +2818,7 @@ callSuper=true : includes superclass fields.
 ## QUICK INTERVIEW ANNOTATION CHEAT SHEET — ALL CATEGORIES
 
 | CATEGORY | KEY ANNOTATIONS |
-|---|---|
+| --- | --- |
 | Spring Core / DI | @Component, @Service, @Repository, @Controller, @Autowired, |
 | @Qualifier, @Primary, @Bean, @Configuration, @Value, @Scope, |  |
 | @PostConstruct, @PreDestroy, @Profile, @Lazy, @DependsOn |  |
@@ -2971,3 +2850,4 @@ callSuper=true : includes superclass fields.
 | @Getter, @Setter, @ToString, @EqualsAndHashCode |  |
 
 ## END OF ANNOTATIONS REFERENCE GUIDE -- 2026-04-22
+

@@ -1,6 +1,5 @@
-﻿================================================================================
-MICROSERVICES - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# MICROSERVICES - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -17,10 +16,11 @@ Client -> API Gateway -> Load Balancer -> Service Discovery
 ```text
     ┌───────────┼──────────────┐
     ↓           ↓              ↓
+
+```
 Service A    Service B      Service C
    |            |              |
    DB-A         DB-B           DB-C
-```
 
 Cross-cutting: Config Server, Circuit Breaker, Distributed Tracing, Log Aggregation
 
@@ -57,7 +57,6 @@ SSL termination, Request/Response transformation
 Spring Cloud Gateway:
 @Bean
 public RouteLocator routes(RouteLocatorBuilder builder) {
-```text
     return builder.routes()
         .route("policy-service", r -> r
             .path("/api/v1/policies/**")
@@ -68,7 +67,6 @@ public RouteLocator routes(RouteLocatorBuilder builder) {
             .uri("lb://CLAIM-SERVICE"))
         .build();
 }
-```
 
 Flow:
 Client Request -> API Gateway -> Service Discovery (Eureka)
@@ -93,30 +91,27 @@ public class DiscoveryServer { }
 public class PolicyService { }
 
 // application.yml
+```yaml
 eureka:
 client:
 service-url:
 defaultZone: http://localhost:8761/eureka
 instance:
 prefer-ip-address: true
-
+```
 #### Q5. Circuit Breaker (Resilience4j).
 
 States: CLOSED (normal) -> OPEN (failing, fast-fail) -> HALF_OPEN (testing)
 
 @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
 public PaymentResponse processPayment(PaymentRequest req) {
-```text
     return paymentClient.pay(req); // External call
 }
-```
 
 public PaymentResponse paymentFallback(PaymentRequest req, Exception ex) {
 log.warn("Payment service down, queuing for retry");
-```text
     return new PaymentResponse("QUEUED", "Payment queued for processing");
 }
-```
 
 Config (application.yml):
 resilience4j.circuitbreaker.instances.paymentService:
@@ -128,10 +123,12 @@ permittedNumberOfCallsInHalfOpenState: 3
 Flow:
 Request -> Circuit Breaker -> Service call
 CLOSED state: Calls pass through, monitors failures
+```text
 failure rate > 50% -> OPEN state: Returns fallback immediately
 After 30s -> HALF_OPEN: Allows 3 test requests
 If tests pass -> CLOSED | If tests fail -> OPEN
 
+```
 ## ROUND 3 - ADVANCED
 
 #### Q6. Inter-service Communication patterns.
@@ -142,11 +139,9 @@ Asynchronous: Message queues (Kafka, RabbitMQ), Event-driven
 Feign Client:
 @FeignClient(name = "PAYMENT-SERVICE", fallback = PaymentFallback.class)
 public interface PaymentClient {
-```text
     @PostMapping("/api/v1/payments")
     PaymentResponse processPayment(@RequestBody PaymentRequest req);
 }
-```
 
 When sync: Real-time response needed (GET operations)
 When async: Fire-and-forget, event notifications, high throughput
@@ -220,8 +215,8 @@ Client (Angular) -> API Gateway (Spring Cloud Gateway)
      │      ├── Inventory Service (reserve stock)
      │      └── Notification Service (email/SMS via Kafka)
      └── Search Service (Elasticsearch)
-```
 
+```
 Each service: Own DB, Docker container, K8s pod, CI/CD pipeline
 
 KEY QUESTIONS:
@@ -241,24 +236,30 @@ KEY QUESTIONS:
 #### Q11. Saga Pattern in detail - Choreography vs Orchestration.
 
 Choreography: Each service publishes events, others react
+```text
 Order Service -> "order-created" event
 Payment Service listens -> processes -> "payment-done" event
 Inventory Service listens -> reserves -> "stock-reserved" event
 If any fails -> publishes compensating event
 
+```
 Orchestration: Central Saga Orchestrator coordinates
+```text
 Orchestrator -> call Payment -> call Inventory -> call Notification
 If Payment fails -> Orchestrator calls compensate on all previous
 
+```
 Choreography: Simple, decoupled, but hard to track complex flows
 Orchestration: Complex to build, but clear flow, easier debugging
 
 #### Q12. CQRS (Command Query Responsibility Segregation).
 
 Separate READ model from WRITE model.
+```text
 Write: Command -> Event Store -> Event Bus -> Read Model updated
 Read: Query -> Read-optimized DB (denormalized views)
 
+```
 Use when: Different scaling needs for reads vs writes
 Example: E-commerce product catalog (high reads) vs order processing (writes)
 
@@ -327,3 +328,4 @@ Q19-Q20 Quick Microservices:
 #### Q19. Config Server (Spring Cloud Config): Centralized configuration
 
 #### Q20. Bulkhead pattern: Isolate thread pools per service call
+

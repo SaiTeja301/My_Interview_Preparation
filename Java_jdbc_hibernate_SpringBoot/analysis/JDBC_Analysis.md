@@ -1,6 +1,5 @@
-﻿================================================================================
-JDBC - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# JDBC - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -51,9 +50,11 @@ PreparedStatement pstmt = conn.prepareStatement(sql);
 |
 SQL sent to DB engine -> Parsed -> Compiled -> Execution plan cached
 |
+```text
 pstmt.setInt(1, value); -> Parameters bound
 pstmt.executeQuery();   -> Uses cached plan (no recompilation!)
 
+```
 #### Q2. JDBC Connection lifecycle.
 
 DriverManager.getConnection(url, user, pass)
@@ -72,12 +73,10 @@ Close resources (ResultSet -> Statement -> Connection) in REVERSE order
 try (Connection conn = dataSource.getConnection();
 PreparedStatement ps = conn.prepareStatement(sql);
 ResultSet rs = ps.executeQuery()) {
-```text
     while (rs.next()) {
         // Process rows
     }
 } // Auto-closed in reverse order
-```
 
 ## ROUND 2 - CORE TECHNICAL
 
@@ -96,11 +95,13 @@ spring.datasource.hikari.connection-timeout=30000
 Flow:
 Application requests connection
 |
+```text
 Pool has idle connection? -> YES -> Return to app (fast!)
 |-- NO -> Pool at max? -> NO -> Create new connection
 - YES -> Wait (up to connectionTimeout)
 - Timeout -> throw SQLException!
 
+```
 Production Issue:
 In IKEA project, connection leak caused pool exhaustion. All 20 connections
 held but not returned because PreparedStatement was not closed in finally block.
@@ -115,10 +116,8 @@ ps2.executeUpdate(); // Credit
 conn.commit();       // Both succeed
 } catch (SQLException e) {
 conn.rollback();     // Both fail (atomicity!)
-```text
     throw e;
 }
-```
 
 Savepoint:
 Savepoint sp = conn.setSavepoint("afterDebit");
@@ -139,11 +138,12 @@ SERIALIZABLE: Full isolation (slowest, safest)
 conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
 
 Problems at each level:
-Dirty Read | Non-Repeatable Read | Phantom Read
-READ_UNCOMMITTED:      Yes     |       Yes           |     Yes
-READ_COMMITTED:        No      |       Yes           |     Yes
-REPEATABLE_READ:       No      |       No            |     Yes
-SERIALIZABLE:          No      |       No            |     No
+| Dirty Read | Non-Repeatable Read | Phantom Read |
+| --- | --- | --- |
+| READ_UNCOMMITTED:      Yes | Yes | Yes |
+| READ_COMMITTED:        No | Yes | Yes |
+| REPEATABLE_READ:       No | No | Yes |
+| SERIALIZABLE:          No | No | No |
 
 ## ROUND 3 - ADVANCED
 
@@ -162,7 +162,6 @@ ps.setString(2, employees.get(i).getDept());
 ps.setDouble(3, employees.get(i).getSalary());
 ps.addBatch();
 
-```text
     if (i % 1000 == 0) {  // Execute in batches of 1000
         ps.executeBatch();
         ps.clearBatch();
@@ -170,7 +169,6 @@ ps.addBatch();
 }
 ps.executeBatch(); // Execute remaining
 conn.commit();
-```
 
 MySQL URL for batch optimization:
 jdbc:mysql://localhost:3306/db?rewriteBatchedStatements=true
@@ -227,10 +225,12 @@ Spring JDBC: JdbcTemplate wraps JDBC, eliminates boilerplate, auto resource mgmt
 Spring Data JPA: Repository interface, automatic query generation, ORM
 
 Flowchart:
+```text
 Raw JDBC -> Spring JDBC (JdbcTemplate) -> Spring Data JPA (Repository)
 More control <---------------------------------> Less boilerplate
 More code    <---------------------------------> More abstraction
 
+```
 KEY QUESTIONS:
 1. Statement vs PreparedStatement
 2. Connection Pooling (HikariCP)
@@ -248,9 +248,11 @@ KEY QUESTIONS:
 
 HikariCP is default in Spring Boot. Pool maintains pre-created connections.
 
+```text
 Flow: Request -> Pool.getConnection() -> if available: return cached
 - if all busy & below max: create new -> if at max: wait (timeout)
 
+```
 Key Properties:
 maximumPoolSize=10 (default), minimumIdle=same as max
 connectionTimeout=30000 (30s wait max), idleTimeout=600000 (10min)
@@ -295,12 +297,10 @@ ps.setString(1, policies[i].getId());
 ps.setString(2, policies[i].getName());
 ps.setDouble(3, policies[i].getPremium());
 ps.addBatch();
-```text
     if (i % 1000 == 0) { ps.executeBatch(); ps.clearBatch(); }
 }
 ps.executeBatch();
 conn.commit();
-```
 
 > **Performance: Batch (1000 at a time) is ~100x faster than individual inserts.**
 
@@ -314,9 +314,7 @@ Cause: Connection borrowed from pool but never returned (missing close())
 Detection: spring.datasource.hikari.leak-detection-threshold=60000
 
 Prevention: Always use try-with-resources
-```text
 try (Connection conn = dataSource.getConnection()) { ... }
-```
 
 Spring: @Transactional manages connection lifecycle automatically.
 
@@ -333,3 +331,4 @@ Q20-Q25 Quick JDBC:
 #### Q24. Database migration tools: Flyway vs Liquibase
 
 #### Q25. N+1 query problem at JDBC level and detection with log analysis
+

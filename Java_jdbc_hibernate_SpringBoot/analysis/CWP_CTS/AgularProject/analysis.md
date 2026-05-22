@@ -1,8 +1,5 @@
-﻿================================================================================
-ENTERPRISE ANGULAR PROJECT: COMPLETE ANALYSIS & INTERVIEW GUIDE
-Project: OdaAdmin UI - Nationwide Insurance Enterprise Application
-Analysis Date: March 2, 2026
-Level: Beginner to Expert | Interview Focused
+# ENTERPRISE ANGULAR PROJECT: COMPLETE ANALYSIS & INTERVIEW GUIDE
+> *Project: OdaAdmin UI - Nationwide Insurance Enterprise Application · Analysis Date: March 2, 2026 · Level: Beginner to Expert | Interview Focused*
 
 ## TABLE OF CONTENTS
 
@@ -112,11 +109,12 @@ Benefits:
 • Native-app-like feel
 
 YOUR PROJECT SPA FLOW:
-index.html → main.ts → App → Router → Feature Components
 ```text
+index.html → main.ts → App → Router → Feature Components
                                   ↓
-                          Agency-Discrepancies / Premium-Audit / etc.
+
 ```
+                          Agency-Discrepancies / Premium-Audit / etc.
 
 1.3 ANGULAR APPLICATION LIFECYCLE
 
@@ -175,8 +173,8 @@ ensuring UI components are ready when Angular renders.
 │  13. Component → subscribe() → Update Signals/State                      │
 │  14. Change Detection → DOM Update → UI Rendered                         │
 └─────────────────────────────────────────────────────────────────────────┘
-```
 
+```
 REAL EXAMPLE FROM YOUR PROJECT:
 
 Step 1-3: Bootstrap (main.ts)
@@ -196,7 +194,6 @@ provideHttpClient(withInterceptors([authInterceptor(), apiInterceptor])),
 
 Step 5-6: Authentication Check (app.ts)
 ngOnInit(): void {
-```text
   this.oidcSecurityService
     .checkAuth()
     .subscribe((loginResponse: LoginResponse) => {
@@ -206,7 +203,6 @@ ngOnInit(): void {
       }
     });
 }
-```
 
 Step 7-10: HTTP Call with Interceptor
 // Service call
@@ -221,7 +217,6 @@ headers = headers
 Step 11-14: Response Handling
 .subscribe({
 next: (response) => {
-```sql
     this.searchResults.set(results);  // Update signal
     // DOM automatically updates via reactive binding
   },
@@ -229,7 +224,6 @@ next: (response) => {
     this.errors.set([error.message]);
   }
 });
-```
 
 ## PART 2: ENTERPRISE FOLDER STRUCTURE DEEP ANALYSIS
 
@@ -270,8 +264,8 @@ src/
 ├── environments/                # Environment configurations
 ├── assets/                      # Static assets
 └── styles/                      # Global styles
-```
 
+```
 2.1 CORE FOLDER EXPLANATION
 
 #### Purpose: Contains singleton services and app-wide functionality that should
@@ -297,8 +291,8 @@ core/
 │   └── loading.service.ts
 └── strategies/
     └── custom-route-reuse.strategy.ts
-```
 
+```
 REAL EXAMPLE - api-endpoints.enum.ts:
 export enum ApiEndpoints {
 USER_ACCESS = '/get-user-infos/',
@@ -309,7 +303,6 @@ AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
 }
 
 export class ApiUrlBuilder {
-```typescript
   static buildUrl(endpoint: ApiEndpoints): string {
     return `${environment.apiEndPointUrl}${endpoint}`;
   }
@@ -319,7 +312,6 @@ export class ApiUrlBuilder {
     // Build query parameters...
   }
 }
-```
 
 WHY THIS PATTERN MATTERS:
 • Single source of truth for API URLs
@@ -346,8 +338,8 @@ shared/
 │   └── confirm-dialog.service.ts     # UI utility service
 └── utils/
     └── bolt.utils.ts                 # Bolt Design System utilities
-```
 
+```
 REAL EXAMPLE - agency-discrepancy.model.ts:
 export interface AgencyDiscrepancy {
 id?: number;
@@ -398,8 +390,8 @@ features/
 │   └── edit/
 └── ovr2b-conversion/
     └── components/
-```
 
+```
 LAZY LOADING EXAMPLE (app.routes.ts):
 {
 path: 'agency-discrepancies',
@@ -427,11 +419,10 @@ layout/
 │   └── ...
 └── footer/
     └── footer.component.ts
-```
 
+```
 REAL EXAMPLE - sidebar.component.ts:
 export class SidebarComponent {
-```sql
   private readonly userAccessService = inject(UserAccessService);
   readonly accessibleScreens = signal<ScreenAccess[]>([]);
 
@@ -443,7 +434,6 @@ export class SidebarComponent {
     });
   }
 }
-```
 
 ## PART 3: ANGULAR MODULES & STANDALONE COMPONENTS
 
@@ -508,7 +498,6 @@ YOUR PROJECT'S LAZY LOADING:
 export const routes: Routes = [
 { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
-```json
   // Lazy-loaded components
   {
     path: 'agency-discrepancies',
@@ -522,7 +511,6 @@ export const routes: Routes = [
       .then(m => m.PremiumAuditRoutingComponent),
   },
 ];
-```
 
 HOW IT WORKS:
 1. User navigates to '/agency-discrepancies'
@@ -558,7 +546,6 @@ styleUrls: ['./agency-discrepancies.component.css'],
 schemas: [CUSTOM_ELEMENTS_SCHEMA]  // Allow Bolt web components
 })
 export class AgencyDiscrepanciesComponent implements OnInit, OnDestroy {
-```typescript
   // Properties
   searchForm!: FormGroup;
   searchResults = signal<AgencyDiscrepancy[]>([]);
@@ -578,7 +565,6 @@ export class AgencyDiscrepanciesComponent implements OnInit, OnDestroy {
   // Methods
   onSubmit(action: string): void { }
 }
-```
 
 4.2 COMPONENT LIFECYCLE HOOKS
 
@@ -599,7 +585,6 @@ YOUR PROJECT EXAMPLES:
 ngOnInit() - Initialization Logic:
 // From: agency-discrepancies.component.ts
 ngOnInit(): void {
-```text
   // Create form
   this.searchForm = new FormGroup({
     ovAgentNumber: new FormControl(''),
@@ -616,26 +601,21 @@ ngOnInit(): void {
     }
   });
 }
-```
 
 ngOnDestroy() - Cleanup Logic:
 // From: agency-discrepancies.component.ts
 ngOnDestroy(): void {
-```text
   // CRITICAL: Prevent memory leaks
   if (this.navigationSubscription) {
     this.navigationSubscription.unsubscribe();
   }
 }
-```
 
 ngOnDestroy() - From edit-premium-audit-routing.component.ts:
 ngOnDestroy() {
-```text
   // Restore default browser title
   document.title = 'ODAdmin';
 }
-```
 
 4.3 COMPONENT COMMUNICATION PATTERNS
 
@@ -718,8 +698,8 @@ core/services/
 ├── agency-accounting-routing.service.ts
 ├── ovr2b-conversion.service.ts
 └── loading.service.ts
-```
 
+```
 5.2 SERVICE IMPLEMENTATION
 
 ### BASIC SERVICE PATTERN:
@@ -729,7 +709,6 @@ core/services/
 providedIn: 'root'  // Singleton at root level
 })
 export class LoadingService {
-```java
   private loadingSubject = new BehaviorSubject<boolean>(false);
   public loading$ = this.loadingSubject.asObservable();
 
@@ -741,7 +720,6 @@ export class LoadingService {
     this.loadingSubject.next(false);
   }
 }
-```
 
 ADVANCED SERVICE PATTERN:
 // From: agency-discrepancy.service.ts
@@ -749,7 +727,6 @@ ADVANCED SERVICE PATTERN:
 providedIn: 'root'
 })
 export class AgencyDiscrepancyService {
-```java
   private readonly apiUrl = ApiUrlBuilder.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
 
   constructor(private http: HttpClient) { }
@@ -773,7 +750,6 @@ export class AgencyDiscrepancyService {
     );
   }
 }
-```
 
 5.3 DEPENDENCY INJECTION (DI) EXPLAINED
 
@@ -792,12 +768,10 @@ TWO INJECTION STYLES IN YOUR PROJECT:
 
 Constructor Injection (Traditional):
 constructor(
-```java
   private agencyService: AgencyDiscrepancyService,
   private loadingService: LoadingService,
   private router: Router,
 ) { }
-```
 
 inject() Function (Modern, Preferred in Angular 14+):
 // From: app.ts
@@ -810,12 +784,10 @@ private readonly authService = inject(AuthService);
 
 #### Root Injector (providedIn: 'root')
 
-```text
         ↓
 Environment Injector (Lazy-loaded routes)
         ↓
 Element Injector (Component level)
-```
 
 PROVIDEIN OPTIONS:
 @Injectable({ providedIn: 'root' })    // App-wide singleton
@@ -860,7 +832,6 @@ catchError(error => { /* handle */ })
 POST Request:
 // From: agency-discrepancy.service.ts
 createWinsValidation(request: WinsValidationRequest): Observable<WinsValidationResponse> {
-```text
   const createUrl = ApiUrlBuilder.getCreateUrl();
   return this.http.post<any>(createUrl, request, {
     headers: {
@@ -876,44 +847,39 @@ createWinsValidation(request: WinsValidationRequest): Observable<WinsValidationR
     catchError(error => this.handleWinsValidationError(error, request))
   );
 }
-```
 
 PUT Request:
 updateRecord(record: PremiumAuditRouting): Observable<any> {
-```text
   const url = `${this.apiUrl}/${record.id}`;
   return this.http.put(url, record).pipe(
     catchError(this.handleError)
   );
 }
-```
 
 DELETE Request:
 deleteRecord(id: number): Observable<any> {
-```sql
   const url = `${this.apiUrl}/${id}`;
   return this.http.delete(url).pipe(
     catchError(this.handleError)
   );
 }
-```
 
 6.3 API INTEGRATION ARCHITECTURE
 
 ### YOUR PROJECT'S API FLOW:
 
-Component → Service → HttpClient → Interceptor → Apigee Gateway → Backend
 ```text
+Component → Service → HttpClient → Interceptor → Apigee Gateway → Backend
                                       ↓
+
+```
                               Add Auth Token
                               Add Client ID
                               Add Message ID
-```
 
 URL BUILDING PATTERN:
 // Centralized URL construction
 export class ApiUrlBuilder {
-```typescript
   private static get baseApiUrl(): string {
     return environment.apiEndPointUrl;  // From environment config
   }
@@ -930,7 +896,6 @@ export class ApiUrlBuilder {
     return `${baseUrl}?${params.toString()}`;
   }
 }
-```
 
 ## PART 7: RxJS AND REACTIVE PROGRAMMING
 
@@ -965,14 +930,12 @@ Subscribing to Observable:
 // From: app.ts
 this.oidcSecurityService
 .checkAuth()
-```text
 .subscribe((loginResponse: LoginResponse) => {
   this.isAuthenticated.set(loginResponse.isAuthenticated);
   if (loginResponse.isAuthenticated) {
     this.loadUserAccess();
   }
 });
-```
 
 7.3 ESSENTIAL RxJS OPERATORS
 
@@ -980,30 +943,26 @@ this.oidcSecurityService
 
 // From: auth.service.ts
 getUserId(): Observable<string> {
-```text
   return this.userData$.pipe(
     map((userData: any) => {
-      const actualUserData = userData?.userData || userData;
-      let userId = actualUserData?.sub || actualUserData?.userId || '';
+| const actualUserData = userData?.userData |  | userData; |  |  |
+| --- | --- | --- | --- | --- |
+| let userId = actualUserData?.sub |  | actualUserData?.userId |  | ''; |
       return userId.toUpperCase();
     })
   );
 }
-```
 
 filter() - Filter Values:
 // From: app.ts
 this.router.events
-```text
 .pipe(filter(event => event instanceof NavigationEnd))
 .subscribe((event: NavigationEnd) => { });
-```
 
 switchMap() - Cancel Previous & Switch to New:
 // From: api.interceptor.ts
 return oidcSecurityService.getAccessToken().pipe(
 switchMap((access_token: string) => {
-```text
     return oidcSecurityService.userData$.pipe(
       switchMap((userData: any) => {
         // Build headers and make request
@@ -1012,29 +971,24 @@ switchMap((access_token: string) => {
     );
   })
 );
-```
 
 catchError() - Error Handling:
 // From: user-access.service.ts
 catchError(error => {
-```text
   if (error.message === 'USER_NOT_FOUND') {
     this.error.set('User not found in system');
     return throwError(() => error);
   }
   return of([]);  // Return empty array on other errors
 })
-```
 
 tap() - Side Effects (Logging):
 // From: user-access.service.ts
 tap(screenCodes => {
-```text
   this.userScreenCodes.set(screenCodes);
   this.isLoading.set(false);
   this.userAccessLoaded$.next(true);
 })
-```
 
 take(1) - Take First Value Then Complete:
 // From: screen-access.guard.ts
@@ -1058,20 +1012,16 @@ SOLUTIONS IN YOUR PROJECT:
 private navigationSubscription?: Subscription;
 
 ngOnInit(): void {
-```text
   this.navigationSubscription = this.router.events
     .pipe(filter(event => event instanceof NavigationEnd))
     .subscribe(() => { });
 }
-```
 
 ngOnDestroy(): void {
-```text
   if (this.navigationSubscription) {
     this.navigationSubscription.unsubscribe();  // CRITICAL!
   }
 }
-```
 
 2. Use take(1) for One-Time Operations:
 this.userAccessService.fetchUserAccess(authUserId).pipe(
@@ -1106,7 +1056,6 @@ USE CASES:
 
 // From: api.interceptor.ts
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
-```typescript
   const oidcSecurityService = inject(OidcSecurityService);
 
   // Only intercept ODA Admin API calls
@@ -1151,7 +1100,6 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req);  // Pass through non-API requests
 };
-```
 
 8.3 INTERCEPTOR FLOW DIAGRAM
 
@@ -1173,12 +1121,13 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 │   6. Clone request with headers     │
 └─────────────────────────────────────┘
      ↓
+
+```
 Backend API (Apigee Gateway)
      ↓
 HTTP Response
      ↓
 Component receives data
-```
 
 8.4 REGISTERING INTERCEPTORS
 
@@ -1206,7 +1155,6 @@ and reverse order for responses.
 #### // From: agency-discrepancy.service.ts
 
 private handleSearchError(error: HttpErrorResponse, ovAgentNumber: string, winsAgentNumber: string) {
-```text
   let errorMessage = '';
 
   if (error.status === 0) {
@@ -1226,14 +1174,12 @@ private handleSearchError(error: HttpErrorResponse, ovAgentNumber: string, winsA
   console.error('Search API Error:', error);
   return throwError(() => new Error(errorMessage));
 }
-```
 
 9.3 COMPONENT-LEVEL ERROR HANDLING
 
 #### // From: agency-discrepancies.component.ts
 
 this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumber)
-```text
 .subscribe({
   next: (response) => {
     // Success handling
@@ -1248,17 +1194,16 @@ this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumb
     this.messageType.set('error');
   }
 });
-```
 
 9.4 VALIDATION ERROR HANDLING
 
 #### // From: agency-discrepancies.component.ts
 
 private performSearch(criteria: SearchCriteria): void {
-```text
   // Client-side validation
-  const ovEmpty = !criteria.ovAgentNumber || criteria.ovAgentNumber.trim() === '';
-  const winsEmpty = !criteria.winsAgentNumber || criteria.winsAgentNumber.trim() === '';
+| const ovEmpty = !criteria.ovAgentNumber |  | criteria.ovAgentNumber.trim() === ''; |
+| --- | --- | --- |
+| const winsEmpty = !criteria.winsAgentNumber |  | criteria.winsAgentNumber.trim() === ''; |
 
   if (ovEmpty && winsEmpty) {
     this.errors.set(['OV Agent or Wins Agent Must be entered.']);
@@ -1272,7 +1217,6 @@ private performSearch(criteria: SearchCriteria): void {
     return;
   }
 }
-```
 
 9.5 SPECIAL ERROR SCENARIOS
 
@@ -1280,25 +1224,20 @@ private performSearch(criteria: SearchCriteria): void {
 
 // From: user-access.service.ts
 if (typeof body === 'string' && body.includes('User not found')) {
-```text
   throw new Error('USER_NOT_FOUND');
 }
-```
 
 // Error propagation
 catchError(error => {
-```text
   if (error.message === 'USER_NOT_FOUND') {
     this.error.set('User not found in system');
     return throwError(() => error);  // Re-throw for upstream handling
   }
 })
-```
 
 GUARD ERROR HANDLING:
 // From: screen-access.guard.ts
 catchError(error => {
-```text
   if (error.message === 'USER_NOT_FOUND') {
     router.navigate(['/user-info-error']);  // Custom error page
   } else {
@@ -1306,7 +1245,6 @@ catchError(error => {
   }
   return of(false);
 })
-```
 
 ## PART 10: MODELS, ENUMS, AND CONSTANTS
 
@@ -1400,7 +1338,6 @@ data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 
 #### export const BoltClasses = {
 
-```text
   // Button Classes
   BUTTON_PRIMARY: 'c-bolt-button c-bolt-button--primary',
   BUTTON_SECONDARY: 'c-bolt-button c-bolt-button--secondary',
@@ -1414,7 +1351,6 @@ data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
   TABLE: 'c-bolt-table',
   TABLE_HEADER: 'c-bolt-table__header',
 };
-```
 
 export const BoltColors = {
 PRIMARY: 'primary',
@@ -1439,7 +1375,6 @@ readonly getBoltButtonClass = getBoltButtonClass;
 
 // From: app.routes.ts
 export const routes: Routes = [
-```json
   // Default redirect
   { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
@@ -1476,7 +1411,6 @@ export const routes: Routes = [
   // Wildcard (catch-all)
   { path: '**', redirectTo: '/agency-discrepancies' }
 ];
-```
 
 11.2 ROUTE PARAMETERS
 
@@ -1486,13 +1420,11 @@ export const routes: Routes = [
 constructor(private route: ActivatedRoute) { }
 
 ngOnInit() {
-```text
   const id = this.route.snapshot.paramMap.get('id');
   if (id) {
     this.loadRecord(id);
   }
 }
-```
 
 11.3 PROGRAMMATIC NAVIGATION
 
@@ -1532,18 +1464,15 @@ canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard]
 
 // From: agency-discrepancies.component.ts
 ngOnInit(): void {
-```text
   this.searchForm = new FormGroup({
     ovAgentNumber: new FormControl(''),
     winsAgentNumber: new FormControl('')
   });
 }
-```
 
 WITH FormBuilder:
 // From: edit-premium-audit-routing.component.ts
 constructor(private fb: FormBuilder) {
-```text
   this.editForm = this.fb.group({
     id: [null],
     agntNbr: ['', [Validators.required, Validators.maxLength(5)]],
@@ -1551,7 +1480,6 @@ constructor(private fb: FormBuilder) {
     entpsId: ['', Validators.maxLength(15)]
   });
 }
-```
 
 12.2 FORM VALIDATION
 
@@ -1565,7 +1493,6 @@ Validators.maxLength(5)   // Max 5 characters
 CUSTOM VALIDATION IN COMPONENT:
 // From: edit-premium-audit-routing.component.ts
 async confirmAndUpdate() {
-```text
   // Validate Agent Number length
   const agntNbr = this.editForm.value.agntNbr?.trim();
   if (agntNbr && agntNbr.length !== 5) {
@@ -1586,7 +1513,6 @@ async confirmAndUpdate() {
     return;
   }
 }
-```
 
 12.3 FORM VALUE ACCESS
 
@@ -1619,25 +1545,19 @@ this.searchForm.reset();
 #### // Check validity
 
 if (!this.editForm.valid) {
-```text
   this.error = 'Form is invalid.';
   return;
 }
-```
 
 // Check if form is dirty (changed)
 if (this.editForm.dirty) {
-```text
   // Prompt user before leaving
 }
-```
 
 // Check specific control
 if (this.editForm.get('agntNbr')?.invalid) {
-```text
   // Handle invalid field
 }
-```
 
 ## PART 13: AUTHENTICATION AND AUTHORIZATION
 
@@ -1661,7 +1581,6 @@ AUTHORIZATION: "What can you do?"
 // From: app.config.ts
 provideAuth({
 config: {
-```text
     // Navigation
     postLoginRoute: '/',
     forbiddenRoute: '/unauthorized',
@@ -1684,7 +1603,6 @@ config: {
     },
   },
 }),
-```
 
 13.3 AUTHENTICATION FLOW
 
@@ -1705,7 +1623,6 @@ config: {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-```java
   private readonly oidcSecurityService = inject(OidcSecurityService);
 
   get isAuthenticated$(): Observable<boolean> {
@@ -1717,8 +1634,9 @@ export class AuthService {
   getUserId(): Observable<string> {
     return this.userData$.pipe(
       map((userData: any) => {
-        const actualUserData = userData?.userData || userData;
-        let userId = actualUserData?.sub || actualUserData?.userId || '';
+| const actualUserData = userData?.userData |  | userData; |  |  |
+| --- | --- | --- | --- | --- |
+| let userId = actualUserData?.sub |  | actualUserData?.userId |  | ''; |
         if (userId.includes('@')) {
           userId = userId.split('@')[0];  // Extract username from email
         }
@@ -1735,7 +1653,6 @@ export class AuthService {
     return this.oidcSecurityService.logoff();
   }
 }
-```
 
 13.5 USER ACCESS (AUTHORIZATION)
 
@@ -1750,7 +1667,6 @@ AGENCY_ACCOUNTING_ROUTING = 400
 
 @Injectable({ providedIn: 'root' })
 export class UserAccessService {
-```typescript
   private readonly userScreenCodes = signal<number[]>([]);
 
   fetchUserAccess(userId: string): Observable<number[]> {
@@ -1771,7 +1687,6 @@ export class UserAccessService {
     return this.userScreenCodes().includes(screenCode);
   }
 }
-```
 
 ## PART 14: GUARDS DEEP EXPLANATION
 
@@ -1780,7 +1695,6 @@ export class UserAccessService {
 #### // From: screen-access.guard.ts
 
 export const screenAccessGuard: CanActivateFn = (route, state) => {
-```text
   const userAccessService = inject(UserAccessService);
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -1828,7 +1742,6 @@ export const screenAccessGuard: CanActivateFn = (route, state) => {
     })
   );
 };
-```
 
 14.2 GUARD EXECUTION FLOW
 
@@ -1849,9 +1762,10 @@ export const screenAccessGuard: CanActivateFn = (route, state) => {
 │   - Allow or redirect               │
 └─────────────────────────────────────┘
          ↓ (if authorized)
+
+```
     Route Activates
     Component Loads
-```
 
 14.3 USING GUARDS IN ROUTES
 
@@ -1873,7 +1787,6 @@ data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 #### // From: environment.ts
 
 function getEnvironment(): Env {
-```text
   const env: Env = {
     production: true,
     apiEndPointUrl: 'https://api-int.nwie.net/operations-support/ess-odadmin-proxy/v1',
@@ -1902,7 +1815,6 @@ function getEnvironment(): Env {
 
   return env;
 }
-```
 
 export const environment: Env = getEnvironment();
 
@@ -2020,10 +1932,8 @@ WITH trackBy (only re-renders changed items):
 <tr *ngFor="let item of items; trackBy: trackByFn">
 
 trackByFn(index: number, item: AgencyDiscrepancy): number {
-```text
   return item.id;
 }
-```
 
 17.4 SIGNALS VS OBSERVABLES
 
@@ -2097,30 +2007,30 @@ BEGINNER LEVEL
 
 #### Q1: What is Angular?
 
-A: Angular is a TypeScript-based open-source framework developed by Google
+**A:** Angular is a TypeScript-based open-source framework developed by Google
 for building client-side web applications. It provides a complete solution
 including components, routing, forms, HTTP client, and dependency injection.
 
 Q2: What is a component?
-A: A component is the fundamental building block of Angular applications.
+**A:** A component is the fundamental building block of Angular applications.
 It consists of a TypeScript class (logic), HTML template (view), and CSS
 styles (presentation), connected by @Component decorator metadata.
 
 Q3: What is the difference between ngOnInit and constructor?
-A: Constructor is called when the class is instantiated and should only
+**A:** Constructor is called when the class is instantiated and should only
 be used for simple initialization (like DI). ngOnInit is called after
 inputs are set and is the proper place for initialization logic like
 API calls and subscriptions.
 
 Q4: What is data binding?
-A: Data binding connects component data to the template:
+**A:** Data binding connects component data to the template:
 - Interpolation: {{ value }} - one-way, data to view
 - Property binding: [property]="value" - one-way, data to view
 - Event binding: (event)="handler()" - one-way, view to data
 - Two-way binding: [(ngModel)]="value" - both directions
 
 Q5: What is a service in Angular?
-A: A service is a class that encapsulates reusable business logic,
+**A:** A service is a class that encapsulates reusable business logic,
 data access, or utility functions. Services are typically singletons
 injected into components via dependency injection.
 
@@ -2128,7 +2038,7 @@ INTERMEDIATE LEVEL
 
 #### Q6: Explain Angular's Dependency Injection.
 
-A: DI is a design pattern where dependencies are "injected" rather than
+**A:** DI is a design pattern where dependencies are "injected" rather than
 created inside a class. Angular's DI system uses:
 - Providers: Register injectable services
 - Injector hierarchy: Root → Environment → Element
@@ -2136,23 +2046,23 @@ created inside a class. Angular's DI system uses:
 - inject() function or constructor injection
 
 Q7: What are Observables and how do they differ from Promises?
-A: Observables (RxJS) are lazy, can emit multiple values over time,
+**A:** Observables (RxJS) are lazy, can emit multiple values over time,
 are cancellable, and support operators. Promises are eager, resolve
 once, cannot be cancelled, and use .then() chaining.
 
 Q8: Explain lazy loading and its benefits.
-A: Lazy loading defers loading of feature modules until needed.
+**A:** Lazy loading defers loading of feature modules until needed.
 Benefits include smaller initial bundle, faster startup, and
 reduced memory usage. Implementation uses loadComponent or
 loadChildren in route configuration.
 
 Q9: What is an HTTP Interceptor?
-A: An interceptor is middleware that intercepts HTTP requests/responses.
+**A:** An interceptor is middleware that intercepts HTTP requests/responses.
 Use cases include adding auth tokens, logging, error handling, and
 caching. Implemented using HttpInterceptorFn in modern Angular.
 
 Q10: Explain route guards.
-A: Route guards control navigation access. Types include:
+**A:** Route guards control navigation access. Types include:
 - canActivate: Before route activation
 - canDeactivate: Before leaving route
 - resolve: Pre-fetch data
@@ -2162,14 +2072,14 @@ ADVANCED LEVEL
 
 #### Q11: Explain Angular's change detection mechanism.
 
-A: Change detection updates the DOM when data changes.
+**A:** Change detection updates the DOM when data changes.
 Traditional approach uses Zone.js to detect async operations.
 Zoneless (Angular 16+) uses Signals for fine-grained reactivity.
 OnPush strategy optimizes by only checking when inputs change
 or events occur.
 
 Q12: How do Signals work in Angular?
-A: Signals are reactive primitives that:
+**A:** Signals are reactive primitives that:
 - Hold a value that can change over time
 - Notify consumers when value changes
 - Enable fine-grained updates without Zone.js
@@ -2177,12 +2087,12 @@ A: Signals are reactive primitives that:
 - Work with effect() for side effects
 
 Q13: Explain the difference between providedIn: 'root' vs 'any'.
-A: 'root' creates a single instance shared app-wide (true singleton).
+**A:** 'root' creates a single instance shared app-wide (true singleton).
 'any' creates one instance per lazy-loaded module boundary,
 useful when each feature needs its own service state.
 
 Q14: How would you implement role-based access control?
-A: RBAC implementation includes:
+**A:** RBAC implementation includes:
 1. Store user roles/permissions after authentication
 2. Create guard that checks required permission from route data
 3. Service that provides hasPermission() method
@@ -2190,7 +2100,7 @@ A: RBAC implementation includes:
 5. Backend validates permissions on each API call
 
 Q15: Explain your error handling strategy.
-A: Multi-layer approach:
+**A:** Multi-layer approach:
 1. Service layer: Transform HTTP errors to user-friendly messages
 2. Interceptor layer: Global error logging, token refresh
 3. Component layer: Display errors, provide recovery options
@@ -2200,7 +2110,7 @@ SENIOR/ARCHITECT LEVEL
 
 #### Q16: How would you architect a large-scale Angular application?
 
-A: Key architectural decisions:
+**A:** Key architectural decisions:
 - Feature-based folder structure with lazy loading
 - Core module for singletons, Shared module for reusables
 - State management with Signals or NgRx
@@ -2211,7 +2121,7 @@ A: Key architectural decisions:
 - CI/CD pipeline with environment builds
 
 Q17: How do you handle authentication in enterprise Angular apps?
-A: Enterprise authentication approach:
+**A:** Enterprise authentication approach:
 1. OIDC/OAuth2 with identity provider (Azure AD, Okta)
 2. Authorization Code Flow with PKCE
 3. Silent token renewal for seamless UX
@@ -2221,7 +2131,7 @@ A: Enterprise authentication approach:
 7. Role-based UI and route protection
 
 Q18: How would you optimize Angular application performance?
-A: Performance optimization strategies:
+**A:** Performance optimization strategies:
 - Lazy loading all feature modules
 - Zoneless change detection with Signals
 - OnPush change detection strategy
@@ -2232,7 +2142,7 @@ A: Performance optimization strategies:
 - Service worker for caching
 
 Q19: Explain your testing strategy for Angular applications.
-A: Comprehensive testing approach:
+**A:** Comprehensive testing approach:
 - Unit tests: Services, pipes, guards with Jest/Jasmine
 - Component tests: Isolated with TestBed
 - Integration tests: Component + dependencies
@@ -2242,7 +2152,7 @@ A: Comprehensive testing approach:
 - CI integration: Tests run on every PR
 
 Q20: How do you handle state management in large applications?
-A: State management options:
+**A:** State management options:
 1. Component state: Signals for local state
 2. Service state: BehaviorSubject/Signal for shared state
 3. NgRx: Complex apps with actions, reducers, effects
@@ -2253,7 +2163,7 @@ SCENARIO-BASED QUESTIONS
 
 #### Q21: A user reports slow page load. How do you diagnose?
 
-A: Diagnosis steps:
+**A:** Diagnosis steps:
 1. Check Network tab for large bundles
 2. Use Angular DevTools for change detection cycles
 3. Profile with Chrome Performance tab
@@ -2262,7 +2172,7 @@ A: Diagnosis steps:
 6. Look for memory leaks in components
 
 Q22: How would you migrate from NgModules to Standalone?
-A: Migration approach:
+**A:** Migration approach:
 1. Start with leaf components (no dependencies)
 2. Convert components to standalone, add imports
 3. Update parent components to import children
@@ -2272,7 +2182,7 @@ A: Migration approach:
 7. Test thoroughly at each step
 
 Q23: How do you secure an Angular application?
-A: Security measures:
+**A:** Security measures:
 - HTTPS only, secure cookies
 - OIDC with secure token handling
 - Route guards for authorization
@@ -2295,3 +2205,4 @@ For interview preparation, focus on:
 4. Demonstrating practical experience with patterns
 
 Good luck with your Angular journey and interviews!
+

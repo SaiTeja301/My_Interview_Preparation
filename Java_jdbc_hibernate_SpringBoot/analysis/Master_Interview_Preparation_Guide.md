@@ -1,6 +1,5 @@
-﻿================================================================================
-MASTER INTERVIEW PREPARATION GUIDE
-For: Akula Venkata Sai Teja | Target: 7+ Years Java Developer
+# MASTER INTERVIEW PREPARATION GUIDE
+> *For: Akula Venkata Sai Teja | Target: 7+ Years Java Developer*
 
 ## SECTION 1: CANDIDATE PROFILE SUMMARY
 
@@ -250,3 +249,4 @@ Master Guide:
 18. Master_Interview_Preparation_Guide.txt (this file)
 
 # BEST OF LUCK, TEJA! YOU'VE GOT THIS! 🎯
+

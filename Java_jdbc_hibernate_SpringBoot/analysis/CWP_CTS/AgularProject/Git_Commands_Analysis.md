@@ -1,7 +1,5 @@
-﻿================================================================================
-GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
-
-# Generated on: November 21, 2025
+# GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
+> *# Generated on: November 21, 2025*
 
 1. PROJECT SETUP AND INITIALIZATION
 
@@ -31,8 +29,8 @@ GIT COMMANDS REFERENCE - ODA ADMIN ANGULAR UI PROJECT
 │ Example: git remote add origin https://github.com/...............
 │ When to use: After git init, to connect to remote repository
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 2. DAILY WORKFLOW COMMANDS
 
 STATUS AND INFORMATION:
@@ -70,8 +68,8 @@ STATUS AND INFORMATION:
 │   git diff HEAD              (show all changes since last commit)
 │   git diff branch1..branch2  (compare branches)
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 STAGING AND COMMITTING:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -108,8 +106,8 @@ STAGING AND COMMITTING:
 │ When to use: When you want to commit all changes without selective staging
 │ Warning: Does not include new (untracked) files
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 3. BRANCH MANAGEMENT
 
 BRANCH OPERATIONS:
@@ -165,8 +163,8 @@ BRANCH OPERATIONS:
 │ When to use: After successful merge and no longer need the feature branch
 │ Note: Use -D for force delete (be careful with this)
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 4. REMOTE REPOSITORY OPERATIONS
 
 SYNCHRONIZATION WITH REMOTE:
@@ -207,8 +205,8 @@ SYNCHRONIZATION WITH REMOTE:
 │ When to use: First time pushing a new local branch to remote
 │ Benefit: Subsequent pushes/pulls don't need origin specification
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 5. ANGULAR-SPECIFIC WORKFLOW COMMANDS
 
 DEVELOPMENT WORKFLOW:
@@ -239,8 +237,8 @@ DEVELOPMENT WORKFLOW:
 │ When to use: After implementing API integration services
 │ Best practice: Include corresponding test files
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 CONFIGURATION FILES:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -260,8 +258,8 @@ CONFIGURATION FILES:
 │ When to use: After updating API URLs, feature flags, or environment configs
 │ Be careful: Don't commit sensitive production credentials
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 6. UNDOING CHANGES
 
 UNDOING UNCOMMITTED CHANGES:
@@ -292,8 +290,8 @@ UNDOING UNCOMMITTED CHANGES:
 │ When to use: When you want to start fresh from last commit
 │ Warning: This permanently destroys all uncommitted changes
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 UNDOING COMMITTED CHANGES:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -313,8 +311,8 @@ UNDOING COMMITTED CHANGES:
 │ When to use: When you want to modify the last commit message or add more files
 │ Note: Only use on commits that haven't been pushed
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 7. CONFLICT RESOLUTION
 
 MERGE CONFLICT HANDLING:
@@ -345,8 +343,8 @@ MERGE CONFLICT HANDLING:
 │ When to use: When conflicts are too complex to resolve immediately
 │ Result: Returns to state before merge attempt
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 8. ADVANCED WORKFLOW COMMANDS
 
 STASHING CHANGES:
@@ -377,8 +375,8 @@ STASHING CHANGES:
 │ When to use: When you have multiple stashes and need to identify them
 │ Output: Shows stash@{0}, stash@{1}, etc.
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 REBASING:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -398,8 +396,8 @@ REBASING:
 │ When to use: Clean up commit history before pushing to shared branch
 │ Actions: pick, squash, edit, reword, drop commits
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 9. INSPECTION AND DEBUGGING
 
 FILE INSPECTION:
@@ -430,8 +428,8 @@ FILE INSPECTION:
 │ When to use: When you need to see all changes to a specific file over time
 │ Benefit: Follows file through renames and moves
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 SEARCHING:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -442,8 +440,8 @@ SEARCHING:
 │ When to use: When looking for usage of specific functions, variables, or text
 │ Benefit: Only searches tracked files, ignores node_modules
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 10. PROJECT-SPECIFIC GIT PATTERNS
 
 ANGULAR PROJECT WORKFLOW:
@@ -461,8 +459,8 @@ ANGULAR PROJECT WORKFLOW:
 │ 9. git pull origin main                    (Update main)
 │ 10. git branch -d feature/new-feature     (Clean up)
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 COMMIT MESSAGE CONVENTIONS:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -482,8 +480,8 @@ COMMIT MESSAGE CONVENTIONS:
 │ test: Add unit tests for discrepancy service
 │ chore: Update Angular to version 20.3.7
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 GITIGNORE IMPORTANT FILES:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────
@@ -497,8 +495,8 @@ GITIGNORE IMPORTANT FILES:
 │ coverage/                      (Test coverage reports)
 │ e2e/                          (End-to-end test artifacts)
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 11. EMERGENCY PROCEDURES
 
 COMMON EMERGENCY SCENARIOS:
@@ -531,8 +529,8 @@ COMMON EMERGENCY SCENARIOS:
 │ 3. Update .gitignore           (Prevent future commits)
 │ Warning: Only use on feature branches, never on shared main branch
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 12. COLLABORATION COMMANDS
 
 WORKING WITH TEAM:
@@ -563,8 +561,8 @@ WORKING WITH TEAM:
 │ When to use: During code reviews or when tracking specific contributions
 │ Variations: Use partial names or email addresses
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 13. CONFIGURATION AND SETUP
 
 GIT CONFIGURATION:
@@ -595,8 +593,8 @@ GIT CONFIGURATION:
 │ When to use: Troubleshooting configuration issues
 │ Output: Shows all config values from global and local settings
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 14. PERFORMANCE AND MAINTENANCE
 
 REPOSITORY MAINTENANCE:
@@ -618,8 +616,8 @@ REPOSITORY MAINTENANCE:
 │ When to use: When experiencing strange Git behavior or suspected corruption
 │ Output: Reports any issues found in repository
 └─────────────────────────────────────────────────────────────────────────────
-```
 
+```
 ## 15. SUMMARY AND BEST PRACTICES
 
 ESSENTIAL DAILY COMMANDS:
@@ -655,3 +653,4 @@ TROUBLESHOOTING CHECKLIST:
 5. If stuck, git stash and start fresh
 
 ## END OF GIT COMMANDS REFERENCE
+

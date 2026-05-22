@@ -1,6 +1,5 @@
-﻿================================================================================
-APACHE KAFKA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-For: 7+ Years Experience Level | Java Developer
+# APACHE KAFKA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+> *For: 7+ Years Experience Level | Java Developer*
 
 ## SECTION 1: SOURCE ANALYSIS
 
@@ -29,12 +28,13 @@ Components:
 
 #### Q1. Kafka vs RabbitMQ vs ActiveMQ.
 
-Feature        | Kafka          | RabbitMQ       | ActiveMQ
-Throughput     | Very High 1M+  | Moderate 50K   | Moderate
-Ordering       | Per partition  | Per queue      | Per queue
-Retention      | Configurable   | Until consumed | Until consumed
-Protocol       | Binary TCP     | AMQP           | JMS/AMQP
-Use Case       | Event streaming| Task queues    | Enterprise JMS
+| Feature | Kafka | RabbitMQ | ActiveMQ |
+| --- | --- | --- | --- |
+| Throughput | Very High 1M+ | Moderate 50K | Moderate |
+| Ordering | Per partition | Per queue | Per queue |
+| Retention | Configurable | Until consumed | Until consumed |
+| Protocol | Binary TCP | AMQP | JMS/AMQP |
+| Use Case | Event streaming | Task queues | Enterprise JMS |
 
 #### Q2. Topic, Partition, and Offset.
 
@@ -43,10 +43,12 @@ Partition: Topic divided into ordered, immutable logs
 Offset: Unique ID per message within partition (sequential)
 
 Topic "policy-events" with 3 partitions:
+```text
 Partition 0: [msg0, msg1, msg2, msg3] -> offset 0,1,2,3
 Partition 1: [msg0, msg1, msg2]       -> offset 0,1,2
 Partition 2: [msg0, msg1]             -> offset 0,1
 
+```
 Ordering guarantee: Messages within SAME partition are ordered.
 No global ordering across partitions!
 
@@ -57,7 +59,6 @@ No global ordering across partitions!
 Spring Kafka Producer:
 @Configuration
 public class KafkaProducerConfig {
-```java
     @Bean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -67,32 +68,30 @@ public class KafkaProducerConfig {
         return new DefaultKafkaProducerFactory<>(config);
     }
 }
-```
 
 @Service
 public class PolicyEventProducer {
-```java
     @Autowired
     private KafkaTemplate<String, PolicyEvent> kafkaTemplate;
 
     public void publishEvent(PolicyEvent event) {
         kafkaTemplate.send("policy-events", event.getPolicyId(), event)
             .addCallback(
+```text
                 result -> log.info("Sent: {}", event.getPolicyId()),
                 ex -> log.error("Failed: {}", ex.getMessage()));
+
+```
     }
 }
-```
 
 Consumer:
 @KafkaListener(topics = "policy-events", groupId = "claim-processor")
 public void handlePolicyEvent(PolicyEvent event,
-```text
                                @Header(KafkaHeaders.OFFSET) long offset) {
     log.info("Received event at offset {}: {}", offset, event);
     claimService.processPolicyChange(event);
 }
-```
 
 #### Q4. Consumer Group and Partition Assignment.
 
@@ -100,14 +99,18 @@ Consumer Group: Set of consumers that cooperatively consume from topic.
 Each partition assigned to exactly ONE consumer in the group.
 
 Topic with 6 partitions, Consumer Group with 3 consumers:
+```text
 Consumer 1 -> Partition 0, 1
 Consumer 2 -> Partition 2, 3
 Consumer 3 -> Partition 4, 5
 
+```
 If Consumer 3 dies (rebalance):
+```text
 Consumer 1 -> Partition 0, 1, 4
 Consumer 2 -> Partition 2, 3, 5
 
+```
 Rule: #consumers > #partitions = idle consumers (waste!)
 Best: #consumers = #partitions for max parallelism
 
@@ -163,11 +166,9 @@ kafkaTemplate.send("order-events", orderId, event);
 @KafkaListener(topics = "policy-events", groupId = "processor")
 @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
 public void process(PolicyEvent event) {
-```text
     // If fails 3 times, goes to "policy-events-dlt" automatically
     riskyOperation(event);
 }
-```
 
 @DltHandler
 public void handleDlt(PolicyEvent event) {
@@ -188,8 +189,8 @@ Order Service -> "order-created" topic
      │      -> "stock-reserved" or "stock-insufficient" topic
      └── Notification Service (consumer group: notifications)
             -> Send email/SMS
-```
 
+```
 KEY QUESTIONS:
 1. Kafka vs RabbitMQ
 2. Topic, Partition, Offset
@@ -225,8 +226,11 @@ Kafka Streams: High-level DSL, stateful processing, joins, windowing
 
 StreamsBuilder builder = new StreamsBuilder();
 builder.<String, String>stream("input-topic")
+```text
 .filter((k, v) -> v.contains("important"))
 .mapValues(v -> v.toUpperCase())
+
+```
 .to("output-topic");
 
 Use Streams for: Real-time transformations, aggregations, joins
@@ -237,17 +241,21 @@ Use Consumer for: Simple event handling, integration with non-Kafka systems
 Problem: Producer changes message format, consumer breaks
 Solution: Schema Registry stores schemas, validates compatibility
 
+```text
 Producer -> Serialize (Avro) -> Schema Registry validates -> Kafka
 Consumer -> Schema Registry gets schema -> Deserialize -> Process
 
+```
 Compatibility modes: BACKWARD, FORWARD, FULL, NONE
 
 #### Q14. Kafka Connect.
 
 Pre-built connectors for moving data between Kafka and other systems.
+```text
 Source Connector: DB -> Kafka (Debezium CDC for MySQL/PostgreSQL)
 Sink Connector: Kafka -> Elasticsearch/S3/JDBC
 
+```
 #### Q15. Scenario: Message ordering across partitions.
 
 Problem: Events for same entity going to different partitions = out of order
@@ -275,3 +283,4 @@ Q17-Q20 Quick Kafka:
 #### Q19. Broker leader election: ISR (In-Sync Replicas), unclean.leader.election.enable
 
 #### Q20. Kafka monitoring: JMX metrics, Confluent Control Center, Burrow
+
