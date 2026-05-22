@@ -1,26 +1,28 @@
 ﻿================================================================================
 DESIGN PATTERNS - INTERVIEW PREPARATION GUIDE
 For: 7+ Years Experience Level | Java Developer
-================================================================================
 
-SECTION 1: DESIGN PATTERNS CATEGORIES
+## SECTION 1: DESIGN PATTERNS CATEGORIES
+
 Creational: Object creation mechanisms
 Structural: Object composition and relationships
 Behavioral: Object interaction and responsibility
 
-SECTION 2: INTERVIEW ROUNDS
+## SECTION 2: INTERVIEW ROUNDS
 
-ROUND 1 - BASIC
+## ROUND 1 - BASIC
 
-*** Q1. Singleton Pattern (Thread-safe).
+#### Q1. Singleton Pattern (Thread-safe).
+
 Purpose: Ensure only one instance exists across the application.
 Use: ObjectMapper, ConnectionPool, ConfigManager
 
 // Double-checked locking (thread-safe, lazy)
 public class AppConfig {
+```java
     private static volatile AppConfig instance;
     private AppConfig() {} // private constructor
-    
+
     public static AppConfig getInstance() {
         if (instance == null) {                  // 1st check (no lock)
             synchronized (AppConfig.class) {
@@ -32,22 +34,26 @@ public class AppConfig {
         return instance;
     }
 }
+```
 
 // Bill Pugh approach (best - uses class loading guarantee)
 public class AppConfig {
+```java
     private AppConfig() {}
     private static class Holder {
         private static final AppConfig INSTANCE = new AppConfig();
     }
     public static AppConfig getInstance() { return Holder.INSTANCE; }
 }
+```
 
 // Enum Singleton (simplest, serialization-safe)
 public enum AppConfig { INSTANCE; }
 
 Spring: All beans are singleton by default.
 
-*** Q2. Factory Pattern.
+#### Q2. Factory Pattern.
+
 Purpose: Create objects without exposing creation logic.
 
 public interface Notification { void send(String message); }
@@ -56,6 +62,7 @@ public class SMSNotification implements Notification { ... }
 public class PushNotification implements Notification { ... }
 
 public class NotificationFactory {
+```java
     public static Notification create(String type) {
         switch (type) {
             case "EMAIL": return new EmailNotification();
@@ -65,101 +72,118 @@ public class NotificationFactory {
         }
     }
 }
+```
 
 Production: BeanFactory in Spring is a Factory pattern implementation.
 
-ROUND 2 - CORE TECHNICAL
+## ROUND 2 - CORE TECHNICAL
 
-*** Q3. Builder Pattern.
+#### Q3. Builder Pattern.
+
 Purpose: Construct complex objects step by step. Immutable objects.
 
 @Builder // Lombok generates builder
 public class PolicyRequest {
+```java
     private String policyId;
     private String customerName;
     private double premium;
     private LocalDate startDate;
     private List<String> coverages;
 }
+```
 
 PolicyRequest req = PolicyRequest.builder()
-    .policyId("POL-001")
-    .customerName("Teja")
-    .premium(15000.0)
-    .startDate(LocalDate.now())
-    .coverages(List.of("Life", "Health"))
-    .build();
+.policyId("POL-001")
+.customerName("Teja")
+.premium(15000.0)
+.startDate(LocalDate.now())
+.coverages(List.of("Life", "Health"))
+.build();
 
 Used in: StringBuilder, Stream.builder(), HttpRequest.newBuilder()
 
-*** Q4. Observer Pattern (Publish-Subscribe).
+#### Q4. Observer Pattern (Publish-Subscribe).
+
 Purpose: One-to-many dependency. When one object changes, all dependents notified.
 
 Spring Events:
 // Event
 public class OrderPlacedEvent extends ApplicationEvent {
+```java
     private final Order order;
     public OrderPlacedEvent(Object source, Order order) {
         super(source);
         this.order = order;
     }
 }
+```
 
 // Publisher
 @Service
 public class OrderService {
+```java
     @Autowired private ApplicationEventPublisher publisher;
     public void placeOrder(Order order) {
         orderRepo.save(order);
         publisher.publishEvent(new OrderPlacedEvent(this, order));
     }
 }
+```
 
 // Subscribers
 @EventListener
 public void handleOrderForPayment(OrderPlacedEvent event) {
-    paymentService.processPayment(event.getOrder());
+paymentService.processPayment(event.getOrder());
 }
 
 @EventListener
 public void handleOrderForNotification(OrderPlacedEvent event) {
-    emailService.sendConfirmation(event.getOrder());
+emailService.sendConfirmation(event.getOrder());
 }
 
-ROUND 3 - ADVANCED
+## ROUND 3 - ADVANCED
 
-*** Q5. Strategy Pattern.
+#### Q5. Strategy Pattern.
+
 Purpose: Define family of algorithms, make them interchangeable at runtime.
 
 public interface PricingStrategy {
-    double calculatePrice(double basePrice, int quantity);
+double calculatePrice(double basePrice, int quantity);
 }
 
 @Component("regular")
 public class RegularPricing implements PricingStrategy {
+```java
     public double calculatePrice(double basePrice, int qty) {
         return basePrice * qty;
     }
 }
+```
 
 @Component("premium")
 public class PremiumPricing implements PricingStrategy {
+```java
     public double calculatePrice(double basePrice, int qty) {
         return basePrice * qty * 0.85; // 15% discount
     }
 }
+```
 
 @Service
 public class OrderService {
+```java
     @Autowired
     private Map<String, PricingStrategy> strategies; // Spring injects all
-    
+
     public double calculateTotal(String customerType, double price, int qty) {
         return strategies.get(customerType).calculatePrice(price, qty);
     }
 }
+```
 
-*** Q6. Proxy Pattern (Spring AOP uses this).
+#### Q6. Proxy Pattern (Spring AOP uses this).
+
 Purpose: Provide surrogate/placeholder for another object.
 
 JDK Dynamic Proxy: For interfaces (InvocationHandler)
@@ -167,12 +191,14 @@ CGLIB Proxy: For classes (creates subclass at runtime)
 
 Spring uses Proxy for: @Transactional, @Cacheable, @Async, @Retry
 
-*** Q7. Template Method Pattern.
+#### Q7. Template Method Pattern.
+
 Purpose: Define algorithm skeleton, let subclasses override specific steps.
 
 Spring: JdbcTemplate, RestTemplate, JmsTemplate
 
 public abstract class DataProcessor {
+```java
     public final void process() {        // Template method
         readData();
         transformData();
@@ -184,10 +210,12 @@ public abstract class DataProcessor {
     protected void validateData() { /* default */ }
     protected abstract void saveData();
 }
+```
 
-ROUND 4 - SCENARIO-BASED
+## ROUND 4 - SCENARIO-BASED
 
-Q8. Which design patterns have you used in your projects?
+#### Q8. Which design patterns have you used in your projects?
+
 Resume-based answers:
 1. Singleton: ObjectMapper bean, Config classes
 2. Factory: Notification service for different channels
@@ -198,9 +226,10 @@ Resume-based answers:
 7. Template: Spring JdbcTemplate, RestTemplate
 8. Repository: Spring Data JPA
 
-ROUND 5 - ARCHITECTURE
+## ROUND 5 - ARCHITECTURE
 
-Q9. SOLID Principles with examples.
+#### Q9. SOLID Principles with examples.
+
 S - Single Responsibility: One class, one reason to change
 O - Open/Closed: Open for extension, closed for modification (Strategy pattern)
 L - Liskov Substitution: Subtypes must be substitutable for base types
@@ -208,22 +237,19 @@ I - Interface Segregation: Many specific interfaces > one general interface
 D - Dependency Inversion: Depend on abstractions, not concretions (DI in Spring)
 
 KEY QUESTIONS:
-*** 1. Singleton (thread-safe implementations)
-*** 2. Factory Pattern
-*** 3. Builder Pattern
-*** 4. Observer/Publish-Subscribe
-*** 5. Strategy Pattern
-*** 6. SOLID Principles
+1. Singleton (thread-safe implementations)
+2. Factory Pattern
+3. Builder Pattern
+4. Observer/Publish-Subscribe
+5. Strategy Pattern
+6. SOLID Principles
 
-================================================================================
-END OF DESIGN PATTERNS ANALYSIS
-================================================================================
+## END OF DESIGN PATTERNS ANALYSIS
 
-================================================================================
-DESIGN PATTERNS - ADDITIONAL QUESTIONS (Q10-Q25) - ENHANCED EXPANSION
-================================================================================
+# DESIGN PATTERNS - ADDITIONAL QUESTIONS (Q10-Q25) - ENHANCED EXPANSION
 
-*** Q10. Adapter Pattern.
+#### Q10. Adapter Pattern.
+
 Converts interface of one class to another expected by client.
 
 // Old payment system
@@ -234,6 +260,7 @@ interface PaymentProcessor { Response process(PaymentRequest req); }
 
 // Adapter:
 class PaymentAdapter implements PaymentProcessor {
+```java
     private OldPaymentGateway gateway;
     public Response process(PaymentRequest req) {
         String xml = convertToXml(req);
@@ -241,28 +268,34 @@ class PaymentAdapter implements PaymentProcessor {
         return parseResponse(result);
     }
 }
+```
 
 Spring: HandlerAdapter, MessageConverter
 
-*** Q11. Decorator Pattern.
+#### Q11. Decorator Pattern.
+
 Add behavior dynamically without modifying original class.
 
 interface DataSource { String readData(); void writeData(String data); }
 class FileDataSource implements DataSource { ... }
 class EncryptionDecorator implements DataSource {
+```java
     private DataSource wrappee;
     public String readData() { return decrypt(wrappee.readData()); }
 }
+```
 
 Java I/O: BufferedReader(new FileReader(new File("path")))
 
-*** Q12. Chain of Responsibility.
+#### Q12. Chain of Responsibility.
+
 Request passes through chain of handlers.
 
 Spring: Filter chain, Interceptor chain, Exception handler chain
 Servlet: FilterChain.doFilter() passes to next filter
 
-*** Q13. Microservices patterns as design patterns.
+#### Q13. Microservices patterns as design patterns.
+
 Gateway: API Gateway pattern (Facade)
 Discovery: Service Registry (Service Locator)
 Circuit Breaker: State pattern (CLOSED/OPEN/HALF_OPEN)
@@ -270,13 +303,18 @@ Saga: Orchestrator pattern
 Sidecar: Proxy pattern (Service Mesh)
 Strangler Fig: Migration pattern
 
-*** Q14-Q20 Quick Patterns:
-Q14. Flyweight: Share common state (String Pool, Integer cache -128 to 127)
-Q15. Facade: Simplified interface to complex subsystem
-Q16. Command: Encapsulate request as object (Runnable, Callable)
-Q17. State: Object behavior changes based on internal state
-Q18. Prototype: Clone existing object (Cloneable, copy constructor)
-Q19. Abstract Factory: Factory of factories
-Q20. Dependency Injection: Pattern, not just Spring feature
+Q14-Q20 Quick Patterns:
 
-================================================================================
+#### Q14. Flyweight: Share common state (String Pool, Integer cache -128 to 127)
+
+#### Q15. Facade: Simplified interface to complex subsystem
+
+#### Q16. Command: Encapsulate request as object (Runnable, Callable)
+
+#### Q17. State: Object behavior changes based on internal state
+
+#### Q18. Prototype: Clone existing object (Cloneable, copy constructor)
+
+#### Q19. Abstract Factory: Factory of factories
+
+#### Q20. Dependency Injection: Pattern, not just Spring feature

@@ -1,10 +1,11 @@
 ﻿================================================================================
 ANGULAR - MASSIVE INTERVIEW PREPARATION (50 Questions)
 For: 7+ Years Experience Level | Full Stack Java Developer
-================================================================================
 
-ANGULAR RENDERING CYCLE FLOW:
+# ANGULAR RENDERING CYCLE FLOW:
+
 User Action (click/input)
+```text
    ↓
 Component Event Handler
    ↓
@@ -25,14 +26,12 @@ Change Detection triggered
 Virtual DOM diff
    ↓
 DOM Update (only changed elements)
+```
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 1: ARCHITECTURE + FUNDAMENTALS (Q1-Q12)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## PART 1: ARCHITECTURE + FUNDAMENTALS (Q1-Q12)
 
-─────────────────────────────────────────────────────────────────────
-*** Q1. Angular Architecture — core building blocks.
-─────────────────────────────────────────────────────────────────────
+#### Q1. Angular Architecture — core building blocks.
+
 Modules (@NgModule): Group related components/services/pipes
 Components (@Component): UI building blocks (template + class + styles)
 Services (@Injectable): Business logic, HTTP calls, shared state
@@ -42,383 +41,379 @@ Guards: Route protection (canActivate, canDeactivate, canLoad)
 Interceptors: Intercept HTTP requests/responses globally
 Resolvers: Pre-fetch data before route activation
 
-─────────────────────────────────────────────────────────────────────
-*** Q2. Component lifecycle hooks — all 8.
-─────────────────────────────────────────────────────────────────────
-  1. ngOnChanges(changes)     → @Input property changed (called before ngOnInit)
-  2. ngOnInit()               → Component initialized, inputs available
-  3. ngDoCheck()              → Custom change detection logic (every CD cycle!)
-  4. ngAfterContentInit()     → After <ng-content> projected content rendered
-  5. ngAfterContentChecked()  → After projected content checked
-  6. ngAfterViewInit()        → After component's view + child views initialized
-  7. ngAfterViewChecked()     → After view + child views checked
-  8. ngOnDestroy()            → Cleanup: unsubscribe, clear timers, detach listeners
+#### Q2. Component lifecycle hooks — all 8.
+
+1. ngOnChanges(changes)     → @Input property changed (called before ngOnInit)
+2. ngOnInit()               → Component initialized, inputs available
+3. ngDoCheck()              → Custom change detection logic (every CD cycle!)
+4. ngAfterContentInit()     → After <ng-content> projected content rendered
+5. ngAfterContentChecked()  → After projected content checked
+6. ngAfterViewInit()        → After component's view + child views initialized
+7. ngAfterViewChecked()     → After view + child views checked
+8. ngOnDestroy()            → Cleanup: unsubscribe, clear timers, detach listeners
 
 Most Used: ngOnInit (data loading), ngOnDestroy (unsubscribe), ngOnChanges (react to inputs)
 
 @Component({...})
 export class PolicyListComponent implements OnInit, OnDestroy {
+```java
   private sub!: Subscription;
   ngOnInit() { this.sub = this.service.getPolicies().subscribe(...); }
   ngOnDestroy() { this.sub.unsubscribe(); } // CRITICAL: prevent memory leak
 }
+```
 
-─────────────────────────────────────────────────────────────────────
-*** Q3. Change Detection — Default vs OnPush.
-─────────────────────────────────────────────────────────────────────
+#### Q3. Change Detection — Default vs OnPush.
+
 Default Strategy:
-  Checks EVERY component in the tree on ANY change (event, timer, HTTP)
-  Expensive for large apps — traverses entire component tree
+Checks EVERY component in the tree on ANY change (event, timer, HTTP)
+Expensive for large apps — traverses entire component tree
 
 OnPush Strategy:
-  Only checks component when:
-  1. @Input reference changes (new object, not mutation)
-  2. Event originates within the component
-  3. Manually triggered: ChangeDetectorRef.markForCheck()
-  4. Observable emits (with async pipe)
+Only checks component when:
+1. @Input reference changes (new object, not mutation)
+2. Event originates within the component
+3. Manually triggered: ChangeDetectorRef.markForCheck()
+4. Observable emits (with async pipe)
 
 @Component({
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  ...
+changeDetection: ChangeDetectionStrategy.OnPush,
+...
 })
 export class PolicyComponent {
+```java
   @Input() policy!: Policy; // Only re-checked if reference changes
 
   constructor(private cdr: ChangeDetectorRef) {}
-  
+
   forceUpdate() { this.cdr.markForCheck(); }  // Manual trigger
 }
+```
 
-Performance: OnPush can skip 90%+ of unnecessary checks in large apps.
-Best Practice: Use OnPush + async pipe + immutable data.
+> **Performance: OnPush can skip 90%+ of unnecessary checks in large apps.**
 
-─────────────────────────────────────────────────────────────────────
-*** Q4. Zone.js — internal working.
-─────────────────────────────────────────────────────────────────────
+> **Best Practice: Use OnPush + async pipe + immutable data.**
+
+#### Q4. Zone.js — internal working.
+
 Zone.js monkey-patches ALL async APIs:
-  setTimeout, setInterval, Promise.then, addEventListener,
-  XMLHttpRequest, fetch, MutationObserver
+setTimeout, setInterval, Promise.then, addEventListener,
+XMLHttpRequest, fetch, MutationObserver
 
 How it triggers Change Detection:
-  1. User clicks button → addEventListener (patched by Zone.js)
-  2. Handler runs → may call HTTP/timers
-  3. Zone.js detects async task completion
-  4. Calls ApplicationRef.tick() → triggers Change Detection
-  5. Angular traverses component tree, updates DOM
+1. User clicks button → addEventListener (patched by Zone.js)
+2. Handler runs → may call HTTP/timers
+3. Zone.js detects async task completion
+4. Calls ApplicationRef.tick() → triggers Change Detection
+5. Angular traverses component tree, updates DOM
 
 Without Zone.js (Angular 16+ Signals):
-  Zone.js can be removed for better performance using Signals
-  Components opt-in to updates via signal.set()
+Zone.js can be removed for better performance using Signals
+Components opt-in to updates via signal.set()
 
-─────────────────────────────────────────────────────────────────────
-*** Q5. Dependency Injection in Angular.
-─────────────────────────────────────────────────────────────────────
+#### Q5. Dependency Injection in Angular.
+
 Angular has its own hierarchical DI system (similar to Spring IOC).
 
 @Injectable({ providedIn: 'root' })  // Singleton across entire app
 export class PolicyService {
-  constructor(private http: HttpClient) {}
+constructor(private http: HttpClient) {}
 }
 
 Injection scopes:
-  providedIn: 'root'   → App-wide singleton (tree-shakable)
-  providedIn: module   → Module-level singleton
-  providers: [Service] → Component-level instance (new per component)
+providedIn: 'root'   → App-wide singleton (tree-shakable)
+providedIn: module   → Module-level singleton
+providers: [Service] → Component-level instance (new per component)
 
 Injection Token (for non-class DI):
-  const API_URL = new InjectionToken<string>('API_URL');
-  providers: [{ provide: API_URL, useValue: 'http://api.company.com' }]
-  constructor(@Inject(API_URL) private apiUrl: string) {}
+const API_URL = new InjectionToken<string>('API_URL');
+providers: [{ provide: API_URL, useValue: 'http://api.company.com' }]
+constructor(@Inject(API_URL) private apiUrl: string) {}
 
-─────────────────────────────────────────────────────────────────────
-Q6. @NgModule — imports vs declarations vs providers vs exports.
-─────────────────────────────────────────────────────────────────────
-  declarations: Components, Directives, Pipes OWNED by this module
-  imports: Other modules whose exported items this module needs
-  providers: Services registered at this module level
-  exports: Items available to importing modules
-  bootstrap: Root component (only AppModule)
+#### Q6. @NgModule — imports vs declarations vs providers vs exports.
 
-  Common mistake: Declaring same component in two modules → ERROR
-  Fix: Create SharedModule, declare + export shared components
+declarations: Components, Directives, Pipes OWNED by this module
+imports: Other modules whose exported items this module needs
+providers: Services registered at this module level
+exports: Items available to importing modules
+bootstrap: Root component (only AppModule)
 
-─────────────────────────────────────────────────────────────────────
-Q7. Data binding — all 4 types.
-─────────────────────────────────────────────────────────────────────
-  Interpolation: {{ expression }}              → Component → Template
-  Property:      [property]="expression"       → Component → Template
-  Event:         (event)="handler($event)"     → Template → Component
-  Two-way:       [(ngModel)]="property"        → Both directions
+> **Common mistake: Declaring same component in two modules → ERROR**
 
-  Two-way binding is sugar for: [ngModel]="prop" (ngModelChange)="prop=$event"
+Fix: Create SharedModule, declare + export shared components
 
-─────────────────────────────────────────────────────────────────────
-*** Q8. Structural vs Attribute directives.
-─────────────────────────────────────────────────────────────────────
+#### Q7. Data binding — all 4 types.
+
+Interpolation: {{ expression }}              → Component → Template
+Property:      [property]="expression"       → Component → Template
+Event:         (event)="handler($event)"     → Template → Component
+Two-way:       [(ngModel)]="property"        → Both directions
+
+Two-way binding is sugar for: [ngModel]="prop" (ngModelChange)="prop=$event"
+
+#### Q8. Structural vs Attribute directives.
+
 Structural (*): Modify DOM structure (add/remove elements)
-  *ngIf="condition"         → Show/hide (removes from DOM entirely)
-  *ngFor="let item of list" → Loop and render
-  *ngSwitch / *ngSwitchCase → Conditional rendering
+ngIf="condition"         → Show/hide (removes from DOM entirely)
+ngFor="let item of list" → Loop and render
+ngSwitch / *ngSwitchCase → Conditional rendering
 
 Attribute: Modify appearance/behavior
-  [ngClass]="{'active': isActive}"  → CSS class binding
-  [ngStyle]="{'color': textColor}"  → Inline style
-  [hidden]="!show"                  → CSS display:none (still in DOM!)
+[ngClass]="{'active': isActive}"  → CSS class binding
+[ngStyle]="{'color': textColor}"  → Inline style
+[hidden]="!show"                  → CSS display:none (still in DOM!)
 
 Custom Directive:
-  @Directive({ selector: '[appHighlight]' })
-  export class HighlightDirective {
-    constructor(private el: ElementRef) {}
-    @HostListener('mouseenter') onMouseEnter() {
-      this.el.nativeElement.style.backgroundColor = 'yellow';
-    }
+@Directive({ selector: '[appHighlight]' })
+export class HighlightDirective {
+constructor(private el: ElementRef) {}
+```text
+  @HostListener('mouseenter') onMouseEnter() {
+    this.el.nativeElement.style.backgroundColor = 'yellow';
   }
+}
+```
 
-─────────────────────────────────────────────────────────────────────
-Q9. *ngIf vs [hidden] — DOM impact.
-─────────────────────────────────────────────────────────────────────
-  *ngIf: Completely removes/adds element from DOM (lifecycle hooks fire)
-  [hidden]: Element stays in DOM, just hidden via CSS (display:none)
+#### Q9. *ngIf vs [hidden] — DOM impact.
 
-  Use *ngIf when: component is expensive, reduce DOM size
-  Use [hidden] when: frequent toggle, preserve component state
+ngIf: Completely removes/adds element from DOM (lifecycle hooks fire)
+[hidden]: Element stays in DOM, just hidden via CSS (display:none)
 
-─────────────────────────────────────────────────────────────────────
-*** Q10. trackBy in *ngFor — performance.
-─────────────────────────────────────────────────────────────────────
+Use *ngIf when: component is expensive, reduce DOM size
+Use [hidden] when: frequent toggle, preserve component state
+
+#### Q10. trackBy in *ngFor — performance.
+
 Without trackBy, Angular destroys and recreates ALL list DOM elements on change.
 With trackBy, Angular only modifies changed items.
 
-  <tr *ngFor="let emp of employees; trackBy: trackById">
-  
-  trackById(index: number, emp: Employee): number { return emp.id; }
+<tr *ngFor="let emp of employees; trackBy: trackById">
 
-Performance impact: For 1000-item list, trackBy reduces re-renders by ~95%.
+trackById(index: number, emp: Employee): number { return emp.id; }
 
-─────────────────────────────────────────────────────────────────────
-Q11. Pipes — built-in and custom.
-─────────────────────────────────────────────────────────────────────
+> **Performance impact: For 1000-item list, trackBy reduces re-renders by ~95%.**
+
+#### Q11. Pipes — built-in and custom.
+
 Built-in: date, currency, percent, uppercase, lowercase, json, async, slice, number
 
 Custom Pure Pipe:
-  @Pipe({ name: 'statusBadge', pure: true })
-  export class StatusBadgePipe implements PipeTransform {
-    transform(status: string): string {
-      return status === 'ACTIVE' ? '✅ Active' : '❌ Inactive';
-    }
+@Pipe({ name: 'statusBadge', pure: true })
+export class StatusBadgePipe implements PipeTransform {
+transform(status: string): string {
+```text
+    return status === 'ACTIVE' ? '✅ Active' : '❌ Inactive';
   }
-  // Template: {{ policy.status | statusBadge }}
+}
+// Template: {{ policy.status | statusBadge }}
+```
 
-  pure: true (default) → Only re-evaluates when INPUT reference changes
-  pure: false → Re-evaluates on EVERY change detection cycle (expensive!)
+pure: true (default) → Only re-evaluates when INPUT reference changes
+pure: false → Re-evaluates on EVERY change detection cycle (expensive!)
 
-─────────────────────────────────────────────────────────────────────
-Q12. ViewChild and ContentChild.
-─────────────────────────────────────────────────────────────────────
-  @ViewChild('myInput') inputRef!: ElementRef;
-  ngAfterViewInit() { this.inputRef.nativeElement.focus(); }
+#### Q12. ViewChild and ContentChild.
 
-  ViewChild: Access child component/element within own template
-  ContentChild: Access projected content (<ng-content>)
+@ViewChild('myInput') inputRef!: ElementRef;
+ngAfterViewInit() { this.inputRef.nativeElement.focus(); }
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 2: RxJS + OBSERVABLES (Q13-Q24)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ViewChild: Access child component/element within own template
+ContentChild: Access projected content (<ng-content>)
 
-─────────────────────────────────────────────────────────────────────
-*** Q13. Observable vs Promise.
-─────────────────────────────────────────────────────────────────────
-  Feature      | Promise              | Observable
-  Values       | Single               | Multiple (stream)
-  Lazy         | No (eager)           | Yes (lazy)
-  Cancel       | No                   | Yes (unsubscribe)
-  Operators    | .then/.catch         | pipe(map, filter, etc.)
-  Async/Await  | Yes                  | Yes (firstValueFrom)
+## PART 2: RxJS + OBSERVABLES (Q13-Q24)
 
-  // Promise: one HTTP call
-  fetch('/api/policies').then(res => res.json());
+#### Q13. Observable vs Promise.
 
-  // Observable: can emit multiple values, cancel, retry
-  this.http.get<Policy[]>('/api/policies')
-      .pipe(retry(3), catchError(err => of([])))
-      .subscribe(data => this.policies = data);
+Feature      | Promise              | Observable
+Values       | Single               | Multiple (stream)
+Lazy         | No (eager)           | Yes (lazy)
+Cancel       | No                   | Yes (unsubscribe)
+Operators    | .then/.catch         | pipe(map, filter, etc.)
+Async/Await  | Yes                  | Yes (firstValueFrom)
 
-─────────────────────────────────────────────────────────────────────
-*** Q14. Subject types — Subject, BehaviorSubject, ReplaySubject, AsyncSubject.
-─────────────────────────────────────────────────────────────────────
+// Promise: one HTTP call
+fetch('/api/policies').then(res => res.json());
+
+// Observable: can emit multiple values, cancel, retry
+this.http.get<Policy[]>('/api/policies')
+```text
+.pipe(retry(3), catchError(err => of([])))
+.subscribe(data => this.policies = data);
+```
+
+#### Q14. Subject types — Subject, BehaviorSubject, ReplaySubject, AsyncSubject.
+
 Subject: No initial value, emits to current subscribers only
-  const sub = new Subject<string>();
-  sub.subscribe(v => console.log(v));
-  sub.next("Hello"); // subscriber receives "Hello"
+const sub = new Subject<string>();
+sub.subscribe(v => console.log(v));
+sub.next("Hello"); // subscriber receives "Hello"
 
 BehaviorSubject: Has initial value, new subscribers get LAST emitted value
-  const sub = new BehaviorSubject<User>(null);
-  sub.next(currentUser);
-  sub.subscribe(user => ...); // immediately gets currentUser
-  Use: Current user state, loading state
+const sub = new BehaviorSubject<User>(null);
+sub.next(currentUser);
+sub.subscribe(user => ...); // immediately gets currentUser
+Use: Current user state, loading state
 
 ReplaySubject: New subscribers get N previous emissions
-  const sub = new ReplaySubject<string>(3); // buffer last 3
-  sub.next("A"); sub.next("B"); sub.next("C"); sub.next("D");
-  sub.subscribe(v => ...); // gets B, C, D (last 3)
-  Use: Chat message history, event replay
+const sub = new ReplaySubject<string>(3); // buffer last 3
+sub.next("A"); sub.next("B"); sub.next("C"); sub.next("D");
+sub.subscribe(v => ...); // gets B, C, D (last 3)
+Use: Chat message history, event replay
 
 AsyncSubject: Only emits LAST value, and only on complete()
-  const sub = new AsyncSubject<string>();
-  sub.next("A"); sub.next("B"); sub.complete();
-  sub.subscribe(v => ...); // gets "B" only
+const sub = new AsyncSubject<string>();
+sub.next("A"); sub.next("B"); sub.complete();
+sub.subscribe(v => ...); // gets "B" only
 
-─────────────────────────────────────────────────────────────────────
-*** Q15. Common RxJS operators for Angular.
-─────────────────────────────────────────────────────────────────────
-  Transformation: map, switchMap, mergeMap, concatMap, exhaustMap
-  Filtering: filter, distinctUntilChanged, debounceTime, take, first
-  Combination: combineLatest, forkJoin, merge, zip
-  Error: catchError, retry, retryWhen
-  Utility: tap, delay, finalize
+#### Q15. Common RxJS operators for Angular.
 
-─────────────────────────────────────────────────────────────────────
-*** Q16. switchMap vs mergeMap vs concatMap vs exhaustMap.
-─────────────────────────────────────────────────────────────────────
+Transformation: map, switchMap, mergeMap, concatMap, exhaustMap
+Filtering: filter, distinctUntilChanged, debounceTime, take, first
+Combination: combineLatest, forkJoin, merge, zip
+Error: catchError, retry, retryWhen
+Utility: tap, delay, finalize
+
+#### Q16. switchMap vs mergeMap vs concatMap vs exhaustMap.
+
 switchMap: Cancels previous inner Observable when new outer emits
-  Use: Search typeahead (cancel old search when user types more)
+Use: Search typeahead (cancel old search when user types more)
 
 mergeMap: Runs all inner Observables concurrently
-  Use: Multiple independent HTTP calls
+Use: Multiple independent HTTP calls
 
 concatMap: Queues inner Observables, runs sequentially
-  Use: Sequential dependent operations (save then load)
+Use: Sequential dependent operations (save then load)
 
 exhaustMap: Ignores new outer emissions until current inner completes
-  Use: Login button (prevent double submission)
+Use: Login button (prevent double submission)
 
-  // Search typeahead — switchMap cancels old search
-  this.searchControl.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(term => this.searchService.search(term))
-  ).subscribe(results => this.results = results);
+// Search typeahead — switchMap cancels old search
+this.searchControl.valueChanges.pipe(
+debounceTime(300),
+distinctUntilChanged(),
+switchMap(term => this.searchService.search(term))
+).subscribe(results => this.results = results);
 
-─────────────────────────────────────────────────────────────────────
-*** Q17. Memory leaks from Observables — prevention.
-─────────────────────────────────────────────────────────────────────
-  Methods to prevent:
-  1. unsubscribe() in ngOnDestroy
-  2. async pipe (auto-unsubscribes)
-  3. takeUntil(destroy$) pattern
-  4. take(1) for one-shot observables
+#### Q17. Memory leaks from Observables — prevention.
 
-  // takeUntil pattern (best for multiple subscriptions)
-  private destroy$ = new Subject<void>();
-  ngOnInit() {
-      this.service.getData().pipe(takeUntil(this.destroy$)).subscribe(...);
-      this.service.getMore().pipe(takeUntil(this.destroy$)).subscribe(...);
-  }
-  ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+Methods to prevent:
+1. unsubscribe() in ngOnDestroy
+2. async pipe (auto-unsubscribes)
+3. takeUntil(destroy$) pattern
+4. take(1) for one-shot observables
 
-  // async pipe (cleanest)
-  policies$ = this.policyService.getPolicies();
-  // Template: <div *ngFor="let p of policies$ | async">{{ p.name }}</div>
+// takeUntil pattern (best for multiple subscriptions)
+private destroy$ = new Subject<void>();
+ngOnInit() {
+```text
+    this.service.getData().pipe(takeUntil(this.destroy$)).subscribe(...);
+    this.service.getMore().pipe(takeUntil(this.destroy$)).subscribe(...);
+}
+ngOnDestroy() { this.destroy$.next(); this.destroy$.complete(); }
+```
 
-─────────────────────────────────────────────────────────────────────
-Q18. combineLatest vs forkJoin.
-─────────────────────────────────────────────────────────────────────
-  forkJoin: Waits for ALL observables to COMPLETE, emits last values
-    forkJoin([obs1$, obs2$]).subscribe(([r1, r2]) => ...);
-    Use: Parallel HTTP calls (like CompletableFuture.allOf)
+// async pipe (cleanest)
+policies$ = this.policyService.getPolicies();
+// Template: <div *ngFor="let p of policies$ | async">{{ p.name }}</div>
 
-  combineLatest: Emits whenever ANY observable emits (after all have emitted once)
-    combineLatest([filter$, sort$]).subscribe(([filter, sort]) => refresh());
-    Use: Reactive UI filters
+#### Q18. combineLatest vs forkJoin.
 
-─────────────────────────────────────────────────────────────────────
-Q19. debounceTime and distinctUntilChanged.
-─────────────────────────────────────────────────────────────────────
-  // Without: Every keystroke fires HTTP call (50 calls for typing "interview")
-  // With: Only calls after 300ms pause + value changed
-  this.search.valueChanges.pipe(
-      debounceTime(300),         // Wait 300ms after last keystroke
-      distinctUntilChanged(),    // Only if value actually changed
-      switchMap(term => this.api.search(term))
-  ).subscribe(results => this.results = results);
+forkJoin: Waits for ALL observables to COMPLETE, emits last values
+forkJoin([obs1$, obs2$]).subscribe(([r1, r2]) => ...);
+Use: Parallel HTTP calls (like CompletableFuture.allOf)
 
-─────────────────────────────────────────────────────────────────────
-Q20-Q24 Quick RxJS continued:
-─────────────────────────────────────────────────────────────────────
-Q20. tap() — side effects without modifying stream
-  .pipe(tap(data => console.log('Received:', data)))
+combineLatest: Emits whenever ANY observable emits (after all have emitted once)
+combineLatest([filter$, sort$]).subscribe(([filter, sort]) => refresh());
+Use: Reactive UI filters
 
-Q21. catchError() — error handling in streams
-  .pipe(catchError(err => { this.error = err; return of([]); }))
+#### Q19. debounceTime and distinctUntilChanged.
 
-Q22. retry(3) — retry n times before error
-  .pipe(retry(3), catchError(this.handleError))
+// Without: Every keystroke fires HTTP call (50 calls for typing "interview")
+// With: Only calls after 300ms pause + value changed
+this.search.valueChanges.pipe(
+debounceTime(300),         // Wait 300ms after last keystroke
+distinctUntilChanged(),    // Only if value actually changed
+switchMap(term => this.api.search(term))
+).subscribe(results => this.results = results);
 
-Q23. first() vs take(1) — first() errors if empty, take(1) completes silently
+#### Q20-Q24 Quick RxJS continued:
 
-Q24. shareReplay(1) — share + cache last value for late subscribers
-  private policies$ = this.http.get<Policy[]>('/api/policies')
-      .pipe(shareReplay(1)); // One HTTP call shared by all subscribers
+#### Q20. tap() — side effects without modifying stream
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 3: ROUTING + GUARDS + HTTP (Q25-Q35)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+.pipe(tap(data => console.log('Received:', data)))
 
-─────────────────────────────────────────────────────────────────────
-*** Q25. Routing — configuration and navigation.
-─────────────────────────────────────────────────────────────────────
+#### Q21. catchError() — error handling in streams
+
+.pipe(catchError(err => { this.error = err; return of([]); }))
+
+#### Q22. retry(3) — retry n times before error
+
+.pipe(retry(3), catchError(this.handleError))
+
+#### Q23. first() vs take(1) — first() errors if empty, take(1) completes silently
+
+#### Q24. shareReplay(1) — share + cache last value for late subscribers
+
+private policies$ = this.http.get<Policy[]>('/api/policies')
+```text
+.pipe(shareReplay(1)); // One HTTP call shared by all subscribers
+```
+
+## PART 3: ROUTING + GUARDS + HTTP (Q25-Q35)
+
+#### Q25. Routing — configuration and navigation.
+
 const routes: Routes = [
-    { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-    { path: 'dashboard', component: DashboardComponent },
-    { path: 'policies', component: PolicyListComponent, canActivate: [AuthGuard] },
-    { path: 'policies/:id', component: PolicyDetailComponent, resolve: { policy: PolicyResolver } },
-    { path: 'admin', loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule) },
-    { path: '**', component: NotFoundComponent }
+{ path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+{ path: 'dashboard', component: DashboardComponent },
+{ path: 'policies', component: PolicyListComponent, canActivate: [AuthGuard] },
+{ path: 'policies/:id', component: PolicyDetailComponent, resolve: { policy: PolicyResolver } },
+{ path: 'admin', loadChildren: () => import('./admin/admin.module').then(m => m.AdminModule) },
+{ path: '**', component: NotFoundComponent }
 ];
 
 // Programmatic navigation
 this.router.navigate(['/policies', policyId]);
 this.router.navigate(['/policies'], { queryParams: { status: 'active' } });
 
-─────────────────────────────────────────────────────────────────────
-*** Q26. Route Guards.
-─────────────────────────────────────────────────────────────────────
-  canActivate: Allow/deny access to route
-  canDeactivate: Allow/deny leaving route (unsaved changes warning)
-  canLoad: Allow/deny lazy module loading
-  resolve: Pre-fetch data before activating route
+#### Q26. Route Guards.
 
-  @Injectable({ providedIn: 'root' })
-  export class AuthGuard implements CanActivate {
-    constructor(private authService: AuthService, private router: Router) {}
-    canActivate(): boolean {
-      if (this.authService.isLoggedIn()) return true;
-      this.router.navigate(['/login']);
-      return false;
-    }
+canActivate: Allow/deny access to route
+canDeactivate: Allow/deny leaving route (unsaved changes warning)
+canLoad: Allow/deny lazy module loading
+resolve: Pre-fetch data before activating route
+
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+constructor(private authService: AuthService, private router: Router) {}
+canActivate(): boolean {
+```text
+    if (this.authService.isLoggedIn()) return true;
+    this.router.navigate(['/login']);
+    return false;
   }
+}
+```
 
-─────────────────────────────────────────────────────────────────────
-*** Q27. Lazy Loading modules.
-─────────────────────────────────────────────────────────────────────
+#### Q27. Lazy Loading modules.
+
 Splits app into chunks, loaded on demand — reduces initial bundle size.
 
-  { path: 'admin', loadChildren: () =>
-      import('./admin/admin.module').then(m => m.AdminModule) }
+{ path: 'admin', loadChildren: () =>
+import('./admin/admin.module').then(m => m.AdminModule) }
 
-  Before: Main bundle = 2MB
-  After: Main = 800KB, admin chunk = 400KB (loaded only on /admin)
+Before: Main bundle = 2MB
+After: Main = 800KB, admin chunk = 400KB (loaded only on /admin)
 
-  PreloadingStrategy: Preload all lazy modules in background after initial load
-  imports: [RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })]
+PreloadingStrategy: Preload all lazy modules in background after initial load
+imports: [RouterModule.forRoot(routes, { preloadingStrategy: PreloadAllModules })]
 
-─────────────────────────────────────────────────────────────────────
-*** Q28. HTTP Interceptors.
-─────────────────────────────────────────────────────────────────────
+#### Q28. HTTP Interceptors.
+
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
-  constructor(private auth: AuthService) {}
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpResponse<any>> {
+constructor(private auth: AuthService) {}
+intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpResponse<any>> {
+```text
     const token = this.auth.getToken();
     const authReq = req.clone({
       setHeaders: { Authorization: `Bearer ${token}` }
@@ -432,14 +427,15 @@ export class AuthInterceptor implements HttpInterceptor {
     );
   }
 }
+```
 
 Multiple Interceptors execute in ORDER of registration (chain pattern).
 
-─────────────────────────────────────────────────────────────────────
-Q29. HttpClient — GET, POST, PUT, DELETE patterns.
-─────────────────────────────────────────────────────────────────────
+#### Q29. HttpClient — GET, POST, PUT, DELETE patterns.
+
 @Injectable({ providedIn: 'root' })
 export class PolicyService {
+```sql
   private baseUrl = '/api/v1/policies';
   constructor(private http: HttpClient) {}
 
@@ -451,190 +447,210 @@ export class PolicyService {
   }
   delete(id: number): Observable<void> { return this.http.delete<void>(`${this.baseUrl}/${id}`); }
 }
+```
 
-─────────────────────────────────────────────────────────────────────
-Q30. Resolvers — pre-fetch data.
-Q31. ActivatedRoute — accessing route params, query params, data.
-Q32. Router events — NavigationStart, NavigationEnd, NavigationError.
-Q33. Passing data between routes — state, queryParams, data.
+#### Q30. Resolvers — pre-fetch data.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 4: FORMS + PERFORMANCE + SECURITY (Q34-Q43)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#### Q31. ActivatedRoute — accessing route params, query params, data.
 
-─────────────────────────────────────────────────────────────────────
-*** Q34. Template-driven vs Reactive forms.
-─────────────────────────────────────────────────────────────────────
+#### Q32. Router events — NavigationStart, NavigationEnd, NavigationError.
+
+#### Q33. Passing data between routes — state, queryParams, data.
+
+## PART 4: FORMS + PERFORMANCE + SECURITY (Q34-Q43)
+
+#### Q34. Template-driven vs Reactive forms.
+
 Template-driven: Simple, [(ngModel)], less control, async validation tricky
 Reactive: Programmatic, FormGroup/FormControl, better testability, dynamic forms
 
-  // Reactive Form
-  this.policyForm = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(3)]],
-    email: ['', [Validators.required, Validators.email]],
-    premium: [0, [Validators.required, Validators.min(1000)]],
-    coverages: this.fb.array([]) // Dynamic array
-  });
+// Reactive Form
+this.policyForm = this.fb.group({
+name: ['', [Validators.required, Validators.minLength(3)]],
+email: ['', [Validators.required, Validators.email]],
+premium: [0, [Validators.required, Validators.min(1000)]],
+coverages: this.fb.array([]) // Dynamic array
+});
 
-  // Custom validator
-  static premiumRange(control: AbstractControl): ValidationErrors | null {
-    return control.value >= 1000 && control.value <= 1000000 ? null : { premiumRange: true };
-  }
+// Custom validator
+static premiumRange(control: AbstractControl): ValidationErrors | null {
+```text
+  return control.value >= 1000 && control.value <= 1000000 ? null : { premiumRange: true };
+}
+```
 
-─────────────────────────────────────────────────────────────────────
-*** Q35. AOT vs JIT compilation.
-─────────────────────────────────────────────────────────────────────
+#### Q35. AOT vs JIT compilation.
+
 JIT (Just-in-Time): Compiles in browser at runtime
-  → Slower startup, larger bundle (includes compiler)
-  → Used during development (ng serve)
+- Slower startup, larger bundle (includes compiler)
+- Used during development (ng serve)
 
 AOT (Ahead-of-Time): Compiles at build time
-  → Faster startup (pre-compiled), smaller bundle
-  → Used in production (ng build --prod)
-  → Catches template errors at build time
+- Faster startup (pre-compiled), smaller bundle
+- Used in production (ng build --prod)
+- Catches template errors at build time
 
-  AOT benefits: 30-50% faster rendering, 50% smaller bundle
+AOT benefits: 30-50% faster rendering, 50% smaller bundle
 
-─────────────────────────────────────────────────────────────────────
-Q36. Tree shaking.
-─────────────────────────────────────────────────────────────────────
-  Webpack removes unused code from final bundle.
-  providedIn: 'root' enables tree-shaking for services.
-  If service is never injected → removed from bundle entirely.
+#### Q36. Tree shaking.
 
-─────────────────────────────────────────────────────────────────────
-*** Q37. Angular performance optimization checklist.
-─────────────────────────────────────────────────────────────────────
-  1. OnPush change detection strategy
-  2. trackBy on *ngFor
-  3. Lazy loading modules
-  4. async pipe (auto-unsubscribe + OnPush compatible)
-  5. Pure pipes (avoid function calls in templates)
-  6. Virtual scrolling for long lists (CDK ScrollingModule)
-  7. Preloading strategy for lazy modules
-  8. Web Workers for heavy computation
-  9. Bundle analysis (ng build --stats-json + webpack-bundle-analyzer)
-  10. Image optimization (lazy loading images, WebP)
+Webpack removes unused code from final bundle.
+providedIn: 'root' enables tree-shaking for services.
+If service is never injected → removed from bundle entirely.
 
-─────────────────────────────────────────────────────────────────────
-Q38. Virtual Scrolling (CDK).
-─────────────────────────────────────────────────────────────────────
-  <cdk-virtual-scroll-viewport itemSize="50" class="viewport">
-    <div *cdkVirtualFor="let item of items; trackBy: trackById">
-      {{ item.name }}
-    </div>
-  </cdk-virtual-scroll-viewport>
+#### Q37. Angular performance optimization checklist.
 
-  Renders only VISIBLE items in DOM (e.g., 20 out of 10,000).
+1. OnPush change detection strategy
+2. trackBy on *ngFor
+3. Lazy loading modules
+4. async pipe (auto-unsubscribe + OnPush compatible)
+5. Pure pipes (avoid function calls in templates)
+6. Virtual scrolling for long lists (CDK ScrollingModule)
+7. Preloading strategy for lazy modules
+8. Web Workers for heavy computation
+9. Bundle analysis (ng build --stats-json + webpack-bundle-analyzer)
+10. Image optimization (lazy loading images, WebP)
 
-─────────────────────────────────────────────────────────────────────
-*** Q39. Security — XSS and CSRF protection.
-─────────────────────────────────────────────────────────────────────
+#### Q38. Virtual Scrolling (CDK).
+
+<cdk-virtual-scroll-viewport itemSize="50" class="viewport">
+```json
+  <div *cdkVirtualFor="let item of items; trackBy: trackById">
+    {{ item.name }}
+  </div>
+</cdk-virtual-scroll-viewport>
+```
+
+Renders only VISIBLE items in DOM (e.g., 20 out of 10,000).
+
+#### Q39. Security — XSS and CSRF protection.
+
 XSS (Cross-Site Scripting):
-  Angular auto-sanitizes HTML, style, URL, resource bindings.
-  [innerHTML]="userContent" → Angular sanitizes automatically
-  bypassSecurityTrustHtml() → ONLY when you trust the source
+Angular auto-sanitizes HTML, style, URL, resource bindings.
+[innerHTML]="userContent" → Angular sanitizes automatically
+bypassSecurityTrustHtml() → ONLY when you trust the source
 
 CSRF (Cross-Site Request Forgery):
-  HttpClientXsrfModule handles XSRF token automatically
-  Reads XSRF-TOKEN cookie → sends as X-XSRF-TOKEN header
+HttpClientXsrfModule handles XSRF token automatically
+Reads XSRF-TOKEN cookie → sends as X-XSRF-TOKEN header
 
-─────────────────────────────────────────────────────────────────────
-Q40. Content Security Policy headers.
-Q41. Angular CLI — ng generate, ng build, ng test, ng lint.
-Q42. Environment files (environment.ts / environment.prod.ts).
-Q43. Angular testing — TestBed, ComponentFixture, async/fakeAsync.
+#### Q40. Content Security Policy headers.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PART 5: SCENARIO-BASED + ENTERPRISE (Q44-Q50)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#### Q41. Angular CLI — ng generate, ng build, ng test, ng lint.
 
-─────────────────────────────────────────────────────────────────────
-*** Q44. Angular + Spring Boot integration architecture.
-─────────────────────────────────────────────────────────────────────
+#### Q42. Environment files (environment.ts / environment.prod.ts).
+
+#### Q43. Angular testing — TestBed, ComponentFixture, async/fakeAsync.
+
+## PART 5: SCENARIO-BASED + ENTERPRISE (Q44-Q50)
+
+#### Q44. Angular + Spring Boot integration architecture.
+
 Development:
-  Angular (localhost:4200) ←proxy→ Spring Boot (localhost:8080)
-  proxy.conf.json: { "/api/*": { "target": "http://localhost:8080" } }
+Angular (localhost:4200) ←proxy→ Spring Boot (localhost:8080)
+proxy.conf.json: { "/api/*": { "target": "http://localhost:8080" } }
 
 Production:
-  Option 1: ng build → copy dist/ to Spring Boot static/ → single JAR
-  Option 2: Separate deployment, CORS config on Spring Boot, NGINX reverse proxy
+Option 1: ng build → copy dist/ to Spring Boot static/ → single JAR
+Option 2: Separate deployment, CORS config on Spring Boot, NGINX reverse proxy
 
 CORS:
-  @CrossOrigin(origins = "http://localhost:4200")
-  or global WebMvcConfigurer with CorsRegistry
+@CrossOrigin(origins = "http://localhost:4200")
+or global WebMvcConfigurer with CorsRegistry
 
-─────────────────────────────────────────────────────────────────────
-*** Q45. State Management — when and how.
-─────────────────────────────────────────────────────────────────────
+#### Q45. State Management — when and how.
+
 Small apps: Service with BehaviorSubject (simple store)
-  @Injectable({ providedIn: 'root' })
-  export class PolicyStore {
-    private policiesSubject = new BehaviorSubject<Policy[]>([]);
-    policies$ = this.policiesSubject.asObservable();
-    setPolicies(p: Policy[]) { this.policiesSubject.next(p); }
-  }
+@Injectable({ providedIn: 'root' })
+export class PolicyStore {
+```java
+  private policiesSubject = new BehaviorSubject<Policy[]>([]);
+  policies$ = this.policiesSubject.asObservable();
+  setPolicies(p: Policy[]) { this.policiesSubject.next(p); }
+}
+```
 
 Large apps: NgRx (Redux pattern)
-  Store → Actions → Reducers → Selectors → Components
+Store → Actions → Reducers → Selectors → Components
 
-─────────────────────────────────────────────────────────────────────
-Q46. Scenario: Debug slow Angular application.
-─────────────────────────────────────────────────────────────────────
-  1. Chrome DevTools → Performance tab → record user interaction
-  2. Angular DevTools → check component tree + change detection runs
-  3. Look for: too many CD cycles, large DOM, too many subscriptions
-  4. Fix: OnPush, trackBy, lazy loading, virtual scroll, async pipe
+#### Q46. Scenario: Debug slow Angular application.
 
-─────────────────────────────────────────────────────────────────────
-Q47. Scenario: Implement global loading spinner.
-─────────────────────────────────────────────────────────────────────
-  @Injectable()
-  export class LoadingInterceptor implements HttpInterceptor {
-    constructor(private loadingService: LoadingService) {}
-    intercept(req, next) {
-      this.loadingService.show();
-      return next.handle(req).pipe(finalize(() => this.loadingService.hide()));
-    }
+1. Chrome DevTools → Performance tab → record user interaction
+2. Angular DevTools → check component tree + change detection runs
+3. Look for: too many CD cycles, large DOM, too many subscriptions
+4. Fix: OnPush, trackBy, lazy loading, virtual scroll, async pipe
+
+#### Q47. Scenario: Implement global loading spinner.
+
+@Injectable()
+export class LoadingInterceptor implements HttpInterceptor {
+constructor(private loadingService: LoadingService) {}
+intercept(req, next) {
+```text
+    this.loadingService.show();
+    return next.handle(req).pipe(finalize(() => this.loadingService.hide()));
   }
+}
+```
 
-Q48. Scenario: Handle JWT token refresh.
-  Intercept 401 → refresh token → retry original request with new token.
-  Use switchMap to queue requests during refresh.
+#### Q48. Scenario: Handle JWT token refresh.
 
-Q49. Scenario: Implement search with autocomplete.
-  Input valueChanges → debounceTime(300) → distinctUntilChanged → switchMap
+Intercept 401 → refresh token → retry original request with new token.
+Use switchMap to queue requests during refresh.
 
-Q50. Standalone Components (Angular 14+).
-  @Component({ standalone: true, imports: [CommonModule, HttpClientModule] })
-  No need for NgModule declarations — components self-contained.
+#### Q49. Scenario: Implement search with autocomplete.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-QUICK REFERENCE: ALL *** QUESTIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-*** Q1.  Architecture building blocks
-*** Q2.  Component lifecycle hooks
-*** Q3.  Change Detection Default vs OnPush
-*** Q4.  Zone.js internal working
-*** Q5.  Dependency Injection
-*** Q8.  Structural vs Attribute directives
-*** Q10. trackBy in *ngFor
-*** Q13. Observable vs Promise
-*** Q14. Subject types (Behavior, Replay, Async)
-*** Q15. Common RxJS operators
-*** Q16. switchMap vs mergeMap vs concatMap
-*** Q17. Memory leaks prevention
-*** Q25. Routing configuration
-*** Q26. Route Guards
-*** Q27. Lazy Loading
-*** Q28. HTTP Interceptors
-*** Q34. Template-driven vs Reactive forms
-*** Q35. AOT vs JIT
-*** Q37. Performance optimization checklist
-*** Q39. Security (XSS, CSRF)
-*** Q44. Angular + Spring Boot integration
-*** Q45. State Management
+Input valueChanges → debounceTime(300) → distinctUntilChanged → switchMap
 
-================================================================================
-END OF ANGULAR ANALYSIS (50 Questions)
-================================================================================
+#### Q50. Standalone Components (Angular 14+).
+
+@Component({ standalone: true, imports: [CommonModule, HttpClientModule] })
+No need for NgModule declarations — components self-contained.
+
+## QUICK REFERENCE: ALL *** QUESTIONS
+
+#### Q1. Architecture building blocks
+
+#### Q2. Component lifecycle hooks
+
+#### Q3. Change Detection Default vs OnPush
+
+#### Q4. Zone.js internal working
+
+#### Q5. Dependency Injection
+
+#### Q8. Structural vs Attribute directives
+
+#### Q10. trackBy in *ngFor
+
+#### Q13. Observable vs Promise
+
+#### Q14. Subject types (Behavior, Replay, Async)
+
+#### Q15. Common RxJS operators
+
+#### Q16. switchMap vs mergeMap vs concatMap
+
+#### Q17. Memory leaks prevention
+
+#### Q25. Routing configuration
+
+#### Q26. Route Guards
+
+#### Q27. Lazy Loading
+
+#### Q28. HTTP Interceptors
+
+#### Q34. Template-driven vs Reactive forms
+
+#### Q35. AOT vs JIT
+
+#### Q37. Performance optimization checklist
+
+#### Q39. Security (XSS, CSRF)
+
+#### Q44. Angular + Spring Boot integration
+
+#### Q45. State Management
+
+## END OF ANGULAR ANALYSIS (50 Questions)

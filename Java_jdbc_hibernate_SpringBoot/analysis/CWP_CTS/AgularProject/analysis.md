@@ -1,40 +1,56 @@
 ﻿================================================================================
-    ENTERPRISE ANGULAR PROJECT: COMPLETE ANALYSIS & INTERVIEW GUIDE
-    Project: OdaAdmin UI - Nationwide Insurance Enterprise Application
-    Analysis Date: March 2, 2026
-    Level: Beginner to Expert | Interview Focused
-================================================================================
+ENTERPRISE ANGULAR PROJECT: COMPLETE ANALYSIS & INTERVIEW GUIDE
+Project: OdaAdmin UI - Nationwide Insurance Enterprise Application
+Analysis Date: March 2, 2026
+Level: Beginner to Expert | Interview Focused
 
-TABLE OF CONTENTS
-================================================================================
-PART 1:  Enterprise Angular Project Architecture
-PART 2:  Enterprise Folder Structure Deep Analysis
-PART 3:  Angular Modules & Standalone Components
-PART 4:  Components Deep Explanation
-PART 5:  Services and Dependency Injection
-PART 6:  HTTP Client and Backend Integration
-PART 7:  RxJS and Reactive Programming
-PART 8:  HTTP Interceptors Deep Explanation
-PART 9:  Error Handling Strategy
-PART 10: Models, Enums, and Constants
-PART 11: Angular Routing Deep Explanation
-PART 12: Forms Deep Explanation
-PART 13: Authentication and Authorization
-PART 14: Guards Deep Explanation
-PART 15: Environment Configuration
-PART 16: Angular Internal Working
-PART 17: Performance Optimization
-PART 18: Enterprise Best Practices
-PART 19: Interview Questions and Answers
+## TABLE OF CONTENTS
 
-================================================================================
-PART 1: ENTERPRISE ANGULAR PROJECT ARCHITECTURE
-================================================================================
+## PART 1:  Enterprise Angular Project Architecture
+
+## PART 2:  Enterprise Folder Structure Deep Analysis
+
+## PART 3:  Angular Modules & Standalone Components
+
+## PART 4:  Components Deep Explanation
+
+## PART 5:  Services and Dependency Injection
+
+## PART 6:  HTTP Client and Backend Integration
+
+## PART 7:  RxJS and Reactive Programming
+
+## PART 8:  HTTP Interceptors Deep Explanation
+
+## PART 9:  Error Handling Strategy
+
+## PART 10: Models, Enums, and Constants
+
+## PART 11: Angular Routing Deep Explanation
+
+## PART 12: Forms Deep Explanation
+
+## PART 13: Authentication and Authorization
+
+## PART 14: Guards Deep Explanation
+
+## PART 15: Environment Configuration
+
+## PART 16: Angular Internal Working
+
+## PART 17: Performance Optimization
+
+## PART 18: Enterprise Best Practices
+
+## PART 19: Interview Questions and Answers
+
+## PART 1: ENTERPRISE ANGULAR PROJECT ARCHITECTURE
 
 1.1 WHAT IS ANGULAR?
---------------------
-Definition:
-Angular is a TypeScript-based open-source framework developed and maintained by 
+
+#### Definition:
+
+Angular is a TypeScript-based open-source framework developed and maintained by
 Google for building client-side web applications. It provides a complete solution
 for building enterprise-scale, single-page applications (SPAs).
 
@@ -58,28 +74,27 @@ REAL-WORLD EXAMPLE FROM YOUR PROJECT:
 The OdaAdmin application uses Angular 19 with standalone components pattern,
 demonstrating modern enterprise Angular architecture:
 
-```typescript
 // From: src/app/app.ts
 @Component({
-  selector: 'app-root',
-  standalone: true,  // Modern standalone approach
-  imports: [
-    CommonModule,
-    RouterOutlet, 
-    HeaderComponent, 
-    SidebarComponent, 
-    FooterComponent, 
-    LoadingSpinnerComponent,
-  ],
-  templateUrl: './app.html',
-  styleUrl: './app.css'
+selector: 'app-root',
+standalone: true,  // Modern standalone approach
+imports: [
+CommonModule,
+RouterOutlet,
+HeaderComponent,
+SidebarComponent,
+FooterComponent,
+LoadingSpinnerComponent,
+],
+templateUrl: './app.html',
+styleUrl: './app.css'
 })
 export class App implements OnInit { ... }
-```
 
 1.2 SINGLE PAGE APPLICATION (SPA) ARCHITECTURE
-----------------------------------------------
-Definition:
+
+#### Definition:
+
 SPA is a web application architecture where a single HTML page is loaded initially,
 and subsequent content is dynamically updated without full page reloads.
 
@@ -97,16 +112,16 @@ Benefits:
 • Native-app-like feel
 
 YOUR PROJECT SPA FLOW:
-```
 index.html → main.ts → App → Router → Feature Components
+```text
                                   ↓
                           Agency-Discrepancies / Premium-Audit / etc.
 ```
 
 1.3 ANGULAR APPLICATION LIFECYCLE
----------------------------------
 
-STARTUP PHASE:
+### STARTUP PHASE:
+
 1. Browser loads index.html
 2. JavaScript bundles load
 3. main.ts executes bootstrapApplication()
@@ -122,7 +137,6 @@ RUNTIME PHASE:
 5. Change detection updates DOM
 
 YOUR PROJECT BOOTSTRAP (src/main.ts):
-```typescript
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
@@ -130,20 +144,19 @@ import Bolt from '@nationwide-bolt/bundle-core';
 
 // Initialize Bolt Design System first, then bootstrap Angular
 Bolt.initialize().then(() => {
-  bootstrapApplication(App, appConfig).catch((err) =>
-    console.error(err),
-  );
+bootstrapApplication(App, appConfig).catch((err) =>
+console.error(err),
+);
 });
-```
 
 KEY INSIGHT: Your project initializes Bolt Design System before Angular,
 ensuring UI components are ready when Angular renders.
 
 1.4 COMPLETE RUNTIME FLOW
--------------------------
 
-DETAILED FLOW DIAGRAM:
-```
+### DETAILED FLOW DIAGRAM:
+
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  BROWSER REQUEST                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -167,27 +180,23 @@ DETAILED FLOW DIAGRAM:
 REAL EXAMPLE FROM YOUR PROJECT:
 
 Step 1-3: Bootstrap (main.ts)
-```typescript
 Bolt.initialize().then(() => {
-  bootstrapApplication(App, appConfig)
+bootstrapApplication(App, appConfig)
 });
-```
 
 Step 4: Configuration (app.config.ts)
-```typescript
 export const appConfig: ApplicationConfig = {
-  providers: [
-    provideZonelessChangeDetection(),  // Modern Angular 19
-    provideAuth({ config: {...} }),     // OIDC authentication
-    provideRouter(routes),              // Routing
-    provideHttpClient(withInterceptors([authInterceptor(), apiInterceptor])),
-  ]
+providers: [
+provideZonelessChangeDetection(),  // Modern Angular 19
+provideAuth({ config: {...} }),     // OIDC authentication
+provideRouter(routes),              // Routing
+provideHttpClient(withInterceptors([authInterceptor(), apiInterceptor])),
+]
 };
-```
 
 Step 5-6: Authentication Check (app.ts)
-```typescript
 ngOnInit(): void {
+```text
   this.oidcSecurityService
     .checkAuth()
     .subscribe((loginResponse: LoginResponse) => {
@@ -200,21 +209,19 @@ ngOnInit(): void {
 ```
 
 Step 7-10: HTTP Call with Interceptor
-```typescript
 // Service call
 this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumber)
 
 // Interceptor adds headers
 headers = headers
-  .set('Authorization', 'Bearer ' + access_token)
-  .set('client_id', environment.clientId)
-  .set('X-NW-Message-ID', messageId);
-```
+.set('Authorization', 'Bearer ' + access_token)
+.set('client_id', environment.clientId)
+.set('X-NW-Message-ID', messageId);
 
 Step 11-14: Response Handling
-```typescript
 .subscribe({
-  next: (response) => {
+next: (response) => {
+```sql
     this.searchResults.set(results);  // Update signal
     // DOM automatically updates via reactive binding
   },
@@ -224,13 +231,11 @@ Step 11-14: Response Handling
 });
 ```
 
-================================================================================
-PART 2: ENTERPRISE FOLDER STRUCTURE DEEP ANALYSIS
-================================================================================
+## PART 2: ENTERPRISE FOLDER STRUCTURE DEEP ANALYSIS
 
 YOUR PROJECT ACTUAL STRUCTURE:
-```
 src/
+```text
 ├── app/
 │   ├── core/                    # Singleton services, guards, interceptors
 │   │   ├── enums/               # Application-wide enumerations
@@ -268,13 +273,14 @@ src/
 ```
 
 2.1 CORE FOLDER EXPLANATION
----------------------------
-Purpose: Contains singleton services and app-wide functionality that should
+
+#### Purpose: Contains singleton services and app-wide functionality that should
+
 only be instantiated once throughout the application lifecycle.
 
 YOUR PROJECT'S CORE FOLDER:
-```
 core/
+```text
 ├── enums/
 │   └── api-endpoints.enum.ts    # Centralized API endpoint management
 ├── guards/
@@ -294,20 +300,20 @@ core/
 ```
 
 REAL EXAMPLE - api-endpoints.enum.ts:
-```typescript
 export enum ApiEndpoints {
-  USER_ACCESS = '/get-user-infos/',
-  WINS_VALIDATION_CREATE = '/wins-validations',
-  WINS_VALIDATION_SEARCH = '/wins-validations/search',
-  PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
-  AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
+USER_ACCESS = '/get-user-infos/',
+WINS_VALIDATION_CREATE = '/wins-validations',
+WINS_VALIDATION_SEARCH = '/wins-validations/search',
+PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
+AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
 }
 
 export class ApiUrlBuilder {
+```typescript
   static buildUrl(endpoint: ApiEndpoints): string {
     return `${environment.apiEndPointUrl}${endpoint}`;
   }
-  
+
   static buildSearchUrl(ovAgent: string, winsAgent: string): string {
     const baseUrl = this.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
     // Build query parameters...
@@ -322,13 +328,14 @@ WHY THIS PATTERN MATTERS:
 • Enables environment-specific URL building
 
 2.2 SHARED FOLDER EXPLANATION
------------------------------
-Purpose: Contains reusable code shared across multiple feature modules.
+
+#### Purpose: Contains reusable code shared across multiple feature modules.
+
 Should NOT contain singleton services.
 
 YOUR PROJECT'S SHARED FOLDER:
-```
 shared/
+```text
 ├── components/
 │   └── loading-spinner.component.ts  # Reusable loading indicator
 ├── models/
@@ -342,27 +349,25 @@ shared/
 ```
 
 REAL EXAMPLE - agency-discrepancy.model.ts:
-```typescript
 export interface AgencyDiscrepancy {
-  id?: number;
-  ovAgentNumber: string;
-  winsAgentNumber: string;
-  createdDate?: Date;
-  lastModified?: Date;
+id?: number;
+ovAgentNumber: string;
+winsAgentNumber: string;
+createdDate?: Date;
+lastModified?: Date;
 }
 
 export interface SearchCriteria {
-  ovAgentNumber?: string;
-  winsAgentNumber?: string;
+ovAgentNumber?: string;
+winsAgentNumber?: string;
 }
 
 export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
+success: boolean;
+data?: T;
+message?: string;
+errors?: string[];
 }
-```
 
 WHY MODELS IN SHARED:
 • Type safety across the application
@@ -371,13 +376,14 @@ WHY MODELS IN SHARED:
 • Compile-time error checking
 
 2.3 FEATURES FOLDER EXPLANATION
--------------------------------
-Purpose: Contains feature-specific modules that are often lazy-loaded.
+
+#### Purpose: Contains feature-specific modules that are often lazy-loaded.
+
 Each feature is self-contained with its own components, templates, and styles.
 
 YOUR PROJECT'S FEATURES:
-```
 features/
+```text
 ├── agency-discrepancies/
 │   └── components/
 │       ├── agency-discrepancies.component.ts
@@ -395,24 +401,23 @@ features/
 ```
 
 LAZY LOADING EXAMPLE (app.routes.ts):
-```typescript
 {
-  path: 'agency-discrepancies', 
-  loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
-    .then(m => m.AgencyDiscrepanciesComponent),
-  canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
-  data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
+path: 'agency-discrepancies',
+loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
+.then(m => m.AgencyDiscrepanciesComponent),
+canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
+data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 }
-```
 
 2.4 LAYOUT FOLDER EXPLANATION
------------------------------
-Purpose: Contains structural components that define the application's
+
+#### Purpose: Contains structural components that define the application's
+
 visual layout (header, footer, sidebar, navigation).
 
 YOUR PROJECT'S LAYOUT:
-```
 layout/
+```text
 ├── header/
 │   ├── header.component.ts      # Navigation bar with page title
 │   ├── header.component.html
@@ -425,8 +430,8 @@ layout/
 ```
 
 REAL EXAMPLE - sidebar.component.ts:
-```typescript
 export class SidebarComponent {
+```sql
   private readonly userAccessService = inject(UserAccessService);
   readonly accessibleScreens = signal<ScreenAccess[]>([]);
 
@@ -440,37 +445,31 @@ export class SidebarComponent {
 }
 ```
 
-================================================================================
-PART 3: ANGULAR MODULES & STANDALONE COMPONENTS
-================================================================================
+## PART 3: ANGULAR MODULES & STANDALONE COMPONENTS
 
 3.1 TRADITIONAL NgModule VS STANDALONE COMPONENTS
--------------------------------------------------
 
-TRADITIONAL NgModule:
-```typescript
+#### TRADITIONAL NgModule:
+
 @NgModule({
-  declarations: [AppComponent, HeaderComponent],
-  imports: [BrowserModule, RouterModule],
-  providers: [AuthService],
-  bootstrap: [AppComponent]
+declarations: [AppComponent, HeaderComponent],
+imports: [BrowserModule, RouterModule],
+providers: [AuthService],
+bootstrap: [AppComponent]
 })
 export class AppModule { }
-```
 
 STANDALONE COMPONENTS (YOUR PROJECT USES THIS):
-```typescript
 @Component({
-  selector: 'app-root',
-  standalone: true,  // No NgModule needed
-  imports: [
-    CommonModule,
-    RouterOutlet, 
-    HeaderComponent,  // Direct component imports
-  ],
+selector: 'app-root',
+standalone: true,  // No NgModule needed
+imports: [
+CommonModule,
+RouterOutlet,
+HeaderComponent,  // Direct component imports
+],
 })
 export class App { }
-```
 
 WHY STANDALONE (Angular 14+):
 • Reduced boilerplate
@@ -480,47 +479,45 @@ WHY STANDALONE (Angular 14+):
 • Future direction of Angular
 
 3.2 YOUR PROJECT'S MODULE-LESS ARCHITECTURE
--------------------------------------------
 
-CONFIGURATION (app.config.ts):
-```typescript
+#### CONFIGURATION (app.config.ts):
+
 export const appConfig: ApplicationConfig = {
-  providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideZonelessChangeDetection(),  // Angular 19 feature!
-    provideAuth({ config: {...} }),
-    provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor(), apiInterceptor])),
-    provideClientHydration(withEventReplay())
-  ]
+providers: [
+provideBrowserGlobalErrorListeners(),
+provideZonelessChangeDetection(),  // Angular 19 feature!
+provideAuth({ config: {...} }),
+provideRouter(routes),
+provideHttpClient(withInterceptors([authInterceptor(), apiInterceptor])),
+provideClientHydration(withEventReplay())
+]
 };
-```
 
 KEY INSIGHT: Your project uses Angular 19's `provideZonelessChangeDetection()`
 which eliminates Zone.js dependency for better performance.
 
 3.3 LAZY LOADING IMPLEMENTATION
--------------------------------
 
-DEFINITION:
+### DEFINITION:
+
 Lazy loading defers loading of feature modules until they're needed,
 reducing initial bundle size and improving startup time.
 
 YOUR PROJECT'S LAZY LOADING:
-```typescript
 // app.routes.ts
 export const routes: Routes = [
-  { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
-  
+{ path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
+
+```json
   // Lazy-loaded components
   {
-    path: 'agency-discrepancies', 
+    path: 'agency-discrepancies',
     loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
       .then(m => m.AgencyDiscrepanciesComponent),
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
   },
   {
-    path: 'premium-audit-routing', 
+    path: 'premium-audit-routing',
     loadComponent: () => import('./features/premium-audit-routing/components/premium-audit-routing.component')
       .then(m => m.PremiumAuditRoutingComponent),
   },
@@ -538,14 +535,12 @@ BUNDLE SIZE BENEFIT:
 - Without lazy loading: All features in main.js (large)
 - With lazy loading: Each feature in separate chunk (smaller initial load)
 
-================================================================================
-PART 4: COMPONENTS DEEP EXPLANATION
-================================================================================
+## PART 4: COMPONENTS DEEP EXPLANATION
 
 4.1 COMPONENT ARCHITECTURE
---------------------------
 
-DEFINITION:
+### DEFINITION:
+
 A component is the fundamental building block of Angular applications.
 It consists of:
 • TypeScript class (logic)
@@ -554,41 +549,41 @@ It consists of:
 • Metadata decorator (@Component)
 
 ANATOMY OF YOUR COMPONENT (AgencyDiscrepanciesComponent):
-```typescript
 @Component({
-  selector: 'app-agency-discrepancies',     // HTML tag name
-  standalone: true,                          // No module required
-  imports: [CommonModule, ReactiveFormsModule],  // Dependencies
-  templateUrl: "./agency-discrepancies.component.html",
-  styleUrls: ['./agency-discrepancies.component.css'],
-  schemas: [CUSTOM_ELEMENTS_SCHEMA]  // Allow Bolt web components
+selector: 'app-agency-discrepancies',     // HTML tag name
+standalone: true,                          // No module required
+imports: [CommonModule, ReactiveFormsModule],  // Dependencies
+templateUrl: "./agency-discrepancies.component.html",
+styleUrls: ['./agency-discrepancies.component.css'],
+schemas: [CUSTOM_ELEMENTS_SCHEMA]  // Allow Bolt web components
 })
 export class AgencyDiscrepanciesComponent implements OnInit, OnDestroy {
+```typescript
   // Properties
   searchForm!: FormGroup;
   searchResults = signal<AgencyDiscrepancy[]>([]);
   loading = signal<boolean>(false);
-  
+
   // Dependency Injection
   constructor(
     private agencyService: AgencyDiscrepancyService,
     private loadingService: LoadingService,
     private router: Router,
   ) { }
-  
+
   // Lifecycle hooks
   ngOnInit(): void { }
   ngOnDestroy(): void { }
-  
+
   // Methods
   onSubmit(action: string): void { }
 }
 ```
 
 4.2 COMPONENT LIFECYCLE HOOKS
------------------------------
 
-HOOK EXECUTION ORDER:
+### HOOK EXECUTION ORDER:
+
 1. constructor()        - Class instantiation (avoid logic here)
 2. ngOnChanges()        - Input property changes (first call before ngOnInit)
 3. ngOnInit()           - Component initialization (API calls, subscriptions)
@@ -602,9 +597,9 @@ HOOK EXECUTION ORDER:
 YOUR PROJECT EXAMPLES:
 
 ngOnInit() - Initialization Logic:
-```typescript
 // From: agency-discrepancies.component.ts
 ngOnInit(): void {
+```text
   // Create form
   this.searchForm = new FormGroup({
     ovAgentNumber: new FormControl(''),
@@ -624,9 +619,9 @@ ngOnInit(): void {
 ```
 
 ngOnDestroy() - Cleanup Logic:
-```typescript
 // From: agency-discrepancies.component.ts
 ngOnDestroy(): void {
+```text
   // CRITICAL: Prevent memory leaks
   if (this.navigationSubscription) {
     this.navigationSubscription.unsubscribe();
@@ -635,27 +630,24 @@ ngOnDestroy(): void {
 ```
 
 ngOnDestroy() - From edit-premium-audit-routing.component.ts:
-```typescript
 ngOnDestroy() {
+```text
   // Restore default browser title
   document.title = 'ODAdmin';
 }
 ```
 
 4.3 COMPONENT COMMUNICATION PATTERNS
-------------------------------------
 
-1. Parent to Child: @Input()
-```typescript
+#### 1. Parent to Child: @Input()
+
 // Child component
 @Input() record: PremiumAuditRouting | null = null;
 
 // Parent template
 <app-edit [record]="selectedRecord"></app-edit>
-```
 
 2. Child to Parent: @Output()
-```typescript
 // From: edit-premium-audit-routing.component.ts
 @Output() update = new EventEmitter<PremiumAuditRouting>();
 @Output() cancel = new EventEmitter<void>();
@@ -665,23 +657,19 @@ this.update.emit(updatedRecord);
 
 // Parent template
 <app-edit (update)="onRecordUpdate($event)" (cancel)="onCancel()"></app-edit>
-```
 
 3. Via Service: Subject/BehaviorSubject (Your Project Pattern)
-```typescript
 // LoadingService
 private loadingSubject = new BehaviorSubject<boolean>(false);
 public loading$ = this.loadingSubject.asObservable();
 
 // Component subscription
 this.loadingService.loading$.subscribe(loading => this.loading.set(loading));
-```
 
 4.4 SIGNALS (ANGULAR 16+)
--------------------------
-Your project extensively uses Signals - a new reactive primitive:
 
-```typescript
+#### Your project extensively uses Signals - a new reactive primitive:
+
 // From: agency-discrepancies.component.ts
 searchResults = signal<AgencyDiscrepancy[]>([]);
 message = signal<string>('');
@@ -698,7 +686,6 @@ this.loading.set(true);
 
 // Computed signals
 readonly accessibleScreens = signal<ScreenAccess[]>([]);
-```
 
 WHY SIGNALS:
 • More predictable than Observables for state
@@ -706,15 +693,13 @@ WHY SIGNALS:
 • Simpler syntax than RxJS for state management
 • Works with zoneless change detection
 
-================================================================================
-PART 5: SERVICES AND DEPENDENCY INJECTION
-================================================================================
+## PART 5: SERVICES AND DEPENDENCY INJECTION
 
 5.1 WHAT IS A SERVICE?
-----------------------
 
-DEFINITION:
-A service is a class that encapsulates business logic, data access, or 
+### DEFINITION:
+
+A service is a class that encapsulates business logic, data access, or
 cross-cutting concerns that can be shared across components.
 
 PURPOSE:
@@ -724,8 +709,8 @@ PURPOSE:
 • Single responsibility
 
 YOUR PROJECT'S SERVICES:
-```
 core/services/
+```text
 ├── auth.service.ts              # Authentication wrapper
 ├── user-access.service.ts       # Permission management
 ├── agency-discrepancy.service.ts
@@ -736,15 +721,15 @@ core/services/
 ```
 
 5.2 SERVICE IMPLEMENTATION
---------------------------
 
-BASIC SERVICE PATTERN:
-```typescript
+### BASIC SERVICE PATTERN:
+
 // From: loading.service.ts
 @Injectable({
-  providedIn: 'root'  // Singleton at root level
+providedIn: 'root'  // Singleton at root level
 })
 export class LoadingService {
+```java
   private loadingSubject = new BehaviorSubject<boolean>(false);
   public loading$ = this.loadingSubject.asObservable();
 
@@ -759,12 +744,12 @@ export class LoadingService {
 ```
 
 ADVANCED SERVICE PATTERN:
-```typescript
 // From: agency-discrepancy.service.ts
 @Injectable({
-  providedIn: 'root'
+providedIn: 'root'
 })
 export class AgencyDiscrepancyService {
+```java
   private readonly apiUrl = ApiUrlBuilder.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
 
   constructor(private http: HttpClient) { }
@@ -791,9 +776,9 @@ export class AgencyDiscrepancyService {
 ```
 
 5.3 DEPENDENCY INJECTION (DI) EXPLAINED
----------------------------------------
 
-DEFINITION:
+### DEFINITION:
+
 DI is a design pattern where dependencies are "injected" into a class
 rather than created inside it.
 
@@ -806,8 +791,8 @@ HOW ANGULAR DI WORKS:
 TWO INJECTION STYLES IN YOUR PROJECT:
 
 Constructor Injection (Traditional):
-```typescript
 constructor(
+```java
   private agencyService: AgencyDiscrepancyService,
   private loadingService: LoadingService,
   private router: Router,
@@ -815,19 +800,17 @@ constructor(
 ```
 
 inject() Function (Modern, Preferred in Angular 14+):
-```typescript
 // From: app.ts
 private readonly oidcSecurityService = inject(OidcSecurityService);
 private readonly router = inject(Router);
 private readonly userAccessService = inject(UserAccessService);
 private readonly authService = inject(AuthService);
-```
 
 5.4 INJECTOR HIERARCHY
-----------------------
 
-```
-Root Injector (providedIn: 'root')
+#### Root Injector (providedIn: 'root')
+
+```text
         ↓
 Environment Injector (Lazy-loaded routes)
         ↓
@@ -835,59 +818,49 @@ Element Injector (Component level)
 ```
 
 PROVIDEIN OPTIONS:
-```typescript
 @Injectable({ providedIn: 'root' })    // App-wide singleton
 @Injectable({ providedIn: 'any' })     // Instance per lazy module
 @Injectable()                          // Must provide in component/module
-```
 
 YOUR PROJECT - All services use 'root':
-```typescript
 @Injectable({ providedIn: 'root' })
 export class AuthService { }
 
 @Injectable({ providedIn: 'root' })
 export class UserAccessService { }
-```
 
-================================================================================
-PART 6: HTTP CLIENT AND BACKEND INTEGRATION
-================================================================================
+## PART 6: HTTP CLIENT AND BACKEND INTEGRATION
 
 6.1 HTTPCLIENT CONFIGURATION
-----------------------------
 
-YOUR PROJECT SETUP (app.config.ts):
-```typescript
+#### YOUR PROJECT SETUP (app.config.ts):
+
 provideHttpClient(
-  withFetch(),  // Use fetch API instead of XMLHttpRequest
-  withInterceptors([authInterceptor(), apiInterceptor])
+withFetch(),  // Use fetch API instead of XMLHttpRequest
+withInterceptors([authInterceptor(), apiInterceptor])
 )
-```
 
 6.2 HTTP METHODS IMPLEMENTATION
--------------------------------
 
-GET Request:
-```typescript
+#### GET Request:
+
 // From: agency-discrepancy.service.ts
 this.http.get<AgencyDiscrepancy[]>(searchUrl, {
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  },
-  observe: 'response',
-  responseType: 'text'
+headers: {
+'Accept': 'application/json',
+'Content-Type': 'application/json'
+},
+observe: 'response',
+responseType: 'text'
 }).pipe(
-  map(response => { /* transform */ }),
-  catchError(error => { /* handle */ })
+map(response => { /* transform */ }),
+catchError(error => { /* handle */ })
 );
-```
 
 POST Request:
-```typescript
 // From: agency-discrepancy.service.ts
 createWinsValidation(request: WinsValidationRequest): Observable<WinsValidationResponse> {
+```text
   const createUrl = ApiUrlBuilder.getCreateUrl();
   return this.http.post<any>(createUrl, request, {
     headers: {
@@ -906,8 +879,8 @@ createWinsValidation(request: WinsValidationRequest): Observable<WinsValidationR
 ```
 
 PUT Request:
-```typescript
 updateRecord(record: PremiumAuditRouting): Observable<any> {
+```text
   const url = `${this.apiUrl}/${record.id}`;
   return this.http.put(url, record).pipe(
     catchError(this.handleError)
@@ -916,8 +889,8 @@ updateRecord(record: PremiumAuditRouting): Observable<any> {
 ```
 
 DELETE Request:
-```typescript
 deleteRecord(id: number): Observable<any> {
+```sql
   const url = `${this.apiUrl}/${id}`;
   return this.http.delete(url).pipe(
     catchError(this.handleError)
@@ -926,11 +899,11 @@ deleteRecord(id: number): Observable<any> {
 ```
 
 6.3 API INTEGRATION ARCHITECTURE
---------------------------------
 
-YOUR PROJECT'S API FLOW:
-```
+### YOUR PROJECT'S API FLOW:
+
 Component → Service → HttpClient → Interceptor → Apigee Gateway → Backend
+```text
                                       ↓
                               Add Auth Token
                               Add Client ID
@@ -938,17 +911,17 @@ Component → Service → HttpClient → Interceptor → Apigee Gateway → Back
 ```
 
 URL BUILDING PATTERN:
-```typescript
 // Centralized URL construction
 export class ApiUrlBuilder {
+```typescript
   private static get baseApiUrl(): string {
     return environment.apiEndPointUrl;  // From environment config
   }
-  
+
   static buildUrl(endpoint: ApiEndpoints): string {
     return `${this.baseApiUrl}${endpoint}`;
   }
-  
+
   static buildSearchUrl(ovAgent: string, winsAgent: string): string {
     const baseUrl = this.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
     const params = new URLSearchParams();
@@ -959,14 +932,12 @@ export class ApiUrlBuilder {
 }
 ```
 
-================================================================================
-PART 7: RxJS AND REACTIVE PROGRAMMING
-================================================================================
+## PART 7: RxJS AND REACTIVE PROGRAMMING
 
 7.1 WHAT IS RxJS?
------------------
 
-DEFINITION:
+### DEFINITION:
+
 RxJS (Reactive Extensions for JavaScript) is a library for reactive programming
 using Observables to compose asynchronous and event-based programs.
 
@@ -977,10 +948,9 @@ KEY CONCEPTS:
 • Operators: Transform, filter, combine streams
 
 7.2 OBSERVABLE PATTERN IN YOUR PROJECT
---------------------------------------
 
-Creating Observable:
-```typescript
+#### Creating Observable:
+
 // From HTTP call
 this.http.get<AgencyDiscrepancy[]>(url)  // Returns Observable
 
@@ -990,28 +960,27 @@ public loading$ = this.loadingSubject.asObservable();
 
 // From throwError
 return throwError(() => new Error('Validation failed'));
-```
 
 Subscribing to Observable:
-```typescript
 // From: app.ts
 this.oidcSecurityService
-  .checkAuth()
-  .subscribe((loginResponse: LoginResponse) => {
-    this.isAuthenticated.set(loginResponse.isAuthenticated);
-    if (loginResponse.isAuthenticated) {
-      this.loadUserAccess();
-    }
-  });
+.checkAuth()
+```text
+.subscribe((loginResponse: LoginResponse) => {
+  this.isAuthenticated.set(loginResponse.isAuthenticated);
+  if (loginResponse.isAuthenticated) {
+    this.loadUserAccess();
+  }
+});
 ```
 
 7.3 ESSENTIAL RxJS OPERATORS
-----------------------------
 
-map() - Transform Values:
-```typescript
+#### map() - Transform Values:
+
 // From: auth.service.ts
 getUserId(): Observable<string> {
+```text
   return this.userData$.pipe(
     map((userData: any) => {
       const actualUserData = userData?.userData || userData;
@@ -1023,18 +992,18 @@ getUserId(): Observable<string> {
 ```
 
 filter() - Filter Values:
-```typescript
 // From: app.ts
 this.router.events
-  .pipe(filter(event => event instanceof NavigationEnd))
-  .subscribe((event: NavigationEnd) => { });
+```text
+.pipe(filter(event => event instanceof NavigationEnd))
+.subscribe((event: NavigationEnd) => { });
 ```
 
 switchMap() - Cancel Previous & Switch to New:
-```typescript
 // From: api.interceptor.ts
 return oidcSecurityService.getAccessToken().pipe(
-  switchMap((access_token: string) => {
+switchMap((access_token: string) => {
+```text
     return oidcSecurityService.userData$.pipe(
       switchMap((userData: any) => {
         // Build headers and make request
@@ -1046,9 +1015,9 @@ return oidcSecurityService.getAccessToken().pipe(
 ```
 
 catchError() - Error Handling:
-```typescript
 // From: user-access.service.ts
 catchError(error => {
+```text
   if (error.message === 'USER_NOT_FOUND') {
     this.error.set('User not found in system');
     return throwError(() => error);
@@ -1058,9 +1027,9 @@ catchError(error => {
 ```
 
 tap() - Side Effects (Logging):
-```typescript
 // From: user-access.service.ts
 tap(screenCodes => {
+```text
   this.userScreenCodes.set(screenCodes);
   this.isLoading.set(false);
   this.userAccessLoaded$.next(true);
@@ -1068,39 +1037,36 @@ tap(screenCodes => {
 ```
 
 take(1) - Take First Value Then Complete:
-```typescript
 // From: screen-access.guard.ts
 return authService.getUserId().pipe(
-  take(1),  // Get userId once, then complete
-  switchMap(authUserId => { })
+take(1),  // Get userId once, then complete
+switchMap(authUserId => { })
 );
-```
 
 timeout() - Cancel After Duration:
-```typescript
 this.http.get(url, {
-  timeout: environment.api.timeout  // 10000ms
+timeout: environment.api.timeout  // 10000ms
 })
-```
 
 7.4 MEMORY LEAK PREVENTION
---------------------------
 
-PROBLEM: Subscriptions that aren't unsubscribed cause memory leaks.
+#### PROBLEM: Subscriptions that aren't unsubscribed cause memory leaks.
 
 SOLUTIONS IN YOUR PROJECT:
 
 1. Store and Unsubscribe:
-```typescript
 private navigationSubscription?: Subscription;
 
 ngOnInit(): void {
+```text
   this.navigationSubscription = this.router.events
     .pipe(filter(event => event instanceof NavigationEnd))
     .subscribe(() => { });
 }
+```
 
 ngOnDestroy(): void {
+```text
   if (this.navigationSubscription) {
     this.navigationSubscription.unsubscribe();  // CRITICAL!
   }
@@ -1108,27 +1074,21 @@ ngOnDestroy(): void {
 ```
 
 2. Use take(1) for One-Time Operations:
-```typescript
 this.userAccessService.fetchUserAccess(authUserId).pipe(
-  take(1)  // Auto-completes after first value
+take(1)  // Auto-completes after first value
 )
-```
 
 3. Use Signals Instead of Subscriptions:
-```typescript
 // Signals don't require manual cleanup
 searchResults = signal<AgencyDiscrepancy[]>([]);
 this.searchResults.set(results);
-```
 
-================================================================================
-PART 8: HTTP INTERCEPTORS DEEP EXPLANATION
-================================================================================
+## PART 8: HTTP INTERCEPTORS DEEP EXPLANATION
 
 8.1 WHAT IS AN INTERCEPTOR?
----------------------------
 
-DEFINITION:
+### DEFINITION:
+
 Interceptors are middleware that process HTTP requests and responses.
 They can modify, log, or handle requests/responses globally.
 
@@ -1141,17 +1101,17 @@ USE CASES:
 • Retry failed requests
 
 8.2 YOUR PROJECT'S INTERCEPTOR
-------------------------------
 
-COMPLETE INTERCEPTOR CODE:
-```typescript
+### COMPLETE INTERCEPTOR CODE:
+
 // From: api.interceptor.ts
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
+```typescript
   const oidcSecurityService = inject(OidcSecurityService);
 
   // Only intercept ODA Admin API calls
   if (req.url.includes('ess-odadmin') || req.url.includes('ODAdmin')) {
-    
+
     return oidcSecurityService.getAccessToken().pipe(
       catchError((tokenError) => {
         console.warn('Failed to retrieve access token:', tokenError);
@@ -1188,16 +1148,16 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
       })
     );
   }
-  
+
   return next(req);  // Pass through non-API requests
 };
 ```
 
 8.3 INTERCEPTOR FLOW DIAGRAM
-----------------------------
 
-```
-HTTP Request
+#### HTTP Request
+
+```text
      ↓
 ┌─────────────────────────────────────┐
 │ apiInterceptor                      │
@@ -1221,41 +1181,34 @@ Component receives data
 ```
 
 8.4 REGISTERING INTERCEPTORS
-----------------------------
 
-```typescript
-// app.config.ts
+#### // app.config.ts
+
 provideHttpClient(
-  withFetch(),
-  withInterceptors([
-    authInterceptor(),   // OIDC library's built-in interceptor
-    apiInterceptor       // Your custom interceptor
-  ])
+withFetch(),
+withInterceptors([
+authInterceptor(),   // OIDC library's built-in interceptor
+apiInterceptor       // Your custom interceptor
+])
 )
-```
 
 ORDER MATTERS: Interceptors execute in order for requests,
 and reverse order for responses.
 
-================================================================================
-PART 9: ERROR HANDLING STRATEGY
-================================================================================
+## PART 9: ERROR HANDLING STRATEGY
 
 9.1 ERROR HANDLING LAYERS
--------------------------
 
-```
-Component Layer → Service Layer → Interceptor Layer → Global Handler
-```
+#### Component Layer → Service Layer → Interceptor Layer → Global Handler
 
 9.2 SERVICE-LEVEL ERROR HANDLING
---------------------------------
 
-```typescript
-// From: agency-discrepancy.service.ts
+#### // From: agency-discrepancy.service.ts
+
 private handleSearchError(error: HttpErrorResponse, ovAgentNumber: string, winsAgentNumber: string) {
+```text
   let errorMessage = '';
-  
+
   if (error.status === 0) {
     // Network error
     errorMessage = 'Network error: Unable to connect to the server.';
@@ -1276,37 +1229,37 @@ private handleSearchError(error: HttpErrorResponse, ovAgentNumber: string, winsA
 ```
 
 9.3 COMPONENT-LEVEL ERROR HANDLING
-----------------------------------
 
-```typescript
-// From: agency-discrepancies.component.ts
+#### // From: agency-discrepancies.component.ts
+
 this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumber)
-  .subscribe({
-    next: (response) => {
-      // Success handling
-      this.searchResults.set(results);
-      this.message.set(`Found ${results.length} record(s)`);
-      this.messageType.set('success');
-    },
-    error: (error) => {
-      // Error handling
-      this.loadingService.hide();
-      this.errors.set([error.message]);
-      this.messageType.set('error');
-    }
-  });
+```text
+.subscribe({
+  next: (response) => {
+    // Success handling
+    this.searchResults.set(results);
+    this.message.set(`Found ${results.length} record(s)`);
+    this.messageType.set('success');
+  },
+  error: (error) => {
+    // Error handling
+    this.loadingService.hide();
+    this.errors.set([error.message]);
+    this.messageType.set('error');
+  }
+});
 ```
 
 9.4 VALIDATION ERROR HANDLING
------------------------------
 
-```typescript
-// From: agency-discrepancies.component.ts
+#### // From: agency-discrepancies.component.ts
+
 private performSearch(criteria: SearchCriteria): void {
+```text
   // Client-side validation
   const ovEmpty = !criteria.ovAgentNumber || criteria.ovAgentNumber.trim() === '';
   const winsEmpty = !criteria.winsAgentNumber || criteria.winsAgentNumber.trim() === '';
-  
+
   if (ovEmpty && winsEmpty) {
     this.errors.set(['OV Agent or Wins Agent Must be entered.']);
     return;  // Stop execution, don't call API
@@ -1322,17 +1275,19 @@ private performSearch(criteria: SearchCriteria): void {
 ```
 
 9.5 SPECIAL ERROR SCENARIOS
----------------------------
 
-USER NOT FOUND ERROR:
-```typescript
+### USER NOT FOUND ERROR:
+
 // From: user-access.service.ts
 if (typeof body === 'string' && body.includes('User not found')) {
+```text
   throw new Error('USER_NOT_FOUND');
 }
+```
 
 // Error propagation
 catchError(error => {
+```text
   if (error.message === 'USER_NOT_FOUND') {
     this.error.set('User not found in system');
     return throwError(() => error);  // Re-throw for upstream handling
@@ -1341,9 +1296,9 @@ catchError(error => {
 ```
 
 GUARD ERROR HANDLING:
-```typescript
 // From: screen-access.guard.ts
 catchError(error => {
+```text
   if (error.message === 'USER_NOT_FOUND') {
     router.navigate(['/user-info-error']);  // Custom error page
   } else {
@@ -1353,14 +1308,12 @@ catchError(error => {
 })
 ```
 
-================================================================================
-PART 10: MODELS, ENUMS, AND CONSTANTS
-================================================================================
+## PART 10: MODELS, ENUMS, AND CONSTANTS
 
 10.1 TYPESCRIPT INTERFACES (MODELS)
------------------------------------
 
-PURPOSE:
+### PURPOSE:
+
 • Define data structure contracts
 • Enable TypeScript type checking
 • Provide IntelliSense support
@@ -1368,79 +1321,72 @@ PURPOSE:
 
 YOUR PROJECT'S MODELS:
 
-```typescript
 // From: agency-discrepancy.model.ts
 export interface AgencyDiscrepancy {
-  id?: number;              // Optional - might not exist for new records
-  ovAgentNumber: string;    // Required
-  winsAgentNumber: string;  // Required
-  createdDate?: Date;       // Optional
-  lastModified?: Date;      // Optional
+id?: number;              // Optional - might not exist for new records
+ovAgentNumber: string;    // Required
+winsAgentNumber: string;  // Required
+createdDate?: Date;       // Optional
+lastModified?: Date;      // Optional
 }
 
 export interface SearchCriteria {
-  ovAgentNumber?: string;
-  winsAgentNumber?: string;
+ovAgentNumber?: string;
+winsAgentNumber?: string;
 }
 
 export interface PaginatedResponse<T> {
-  data: T[];
-  totalElements: number;
-  totalPages: number;
-  currentPage: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
+data: T[];
+totalElements: number;
+totalPages: number;
+currentPage: number;
+pageSize: number;
+hasNext: boolean;
+hasPrevious: boolean;
 }
 
 export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
+success: boolean;
+data?: T;
+message?: string;
+errors?: string[];
 }
-```
 
 GENERIC INTERFACES:
 ApiResponse<T> can hold any data type:
-```typescript
 ApiResponse<AgencyDiscrepancy[]>  // Array of discrepancies
 ApiResponse<string>               // Single string
 ApiResponse<void>                 // No data
-```
 
 10.2 ENUMS
-----------
 
-PURPOSE:
+### PURPOSE:
+
 • Define fixed set of named constants
 • Prevent magic numbers/strings
 • Centralized configuration
 
 YOUR PROJECT'S ENUMS:
 
-```typescript
 // From: api-endpoints.enum.ts
 export enum ApiEndpoints {
-  USER_ACCESS = '/get-user-infos/',
-  WINS_VALIDATION_CREATE = '/wins-validations',
-  WINS_VALIDATION_SEARCH = '/wins-validations/search',
-  WINS_VALIDATION_LIST = '/wins-validations',
-  PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
-  AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
+USER_ACCESS = '/get-user-infos/',
+WINS_VALIDATION_CREATE = '/wins-validations',
+WINS_VALIDATION_SEARCH = '/wins-validations/search',
+WINS_VALIDATION_LIST = '/wins-validations',
+PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
+AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
 }
 
 // From: user-access.service.ts
 export enum ScreenCode {
-  AGENCY_DISCREPANCIES = 100,
-  OVR2B_CONVERSION = 200,
-  PREMIUM_AUDIT_ROUTING = 300,
-  AGENCY_ACCOUNTING_ROUTING = 400
+AGENCY_DISCREPANCIES = 100,
+OVR2B_CONVERSION = 200,
+PREMIUM_AUDIT_ROUTING = 300,
+AGENCY_ACCOUNTING_ROUTING = 400
 }
-```
 
 USAGE:
-```typescript
 // Instead of magic string
 const url = '/wins-validations/search';
 
@@ -1449,56 +1395,51 @@ const url = ApiUrlBuilder.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
 
 // In route data
 data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
-```
 
 10.3 CONSTANTS (bolt.utils.ts)
-------------------------------
 
-```typescript
-export const BoltClasses = {
+#### export const BoltClasses = {
+
+```text
   // Button Classes
   BUTTON_PRIMARY: 'c-bolt-button c-bolt-button--primary',
   BUTTON_SECONDARY: 'c-bolt-button c-bolt-button--secondary',
   BUTTON_SUCCESS: 'c-bolt-button c-bolt-button--success',
-  
+
   // Message Classes
   MESSAGE_SUCCESS: 'c-bolt-banner c-bolt-banner--success',
   MESSAGE_ERROR: 'c-bolt-banner c-bolt-banner--error',
-  
+
   // Table Classes
   TABLE: 'c-bolt-table',
   TABLE_HEADER: 'c-bolt-table__header',
 };
-
-export const BoltColors = {
-  PRIMARY: 'primary',
-  SECONDARY: 'secondary',
-  SUCCESS: 'success',
-  ERROR: 'error',
-};
 ```
 
+export const BoltColors = {
+PRIMARY: 'primary',
+SECONDARY: 'secondary',
+SUCCESS: 'success',
+ERROR: 'error',
+};
+
 USAGE IN COMPONENTS:
-```typescript
 // Component
 readonly BoltClasses = BoltClasses;
 readonly getBoltButtonClass = getBoltButtonClass;
 
 // Template
 [class]="BoltClasses.BUTTON_PRIMARY"
-```
 
-================================================================================
-PART 11: ANGULAR ROUTING DEEP EXPLANATION
-================================================================================
+## PART 11: ANGULAR ROUTING DEEP EXPLANATION
 
 11.1 ROUTER CONFIGURATION
--------------------------
 
-YOUR PROJECT'S ROUTES:
-```typescript
+### YOUR PROJECT'S ROUTES:
+
 // From: app.routes.ts
 export const routes: Routes = [
+```json
   // Default redirect
   { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
@@ -1516,13 +1457,13 @@ export const routes: Routes = [
 
   // Protected routes (lazy loaded with guards)
   {
-    path: 'agency-discrepancies', 
+    path: 'agency-discrepancies',
     loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
       .then(m => m.AgencyDiscrepanciesComponent),
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
     data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
   },
-  
+
   // Route with parameter
   {
     path: 'premium-audit-routing/edit/:id',
@@ -1538,14 +1479,14 @@ export const routes: Routes = [
 ```
 
 11.2 ROUTE PARAMETERS
----------------------
 
-READING ROUTE PARAMETERS:
-```typescript
+### READING ROUTE PARAMETERS:
+
 // From: edit-premium-audit-routing.component.ts
 constructor(private route: ActivatedRoute) { }
 
 ngOnInit() {
+```text
   const id = this.route.snapshot.paramMap.get('id');
   if (id) {
     this.loadRecord(id);
@@ -1554,10 +1495,9 @@ ngOnInit() {
 ```
 
 11.3 PROGRAMMATIC NAVIGATION
-----------------------------
 
-```typescript
-// Simple navigation
+#### // Simple navigation
+
 this.router.navigate(['/agency-discrepancies']);
 
 // Navigation with route parameters
@@ -1565,39 +1505,34 @@ this.router.navigate(['/premium-audit-routing/edit', record.id]);
 
 // Navigation with state (passing data)
 this.router.navigate(['/premium-audit-routing/edit', record.id], {
-  state: { premiumAuditRouting: record }
+state: { premiumAuditRouting: record }
 });
 
 // Reading navigation state
 const navState = history.state?.premiumAuditRouting;
-```
 
 11.4 ROUTE GUARDS
------------------
 
-GUARD TYPES:
+### GUARD TYPES:
+
 • canActivate - Before route activation
 • canDeactivate - Before leaving route
 • canMatch - Before matching route
 • resolve - Pre-fetch data
 
 YOUR PROJECT'S GUARDS:
-```typescript
 // Multiple guards on single route
 canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard]
-```
 
-================================================================================
-PART 12: FORMS DEEP EXPLANATION
-================================================================================
+## PART 12: FORMS DEEP EXPLANATION
 
 12.1 REACTIVE FORMS (YOUR PROJECT'S APPROACH)
----------------------------------------------
 
-FORM CREATION:
-```typescript
+### FORM CREATION:
+
 // From: agency-discrepancies.component.ts
 ngOnInit(): void {
+```text
   this.searchForm = new FormGroup({
     ovAgentNumber: new FormControl(''),
     winsAgentNumber: new FormControl('')
@@ -1606,9 +1541,9 @@ ngOnInit(): void {
 ```
 
 WITH FormBuilder:
-```typescript
 // From: edit-premium-audit-routing.component.ts
 constructor(private fb: FormBuilder) {
+```text
   this.editForm = this.fb.group({
     id: [null],
     agntNbr: ['', [Validators.required, Validators.maxLength(5)]],
@@ -1619,20 +1554,18 @@ constructor(private fb: FormBuilder) {
 ```
 
 12.2 FORM VALIDATION
---------------------
 
-BUILT-IN VALIDATORS:
-```typescript
+### BUILT-IN VALIDATORS:
+
 agntNbr: ['', [
-  Validators.required,      // Field is required
-  Validators.maxLength(5)   // Max 5 characters
+Validators.required,      // Field is required
+Validators.maxLength(5)   // Max 5 characters
 ]]
-```
 
 CUSTOM VALIDATION IN COMPONENT:
-```typescript
 // From: edit-premium-audit-routing.component.ts
 async confirmAndUpdate() {
+```text
   // Validate Agent Number length
   const agntNbr = this.editForm.value.agntNbr?.trim();
   if (agntNbr && agntNbr.length !== 5) {
@@ -1656,10 +1589,9 @@ async confirmAndUpdate() {
 ```
 
 12.3 FORM VALUE ACCESS
-----------------------
 
-```typescript
-// Get all values
+#### // Get all values
+
 const formValue = this.searchForm.value;
 
 // Get specific control value
@@ -1667,51 +1599,52 @@ const ovAgent = this.searchForm.get('ovAgentNumber')?.value;
 
 // Patch values (update some fields)
 this.editForm.patchValue({
-  agntNbr: record.agntNbr,
-  auditProcId: record.auditProcId
+agntNbr: record.agntNbr,
+auditProcId: record.auditProcId
 });
 
 // Set values (replace all fields)
 this.editForm.setValue({
-  id: record.id,
-  agntNbr: record.agntNbr,
-  auditProcId: record.auditProcId,
-  entpsId: record.entpsId
+id: record.id,
+agntNbr: record.agntNbr,
+auditProcId: record.auditProcId,
+entpsId: record.entpsId
 });
 
 // Reset form
 this.searchForm.reset();
-```
 
 12.4 FORM STATE
----------------
 
-```typescript
-// Check validity
+#### // Check validity
+
 if (!this.editForm.valid) {
+```text
   this.error = 'Form is invalid.';
   return;
 }
+```
 
 // Check if form is dirty (changed)
 if (this.editForm.dirty) {
+```text
   // Prompt user before leaving
 }
+```
 
 // Check specific control
 if (this.editForm.get('agntNbr')?.invalid) {
+```text
   // Handle invalid field
 }
 ```
 
-================================================================================
-PART 13: AUTHENTICATION AND AUTHORIZATION
-================================================================================
+## PART 13: AUTHENTICATION AND AUTHORIZATION
 
 13.1 AUTHENTICATION VS AUTHORIZATION
-------------------------------------
 
-AUTHENTICATION: "Who are you?"
+#### AUTHENTICATION: "Who are you?"
+
 - Login process
 - Token verification
 - Identity confirmation
@@ -1722,29 +1655,29 @@ AUTHORIZATION: "What can you do?"
 - Screen/feature access
 
 13.2 YOUR PROJECT'S OIDC IMPLEMENTATION
----------------------------------------
 
-OIDC CONFIGURATION:
-```typescript
+### OIDC CONFIGURATION:
+
 // From: app.config.ts
 provideAuth({
-  config: {
+config: {
+```text
     // Navigation
     postLoginRoute: '/',
     forbiddenRoute: '/unauthorized',
-    
+
     // OIDC Provider
     authority: environment.authority,
     redirectUrl: `${window.location.origin}/authorize`,
     clientId: environment.clientId,
     scope: 'openid nwapi',
     responseType: 'code',  // Authorization Code Flow with PKCE
-    
+
     // Silent Renew
     silentRenewUrl: `${window.location.origin}/silent-renew.html`,
     silentRenew: true,
     useRefreshToken: true,
-    
+
     // Custom Parameters
     customParamsAuthRequest: {
       iam_domain: 'employee-azure',
@@ -1754,10 +1687,9 @@ provideAuth({
 ```
 
 13.3 AUTHENTICATION FLOW
-------------------------
 
-```
-1. User visits protected route
+#### 1. User visits protected route
+
 2. AutoLoginPartialRoutesGuard checks auth status
 3. If not authenticated → Redirect to OIDC provider
 4. User logs in at identity provider
@@ -1766,15 +1698,14 @@ provideAuth({
 7. Tokens stored in session storage
 8. User redirected to original route
 9. Route guard allows access
-```
 
 13.4 AUTH SERVICE IMPLEMENTATION
---------------------------------
 
-```typescript
-// From: auth.service.ts
+#### // From: auth.service.ts
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
+```java
   private readonly oidcSecurityService = inject(OidcSecurityService);
 
   get isAuthenticated$(): Observable<boolean> {
@@ -1807,24 +1738,24 @@ export class AuthService {
 ```
 
 13.5 USER ACCESS (AUTHORIZATION)
---------------------------------
 
-```typescript
-// From: user-access.service.ts
+#### // From: user-access.service.ts
+
 export enum ScreenCode {
-  AGENCY_DISCREPANCIES = 100,
-  OVR2B_CONVERSION = 200,
-  PREMIUM_AUDIT_ROUTING = 300,
-  AGENCY_ACCOUNTING_ROUTING = 400
+AGENCY_DISCREPANCIES = 100,
+OVR2B_CONVERSION = 200,
+PREMIUM_AUDIT_ROUTING = 300,
+AGENCY_ACCOUNTING_ROUTING = 400
 }
 
 @Injectable({ providedIn: 'root' })
 export class UserAccessService {
+```typescript
   private readonly userScreenCodes = signal<number[]>([]);
 
   fetchUserAccess(userId: string): Observable<number[]> {
     const apiUrl = `${ApiUrlBuilder.getUserAccessUrl()}${userId}`;
-    
+
     return this.http.get(apiUrl, { responseType: 'text' }).pipe(
       map(response => {
         // Parse response to get screen codes
@@ -1842,16 +1773,14 @@ export class UserAccessService {
 }
 ```
 
-================================================================================
-PART 14: GUARDS DEEP EXPLANATION
-================================================================================
+## PART 14: GUARDS DEEP EXPLANATION
 
 14.1 FUNCTIONAL GUARDS (MODERN ANGULAR)
----------------------------------------
 
-```typescript
-// From: screen-access.guard.ts
+#### // From: screen-access.guard.ts
+
 export const screenAccessGuard: CanActivateFn = (route, state) => {
+```text
   const userAccessService = inject(UserAccessService);
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -1864,7 +1793,7 @@ export const screenAccessGuard: CanActivateFn = (route, state) => {
 
   // Check existing access
   const currentScreenCodes = userAccessService.getUserScreenCodes();
-  
+
   if (currentScreenCodes.length > 0) {
     const hasAccess = userAccessService.hasAccessToScreen(requiredScreenCode);
     if (!hasAccess) {
@@ -1902,10 +1831,10 @@ export const screenAccessGuard: CanActivateFn = (route, state) => {
 ```
 
 14.2 GUARD EXECUTION FLOW
--------------------------
 
-```
-Route Navigation Request
+#### Route Navigation Request
+
+```text
          ↓
 ┌─────────────────────────────────────┐
 │ AutoLoginPartialRoutesGuard         │
@@ -1925,30 +1854,26 @@ Route Navigation Request
 ```
 
 14.3 USING GUARDS IN ROUTES
----------------------------
 
-```typescript
-{
-  path: 'agency-discrepancies', 
-  loadComponent: () => import(...),
-  canActivate: [
-    AutoLoginPartialRoutesGuard,  // First: Check authentication
-    screenAccessGuard             // Second: Check authorization
-  ],
-  data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
+#### {
+
+path: 'agency-discrepancies',
+loadComponent: () => import(...),
+canActivate: [
+AutoLoginPartialRoutesGuard,  // First: Check authentication
+screenAccessGuard             // Second: Check authorization
+],
+data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 }
-```
 
-================================================================================
-PART 15: ENVIRONMENT CONFIGURATION
-================================================================================
+## PART 15: ENVIRONMENT CONFIGURATION
 
 15.1 ENVIRONMENT FILES
-----------------------
 
-```typescript
-// From: environment.ts
+#### // From: environment.ts
+
 function getEnvironment(): Env {
+```text
   const env: Env = {
     production: true,
     apiEndPointUrl: 'https://api-int.nwie.net/operations-support/ess-odadmin-proxy/v1',
@@ -1974,18 +1899,17 @@ function getEnvironment(): Env {
       env.apiEndPointUrl = 'https://api-int-test.nwie.net/.../v1';
     }
   }
-  
+
   return env;
 }
-
-export const environment: Env = getEnvironment();
 ```
 
-15.2 ENVIRONMENT USAGE
-----------------------
+export const environment: Env = getEnvironment();
 
-```typescript
-// In service
+15.2 ENVIRONMENT USAGE
+
+#### // In service
+
 import { environment } from '../../../environments/environment';
 
 const apiUrl = environment.apiEndPointUrl;
@@ -1993,12 +1917,11 @@ const timeout = environment.api.timeout;
 
 // In interceptor
 headers.set('client_id', environment.clientId);
-```
 
 15.3 RUNTIME ENVIRONMENT SWITCHING
-----------------------------------
 
-YOUR PROJECT'S APPROACH:
+### YOUR PROJECT'S APPROACH:
+
 Instead of build-time environment replacement, your project uses
 runtime hostname detection to set environment variables.
 
@@ -2007,23 +1930,19 @@ BENEFITS:
 • No need to rebuild for each environment
 • Easy to troubleshoot
 
-================================================================================
-PART 16: ANGULAR INTERNAL WORKING
-================================================================================
+## PART 16: ANGULAR INTERNAL WORKING
 
 16.1 CHANGE DETECTION
----------------------
 
-TRADITIONAL (Zone.js):
+#### TRADITIONAL (Zone.js):
+
 - Zone.js patches async APIs (setTimeout, Promise, etc.)
 - Detects when async operation completes
 - Triggers change detection from root
 
 YOUR PROJECT (Zoneless - Angular 19):
-```typescript
 // From: app.config.ts
 provideZonelessChangeDetection()
-```
 
 HOW ZONELESS WORKS:
 - No automatic change detection
@@ -2031,10 +1950,9 @@ HOW ZONELESS WORKS:
 - Manual markForCheck() or signal updates trigger detection
 
 16.2 SIGNALS AND REACTIVITY
----------------------------
 
-```typescript
-// Create signal
+#### // Create signal
+
 searchResults = signal<AgencyDiscrepancy[]>([]);
 
 // Update signal (triggers change detection)
@@ -2048,14 +1966,13 @@ readonly displayCount = computed(() => this.searchResults().length);
 
 // Effect (react to signal changes)
 effect(() => {
-  console.log('Results changed:', this.searchResults());
+console.log('Results changed:', this.searchResults());
 });
-```
 
 16.3 COMPONENT RENDERING
-------------------------
 
-RENDERING LIFECYCLE:
+### RENDERING LIFECYCLE:
+
 1. Component class instantiated
 2. @Input bindings set
 3. ngOnChanges called (if inputs exist)
@@ -2066,21 +1983,17 @@ RENDERING LIFECYCLE:
 8. Change detection runs
 9. DOM updated with bindings
 
-================================================================================
-PART 17: PERFORMANCE OPTIMIZATION
-================================================================================
+## PART 17: PERFORMANCE OPTIMIZATION
 
 17.1 LAZY LOADING
------------------
 
-YOUR PROJECT IMPLEMENTATION:
-```typescript
+### YOUR PROJECT IMPLEMENTATION:
+
 {
-  path: 'agency-discrepancies',
-  loadComponent: () => import('./features/...')
-    .then(m => m.AgencyDiscrepanciesComponent)
+path: 'agency-discrepancies',
+loadComponent: () => import('./features/...')
+.then(m => m.AgencyDiscrepanciesComponent)
 }
-```
 
 IMPACT:
 - Initial bundle smaller
@@ -2088,11 +2001,8 @@ IMPACT:
 - Faster initial page load
 
 17.2 ZONELESS CHANGE DETECTION
-------------------------------
 
-```typescript
-provideZonelessChangeDetection()
-```
+#### provideZonelessChangeDetection()
 
 BENEFITS:
 - No Zone.js overhead
@@ -2101,104 +2011,92 @@ BENEFITS:
 - Better debugging
 
 17.3 TRACKBY FOR LISTS
-----------------------
 
-WITHOUT trackBy (re-renders all items):
-```html
+#### WITHOUT trackBy (re-renders all items):
+
 <tr *ngFor="let item of items">
-```
 
 WITH trackBy (only re-renders changed items):
-```html
 <tr *ngFor="let item of items; trackBy: trackByFn">
-```
 
-```typescript
 trackByFn(index: number, item: AgencyDiscrepancy): number {
+```text
   return item.id;
 }
 ```
 
 17.4 SIGNALS VS OBSERVABLES
----------------------------
 
-OBSERVABLES (More overhead):
-```typescript
+#### OBSERVABLES (More overhead):
+
 private results$ = new BehaviorSubject<AgencyDiscrepancy[]>([]);
 
 // Subscribe everywhere
 this.results$.subscribe(results => this.displayResults = results);
-```
 
 SIGNALS (More efficient):
-```typescript
 results = signal<AgencyDiscrepancy[]>([]);
 
 // Direct access
 const displayResults = this.results();
-```
 
-================================================================================
-PART 18: ENTERPRISE BEST PRACTICES
-================================================================================
+## PART 18: ENTERPRISE BEST PRACTICES
 
 18.1 CODE ORGANIZATION
-----------------------
 
-✓ Use feature-based folder structure
+#### ✓ Use feature-based folder structure
+
 ✓ Keep core module for singletons
 ✓ Keep shared module for reusables
 ✓ Lazy load feature modules
 ✓ Use standalone components
 
 18.2 TYPE SAFETY
-----------------
 
-✓ Define interfaces for all data models
+#### ✓ Define interfaces for all data models
+
 ✓ Use strict TypeScript configuration
 ✓ Avoid 'any' type when possible
 ✓ Use enums for fixed values
 
 18.3 ERROR HANDLING
--------------------
 
-✓ Centralized error handling in services
+#### ✓ Centralized error handling in services
+
 ✓ User-friendly error messages
 ✓ Proper error logging
 ✓ Graceful degradation
 
 18.4 SECURITY
--------------
 
-✓ Use HTTP interceptors for auth tokens
+#### ✓ Use HTTP interceptors for auth tokens
+
 ✓ Implement route guards
 ✓ Validate inputs on client and server
 ✓ Don't store sensitive data in local storage
 
 18.5 TESTING
-------------
 
-✓ Unit tests for services
+#### ✓ Unit tests for services
+
 ✓ Component tests for UI logic
 ✓ E2E tests for critical paths
 ✓ Mock HTTP calls in tests
 
 18.6 OBSERVABLES & SIGNALS
---------------------------
 
-✓ Unsubscribe from observables
+#### ✓ Unsubscribe from observables
+
 ✓ Use take(1) for one-time operations
 ✓ Prefer signals for component state
 ✓ Use async pipe when possible
 
-================================================================================
-PART 19: INTERVIEW QUESTIONS AND ANSWERS
-================================================================================
+## PART 19: INTERVIEW QUESTIONS AND ANSWERS
 
 BEGINNER LEVEL
---------------
 
-Q1: What is Angular?
+#### Q1: What is Angular?
+
 A: Angular is a TypeScript-based open-source framework developed by Google
 for building client-side web applications. It provides a complete solution
 including components, routing, forms, HTTP client, and dependency injection.
@@ -2227,9 +2125,9 @@ data access, or utility functions. Services are typically singletons
 injected into components via dependency injection.
 
 INTERMEDIATE LEVEL
-------------------
 
-Q6: Explain Angular's Dependency Injection.
+#### Q6: Explain Angular's Dependency Injection.
+
 A: DI is a design pattern where dependencies are "injected" rather than
 created inside a class. Angular's DI system uses:
 - Providers: Register injectable services
@@ -2261,9 +2159,9 @@ A: Route guards control navigation access. Types include:
 Guards return boolean, Observable<boolean>, or UrlTree.
 
 ADVANCED LEVEL
---------------
 
-Q11: Explain Angular's change detection mechanism.
+#### Q11: Explain Angular's change detection mechanism.
+
 A: Change detection updates the DOM when data changes.
 Traditional approach uses Zone.js to detect async operations.
 Zoneless (Angular 16+) uses Signals for fine-grained reactivity.
@@ -2299,9 +2197,9 @@ A: Multi-layer approach:
 4. Global handler: Catch unhandled errors, report to monitoring
 
 SENIOR/ARCHITECT LEVEL
-----------------------
 
-Q16: How would you architect a large-scale Angular application?
+#### Q16: How would you architect a large-scale Angular application?
+
 A: Key architectural decisions:
 - Feature-based folder structure with lazy loading
 - Core module for singletons, Shared module for reusables
@@ -2352,9 +2250,9 @@ A: State management options:
 Consider: Complexity, team experience, app requirements
 
 SCENARIO-BASED QUESTIONS
-------------------------
 
-Q21: A user reports slow page load. How do you diagnose?
+#### Q21: A user reports slow page load. How do you diagnose?
+
 A: Diagnosis steps:
 1. Check Network tab for large bundles
 2. Use Angular DevTools for change detection cycles
@@ -2384,9 +2282,7 @@ A: Security measures:
 - Content Security Policy headers
 - Regular dependency updates
 
-================================================================================
-END OF ANALYSIS DOCUMENT
-================================================================================
+## END OF ANALYSIS DOCUMENT
 
 This document was generated as a comprehensive guide for understanding
 enterprise Angular architecture using the OdaAdmin UI project as a
@@ -2399,4 +2295,3 @@ For interview preparation, focus on:
 4. Demonstrating practical experience with patterns
 
 Good luck with your Angular journey and interviews!
-================================================================================

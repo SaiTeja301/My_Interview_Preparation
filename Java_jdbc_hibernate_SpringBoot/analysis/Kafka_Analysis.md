@@ -1,16 +1,16 @@
 ﻿================================================================================
 APACHE KAFKA - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 For: 7+ Years Experience Level | Java Developer
-================================================================================
 
-SECTION 1: SOURCE ANALYSIS
+## SECTION 1: SOURCE ANALYSIS
+
 Source: Microservices with Kafka.txt (1,320 lines / 56 KB)
 Coverage: Kafka setup, Zookeeper, Producer/Consumer, Topics, Security (SSL + SASL-SCRAM),
-          Keystore/Truststore, Broker config, Service implementation flows
+Keystore/Truststore, Broker config, Service implementation flows
 Missing: Kafka Streams, KSQL, Exactly-once semantics, Partition rebalancing internals,
-         Consumer group coordination, Kafka Connect, Schema Registry (Avro)
+Consumer group coordination, Kafka Connect, Schema Registry (Avro)
 
-SECTION 2: KAFKA ARCHITECTURE
+## SECTION 2: KAFKA ARCHITECTURE
 
 Producer -> Topic (Partitions) -> Consumer Group -> Consumer(s)
 
@@ -23,11 +23,12 @@ Components:
 - Consumer Group: Group of consumers sharing partition assignment
 - Zookeeper/KRaft: Cluster coordination
 
-SECTION 3: 5 INTERVIEW ROUNDS
+## SECTION 3: 5 INTERVIEW ROUNDS
 
-ROUND 1 - BASIC
+## ROUND 1 - BASIC
 
-*** Q1. Kafka vs RabbitMQ vs ActiveMQ.
+#### Q1. Kafka vs RabbitMQ vs ActiveMQ.
+
 Feature        | Kafka          | RabbitMQ       | ActiveMQ
 Throughput     | Very High 1M+  | Moderate 50K   | Moderate
 Ordering       | Per partition  | Per queue      | Per queue
@@ -35,7 +36,8 @@ Retention      | Configurable   | Until consumed | Until consumed
 Protocol       | Binary TCP     | AMQP           | JMS/AMQP
 Use Case       | Event streaming| Task queues    | Enterprise JMS
 
-*** Q2. Topic, Partition, and Offset.
+#### Q2. Topic, Partition, and Offset.
+
 Topic: Named feed of messages (e.g., "policy-events")
 Partition: Topic divided into ordered, immutable logs
 Offset: Unique ID per message within partition (sequential)
@@ -48,12 +50,14 @@ Partition 2: [msg0, msg1]             -> offset 0,1
 Ordering guarantee: Messages within SAME partition are ordered.
 No global ordering across partitions!
 
-ROUND 2 - CORE TECHNICAL
+## ROUND 2 - CORE TECHNICAL
 
-*** Q3. Producer and Consumer implementation.
+#### Q3. Producer and Consumer implementation.
+
 Spring Kafka Producer:
 @Configuration
 public class KafkaProducerConfig {
+```java
     @Bean
     public ProducerFactory<String, String> producerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -63,9 +67,11 @@ public class KafkaProducerConfig {
         return new DefaultKafkaProducerFactory<>(config);
     }
 }
+```
 
 @Service
 public class PolicyEventProducer {
+```java
     @Autowired
     private KafkaTemplate<String, PolicyEvent> kafkaTemplate;
 
@@ -76,16 +82,20 @@ public class PolicyEventProducer {
                 ex -> log.error("Failed: {}", ex.getMessage()));
     }
 }
+```
 
 Consumer:
 @KafkaListener(topics = "policy-events", groupId = "claim-processor")
 public void handlePolicyEvent(PolicyEvent event,
+```text
                                @Header(KafkaHeaders.OFFSET) long offset) {
     log.info("Received event at offset {}: {}", offset, event);
     claimService.processPolicyChange(event);
 }
+```
 
-*** Q4. Consumer Group and Partition Assignment.
+#### Q4. Consumer Group and Partition Assignment.
+
 Consumer Group: Set of consumers that cooperatively consume from topic.
 Each partition assigned to exactly ONE consumer in the group.
 
@@ -101,7 +111,8 @@ Consumer 2 -> Partition 2, 3, 5
 Rule: #consumers > #partitions = idle consumers (waste!)
 Best: #consumers = #partitions for max parallelism
 
-*** Q5. Kafka Security (from notes: SSL + SASL-SCRAM).
+#### Q5. Kafka Security (from notes: SSL + SASL-SCRAM).
+
 SSL Encryption: Encrypt data in transit
 SASL-SCRAM: Authentication (username/password)
 
@@ -113,9 +124,10 @@ Setup steps (from your notes):
 5. Create SCRAM user in Zookeeper
 6. Configure broker: security.inter.broker.protocol=SASL_SSL
 
-ROUND 3 - ADVANCED
+## ROUND 3 - ADVANCED
 
-*** Q6. Message delivery guarantees.
+#### Q6. Message delivery guarantees.
+
 At-most-once: Fire and forget. May lose messages. (acks=0)
 At-least-once: Retry until ack. May have duplicates. (acks=1 or all)
 Exactly-once: Idempotent producer + transactional consumer. (enable.idempotence=true)
@@ -131,90 +143,97 @@ props.put("acks", "all");
 props.put("retries", Integer.MAX_VALUE);
 props.put("max.in.flight.requests.per.connection", 5);
 
-Q7. Kafka performance tuning.
+#### Q7. Kafka performance tuning.
+
 Producer: batch.size=32768, linger.ms=5, compression.type=snappy
 Consumer: fetch.min.bytes=1024, max.poll.records=500
 Broker: num.io.threads=8, num.network.threads=3
 
-ROUND 4 - SCENARIO-BASED
+## ROUND 4 - SCENARIO-BASED
 
-*** Q8. How to handle message ordering in Kafka?
+#### Q8. How to handle message ordering in Kafka?
+
 Solution: Use same key for related messages -> same partition -> ordered
 
 kafkaTemplate.send("order-events", orderId, event);
 // All events for same orderId go to same partition -> ORDERED!
 
-*** Q9. Dead Letter Topic (DLT) for failed messages.
+#### Q9. Dead Letter Topic (DLT) for failed messages.
+
 @KafkaListener(topics = "policy-events", groupId = "processor")
 @RetryableTopic(attempts = "3", backoff = @Backoff(delay = 1000))
 public void process(PolicyEvent event) {
+```text
     // If fails 3 times, goes to "policy-events-dlt" automatically
     riskyOperation(event);
 }
+```
 
 @DltHandler
 public void handleDlt(PolicyEvent event) {
-    log.error("DLT: Failed processing: {}", event);
-    alertService.notifyOps(event); // Alert operations team
+log.error("DLT: Failed processing: {}", event);
+alertService.notifyOps(event); // Alert operations team
 }
 
-ROUND 5 - ARCHITECTURE
+## ROUND 5 - ARCHITECTURE
 
-Q10. Design event-driven architecture with Kafka.
+#### Q10. Design event-driven architecture with Kafka.
+
 Order Service -> "order-created" topic
-     |
+|
+```text
      ├── Payment Service (consumer group: payments)
      │      -> "payment-completed" or "payment-failed" topic
      ├── Inventory Service (consumer group: inventory)
      │      -> "stock-reserved" or "stock-insufficient" topic
      └── Notification Service (consumer group: notifications)
             -> Send email/SMS
+```
 
 KEY QUESTIONS:
-*** 1. Kafka vs RabbitMQ
-*** 2. Topic, Partition, Offset
-*** 3. Consumer Groups and rebalancing
-*** 4. Message delivery guarantees
-*** 5. Kafka Security (SSL + SASL)
-*** 6. Message ordering strategies
-*** 7. Dead Letter Topics
+1. Kafka vs RabbitMQ
+2. Topic, Partition, Offset
+3. Consumer Groups and rebalancing
+4. Message delivery guarantees
+5. Kafka Security (SSL + SASL)
+6. Message ordering strategies
+7. Dead Letter Topics
 
-================================================================================
-END OF KAFKA ANALYSIS
-================================================================================
+## END OF KAFKA ANALYSIS
 
-================================================================================
-KAFKA - ADDITIONAL QUESTIONS (Q11-Q30) - ENHANCED EXPANSION
-================================================================================
+# KAFKA - ADDITIONAL QUESTIONS (Q11-Q30) - ENHANCED EXPANSION
 
-*** Q11. Exactly-once semantics - how to achieve.
+#### Q11. Exactly-once semantics - how to achieve.
+
 Idempotent Producer: enable.idempotence=true
-  Producer assigns sequence number per partition
-  Broker deduplicates based on ProducerID + sequence number
+Producer assigns sequence number per partition
+Broker deduplicates based on ProducerID + sequence number
 
 Transactional Producer:
-  producer.initTransactions();
-  producer.beginTransaction();
-  producer.send(record1);
-  producer.send(record2);
-  producer.commitTransaction(); // Atomic: both or neither
+producer.initTransactions();
+producer.beginTransaction();
+producer.send(record1);
+producer.send(record2);
+producer.commitTransaction(); // Atomic: both or neither
 
 Consumer: read_committed isolation (only see committed messages)
 
-*** Q12. Kafka Streams vs Consumer API.
+#### Q12. Kafka Streams vs Consumer API.
+
 Consumer API: Low-level, manual offset management, simple consume
 Kafka Streams: High-level DSL, stateful processing, joins, windowing
 
 StreamsBuilder builder = new StreamsBuilder();
 builder.<String, String>stream("input-topic")
-    .filter((k, v) -> v.contains("important"))
-    .mapValues(v -> v.toUpperCase())
-    .to("output-topic");
+.filter((k, v) -> v.contains("important"))
+.mapValues(v -> v.toUpperCase())
+.to("output-topic");
 
 Use Streams for: Real-time transformations, aggregations, joins
 Use Consumer for: Simple event handling, integration with non-Kafka systems
 
-*** Q13. Schema Registry (Avro/Protobuf).
+#### Q13. Schema Registry (Avro/Protobuf).
+
 Problem: Producer changes message format, consumer breaks
 Solution: Schema Registry stores schemas, validates compatibility
 
@@ -223,19 +242,22 @@ Consumer -> Schema Registry gets schema -> Deserialize -> Process
 
 Compatibility modes: BACKWARD, FORWARD, FULL, NONE
 
-*** Q14. Kafka Connect.
+#### Q14. Kafka Connect.
+
 Pre-built connectors for moving data between Kafka and other systems.
 Source Connector: DB -> Kafka (Debezium CDC for MySQL/PostgreSQL)
 Sink Connector: Kafka -> Elasticsearch/S3/JDBC
 
-*** Q15. Scenario: Message ordering across partitions.
+#### Q15. Scenario: Message ordering across partitions.
+
 Problem: Events for same entity going to different partitions = out of order
 Solution: Use entity ID as key -> same partition -> ordered
 
 kafkaTemplate.send("orders", orderId, orderEvent);
 // All events for same orderId -> same partition -> ORDERED
 
-*** Q16. Scenario: Consumer lag monitoring.
+#### Q16. Scenario: Consumer lag monitoring.
+
 Consumer lag = Latest offset - Consumer committed offset
 If lag grows -> consumer is falling behind
 
@@ -244,10 +266,12 @@ Alerting: Set up alerts when lag exceeds threshold
 
 Fix options: Add consumers (up to # partitions), optimize processing, increase partitions
 
-*** Q17-Q20 Quick Kafka:
-Q17. Log compaction: Retain only latest value per key (like KV store)
-Q18. Consumer rebalancing strategies: RangeAssignor, RoundRobinAssignor, StickyAssignor
-Q19. Broker leader election: ISR (In-Sync Replicas), unclean.leader.election.enable
-Q20. Kafka monitoring: JMX metrics, Confluent Control Center, Burrow
+Q17-Q20 Quick Kafka:
 
-================================================================================
+#### Q17. Log compaction: Retain only latest value per key (like KV store)
+
+#### Q18. Consumer rebalancing strategies: RangeAssignor, RoundRobinAssignor, StickyAssignor
+
+#### Q19. Broker leader election: ISR (In-Sync Replicas), unclean.leader.election.enable
+
+#### Q20. Kafka monitoring: JMX metrics, Confluent Control Center, Burrow

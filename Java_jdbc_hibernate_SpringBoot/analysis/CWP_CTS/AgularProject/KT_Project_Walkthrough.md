@@ -1,13 +1,11 @@
 ﻿================================================================================
-    OdaAdmin UI - PROJECT KNOWLEDGE TRANSFER (KT) DOCUMENT
-    Prepared for: Team Demo & Repository Workflow KT Session
-    Date: March 2, 2026
-    Application: OmniView Data Administration (OdaAdmin)
-================================================================================
+OdaAdmin UI - PROJECT KNOWLEDGE TRANSFER (KT) DOCUMENT
+Prepared for: Team Demo & Repository Workflow KT Session
+Date: March 2, 2026
+Application: OmniView Data Administration (OdaAdmin)
 
-================================================================================
-TABLE OF CONTENTS
-================================================================================
+## TABLE OF CONTENTS
+
 1.  PROJECT OVERVIEW
 2.  TECHNOLOGY STACK
 3.  PROJECT STRUCTURE
@@ -29,13 +27,11 @@ TABLE OF CONTENTS
 19. DEMO SCRIPT / WALKTHROUGH STEPS
 20. Q&A PREPARATION
 
-================================================================================
-1. PROJECT OVERVIEW
-================================================================================
+# 1. PROJECT OVERVIEW
 
 PROJECT NAME: OdaAdmin (OmniView Data Administration)
 PURPOSE: Enterprise web application for managing OmniView administrative data
-         including agency discrepancies, premium audit routing, and account routing.
+including agency discrepancies, premium audit routing, and account routing.
 
 BUSINESS CONTEXT:
 - Used by Nationwide Insurance operations team
@@ -44,51 +40,58 @@ BUSINESS CONTEXT:
 - Role-based access control for different screens
 
 KEY FEATURES:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  1. Agency Discrepancies    - Manage OV/WINS agent number mappings          │
 │  2. Premium Audit Routing   - Manage audit routing configurations           │
 │  3. Agency Accounting Routing - Manage accounting routing rules             │
 │  4. OVR2B Conversion        - Manage R2B contract agent conversions         │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
-================================================================================
-2. TECHNOLOGY STACK
-================================================================================
+## 2. TECHNOLOGY STACK
 
 FRONTEND FRAMEWORK:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  Angular 19/20          - Latest Angular with standalone components         │
 │  TypeScript 5.x         - Type-safe JavaScript                              │
 │  RxJS 7.8              - Reactive programming                               │
 │  Angular Signals       - Modern state management (Angular 16+)              │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 AUTHENTICATION:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  angular-auth-oidc-client   - OIDC/OAuth2 authentication library            │
 │  Nationwide Identity        - Enterprise identity provider                  │
 │  JWT Tokens                 - Token-based authentication                    │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 UI COMPONENTS:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  Nationwide Bolt Design System (@nationwide-bolt/bundle-core)               │
 │  Custom CSS styling                                                         │
 │  Responsive design                                                          │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
 BACKEND INTEGRATION:
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │  REST APIs via Apigee Gateway                                               │
 │  ess-odadmin-service (Spring Boot backend)                                  │
 │  JWT token validation at API gateway                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
+```
 
-================================================================================
-3. PROJECT STRUCTURE
-================================================================================
+## 3. PROJECT STRUCTURE
 
 ess-odadmin-angular-ui/
+```text
 │
 ├── src/
 │   ├── app/
@@ -171,19 +174,20 @@ ess-odadmin-angular-ui/
 ├── package.json                           # Dependencies
 ├── tsconfig.json                          # TypeScript configuration
 └── proxy.conf.json                        # Dev server proxy config
+```
 
 PROJECT SPA FLOW:
-```
 index.html → main.ts → App → Router → Feature Components
+```text
                                   ↓
                           Agency-Discrepancies / Premium-Audit / etc.
-						  
-						  
-COMPLETE RUNTIME FLOW
--------------------------
-
-DETAILED FLOW DIAGRAM:
 ```
+
+COMPLETE RUNTIME FLOW
+
+### DETAILED FLOW DIAGRAM:
+
+```text
 ┌─────────────────────────────────────────────────────────────────────────┐
 │  BROWSER REQUEST                                                         │
 ├─────────────────────────────────────────────────────────────────────────┤
@@ -202,13 +206,12 @@ DETAILED FLOW DIAGRAM:
 │  13. Component → subscribe() → Update Signals/State                      │
 │  14. Change Detection → DOM Update → UI Rendered                         │
 └─────────────────────────────────────────────────────────────────────────
+```
 
-================================================================================
-4. APPLICATION ARCHITECTURE
-================================================================================
+## 4. APPLICATION ARCHITECTURE
 
 HIGH-LEVEL ARCHITECTURE DIAGRAM:
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              BROWSER                                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
@@ -264,42 +267,50 @@ HIGH-LEVEL ARCHITECTURE DIAGRAM:
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-================================================================================
-5. BOOTSTRAP & STARTUP FLOW
-================================================================================
+## 5. BOOTSTRAP & STARTUP FLOW
 
 STEP-BY-STEP APPLICATION STARTUP:
 
 STEP 1: Browser loads index.html
+```text
         └── Loads JavaScript bundles
+```
 
 STEP 2: main.ts executes
+```text
         └── Initializes Bolt Design System
         └── Calls bootstrapApplication(App, appConfig)
+```
 
 STEP 3: App Configuration (app.config.ts)
+```text
         └── provideZonelessChangeDetection()  → Modern Angular 19
         └── provideAuth({...})                → OIDC configuration
         └── provideRouter(routes)             → Route setup
         └── provideHttpClient(withInterceptors([...]))
+```
 
 STEP 4: Root Component (app.ts) initializes
+```text
         └── ngOnInit() calls checkAuth()
         └── If authenticated, loads user access permissions
+```
 
 STEP 5: Router processes URL
+```text
         └── Guards check authentication & authorization
         └── Feature component lazy-loads and renders
+```
 
 CODE FLOW:
-```typescript
 // main.ts
 Bolt.initialize().then(() => {
-  bootstrapApplication(App, appConfig)
+bootstrapApplication(App, appConfig)
 });
 
 // app.ts
 ngOnInit(): void {
+```text
   this.oidcSecurityService.checkAuth()
     .subscribe((loginResponse: LoginResponse) => {
       this.isAuthenticated.set(loginResponse.isAuthenticated);
@@ -310,12 +321,10 @@ ngOnInit(): void {
 }
 ```
 
-================================================================================
-6. AUTHENTICATION FLOW (OIDC)
-================================================================================
+## 6. AUTHENTICATION FLOW (OIDC)
 
 AUTHENTICATION SEQUENCE:
-```
+```text
 ┌─────────┐     ┌─────────────┐     ┌────────────────┐     ┌─────────┐
 │  User   │     │   Angular   │     │ Identity       │     │ Backend │
 │ Browser │     │    App      │     │ Provider       │     │   API   │
@@ -362,28 +371,26 @@ AUTHENTICATION SEQUENCE:
 ```
 
 OIDC CONFIGURATION:
-```typescript
 // app.config.ts
 provideAuth({
-  config: {
-    authority: environment.authority,
-    redirectUrl: `${window.location.origin}/authorize`,
-    clientId: environment.clientId,
-    scope: 'openid nwapi',
-    responseType: 'code',  // Authorization Code Flow with PKCE
-    silentRenew: true,     // Auto-refresh tokens
-    useRefreshToken: true,
+config: {
+authority: environment.authority,
+redirectUrl: `${window.location.origin}/authorize`,
+clientId: environment.clientId,
+scope: 'openid nwapi',
+responseType: 'code',  // Authorization Code Flow with PKCE
+silentRenew: true,     // Auto-refresh tokens
+useRefreshToken: true,
+```text
   }
 })
 ```
 
-================================================================================
-7. ROUTING & NAVIGATION
-================================================================================
+## 7. ROUTING & NAVIGATION
 
 ROUTE CONFIGURATION (app.routes.ts):
-```typescript
 export const routes: Routes = [
+```json
   // Default redirect
   { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
@@ -394,13 +401,13 @@ export const routes: Routes = [
 
   // Protected feature routes (with guards)
   {
-    path: 'agency-discrepancies', 
+    path: 'agency-discrepancies',
     loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')...,
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
     data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }  // 100
   },
   {
-    path: 'premium-audit-routing', 
+    path: 'premium-audit-routing',
     loadComponent: () => import('./features/premium-audit-routing/components/premium-audit-routing.component')...,
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
     data: { screenCode: ScreenCode.PREMIUM_AUDIT_ROUTING }  // 300
@@ -419,8 +426,8 @@ export const routes: Routes = [
 ```
 
 GUARDS FLOW:
-```
 Route Navigation Request
+```text
          │
          ▼
 ┌─────────────────────────────────────┐
@@ -446,73 +453,63 @@ Route Navigation Request
      Component Loads
 ```
 
-================================================================================
-8. FEATURE MODULES WALKTHROUGH
-================================================================================
+## 8. FEATURE MODULES WALKTHROUGH
 
 FEATURE 1: AGENCY DISCREPANCIES (Screen Code: 100)
-─────────────────────────────────────────────────
-Purpose: Manage OV Agent ↔ WINS Agent number mappings
+
+#### Purpose: Manage OV Agent ↔ WINS Agent number mappings
 
 Operations:
-  • SEARCH - Find records by OV Agent or WINS Agent number
-  • ADD    - Create new agent mapping
-  • LIST   - View all records (paginated)
-  • DELETE - Remove selected records
+• SEARCH - Find records by OV Agent or WINS Agent number
+• ADD    - Create new agent mapping
+• LIST   - View all records (paginated)
+• DELETE - Remove selected records
 
 Key Files:
-  • agency-discrepancies.component.ts  (746 lines)
-  • agency-discrepancy.service.ts
-  • agency-discrepancy.model.ts
+• agency-discrepancies.component.ts  (746 lines)
+• agency-discrepancy.service.ts
+• agency-discrepancy.model.ts
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## FEATURE 2: PREMIUM AUDIT ROUTING (Screen Code: 300)
 
-FEATURE 2: PREMIUM AUDIT ROUTING (Screen Code: 300)
-─────────────────────────────────────────────────
 Purpose: Manage premium audit routing configurations
 
 Operations:
-  • SEARCH - Find by Agent Number, Audit Proc ID, Enterprise ID
-  • ADD    - Create new routing record
-  • LIST   - View all records (paginated)
-  • EDIT   - Modify existing record (separate page)
-  • DELETE - Remove selected records
+• SEARCH - Find by Agent Number, Audit Proc ID, Enterprise ID
+• ADD    - Create new routing record
+• LIST   - View all records (paginated)
+• EDIT   - Modify existing record (separate page)
+• DELETE - Remove selected records
 
 Key Files:
-  • premium-audit-routing.component.ts (1072 lines)
-  • edit-premium-audit-routing.component.ts (266 lines)
-  • premium-audit-routing.service.ts
-  • premium-audit-routing.model.ts
+• premium-audit-routing.component.ts (1072 lines)
+• edit-premium-audit-routing.component.ts (266 lines)
+• premium-audit-routing.service.ts
+• premium-audit-routing.model.ts
 
 Validation Rules:
-  • Agent Number: Must be exactly 5 alphanumeric characters
-  • Enterprise ID: Must be "SIC" or "WHIC" only
-  • Audit Proc ID: Must exist in OmniView Users Table
+• Agent Number: Must be exactly 5 alphanumeric characters
+• Enterprise ID: Must be "SIC" or "WHIC" only
+• Audit Proc ID: Must exist in OmniView Users Table
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## FEATURE 3: AGENCY ACCOUNTING ROUTING (Screen Code: 400)
 
-FEATURE 3: AGENCY ACCOUNTING ROUTING (Screen Code: 400)
-─────────────────────────────────────────────────
 Purpose: Manage agency accounting routing rules
 
 Operations:
-  • SEARCH, ADD, LIST, EDIT, DELETE
+• SEARCH, ADD, LIST, EDIT, DELETE
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+## FEATURE 4: OVR2B CONVERSION (Screen Code: 200)
 
-FEATURE 4: OVR2B CONVERSION (Screen Code: 200)
-─────────────────────────────────────────────────
 Purpose: Manage R2B contract agent conversions
 
 Operations:
-  • SEARCH, ADD, LIST, DELETE
+• SEARCH, ADD, LIST, DELETE
 
-================================================================================
-9. SERVICES ARCHITECTURE
-================================================================================
+## 9. SERVICES ARCHITECTURE
 
 SERVICE HIERARCHY:
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          CORE SERVICES                                       │
 │                    (providedIn: 'root' - Singletons)                         │
@@ -552,15 +549,15 @@ SERVICE HIERARCHY:
 ```
 
 SERVICE PATTERN EXAMPLE:
-```typescript
 @Injectable({ providedIn: 'root' })
 export class PremiumAuditRoutingService {
-  
-  constructor(private http: HttpClient) {}
 
-  search(criteria: SearchCriteria): Observable<ApiResponse<PremiumAuditRouting[]>> {
+constructor(private http: HttpClient) {}
+
+search(criteria: SearchCriteria): Observable<ApiResponse<PremiumAuditRouting[]>> {
+```text
     const searchUrl = ApiUrlBuilder.buildPremiumAuditSearchUrl(...);
-    
+
     return this.http.get<PremiumAuditRouting[]>(searchUrl, {
       headers: { 'Accept': 'application/json' }
     }).pipe(
@@ -575,13 +572,11 @@ export class PremiumAuditRoutingService {
 }
 ```
 
-================================================================================
-10. API INTEGRATION
-================================================================================
+## 10. API INTEGRATION
 
 API ENDPOINTS (Centralized in api-endpoints.enum.ts):
-```typescript
 export enum ApiEndpoints {
+```text
   // User Access
   USER_ACCESS = '/get-user-infos/',
 
@@ -606,8 +601,8 @@ export enum ApiEndpoints {
 ```
 
 HTTP INTERCEPTOR (api.interceptor.ts):
-```typescript
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
+```text
   // Only intercept ODA Admin API calls
   if (req.url.includes('ess-odadmin')) {
     return oidcSecurityService.getAccessToken().pipe(
@@ -629,25 +624,21 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 ```
 
 API ENVIRONMENTS:
-```
 LOCALHOST:   https://api-int-test.nwie.net/.../v1  (points to PT)
 DEV:         https://api-int-dev.nwie.net/.../v1
 PT (Test):   https://api-int-test.nwie.net/.../v1
 PRODUCTION:  https://api-int.nwie.net/.../v1
-```
 
-================================================================================
-11. STATE MANAGEMENT (SIGNALS)
-================================================================================
+## 11. STATE MANAGEMENT (SIGNALS)
 
 ANGULAR SIGNALS (Modern State Management):
 
 The project uses Angular Signals instead of traditional RxJS BehaviorSubjects
 for component state management.
 
-```typescript
 // Component state with signals
 export class AgencyDiscrepanciesComponent {
+```sql
   // Signal declarations
   searchResults = signal<AgencyDiscrepancy[]>([]);
   message = signal<string>('');
@@ -667,19 +658,17 @@ export class AgencyDiscrepanciesComponent {
 ```
 
 COMPUTED SIGNALS:
-```typescript
 // Derived values that auto-update
 readonly totalRecords = computed(() => this.searchResults().length);
 readonly hasResults = computed(() => this.searchResults().length > 0);
 readonly pagedResults = computed(() => {
+```text
   const start = (this.currentPage() - 1) * this.pageSize;
   return this.searchResults().slice(start, start + this.pageSize);
 });
 ```
 
-================================================================================
-12. UI COMPONENTS & BOLT DESIGN SYSTEM
-================================================================================
+## 12. UI COMPONENTS & BOLT DESIGN SYSTEM
 
 BOLT DESIGN SYSTEM:
 - Nationwide's enterprise UI component library
@@ -687,46 +676,42 @@ BOLT DESIGN SYSTEM:
 - Provides consistent styling across apps
 
 BOLT UTILITIES (bolt.utils.ts):
-```typescript
 export const BoltClasses = {
-  BUTTON_PRIMARY: 'c-bolt-button c-bolt-button--primary',
-  BUTTON_SECONDARY: 'c-bolt-button c-bolt-button--secondary',
-  TABLE: 'c-bolt-table',
-  TABLE_HEADER: 'c-bolt-table__header',
-  FORM_GROUP: 'c-bolt-form-group',
-  INPUT_TEXT: 'c-bolt-input c-bolt-input--text',
-  MESSAGE_SUCCESS: 'c-bolt-banner c-bolt-banner--success',
-  MESSAGE_ERROR: 'c-bolt-banner c-bolt-banner--error',
+BUTTON_PRIMARY: 'c-bolt-button c-bolt-button--primary',
+BUTTON_SECONDARY: 'c-bolt-button c-bolt-button--secondary',
+TABLE: 'c-bolt-table',
+TABLE_HEADER: 'c-bolt-table__header',
+FORM_GROUP: 'c-bolt-form-group',
+INPUT_TEXT: 'c-bolt-input c-bolt-input--text',
+MESSAGE_SUCCESS: 'c-bolt-banner c-bolt-banner--success',
+MESSAGE_ERROR: 'c-bolt-banner c-bolt-banner--error',
 };
-```
 
 USAGE IN TEMPLATES:
-```html
 <button class="{{ getBoltButtonClass('search') }}" [disabled]="loading()">
-  Search
+Search
 </button>
 
 <table class="{{ BoltClasses.TABLE }}">
+```text
   <thead class="{{ BoltClasses.TABLE_HEADER }}">
     ...
   </thead>
 </table>
-
-<div *ngIf="errors().length > 0" class="{{ BoltClasses.MESSAGE_ERROR }}">
-  {{ errors()[0] }}
-</div>
 ```
 
-================================================================================
-13. ERROR HANDLING STRATEGY
-================================================================================
+<div *ngIf="errors().length > 0" class="{{ BoltClasses.MESSAGE_ERROR }}">
+{{ errors()[0] }}
+</div>
+
+## 13. ERROR HANDLING STRATEGY
 
 3-LAYER ERROR HANDLING:
 
 LAYER 1: SERVICE LEVEL
-```typescript
 // Transform HTTP errors to user-friendly messages
 private handleSearchError(error: HttpErrorResponse, criteria: SearchCriteria) {
+```text
   if (error.status === 404) {
     return throwError(() => new Error('Record not found'));
   } else if (error.status === 0) {
@@ -737,9 +722,9 @@ private handleSearchError(error: HttpErrorResponse, criteria: SearchCriteria) {
 ```
 
 LAYER 2: COMPONENT LEVEL
-```typescript
 this.service.search(criteria).subscribe({
-  next: (response) => {
+next: (response) => {
+```text
     this.searchResults.set(response.data);
     this.message.set('Search complete');
   },
@@ -751,9 +736,9 @@ this.service.search(criteria).subscribe({
 ```
 
 LAYER 3: INTERCEPTOR/GUARD LEVEL
-```typescript
 // In screen-access.guard.ts
 catchError(error => {
+```text
   if (error.message === 'USER_NOT_FOUND') {
     router.navigate(['/user-info-error']);
   } else {
@@ -763,13 +748,11 @@ catchError(error => {
 })
 ```
 
-================================================================================
-14. ENVIRONMENT CONFIGURATION
-================================================================================
+## 14. ENVIRONMENT CONFIGURATION
 
 RUNTIME ENVIRONMENT DETECTION (environment.ts):
-```typescript
 function getEnvironment(): Env {
+```text
   const env: Env = {
     production: true,
     apiEndPointUrl: 'https://api-int.nwie.net/.../v1',  // Default: PROD
@@ -790,19 +773,16 @@ function getEnvironment(): Env {
       env.apiEndPointUrl = 'https://api-int-test.nwie.net/.../v1';
     }
   }
-  
+
   return env;
 }
 ```
 
 BENEFIT: Single build artifact works in all environments!
 
-================================================================================
-15. DEVELOPMENT WORKFLOW
-================================================================================
+## 15. DEVELOPMENT WORKFLOW
 
 DAILY DEVELOPMENT COMMANDS:
-```bash
 # Install dependencies (first time)
 npm install
 
@@ -824,10 +804,8 @@ npm run lint
 
 # Format code
 npm run prettier:fix
-```
 
 GIT WORKFLOW:
-```
 1. Pull latest from main branch
 2. Create feature branch: feature/JIRA-123-description
 3. Make changes
@@ -835,17 +813,15 @@ GIT WORKFLOW:
 5. Run lint: npm run lint
 6. Commit with message: "JIRA-123: Description of change"
 7. Push and create Pull Request
-8. Code review
+
+### 8. Code review
+
 9. Merge to main
 10. CI/CD deploys to DEV automatically
-```
 
-================================================================================
-16. BUILD & DEPLOYMENT
-================================================================================
+## 16. BUILD & DEPLOYMENT
 
 BUILD COMMANDS:
-```bash
 # Development build
 ng build
 
@@ -853,10 +829,9 @@ ng build
 ng build --configuration production
 
 # Build output: dist/ess-odadmin/
-```
 
 DEPLOYMENT PIPELINE:
-```
+```text
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │    DEV      │ ──> │     PT      │ ──> │    PROD     │ ──> │  VERIFIED   │
 │  (Auto)     │     │  (Manual)   │     │  (Manual)   │     │             │
@@ -867,9 +842,7 @@ DEPLOYMENT PIPELINE:
   .nwie.net           .nwie.net            .nwie.net
 ```
 
-================================================================================
-17. TESTING APPROACH
-================================================================================
+## 17. TESTING APPROACH
 
 TESTING STACK:
 - Karma: Test runner
@@ -881,149 +854,129 @@ TEST FILES:
 - Example: agency-discrepancy.service.spec.ts
 
 RUN TESTS:
-```bash
 npm test              # Watch mode
 npm run test:ci       # CI mode (headless)
 npm run test:coverage # With coverage report
-```
 
-================================================================================
-18. KEY CODE PATTERNS TO HIGHLIGHT
-================================================================================
+## 18. KEY CODE PATTERNS TO HIGHLIGHT
 
 PATTERN 1: STANDALONE COMPONENTS
-```typescript
 @Component({
-  selector: 'app-agency-discrepancies',
-  standalone: true,  // No NgModule needed
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './agency-discrepancies.component.html',
+selector: 'app-agency-discrepancies',
+standalone: true,  // No NgModule needed
+imports: [CommonModule, ReactiveFormsModule],
+templateUrl: './agency-discrepancies.component.html',
 })
 export class AgencyDiscrepanciesComponent { }
-```
 
 PATTERN 2: DEPENDENCY INJECTION WITH inject()
-```typescript
 // Modern approach (preferred)
 private readonly router = inject(Router);
 private readonly userAccessService = inject(UserAccessService);
 
 // Traditional approach (also used)
 constructor(private http: HttpClient) { }
-```
 
 PATTERN 3: LAZY LOADING ROUTES
-```typescript
 {
-  path: 'agency-discrepancies',
-  loadComponent: () => import('./features/agency-discrepancies/...')
-    .then(m => m.AgencyDiscrepanciesComponent),
+path: 'agency-discrepancies',
+loadComponent: () => import('./features/agency-discrepancies/...')
+.then(m => m.AgencyDiscrepanciesComponent),
 }
-```
 
 PATTERN 4: REACTIVE FORMS
-```typescript
 this.searchForm = new FormGroup({
-  ovAgentNumber: new FormControl(''),
-  winsAgentNumber: new FormControl('')
+ovAgentNumber: new FormControl(''),
+winsAgentNumber: new FormControl('')
 });
 
 // or with FormBuilder
 this.editForm = this.fb.group({
-  agntNbr: ['', [Validators.required, Validators.maxLength(5)]],
+agntNbr: ['', [Validators.required, Validators.maxLength(5)]],
 });
-```
 
 PATTERN 5: RxJS OPERATORS PIPELINE
-```typescript
 this.http.get<Data[]>(url).pipe(
-  map(data => transform(data)),
-  tap(data => this.log(data)),
-  catchError(error => this.handleError(error))
+map(data => transform(data)),
+tap(data => this.log(data)),
+catchError(error => this.handleError(error))
 ).subscribe({
-  next: result => this.handleSuccess(result),
-  error: err => this.handleFailure(err)
+next: result => this.handleSuccess(result),
+error: err => this.handleFailure(err)
 });
-```
 
-================================================================================
-19. DEMO SCRIPT / WALKTHROUGH STEPS
-================================================================================
+## 19. DEMO SCRIPT / WALKTHROUGH STEPS
 
 SUGGESTED DEMO ORDER:
 
 1. PROJECT OVERVIEW (5 min)
-   - Show folder structure in VS Code
-   - Explain core/shared/features organization
-   - Highlight key configuration files
+- Show folder structure in VS Code
+- Explain core/shared/features organization
+- Highlight key configuration files
 
 2. BOOTSTRAP FLOW (5 min)
-   - Start from main.ts
-   - Walk through app.config.ts
-   - Show app.ts root component
+- Start from main.ts
+- Walk through app.config.ts
+- Show app.ts root component
 
 3. AUTHENTICATION (5 min)
-   - Show OIDC configuration
-   - Explain guards
-   - Demo login flow (if possible)
+- Show OIDC configuration
+- Explain guards
+- Demo login flow (if possible)
 
 4. FEATURE WALKTHROUGH (15 min)
-   - Pick ONE feature (suggest Premium Audit Routing)
-   - Show component → service → API flow
-   - Demo Search, Add, Edit, Delete operations
-   - Highlight validation logic
-   - Show error handling
+- Pick ONE feature (suggest Premium Audit Routing)
+- Show component → service → API flow
+- Demo Search, Add, Edit, Delete operations
+- Highlight validation logic
+- Show error handling
 
 5. INTERCEPTOR (5 min)
-   - Show api.interceptor.ts
-   - Explain header addition
-   - Show in browser DevTools Network tab
+- Show api.interceptor.ts
+- Explain header addition
+- Show in browser DevTools Network tab
 
 6. SIGNALS & STATE (5 min)
-   - Show signal declarations
-   - Show computed signals
-   - Compare to traditional approach
+- Show signal declarations
+- Show computed signals
+- Compare to traditional approach
 
 7. Q&A (10 min)
 
-================================================================================
-20. Q&A PREPARATION - EXPECTED QUESTIONS
-================================================================================
+## 20. Q&A PREPARATION - EXPECTED QUESTIONS
 
 Q: Why standalone components instead of NgModules?
-A: Angular 14+ recommends standalone for simpler mental model, better 
-   tree-shaking, and easier lazy loading. It's the future direction of Angular.
+A: Angular 14+ recommends standalone for simpler mental model, better
+tree-shaking, and easier lazy loading. It's the future direction of Angular.
 
 Q: Why Signals instead of RxJS BehaviorSubject for state?
 A: Signals provide simpler syntax, better performance with fine-grained updates,
-   and work well with zoneless change detection (Angular 19).
+and work well with zoneless change detection (Angular 19).
 
 Q: How does authentication work?
 A: OIDC with Nationwide Identity Provider. Authorization Code Flow with PKCE.
-   Tokens stored in session storage. Interceptor adds Bearer token to API calls.
+Tokens stored in session storage. Interceptor adds Bearer token to API calls.
 
 Q: How are permissions managed?
 A: User screen codes fetched from /get-user-infos/{userId} API on login.
-   Screen codes (100, 200, 300, 400) determine which features user can access.
-   screenAccessGuard checks permissions before route activation.
+Screen codes (100, 200, 300, 400) determine which features user can access.
+screenAccessGuard checks permissions before route activation.
 
 Q: How do environments work?
 A: Runtime detection based on window.location.hostname. Single build artifact
-   works for all environments (DEV, PT, PROD).
+works for all environments (DEV, PT, PROD).
 
 Q: How is the API secured?
 A: 1) OIDC tokens (JWT) validated by Apigee gateway
-   2) client_id header identifies the application
-   3) X-NW-Message-ID for request tracking
-   4) X-User-Id for audit logging
+2) client_id header identifies the application
+3) X-NW-Message-ID for request tracking
+4) X-User-Id for audit logging
 
 Q: What testing is in place?
 A: Unit tests with Karma/Jasmine. Spec files alongside source files.
-   Coverage reports generated with npm run test:coverage.
+Coverage reports generated with npm run test:coverage.
 
-================================================================================
-                           END OF KT DOCUMENT
-================================================================================
+## END OF KT DOCUMENT
 
 TIPS FOR PRESENTER:
 - Keep VS Code open with project
@@ -1033,4 +986,3 @@ TIPS FOR PRESENTER:
 - Have this document open as reference
 
 Good luck with your KT session! 🎯
-================================================================================

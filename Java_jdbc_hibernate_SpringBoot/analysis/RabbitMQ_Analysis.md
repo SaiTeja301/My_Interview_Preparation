@@ -1,14 +1,14 @@
 ﻿================================================================================
 RABBITMQ - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 For: 7+ Years Experience Level | Java Developer
-================================================================================
 
-SECTION 1: ANALYSIS
+## SECTION 1: ANALYSIS
+
 Source: Microservices with RabbitMQ.txt (available in folder)
 Coverage: RabbitMQ setup, exchanges, queues, bindings, Spring AMQP
 Missing: Dead Letter Exchange, Delayed messages, Clustering, HA queues
 
-SECTION 2: RABBITMQ ARCHITECTURE
+## SECTION 2: RABBITMQ ARCHITECTURE
 
 Producer -> Exchange -> Binding -> Queue -> Consumer
 
@@ -18,41 +18,44 @@ Fanout: Broadcasts to ALL bound queues (pub-sub)
 Topic: Pattern matching routing key (wildcard)
 Headers: Routes by message header attributes
 
-SECTION 3: INTERVIEW ROUNDS
+## SECTION 3: INTERVIEW ROUNDS
 
-ROUND 1 - BASIC
+## ROUND 1 - BASIC
 
-*** Q1. RabbitMQ vs Kafka - when to use which?
+#### Q1. RabbitMQ vs Kafka - when to use which?
+
 RabbitMQ: Traditional message broker, message routing, task queues
-  - Messages deleted after consumption
-  - Complex routing (exchanges, bindings)
-  - Lower throughput (~50K msgs/sec)
-  - Best for: Task distribution, RPC, request/reply
+- Messages deleted after consumption
+- Complex routing (exchanges, bindings)
+- Lower throughput (~50K msgs/sec)
+- Best for: Task distribution, RPC, request/reply
 
 Kafka: Distributed event streaming platform
-  - Messages retained (configurable retention)
-  - Simple routing (topic + partition)
-  - Very high throughput (~1M msgs/sec)
-  - Best for: Event sourcing, log aggregation, stream processing
+- Messages retained (configurable retention)
+- Simple routing (topic + partition)
+- Very high throughput (~1M msgs/sec)
+- Best for: Event sourcing, log aggregation, stream processing
 
-*** Q2. Exchange types with examples.
+#### Q2. Exchange types with examples.
+
 Direct Exchange (routing key = queue name):
-  Producer -> exchange(routing_key="payment.success") -> payment-queue
+Producer -> exchange(routing_key="payment.success") -> payment-queue
 
 Fanout Exchange (broadcast):
-  Producer -> exchange -> queue1 (email service)
-                       -> queue2 (SMS service)
-                       -> queue3 (audit service)
+Producer -> exchange -> queue1 (email service)
+- queue2 (SMS service)
+- queue3 (audit service)
 
 Topic Exchange (pattern matching):
-  Producer -> exchange(routing_key="order.created.premium")
-  Queue binding: "order.created.*" -> receives message
-  Queue binding: "order.#" -> receives all order messages
-  * = one word, # = zero or more words
+Producer -> exchange(routing_key="order.created.premium")
+Queue binding: "order.created.*" -> receives message
+Queue binding: "order.#" -> receives all order messages
+= one word, # = zero or more words
 
-ROUND 2 - CORE TECHNICAL
+## ROUND 2 - CORE TECHNICAL
 
-*** Q3. Spring AMQP Producer and Consumer.
+#### Q3. Spring AMQP Producer and Consumer.
+
 Config:
 spring.rabbitmq.host=localhost
 spring.rabbitmq.port=5673
@@ -61,6 +64,7 @@ spring.rabbitmq.password=guest
 
 @Configuration
 public class RabbitConfig {
+```java
     @Bean
     public TopicExchange orderExchange() {
         return new TopicExchange("order-exchange");
@@ -77,27 +81,32 @@ public class RabbitConfig {
             .to(orderExchange()).with("order.payment.*");
     }
 }
+```
 
 Producer:
 @Service
 public class OrderProducer {
+```java
     @Autowired private RabbitTemplate rabbitTemplate;
     public void sendOrderEvent(OrderEvent event) {
         rabbitTemplate.convertAndSend("order-exchange",
             "order.payment.created", event);
     }
 }
+```
 
 Consumer:
 @RabbitListener(queues = "payment-queue")
 public void handlePayment(OrderEvent event) {
-    paymentService.process(event);
+paymentService.process(event);
 }
 
-*** Q4. Message acknowledgment and reliability.
+#### Q4. Message acknowledgment and reliability.
+
 Manual Acknowledgment:
 @RabbitListener(queues = "payment-queue", ackMode = "MANUAL")
 public void handlePayment(OrderEvent event, Channel channel,
+```text
                            @Header(AmqpHeaders.DELIVERY_TAG) long tag) {
     try {
         paymentService.process(event);
@@ -106,37 +115,43 @@ public void handlePayment(OrderEvent event, Channel channel,
         channel.basicNack(tag, false, true); // Requeue
     }
 }
+```
 
 Publisher Confirms (producer-side reliability):
 spring.rabbitmq.publisher-confirm-type=correlated
 spring.rabbitmq.publisher-returns=true
 
-ROUND 3 - ADVANCED
+## ROUND 3 - ADVANCED
 
-*** Q5. Dead Letter Exchange (DLX).
+#### Q5. Dead Letter Exchange (DLX).
+
 When messages die (rejected, expired, queue full), route to DLX.
 
 Queue -> message fails 3 times -> Dead Letter Exchange -> DLQ
-                                                          |
-                                                   Manual review
+|
+Manual review
 
 @Bean
 public Queue mainQueue() {
+```text
     return QueueBuilder.durable("main-queue")
         .withArgument("x-dead-letter-exchange", "dlx")
         .withArgument("x-dead-letter-routing-key", "dlq")
         .withArgument("x-message-ttl", 60000) // 60s TTL
         .build();
 }
+```
 
-Q6. RabbitMQ clustering and High Availability.
+#### Q6. RabbitMQ clustering and High Availability.
+
 Cluster: Multiple RabbitMQ nodes sharing users, vhosts, queues, exchanges
 Quorum Queues: Replicated queues using Raft consensus (recommended for HA)
 Mirror Queues: Legacy HA approach (deprecated in favor of quorum queues)
 
-ROUND 4 - SCENARIO-BASED
+## ROUND 4 - SCENARIO-BASED
 
-Q7. When to choose RabbitMQ over Kafka in microservices?
+#### Q7. When to choose RabbitMQ over Kafka in microservices?
+
 Choose RabbitMQ when:
 1. Complex routing needed (multiple exchange types)
 2. Message acknowledgment per message is critical
@@ -146,13 +161,11 @@ Choose RabbitMQ when:
 6. Smaller scale (<50K msgs/sec)
 
 KEY QUESTIONS:
-*** 1. RabbitMQ vs Kafka
-*** 2. Exchange types (Direct, Fanout, Topic)
-*** 3. Spring AMQP Producer/Consumer
-*** 4. Message acknowledgment
-*** 5. Dead Letter Exchange
-*** 6. Publisher Confirms
+1. RabbitMQ vs Kafka
+2. Exchange types (Direct, Fanout, Topic)
+3. Spring AMQP Producer/Consumer
+4. Message acknowledgment
+5. Dead Letter Exchange
+6. Publisher Confirms
 
-================================================================================
-END OF RABBITMQ ANALYSIS
-================================================================================
+## END OF RABBITMQ ANALYSIS

@@ -1,39 +1,43 @@
 ﻿================================================================================
 MICROSERVICES - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 For: 7+ Years Experience Level | Java Developer
-================================================================================
 
-SECTION 1: SOURCE ANALYSIS
+## SECTION 1: SOURCE ANALYSIS
+
 Source: Microservices.txt (4,272 lines), Microservices with RabbitMQ.txt (262K)
 Coverage: MSA concepts, Spring Boot for microservices, API Gateway, Service Discovery,
-          Docker, Kubernetes, Domain-Driven Design, Promise theory, distributed systems
+Docker, Kubernetes, Domain-Driven Design, Promise theory, distributed systems
 Missing: Saga pattern, CQRS, Event Sourcing, Distributed tracing (Zipkin/Jaeger),
-         Rate limiting, API versioning strategies, Blue-Green/Canary deployment
+Rate limiting, API versioning strategies, Blue-Green/Canary deployment
 
-SECTION 2: MICROSERVICES ARCHITECTURE
+## SECTION 2: MICROSERVICES ARCHITECTURE
 
 Client -> API Gateway -> Load Balancer -> Service Discovery
-                |
+|
+```text
     ┌───────────┼──────────────┐
     ↓           ↓              ↓
 Service A    Service B      Service C
    |            |              |
    DB-A         DB-B           DB-C
+```
 
 Cross-cutting: Config Server, Circuit Breaker, Distributed Tracing, Log Aggregation
 
-SECTION 3: 5 INTERVIEW ROUNDS
+## SECTION 3: 5 INTERVIEW ROUNDS
 
-ROUND 1 - BASIC
+## ROUND 1 - BASIC
 
-*** Q1. Monolith vs Microservices.
+#### Q1. Monolith vs Microservices.
+
 Monolith: Single deployable unit, shared DB, single codebase
 Microservices: Independent services, own DB, own deployment, own team
 
 When Monolith: Small team, simple domain, rapid prototyping
 When Microservices: Large team, complex domain, independent scaling needed
 
-*** Q2. Key Microservice design principles.
+#### Q2. Key Microservice design principles.
+
 1. Single Responsibility: Each service does one thing well
 2. Database per Service: No shared databases
 3. API First: Design contracts before implementation
@@ -42,16 +46,18 @@ When Microservices: Large team, complex domain, independent scaling needed
 6. Smart endpoints, dumb pipes: Business logic in services
 7. Infrastructure automation: CI/CD, containers
 
-ROUND 2 - CORE TECHNICAL
+## ROUND 2 - CORE TECHNICAL
 
-*** Q3. API Gateway pattern.
+#### Q3. API Gateway pattern.
+
 Purpose: Single entry point for all clients
 Responsibilities: Routing, Authentication, Rate limiting, Load balancing,
-                  SSL termination, Request/Response transformation
+SSL termination, Request/Response transformation
 
 Spring Cloud Gateway:
 @Bean
 public RouteLocator routes(RouteLocatorBuilder builder) {
+```text
     return builder.routes()
         .route("policy-service", r -> r
             .path("/api/v1/policies/**")
@@ -62,15 +68,17 @@ public RouteLocator routes(RouteLocatorBuilder builder) {
             .uri("lb://CLAIM-SERVICE"))
         .build();
 }
+```
 
 Flow:
 Client Request -> API Gateway -> Service Discovery (Eureka)
-                                       |
-                              Resolve service instances
-                                       |
-                              Load Balance -> Service Instance
+|
+Resolve service instances
+|
+Load Balance -> Service Instance
 
-*** Q4. Service Discovery (Eureka).
+#### Q4. Service Discovery (Eureka).
+
 Eureka Server: Registry of all service instances
 Eureka Client: Each microservice registers itself
 
@@ -86,56 +94,65 @@ public class PolicyService { }
 
 // application.yml
 eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka
-  instance:
-    prefer-ip-address: true
+client:
+service-url:
+defaultZone: http://localhost:8761/eureka
+instance:
+prefer-ip-address: true
 
-*** Q5. Circuit Breaker (Resilience4j).
+#### Q5. Circuit Breaker (Resilience4j).
+
 States: CLOSED (normal) -> OPEN (failing, fast-fail) -> HALF_OPEN (testing)
 
 @CircuitBreaker(name = "paymentService", fallbackMethod = "paymentFallback")
 public PaymentResponse processPayment(PaymentRequest req) {
+```text
     return paymentClient.pay(req); // External call
 }
+```
 
 public PaymentResponse paymentFallback(PaymentRequest req, Exception ex) {
-    log.warn("Payment service down, queuing for retry");
+log.warn("Payment service down, queuing for retry");
+```text
     return new PaymentResponse("QUEUED", "Payment queued for processing");
 }
+```
 
 Config (application.yml):
 resilience4j.circuitbreaker.instances.paymentService:
-  slidingWindowSize: 10
-  failureRateThreshold: 50
-  waitDurationInOpenState: 30s
-  permittedNumberOfCallsInHalfOpenState: 3
+slidingWindowSize: 10
+failureRateThreshold: 50
+waitDurationInOpenState: 30s
+permittedNumberOfCallsInHalfOpenState: 3
 
 Flow:
 Request -> Circuit Breaker -> Service call
-     CLOSED state: Calls pass through, monitors failures
-     failure rate > 50% -> OPEN state: Returns fallback immediately
-     After 30s -> HALF_OPEN: Allows 3 test requests
-     If tests pass -> CLOSED | If tests fail -> OPEN
+CLOSED state: Calls pass through, monitors failures
+failure rate > 50% -> OPEN state: Returns fallback immediately
+After 30s -> HALF_OPEN: Allows 3 test requests
+If tests pass -> CLOSED | If tests fail -> OPEN
 
-ROUND 3 - ADVANCED
+## ROUND 3 - ADVANCED
 
-*** Q6. Inter-service Communication patterns.
+#### Q6. Inter-service Communication patterns.
+
 Synchronous: REST (WebClient/Feign), gRPC
 Asynchronous: Message queues (Kafka, RabbitMQ), Event-driven
 
 Feign Client:
 @FeignClient(name = "PAYMENT-SERVICE", fallback = PaymentFallback.class)
 public interface PaymentClient {
+```text
     @PostMapping("/api/v1/payments")
     PaymentResponse processPayment(@RequestBody PaymentRequest req);
 }
+```
 
 When sync: Real-time response needed (GET operations)
 When async: Fire-and-forget, event notifications, high throughput
 
-*** Q7. Saga Pattern for distributed transactions.
+#### Q7. Saga Pattern for distributed transactions.
+
 Problem: No ACID transactions across microservices
 Solution: Saga = sequence of local transactions + compensating actions
 
@@ -153,7 +170,8 @@ If Payment fails:
 1. Payment Service publishes "PaymentFailed" event
 2. Order Service: Compensate -> Cancel order
 
-*** Q8. Distributed Tracing (Micrometer + Zipkin).
+#### Q8. Distributed Tracing (Micrometer + Zipkin).
+
 Each request gets a unique Trace ID that flows through all services.
 Each service call gets a Span ID.
 
@@ -161,15 +179,16 @@ spring.application.name=policy-service
 management.tracing.sampling.probability=1.0
 
 Client -> API Gateway (TraceID: abc123, SpanID: 1)
-  -> Policy Service (TraceID: abc123, SpanID: 2)
-    -> Claim Service (TraceID: abc123, SpanID: 3)
-      -> Database query (TraceID: abc123, SpanID: 4)
+- Policy Service (TraceID: abc123, SpanID: 2)
+- Claim Service (TraceID: abc123, SpanID: 3)
+- Database query (TraceID: abc123, SpanID: 4)
 
 All logs contain TraceID -> searchable in Kibana/Splunk
 
-ROUND 4 - SCENARIO-BASED
+## ROUND 4 - SCENARIO-BASED
 
-*** Q9. How to handle service failures in production?
+#### Q9. How to handle service failures in production?
+
 1. Circuit Breaker: Fast-fail when service down
 2. Retries with exponential backoff: retry 3 times (1s, 2s, 4s)
 3. Timeout: Set request timeout (3-5 seconds)
@@ -184,14 +203,16 @@ Resilience4j Retry:
 @RateLimiter(name = "paymentService")
 public PaymentResponse pay(PaymentRequest req) { ... }
 
-ROUND 5 - ARCHITECTURE
+## ROUND 5 - ARCHITECTURE
 
-Q10. Design a scalable microservices architecture for e-commerce.
+#### Q10. Design a scalable microservices architecture for e-commerce.
+
 Services: User, Product, Order, Payment, Inventory, Notification, Search
 Infrastructure: API Gateway, Config Server, Eureka, Kafka, Redis, ELK
 
 Client (Angular) -> API Gateway (Spring Cloud Gateway)
-     |
+|
+```text
      ├── User Service (Auth/JWT)
      ├── Product Service (CRUD + Search via Elasticsearch)
      ├── Order Service (Saga orchestrator)
@@ -199,42 +220,41 @@ Client (Angular) -> API Gateway (Spring Cloud Gateway)
      │      ├── Inventory Service (reserve stock)
      │      └── Notification Service (email/SMS via Kafka)
      └── Search Service (Elasticsearch)
+```
 
 Each service: Own DB, Docker container, K8s pod, CI/CD pipeline
 
 KEY QUESTIONS:
-*** 1. Monolith vs Microservices
-*** 2. API Gateway pattern
-*** 3. Service Discovery (Eureka)
-*** 4. Circuit Breaker (Resilience4j)
-*** 5. Inter-service communication (sync vs async)
-*** 6. Saga pattern for distributed transactions
-*** 7. Distributed tracing
-*** 8. Handling service failures
+1. Monolith vs Microservices
+2. API Gateway pattern
+3. Service Discovery (Eureka)
+4. Circuit Breaker (Resilience4j)
+5. Inter-service communication (sync vs async)
+6. Saga pattern for distributed transactions
+7. Distributed tracing
+8. Handling service failures
 
-================================================================================
-END OF MICROSERVICES ANALYSIS
-================================================================================
+## END OF MICROSERVICES ANALYSIS
 
-================================================================================
-MICROSERVICES - ADDITIONAL QUESTIONS (Q11-Q35) - ENHANCED EXPANSION
-================================================================================
+# MICROSERVICES - ADDITIONAL QUESTIONS (Q11-Q35) - ENHANCED EXPANSION
 
-*** Q11. Saga Pattern in detail - Choreography vs Orchestration.
+#### Q11. Saga Pattern in detail - Choreography vs Orchestration.
+
 Choreography: Each service publishes events, others react
-  Order Service -> "order-created" event
-  Payment Service listens -> processes -> "payment-done" event
-  Inventory Service listens -> reserves -> "stock-reserved" event
-  If any fails -> publishes compensating event
+Order Service -> "order-created" event
+Payment Service listens -> processes -> "payment-done" event
+Inventory Service listens -> reserves -> "stock-reserved" event
+If any fails -> publishes compensating event
 
 Orchestration: Central Saga Orchestrator coordinates
-  Orchestrator -> call Payment -> call Inventory -> call Notification
-  If Payment fails -> Orchestrator calls compensate on all previous
+Orchestrator -> call Payment -> call Inventory -> call Notification
+If Payment fails -> Orchestrator calls compensate on all previous
 
 Choreography: Simple, decoupled, but hard to track complex flows
 Orchestration: Complex to build, but clear flow, easier debugging
 
-*** Q12. CQRS (Command Query Responsibility Segregation).
+#### Q12. CQRS (Command Query Responsibility Segregation).
+
 Separate READ model from WRITE model.
 Write: Command -> Event Store -> Event Bus -> Read Model updated
 Read: Query -> Read-optimized DB (denormalized views)
@@ -242,7 +262,8 @@ Read: Query -> Read-optimized DB (denormalized views)
 Use when: Different scaling needs for reads vs writes
 Example: E-commerce product catalog (high reads) vs order processing (writes)
 
-*** Q13. Event Sourcing.
+#### Q13. Event Sourcing.
+
 Instead of storing current state, store ALL events that led to current state.
 Events are immutable, append-only.
 
@@ -252,7 +273,8 @@ Replay all events = current state
 Benefits: Complete audit trail, can rebuild state at any point in time
 Drawbacks: Complex, eventual consistency, event schema evolution
 
-*** Q14. Service Mesh (Istio/Linkerd).
+#### Q14. Service Mesh (Istio/Linkerd).
+
 Sidecar proxy pattern: Each service gets a proxy (Envoy)
 Handles: Load balancing, mTLS, retries, circuit breaking, tracing
 
@@ -261,7 +283,8 @@ Service A -> Envoy Proxy A -> Network -> Envoy Proxy B -> Service B
 Benefits: Infrastructure concerns separated from business logic
 No library dependency in application code.
 
-*** Q15. 12-Factor App principles for microservices.
+#### Q15. 12-Factor App principles for microservices.
+
 1. Codebase: One repo per service
 2. Dependencies: Explicitly declare (pom.xml)
 3. Config: Store in environment (not code)
@@ -275,20 +298,23 @@ No library dependency in application code.
 11. Logs: Treat as event streams
 12. Admin processes: Run as one-off processes
 
-*** Q16. API versioning strategies.
+#### Q16. API versioning strategies.
+
 URL: /api/v1/policies vs /api/v2/policies (most common)
 Header: Accept: application/vnd.company.v1+json
 Query: /api/policies?version=1
 Content-Type: Custom media type
 
-*** Q17. Scenario: Microservice database migration.
+#### Q17. Scenario: Microservice database migration.
+
 Strangler Fig pattern:
 1. New service reads/writes to both old DB and new DB
 2. Gradually migrate clients to new service
 3. Once all migrated, remove old DB connection
 4. Delete old monolith code
 
-*** Q18. Scenario: Handling eventual consistency.
+#### Q18. Scenario: Handling eventual consistency.
+
 Problem: After order created, inventory not updated for 2 seconds
 Solution:
 1. UI shows "Processing..." state
@@ -296,8 +322,8 @@ Solution:
 3. Idempotent operations (retry-safe)
 4. Compensation on failure
 
-*** Q19-Q20 Quick Microservices:
-Q19. Config Server (Spring Cloud Config): Centralized configuration
-Q20. Bulkhead pattern: Isolate thread pools per service call
+Q19-Q20 Quick Microservices:
 
-================================================================================
+#### Q19. Config Server (Spring Cloud Config): Centralized configuration
+
+#### Q20. Bulkhead pattern: Isolate thread pools per service call

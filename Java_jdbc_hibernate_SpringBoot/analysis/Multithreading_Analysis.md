@@ -1,19 +1,20 @@
 ﻿================================================================================
 MULTITHREADING & CONCURRENCY - INTERVIEW PREPARATION GUIDE
 For: 7+ Years Experience Level | Java Developer
-================================================================================
 
-SECTION 1: SOURCE ANALYSIS
+## SECTION 1: SOURCE ANALYSIS
+
 Source: Java_Notes.txt (Multithreading section)
 Coverage: Thread creation (Thread class, Runnable), synchronized, basic thread lifecycle
 Missing: Executor Framework, ThreadPool internals, CompletableFuture, ReentrantLock,
-         volatile vs synchronized, AtomicInteger, Fork/Join, CountDownLatch, CyclicBarrier
+volatile vs synchronized, AtomicInteger, Fork/Join, CountDownLatch, CyclicBarrier
 
-SECTION 2: 5 INTERVIEW ROUNDS
+## SECTION 2: 5 INTERVIEW ROUNDS
 
-ROUND 1 - BASIC
+## ROUND 1 - BASIC
 
-*** Q1. Thread vs Runnable vs Callable.
+#### Q1. Thread vs Runnable vs Callable.
+
 Thread: Extends Thread class, limited (no multiple inheritance)
 Runnable: Implements Runnable, no return value, cannot throw checked exceptions
 Callable: Implements Callable<V>, returns Future<V>, can throw exceptions
@@ -29,22 +30,25 @@ ExecutorService executor = Executors.newFixedThreadPool(4);
 Future<Integer> future = executor.submit(calc);
 Integer result = future.get(); // Blocks until done
 
-*** Q2. Thread Lifecycle.
+#### Q2. Thread Lifecycle.
+
 NEW -> (start()) -> RUNNABLE -> (scheduler) -> RUNNING
 RUNNING -> (sleep/wait) -> WAITING/TIMED_WAITING -> (notify/timeout) -> RUNNABLE
 RUNNING -> (synchronized block) -> BLOCKED -> (lock acquired) -> RUNNABLE
 RUNNING -> (completed) -> TERMINATED
 
-ROUND 2 - CORE TECHNICAL
+## ROUND 2 - CORE TECHNICAL
 
-*** Q3. synchronized vs ReentrantLock.
+#### Q3. synchronized vs ReentrantLock.
+
 synchronized: Implicit lock, auto-release, no try-lock, no fairness
 ReentrantLock: Explicit lock/unlock, tryLock(timeout), fairness option, Condition support
 
 Code:
 private final ReentrantLock lock = new ReentrantLock(true); // fair lock
 public void transfer(Account from, Account to, double amount) {
-    lock.lock();
+lock.lock();
+```text
     try {
         from.debit(amount);
         to.credit(amount);
@@ -54,9 +58,11 @@ public void transfer(Account from, Account to, double amount) {
     finally {
         lock.unlock(); // MUST unlock in finally!
     }
-}  
+}
+```
 
-*** Q4. volatile keyword - when and why?
+#### Q4. volatile keyword - when and why?
+
 volatile: Guarantees visibility (read from main memory, not CPU cache)
 Does NOT provide atomicity (i++ is NOT atomic even with volatile)
 
@@ -67,10 +73,13 @@ Code:
 private volatile boolean running = true; // visible to all threads
 public void stop() { running = false; } // immediately visible
 public void run() {
+```text
     while (running) { doWork(); } // reads from main memory
 }
+```
 
-*** Q5. Executor Framework - ThreadPoolExecutor.
+#### Q5. Executor Framework - ThreadPoolExecutor.
+
 Core Parameters:
 - corePoolSize: Minimum threads kept alive
 - maxPoolSize: Maximum threads allowed
@@ -80,14 +89,14 @@ Core Parameters:
 
 Flow:
 Task submitted
-     |
+|
 corePoolSize threads busy?
-     |-- No -> Create core thread
-     |-- Yes -> Queue full?
-                |-- No -> Add to queue
-                |-- Yes -> maxPoolSize reached?
-                           |-- No -> Create new thread
-                           |-- Yes -> Apply rejection policy
+|-- No -> Create core thread
+|-- Yes -> Queue full?
+|-- No -> Add to queue
+|-- Yes -> maxPoolSize reached?
+|-- No -> Create new thread
+|-- Yes -> Apply rejection policy
 
 Rejection Policies:
 AbortPolicy (default): throws RejectedExecutionException
@@ -98,33 +107,37 @@ DiscardOldestPolicy: drops oldest queued task
 Production Config:
 @Bean
 public ThreadPoolTaskExecutor asyncExecutor() {
-    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-    executor.setCorePoolSize(10);
-    executor.setMaxPoolSize(50);
-    executor.setQueueCapacity(100);
-    executor.setRejectedExecutionHandler(new CallerRunsPolicy());
-    executor.setThreadNamePrefix("claim-processor-");
+ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+executor.setCorePoolSize(10);
+executor.setMaxPoolSize(50);
+executor.setQueueCapacity(100);
+executor.setRejectedExecutionHandler(new CallerRunsPolicy());
+executor.setThreadNamePrefix("claim-processor-");
+```text
     return executor;
 }
+```
 
-ROUND 3 - ADVANCED
+## ROUND 3 - ADVANCED
 
-*** Q6. CompletableFuture advanced chaining.
+#### Q6. CompletableFuture advanced chaining.
+
 // Parallel API calls
 CompletableFuture<ClaimDetails> cf1 = CompletableFuture
-    .supplyAsync(() -> claimService.getDetails(id), executor);
+.supplyAsync(() -> claimService.getDetails(id), executor);
 CompletableFuture<List<Document>> cf2 = CompletableFuture
-    .supplyAsync(() -> docService.getDocs(id), executor);
+.supplyAsync(() -> docService.getDocs(id), executor);
 
 // Combine results
 CompletableFuture<ClaimSummary> combined = cf1
-    .thenCombine(cf2, (details, docs) -> new ClaimSummary(details, docs))
-    .exceptionally(ex -> { log.error("Failed", ex); return fallback(); });
+.thenCombine(cf2, (details, docs) -> new ClaimSummary(details, docs))
+.exceptionally(ex -> { log.error("Failed", ex); return fallback(); });
 
 // Wait for all
 CompletableFuture.allOf(cf1, cf2).thenRun(() -> log.info("All done")).join();
 
-*** Q7. CountDownLatch vs CyclicBarrier vs Semaphore.
+#### Q7. CountDownLatch vs CyclicBarrier vs Semaphore.
+
 CountDownLatch: One-time use, threads wait until count reaches 0
 CyclicBarrier: Reusable, threads wait until N threads arrive at barrier
 Semaphore: Controls access to N resources (permits)
@@ -140,20 +153,23 @@ latch.await(); // Main waits here until count = 0
 Code (Semaphore - connection pool):
 Semaphore pool = new Semaphore(10); // max 10 connections
 public Connection getConnection() throws InterruptedException {
-    pool.acquire(); // blocks if 10 connections in use
+pool.acquire(); // blocks if 10 connections in use
+```java
     return createConnection();
 }
 public void releaseConnection(Connection conn) {
     conn.close();
     pool.release();
 }
+```
 
-ROUND 4 - SCENARIO-BASED
+## ROUND 4 - SCENARIO-BASED
 
-*** Q8. Deadlock detection and prevention.
+#### Q8. Deadlock detection and prevention.
+
 Deadlock: Thread A holds Lock1, waits for Lock2. Thread B holds Lock2, waits for Lock1.
 
-Detection: jstack <pid> shows "Found X deadlock(s)" 
+Detection: jstack <pid> shows "Found X deadlock(s)"
 Prevention:
 1. Lock ordering: Always acquire locks in same global order
 2. tryLock with timeout: lock.tryLock(1, TimeUnit.SECONDS)
@@ -166,34 +182,43 @@ private static final Object LOCK_B = new Object();
 
 // ALL methods acquire A first, then B
 public void method1() {
-    synchronized(LOCK_A) {
-        synchronized(LOCK_B) { /* work */ }
+synchronized(LOCK_A) {
+synchronized(LOCK_B) { /* work */ }
+```text
     }
 }
+```
 
-Q9. Producer-Consumer pattern with BlockingQueue.
+#### Q9. Producer-Consumer pattern with BlockingQueue.
+
 BlockingQueue<Task> queue = new ArrayBlockingQueue<>(100);
 
 // Producer
 executor.submit(() -> {
+```text
     while (true) {
         Task task = generateTask();
         queue.put(task); // blocks if queue full
     }
 });
+```
 
 // Consumer
 executor.submit(() -> {
+```text
     while (true) {
         Task task = queue.take(); // blocks if queue empty
         processTask(task);
     }
 });
+```
 
-ROUND 5 - SYSTEM DESIGN
+## ROUND 5 - SYSTEM DESIGN
 
-Q10. Design a rate limiter using concurrency primitives.
+#### Q10. Design a rate limiter using concurrency primitives.
+
 public class RateLimiter {
+```java
     private final Semaphore semaphore;
     private final ScheduledExecutorService scheduler;
 
@@ -209,61 +234,63 @@ public class RateLimiter {
         return semaphore.tryAcquire();
     }
 }
+```
 
 KEY QUESTIONS:
-*** 1. Thread vs Runnable vs Callable
-*** 2. synchronized vs ReentrantLock
-*** 3. volatile keyword usage
-*** 4. Executor Framework / ThreadPoolExecutor
-*** 5. CompletableFuture chaining
-*** 6. Deadlock detection and prevention
-*** 7. CountDownLatch vs CyclicBarrier vs Semaphore
-*** 8. Producer-Consumer with BlockingQueue
-*** 9. Thread-safe Singleton (double-check locking)
+1. Thread vs Runnable vs Callable
+2. synchronized vs ReentrantLock
+3. volatile keyword usage
+4. Executor Framework / ThreadPoolExecutor
+5. CompletableFuture chaining
+6. Deadlock detection and prevention
+7. CountDownLatch vs CyclicBarrier vs Semaphore
+8. Producer-Consumer with BlockingQueue
+9. Thread-safe Singleton (double-check locking)
 
-================================================================================
-END OF MULTITHREADING ANALYSIS
-================================================================================
+## END OF MULTITHREADING ANALYSIS
 
-================================================================================
-MULTITHREADING - ADDITIONAL QUESTIONS (Q11-Q30) - ENHANCED EXPANSION
-================================================================================
+# MULTITHREADING - ADDITIONAL QUESTIONS (Q11-Q30) - ENHANCED EXPANSION
 
-*** Q11. ThreadPoolExecutor - 7 parameters.
+#### Q11. ThreadPoolExecutor - 7 parameters.
+
 new ThreadPoolExecutor(
-    corePoolSize,      // Min threads always alive
-    maximumPoolSize,   // Max threads
-    keepAliveTime,     // Idle thread timeout
-    TimeUnit.SECONDS,
+corePoolSize,      // Min threads always alive
+maximumPoolSize,   // Max threads
+keepAliveTime,     // Idle thread timeout
+TimeUnit.SECONDS,
+```text
     new LinkedBlockingQueue<>(100), // Work queue
     Executors.defaultThreadFactory(),
     new ThreadPoolExecutor.CallerRunsPolicy() // Rejection policy
 );
+```
 
 Flow:
-  Task submitted -> core threads busy? -> queue task
-  Queue full? -> create new thread (up to max)
-  Max reached + queue full? -> rejection policy
+Task submitted -> core threads busy? -> queue task
+Queue full? -> create new thread (up to max)
+Max reached + queue full? -> rejection policy
 
 Rejection Policies:
-  AbortPolicy: Throws RejectedExecutionException (default)
-  CallerRunsPolicy: Caller thread executes task (back-pressure)
-  DiscardPolicy: Silently drops task
-  DiscardOldestPolicy: Drops oldest queued task
+AbortPolicy: Throws RejectedExecutionException (default)
+CallerRunsPolicy: Caller thread executes task (back-pressure)
+DiscardPolicy: Silently drops task
+DiscardOldestPolicy: Drops oldest queued task
 
-*** Q12. CompletableFuture chaining patterns.
+#### Q12. CompletableFuture chaining patterns.
+
 CompletableFuture.supplyAsync(() -> fetchUser(id))    // async
-    .thenApply(user -> enrichUser(user))               // sync transform
-    .thenCompose(user -> fetchOrders(user.getId()))     // async chain
-    .thenCombine(fetchDiscounts(), (orders, disc) -> applyDiscount(orders, disc))
-    .thenAccept(result -> sendNotification(result))    // consume
-    .exceptionally(ex -> { log.error(ex); return fallback(); })
-    .get(5, TimeUnit.SECONDS);                         // block with timeout
+.thenApply(user -> enrichUser(user))               // sync transform
+.thenCompose(user -> fetchOrders(user.getId()))     // async chain
+.thenCombine(fetchDiscounts(), (orders, disc) -> applyDiscount(orders, disc))
+.thenAccept(result -> sendNotification(result))    // consume
+.exceptionally(ex -> { log.error(ex); return fallback(); })
+.get(5, TimeUnit.SECONDS);                         // block with timeout
 
 allOf: Wait for ALL futures
 anyOf: Wait for FIRST completed future
 
-*** Q13. ReentrantLock vs synchronized.
+#### Q13. ReentrantLock vs synchronized.
+
 synchronized: JVM-managed, auto-release, no try-lock, no fairness
 ReentrantLock: Manual lock/unlock, tryLock(timeout), fairness option, Condition
 
@@ -274,14 +301,16 @@ finally { lock.unlock(); } // MUST unlock in finally!
 
 lock.tryLock(2, TimeUnit.SECONDS); // Non-blocking attempt
 
-*** Q14. ReadWriteLock for concurrent reads.
+#### Q14. ReadWriteLock for concurrent reads.
+
 ReadWriteLock rwLock = new ReentrantReadWriteLock();
 rwLock.readLock().lock();   // Multiple readers allowed concurrently
 rwLock.writeLock().lock();  // Exclusive access, blocks all readers + writers
 
 Use: Config cache (many reads, rare writes)
 
-*** Q15. Deadlock - detection, prevention, example.
+#### Q15. Deadlock - detection, prevention, example.
+
 Thread 1: lock(A) -> lock(B)
 Thread 2: lock(B) -> lock(A) // DEADLOCK!
 
@@ -292,7 +321,8 @@ Prevention:
 
 Detection: jstack PID -> shows DEADLOCKED threads
 
-*** Q16. volatile keyword deep dive.
+#### Q16. volatile keyword deep dive.
+
 Guarantees:
 1. Visibility: Write visible to all threads immediately
 2. Ordering: No instruction reordering around volatile access
@@ -302,31 +332,34 @@ Does NOT guarantee: Atomicity (count++ is NOT atomic even with volatile)
 Use: Flags (boolean running = true), published object references
 For atomic ops: Use AtomicInteger, AtomicReference
 
-*** Q17. CountDownLatch vs CyclicBarrier vs Semaphore.
+#### Q17. CountDownLatch vs CyclicBarrier vs Semaphore.
+
 CountDownLatch: Countdown from N, threads wait until 0
-  Use: Wait for N tasks to complete, then proceed (one-time)
+Use: Wait for N tasks to complete, then proceed (one-time)
 
 CyclicBarrier: N threads wait for each other at barrier, then all proceed
-  Use: Parallel computation phases (reusable)
+Use: Parallel computation phases (reusable)
 
 Semaphore: Controls access to N permits (resource pool)
-  Use: Connection pool, rate limiting (acquire/release permits)
+Use: Connection pool, rate limiting (acquire/release permits)
 
-*** Q18. ForkJoinPool internals (used by parallel streams).
+#### Q18. ForkJoinPool internals (used by parallel streams).
+
 Work-stealing: Idle threads steal tasks from busy threads' deques.
 Each thread has double-ended queue (deque).
-  Push: Owner pushes to tail
-  Pop: Owner pops from tail
-  Steal: Other threads steal from head
+Push: Owner pushes to tail
+Pop: Owner pops from tail
+Steal: Other threads steal from head
 
-*** Q19-Q20 Quick Multithreading:
-Q19. ThreadLocal: Thread-scoped variables, each thread gets own copy
-  ThreadLocal<SimpleDateFormat> local = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy"));
-  MUST remove in finally to prevent memory leaks in thread pools!
+Q19-Q20 Quick Multithreading:
 
-Q20. Virtual Threads (Java 21): Lightweight threads managed by JVM
-  Thread.startVirtualThread(() -> process());
-  1M virtual threads possible (vs ~1K platform threads)
-  Game changer for I/O-bound applications
+#### Q19. ThreadLocal: Thread-scoped variables, each thread gets own copy
 
-================================================================================
+ThreadLocal<SimpleDateFormat> local = ThreadLocal.withInitial(() -> new SimpleDateFormat("yyyy"));
+MUST remove in finally to prevent memory leaks in thread pools!
+
+#### Q20. Virtual Threads (Java 21): Lightweight threads managed by JVM
+
+Thread.startVirtualThread(() -> process());
+1M virtual threads possible (vs ~1K platform threads)
+Game changer for I/O-bound applications
