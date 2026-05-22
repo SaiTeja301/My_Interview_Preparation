@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
 SHELL SCRIPTING (BASH) - COMPREHENSIVE INTERVIEW & REVISION GUIDE
 Extracted from: Linux and Shell Scripting.txt (Deduplicated)
 For: DevOps Engineers | System Administrators | Java Full Stack Developers

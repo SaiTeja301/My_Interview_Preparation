@@ -1,0 +1,2802 @@
+﻿================================================================================
+STREAMS API - MASSIVE INTERVIEW PREPARATION (50 Questions)
+For: 7+ Years Experience Level | Java Developer
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STREAM PIPELINE ARCHITECTURE (Internal Working)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Data Source (Collection/Array/Generator)
+   ↓
+stream() → Creates ReferencePipeline.Head (source stage)
+   ↓
+Intermediate Ops → Each wraps previous as StatelessOp/StatefulOp
+   (filter/map/sorted etc. — LAZY, nothing executes)
+   ↓
+Terminal Op → Triggers Sink chain construction
+   ↓
+Each element flows VERTICALLY through entire pipeline
+   (element1 through all ops, then element2, etc.)
+   ↓
+Result collected/returned
+
+Internal Classes:
+  AbstractPipeline → ReferencePipeline → Head (source)
+  StatelessOp (filter, map, flatMap, peek)
+  StatefulOp (sorted, distinct, limit, skip)
+  Sink interface: begin() → accept(T) → end()
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 1: BASIC STREAM QUESTIONS (Q1-Q10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q1. What is a Stream in Java 8? How is it different from Collection?
+─────────────────────────────────────────────────────────────────────
+Answer:
+Stream is a pipeline for processing sequences of elements supporting
+functional operations. It does NOT store data.
+
+  Feature         | Collection           | Stream
+  Storage         | Stores elements      | No storage, processes on-the-fly
+  Evaluation      | Eager                | Lazy (nothing until terminal op)
+  Consumption     | Reusable (iterate N) | Single-use (IllegalStateException)
+  Modification    | Can add/remove       | Cannot modify source
+  Iteration       | External (for-loop)  | Internal (pipeline)
+  Infinite        | No                   | Yes (Stream.generate/iterate)
+
+Internal Working:
+  Collection.stream() creates Spliterator from the collection, wraps it
+  in ReferencePipeline.Head. No data is copied or stored.
+
+Code:
+  List<String> names = List.of("Teja", "Pradeep", "Rakesh");
+  // Collection: external iteration
+  for (String n : names) { if (n.length() > 4) System.out.println(n); }
+  // Stream: internal iteration, declarative
+  names.stream().filter(n -> n.length() > 4).forEach(System.out::println);
+
+Production: In insurance claims processing, we stream() over 100K claims
+to filter by status and compute totals — without ever creating intermediate lists.
+
+─────────────────────────────────────────────────────────────────────
+*** Q2. What are intermediate vs terminal operations?
+─────────────────────────────────────────────────────────────────────
+Intermediate (return Stream, LAZY — nothing executes):
+  Stateless: filter, map, flatMap, peek, mapToInt/Long/Double
+  Stateful:  sorted, distinct, limit, skip
+
+Terminal (trigger execution, return non-Stream result):
+  collect, forEach, reduce, count, min, max, findFirst, findAny,
+  anyMatch, allMatch, noneMatch, toArray, forEachOrdered
+
+Internal Working:
+  Each intermediate op creates a new pipeline stage (StatelessOp/StatefulOp)
+  wrapping the previous one. Terminal op calls wrapSink() which chains
+  all Sinks together, then Spliterator.forEachRemaining() pushes elements.
+
+Flow:
+  stream() → filter() → map() → collect()
+  [Head]     [Stage1]   [Stage2]  [Terminal triggers all]
+
+─────────────────────────────────────────────────────────────────────
+*** Q3. Explain lazy evaluation with proof code.
+─────────────────────────────────────────────────────────────────────
+Answer:
+Stream operations are NOT executed until a terminal operation is invoked.
+
+Code:
+  Stream<String> s = List.of("A","B","C","D").stream()
+      .filter(x -> { System.out.println("filter: " + x); return true; })
+      .map(x -> { System.out.println("map: " + x); return x.toLowerCase(); });
+  System.out.println("Pipeline built — nothing printed yet!");
+  s.forEach(System.out::println); // NOW all operations execute
+
+Output:
+  Pipeline built — nothing printed yet!
+  filter: A → map: A → a
+  filter: B → map: B → b
+  ... (vertical processing per element)
+
+Key insight: Elements flow VERTICALLY (one element through all stages)
+not HORIZONTALLY (all elements through one stage).
+
+─────────────────────────────────────────────────────────────────────
+*** Q4. Why can a Stream be consumed only once?
+─────────────────────────────────────────────────────────────────────
+Answer:
+After a terminal operation, the stream's linkedOrConsumed flag is set to true.
+Any subsequent operation throws IllegalStateException.
+
+Code:
+  Stream<String> s = List.of("A","B").stream();
+  s.forEach(System.out::println); // OK
+  s.forEach(System.out::println); // IllegalStateException!
+
+Internal: AbstractPipeline.evaluate() checks this flag before execution.
+
+Fix: Create a new stream each time, or use Supplier<Stream>:
+  Supplier<Stream<String>> supplier = () -> List.of("A","B").stream();
+  supplier.get().forEach(...);
+  supplier.get().count(); // works!
+
+─────────────────────────────────────────────────────────────────────
+Q5. How to create Streams from different sources?
+─────────────────────────────────────────────────────────────────────
+  Stream.of("A", "B", "C")                 // from values
+  Arrays.stream(new int[]{1,2,3})          // from array (IntStream)
+  list.stream()                             // from Collection
+  Stream.empty()                            // empty stream
+  Stream.generate(Math::random)             // infinite (Supplier)
+  Stream.iterate(0, n -> n + 2)             // infinite (seed + UnaryOp)
+  Stream.iterate(0, n -> n < 100, n -> n+2) // bounded (Java 9)
+  Files.lines(Path.of("data.csv"))          // from file (lazy line-by-line)
+  "Hello".chars()                           // IntStream from String
+  Pattern.compile(",").splitAsStream(csv)   // from regex split
+  Stream.builder().add("A").add("B").build() // builder pattern
+
+─────────────────────────────────────────────────────────────────────
+Q6. What are primitive streams and why do they exist?
+─────────────────────────────────────────────────────────────────────
+IntStream, LongStream, DoubleStream — avoid auto-boxing overhead.
+
+  // BAD: auto-boxing Integer for every element
+  int sum = list.stream().map(String::length).reduce(0, Integer::sum);
+  
+  // GOOD: no boxing
+  int sum = list.stream().mapToInt(String::length).sum();
+
+Special methods on primitive streams:
+  sum(), average(), min(), max() — without Comparator
+  summaryStatistics() → count, sum, min, max, average in one pass
+  range(1, 10) → 1..9, rangeClosed(1, 10) → 1..10
+  asLongStream(), asDoubleStream(), boxed()
+
+Performance: For 1M elements, IntStream.sum() is ~5x faster than
+Stream<Integer>.reduce() due to zero boxing overhead.
+
+─────────────────────────────────────────────────────────────────────
+Q7. What is Stream.of() vs Arrays.stream() difference?
+─────────────────────────────────────────────────────────────────────
+  int[] arr = {1, 2, 3};
+  Stream.of(arr);          // Stream<int[]> — single element! (wrong)
+  Arrays.stream(arr);       // IntStream — 3 elements (correct)
+
+  String[] sarr = {"A","B"};
+  Stream.of(sarr);          // Stream<String> — works correctly
+  Arrays.stream(sarr);      // Stream<String> — also correct
+
+Rule: For primitive arrays, use Arrays.stream(). For object arrays, both work.
+
+─────────────────────────────────────────────────────────────────────
+Q8. Explain Stream.builder() pattern.
+─────────────────────────────────────────────────────────────────────
+  Stream.Builder<String> builder = Stream.builder();
+  builder.add("Teja");
+  if (includeAdmin) builder.add("Admin");
+  builder.add("Guest");
+  Stream<String> stream = builder.build();
+  // Cannot add after build() — IllegalStateException
+
+Use case: Conditionally building stream elements before processing.
+
+─────────────────────────────────────────────────────────────────────
+Q9. Infinite streams — generate vs iterate.
+─────────────────────────────────────────────────────────────────────
+  // generate: each element independent (Supplier)
+  Stream.generate(UUID::randomUUID).limit(10).forEach(System.out::println);
+
+  // iterate: each depends on previous (seed + UnaryOperator)
+  Stream.iterate(1, n -> n * 2).limit(10); // 1, 2, 4, 8, 16...
+
+  // Java 9 bounded iterate:
+  Stream.iterate(1, n -> n <= 1000, n -> n * 2); // stops at 1024
+
+  WARNING: Without limit(), infinite stream causes OutOfMemoryError
+  or infinite loop depending on terminal operation.
+
+─────────────────────────────────────────────────────────────────────
+Q10. Stream.empty() — when and why?
+─────────────────────────────────────────────────────────────────────
+  Use: Return empty stream instead of null to avoid NullPointerException.
+
+  public Stream<Order> getOrders(Customer c) {
+      if (c == null || c.getOrders() == null) return Stream.empty();
+      return c.getOrders().stream();
+  }
+
+  // Safe flatMap usage:
+  customers.stream()
+      .flatMap(c -> c.getOrders() == null ? Stream.empty() : c.getOrders().stream())
+      .collect(Collectors.toList());
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 2: INTERMEDIATE OPERATIONS DEEP DIVE (Q11-Q22)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q11. filter() — internal working with Predicate.
+─────────────────────────────────────────────────────────────────────
+Answer:
+filter(Predicate<T>) creates a StatelessOp. Each element passed to
+Predicate.test(). If true → passed downstream. If false → dropped.
+
+Internal code (simplified):
+  @Override
+  public void accept(T t) {
+      if (predicate.test(t)) {       // Predicate.test() called
+          downstream.accept(t);       // Pass to next stage
+      }
+      // else: element silently dropped
+  }
+
+Predicate is a @FunctionalInterface with: boolean test(T t)
+  Also has: and(), or(), negate(), isEqual() for composition.
+
+Code:
+  Predicate<Policy> isActive = p -> "ACTIVE".equals(p.getStatus());
+  Predicate<Policy> isHighValue = p -> p.getPremium() > 50000;
+  
+  policies.stream()
+      .filter(isActive.and(isHighValue))  // Composed predicate
+      .collect(Collectors.toList());
+
+Flow:
+  Element → Predicate.test(element) → true? → pass to next stage
+                                    → false? → discarded
+
+─────────────────────────────────────────────────────────────────────
+*** Q12. map() — internal working with Function.
+─────────────────────────────────────────────────────────────────────
+Answer:
+map(Function<T,R>) transforms each element. Creates StatelessOp.
+
+Internal:
+  @Override
+  public void accept(T t) {
+      downstream.accept(mapper.apply(t));  // Function.apply() called
+  }
+
+Function<T,R>: R apply(T t) — takes T, returns R (transformation).
+  Identity: Function.identity() → returns same element
+  Composition: f.andThen(g) → g(f(x)), f.compose(g) → f(g(x))
+
+Code:
+  List<String> names = employees.stream()
+      .map(Employee::getName)       // Employee → String
+      .map(String::toUpperCase)     // String → String
+      .collect(Collectors.toList());
+
+  // Chained: employee → getName → toUpperCase → collect
+
+─────────────────────────────────────────────────────────────────────
+*** Q13. map() vs flatMap() — deep comparison.
+─────────────────────────────────────────────────────────────────────
+Answer:
+map: 1 element → 1 element (one-to-one)
+flatMap: 1 element → 0 or more elements (one-to-many, flattens)
+
+  map(Function<T, R>)         → Stream<R>
+  flatMap(Function<T, Stream<R>>) → Stream<R> (flattened)
+
+Code:
+  List<List<String>> nested = List.of(
+      List.of("A", "B"), List.of("C", "D"), List.of("E"));
+
+  // map → Stream<List<String>> (NESTED, wrong!)
+  nested.stream().map(list -> list.stream()); // Stream<Stream<String>>
+
+  // flatMap → Stream<String> (FLAT, correct!)
+  nested.stream().flatMap(Collection::stream); // Stream<String>: A,B,C,D,E
+
+Real-time:
+  // All skills across all employees
+  List<String> allSkills = employees.stream()
+      .flatMap(e -> e.getSkills().stream())  // each employee → stream of skills
+      .distinct()
+      .sorted()
+      .collect(Collectors.toList());
+
+Internal flatMap:
+  For each element, mapper returns a Stream. flatMap subscribes to each
+  sub-stream and pushes elements to downstream one-by-one. The sub-streams
+  are NOT materialized into collections — they stream directly.
+
+─────────────────────────────────────────────────────────────────────
+*** Q14. sorted() — stateful operation.
+─────────────────────────────────────────────────────────────────────
+Answer:
+sorted() is STATEFUL — it must see ALL elements before producing output.
+Breaks lazy evaluation partially: buffers all elements, sorts, then emits.
+
+Internal: Uses Arrays.sort() (TimSort) on accumulated elements.
+
+  employees.stream()
+      .sorted(Comparator.comparing(Employee::getSalary).reversed()
+              .thenComparing(Employee::getName))
+      .limit(10)  // top 10 highest salary
+      .collect(Collectors.toList());
+
+Performance warning: sorted() on a large stream (millions) consumes
+significant memory. Consider sorting at DB level with ORDER BY instead.
+
+─────────────────────────────────────────────────────────────────────
+Q15. distinct() — internal working.
+─────────────────────────────────────────────────────────────────────
+Answer:
+Stateful. Uses LinkedHashSet internally to track seen elements.
+Calls element.equals() and element.hashCode() for deduplication.
+
+  List<String> unique = names.stream()
+      .distinct()  // equals/hashCode based
+      .collect(Collectors.toList());
+
+Custom objects: MUST override equals() and hashCode()!
+Memory: Stores all unique elements — O(n) memory for n unique.
+
+─────────────────────────────────────────────────────────────────────
+Q16. peek() — debugging purpose only.
+─────────────────────────────────────────────────────────────────────
+Answer:
+peek(Consumer<T>) performs action without modifying elements.
+Designed for debugging/logging only. Do NOT use for side effects!
+
+  List<String> result = names.stream()
+      .filter(n -> n.length() > 3)
+      .peek(n -> System.out.println("After filter: " + n))  // debug
+      .map(String::toUpperCase)
+      .peek(n -> System.out.println("After map: " + n))      // debug
+      .collect(Collectors.toList());
+
+WARNING: peek() may NOT execute for all elements if downstream
+short-circuits (e.g., findFirst()). Don't rely on it for business logic.
+
+─────────────────────────────────────────────────────────────────────
+Q17. limit() and skip() — short-circuit behavior.
+─────────────────────────────────────────────────────────────────────
+  limit(n): Take first n elements, then STOP pipeline (short-circuit)
+  skip(n):  Skip first n elements, pass rest through
+
+Pagination pattern:
+  List<Employee> page = employees.stream()
+      .sorted(Comparator.comparing(Employee::getId))
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .collect(Collectors.toList());
+
+WARNING: This is O(n) per page — very inefficient for large data.
+Use database-level pagination (LIMIT/OFFSET or keyset) instead.
+
+─────────────────────────────────────────────────────────────────────
+Q18. mapToInt / mapToLong / mapToDouble.
+─────────────────────────────────────────────────────────────────────
+  // Avoid auto-boxing:
+  OptionalDouble avg = employees.stream()
+      .mapToDouble(Employee::getSalary)  // Stream<Employee> → DoubleStream
+      .average();                         // Specialized terminal op
+
+  IntSummaryStatistics stats = orders.stream()
+      .mapToInt(Order::getQuantity)
+      .summaryStatistics();
+  // stats.getCount(), getSum(), getMin(), getMax(), getAverage()
+
+─────────────────────────────────────────────────────────────────────
+Q19. Stateless vs Stateful operations — impact on parallel streams.
+─────────────────────────────────────────────────────────────────────
+Stateless: filter, map, flatMap, peek — process each element independently
+  → Safe for parallel, no synchronization needed
+
+Stateful: sorted, distinct, limit, skip — need to see multiple elements
+  → Require synchronization in parallel, potential bottleneck
+  → sorted() gathers ALL elements (blocks pipeline)
+  → distinct() maintains shared Set across threads
+
+Rule: Minimize stateful operations in parallel streams for best performance.
+
+─────────────────────────────────────────────────────────────────────
+Q20. How does flatMap handle null inner streams?
+─────────────────────────────────────────────────────────────────────
+  If mapper returns null, NullPointerException is thrown!
+  Always return Stream.empty() instead of null.
+
+  // SAFE:
+  .flatMap(dept -> dept.getEmployees() != null
+      ? dept.getEmployees().stream()
+      : Stream.empty())
+
+─────────────────────────────────────────────────────────────────────
+Q21. mapMulti() (Java 16) — replacement for flatMap.
+─────────────────────────────────────────────────────────────────────
+  // flatMap creates intermediate Stream objects for each element
+  // mapMulti avoids that overhead using Consumer directly
+
+  numbers.stream()
+      .<String>mapMulti((num, consumer) -> {
+          if (num % 2 == 0) {
+              consumer.accept(num + " is even");
+              consumer.accept(num + " doubled: " + num * 2);
+          }
+      }).forEach(System.out::println);
+
+  // Use when: one-to-few mapping (avoids Stream creation overhead)
+
+─────────────────────────────────────────────────────────────────────
+Q22. Stream.concat() and reducing multiple streams.
+─────────────────────────────────────────────────────────────────────
+  Stream<String> combined = Stream.concat(stream1, stream2);
+  // For 3+: Stream.of(s1, s2, s3).flatMap(Function.identity())
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 3: TERMINAL OPERATIONS + INTERNAL WORKING (Q23-Q35)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q23. forEach() — Consumer internal working.
+─────────────────────────────────────────────────────────────────────
+Answer:
+forEach(Consumer<T>) calls Consumer.accept(T) for each element.
+Consumer: @FunctionalInterface with void accept(T t)
+
+  // Method reference as Consumer:
+  names.forEach(System.out::println);
+
+  // forEach does NOT guarantee order in parallel streams!
+  // Use forEachOrdered() for guaranteed encounter order.
+  names.parallelStream().forEachOrdered(System.out::println); // ordered
+
+Side-effect warning: forEach is the ONLY intended place for side effects.
+Don't use peek() or map() for side effects.
+
+─────────────────────────────────────────────────────────────────────
+*** Q24. reduce() — BinaryOperator internal working.
+─────────────────────────────────────────────────────────────────────
+Answer:
+reduce() combines stream elements into a single result.
+
+3 variants:
+  Optional<T> reduce(BinaryOperator<T> accumulator)
+  T reduce(T identity, BinaryOperator<T> accumulator)
+  <U> U reduce(U identity, BiFunction<U,T,U> accumulator, BinaryOperator<U> combiner)
+
+BinaryOperator<T>: extends BiFunction<T,T,T> → takes 2 args, returns same type
+
+Internal execution:
+  reduce(0, Integer::sum) on [1, 2, 3, 4]
+  Step 1: result = 0 (identity)
+  Step 2: result = 0 + 1 = 1
+  Step 3: result = 1 + 2 = 3
+  Step 4: result = 3 + 3 = 6
+  Step 5: result = 6 + 4 = 10
+
+Parallel reduce (3-arg):
+  identity MUST be identity element: x op identity = x
+  accumulator MUST be associative: (a op b) op c = a op (b op c)
+  combiner combines partial results from parallel threads
+
+  // Parallel word count:
+  int total = words.parallelStream()
+      .reduce(0,                                    // identity
+              (count, word) -> count + word.length(), // accumulator
+              Integer::sum);                          // combiner
+
+  WARNING: Non-associative operations give WRONG results in parallel!
+  // BAD: subtraction is not associative
+  stream.parallel().reduce(0, (a,b) -> a - b); // WRONG!
+
+─────────────────────────────────────────────────────────────────────
+*** Q25. collect() — Collector internal working.
+─────────────────────────────────────────────────────────────────────
+Answer:
+collect(Collector<T,A,R>) is the most powerful terminal operation.
+
+Collector has 4 components:
+  Supplier<A> supplier()       → Creates mutable container (ArrayList::new)
+  BiConsumer<A,T> accumulator() → Adds element to container (List::add)
+  BinaryOperator<A> combiner()  → Merges two containers (list1.addAll(list2))
+  Function<A,R> finisher()      → Final transformation (identity or toUnmodifiable)
+
+Flow:
+  collect(Collectors.toList())
+  1. supplier() → new ArrayList()
+  2. For each element: accumulator.accept(list, element) → list.add(element)
+  3. (parallel) combiner: list1.addAll(list2)
+  4. finisher: return list (identity)
+
+  // toList() (Java 16): returns unmodifiable list
+  List<String> names = stream.toList(); // shorter, unmodifiable
+
+─────────────────────────────────────────────────────────────────────
+*** Q26. Collectors.groupingBy() — deep dive.
+─────────────────────────────────────────────────────────────────────
+Answer:
+  // Simple grouping
+  Map<String, List<Employee>> byDept = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment));
+
+  // Custom downstream collector
+  Map<String, Long> deptCount = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()));
+
+  // Nested grouping
+  Map<String, Map<String, List<Employee>>> nested = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment,
+               Collectors.groupingBy(Employee::getCity)));
+
+  // Average salary per department
+  Map<String, Double> avgSalary = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment,
+               Collectors.averagingDouble(Employee::getSalary)));
+
+  // Department with max salary employee
+  Map<String, Optional<Employee>> topEarners = employees.stream()
+      .collect(Collectors.groupingBy(Employee::getDepartment,
+               Collectors.maxBy(Comparator.comparingDouble(Employee::getSalary))));
+
+Internal: Uses HashMap with classifier as key, downstream Collector to accumulate.
+
+─────────────────────────────────────────────────────────────────────
+*** Q27. Collectors.partitioningBy().
+─────────────────────────────────────────────────────────────────────
+  // Splits into exactly 2 groups: true and false
+  Map<Boolean, List<Employee>> partitioned = employees.stream()
+      .collect(Collectors.partitioningBy(e -> e.getSalary() > 50000));
+  
+  List<Employee> highSalary = partitioned.get(true);
+  List<Employee> lowSalary = partitioned.get(false);
+
+  // Both keys (true/false) ALWAYS exist — never null
+
+Difference from groupingBy: partitioningBy is more efficient for boolean
+classification — uses a fixed 2-element map instead of HashMap.
+
+─────────────────────────────────────────────────────────────────────
+Q28. Collectors.toMap() — handling duplicates.
+─────────────────────────────────────────────────────────────────────
+  // Without merge: throws IllegalStateException on duplicate key!
+  Map<Integer, String> bad = employees.stream()
+      .collect(Collectors.toMap(Employee::getId, Employee::getName));
+
+  // With merge function:
+  Map<Integer, String> safe = employees.stream()
+      .collect(Collectors.toMap(
+          Employee::getId,
+          Employee::getName,
+          (existing, replacement) -> existing)); // keep first
+
+  // Into specific map type:
+  Map<Integer, String> linked = employees.stream()
+      .collect(Collectors.toMap(
+          Employee::getId, Employee::getName,
+          (e, r) -> e, LinkedHashMap::new)); // maintain insertion order
+
+─────────────────────────────────────────────────────────────────────
+Q29. Collectors.joining().
+─────────────────────────────────────────────────────────────────────
+  String csv = employees.stream()
+      .map(Employee::getName)
+      .collect(Collectors.joining(", ", "[", "]"));
+  // Output: [Teja, Pradeep, Rakesh]
+
+  // Internal: Uses StringJoiner (which uses StringBuilder internally)
+
+─────────────────────────────────────────────────────────────────────
+Q30. Custom Collector implementation.
+─────────────────────────────────────────────────────────────────────
+  // Custom collector: collect to comma-separated String
+  Collector<String, StringBuilder, String> csvCollector = Collector.of(
+      StringBuilder::new,                         // supplier
+      (sb, s) -> { if (sb.length() > 0) sb.append(","); sb.append(s); }, // accumulator
+      (sb1, sb2) -> { if (sb1.length() > 0) sb1.append(","); sb1.append(sb2); return sb1; }, // combiner
+      StringBuilder::toString,                     // finisher
+      Collector.Characteristics.CONCURRENT         // characteristics
+  );
+
+  String result = names.stream().collect(csvCollector);
+
+─────────────────────────────────────────────────────────────────────
+*** Q31. Short-circuit terminal operations.
+─────────────────────────────────────────────────────────────────────
+  findFirst() → returns first element (Optional), stops processing
+  findAny()   → returns any element (good for parallel), stops processing
+  anyMatch(P) → true if any element matches, stops at first match
+  allMatch(P) → false if any element fails, stops at first failing
+  noneMatch(P)→ false if any element matches, stops at first match
+
+  // On infinite stream:
+  Optional<Integer> first = Stream.iterate(0, n -> n + 1)
+      .filter(n -> n > 100)
+      .findFirst(); // Returns 101 — doesn't process infinite elements!
+
+  Internal: Short-circuit ops set a "cancel" flag that stops Spliterator traversal.
+
+─────────────────────────────────────────────────────────────────────
+Q32. count() — optimization in Java 11+.
+─────────────────────────────────────────────────────────────────────
+  // Java 8: count() traverses entire stream
+  long count = list.stream().count(); // processes all elements
+
+  // Java 11+: count() skips traversal for known-size sources
+  long count = list.stream().count(); // optimized: returns list.size()
+
+  // BUT: Adding operations breaks optimization
+  long count = list.stream().filter(x -> true).count(); // traverses!
+
+─────────────────────────────────────────────────────────────────────
+Q33. min() and max() with Comparator.
+─────────────────────────────────────────────────────────────────────
+  Optional<Employee> highest = employees.stream()
+      .max(Comparator.comparingDouble(Employee::getSalary));
+
+  Optional<Employee> youngest = employees.stream()
+      .min(Comparator.comparingInt(Employee::getAge));
+
+  // Returns Optional — empty if stream is empty
+
+─────────────────────────────────────────────────────────────────────
+Q34. toArray() — typed array conversion.
+─────────────────────────────────────────────────────────────────────
+  Object[] arr = stream.toArray();            // Object array
+  String[] arr = stream.toArray(String[]::new); // typed array
+
+  // String[]::new is IntFunction<String[]> → creates array of given size
+
+─────────────────────────────────────────────────────────────────────
+Q35. Optional inside streams.
+─────────────────────────────────────────────────────────────────────
+  // Stream of Optionals → flat unwrap
+  List<Optional<String>> opts = List.of(Optional.of("A"), Optional.empty(), Optional.of("C"));
+
+  // Java 8:
+  opts.stream().filter(Optional::isPresent).map(Optional::get).collect(Collectors.toList());
+
+  // Java 9+:
+  opts.stream().flatMap(Optional::stream).collect(Collectors.toList());
+  // Output: [A, C]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 4: PARALLEL STREAMS + PERFORMANCE (Q36-Q43)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q36. Parallel streams — internal working (ForkJoinPool + Spliterator).
+─────────────────────────────────────────────────────────────────────
+Answer:
+parallel() uses ForkJoinPool.commonPool() (threads = CPU cores - 1).
+
+Spliterator splits the data source:
+  trySplit() → divides data into two halves
+  Recursive splitting until chunks are small enough
+
+Flow:
+  list.parallelStream().filter(...).map(...).collect(...)
+       ↓
+  Spliterator.trySplit() → splits source into chunks
+       ↓
+  Each chunk → submitted as task to ForkJoinPool
+       ↓
+  Each thread applies filter+map independently
+       ↓
+  Combiner merges results from all threads
+       ↓
+  Final result
+
+Custom pool (avoid blocking common pool):
+  ForkJoinPool pool = new ForkJoinPool(8);
+  List<String> result = pool.submit(() ->
+      list.parallelStream().filter(...).collect(toList())
+  ).get();
+
+─────────────────────────────────────────────────────────────────────
+*** Q37. When to use / NOT use parallel streams.
+─────────────────────────────────────────────────────────────────────
+USE when:
+  ✅ Large data (>10K elements)
+  ✅ CPU-intensive per element (heavy computation)
+  ✅ Source splits efficiently (ArrayList, arrays, IntRange)
+  ✅ Stateless operations only
+  ✅ No shared mutable state
+
+AVOID when:
+  ❌ Small data (<1K — overhead > benefit)
+  ❌ I/O bound (HTTP calls, DB queries — blocks ForkJoin threads)
+  ❌ LinkedList source (poor split: O(n) per split)
+  ❌ Order-dependent operations
+  ❌ Shared mutable state (race conditions)
+  ❌ Contains sorted() (becomes sequential bottleneck)
+
+Performance:
+  ArrayList:    Excellent parallelism (O(1) split)
+  HashSet:      Good
+  TreeSet:      Good
+  LinkedList:   TERRIBLE (O(n) split — avoid!)
+  Stream.iterate: TERRIBLE (sequential dependency)
+
+─────────────────────────────────────────────────────────────────────
+Q38. Spliterator — what is it and how does it work?
+─────────────────────────────────────────────────────────────────────
+  Spliterator = Splittable Iterator
+  Methods:
+    tryAdvance(Consumer) → process one element, return false if empty
+    trySplit()           → divide into two: this + returned Spliterator
+    estimateSize()       → estimated remaining elements
+    characteristics()    → ORDERED, DISTINCT, SORTED, SIZED, NONNULL, IMMUTABLE, CONCURRENT, SUBSIZED
+
+  ArrayList Spliterator: ArraySpliterator — binary split at midpoint → perfect parallelism
+
+─────────────────────────────────────────────────────────────────────
+Q39. Thread safety pitfall in parallel streams.
+─────────────────────────────────────────────────────────────────────
+  // BAD: Shared mutable state
+  List<String> results = new ArrayList<>(); // NOT thread-safe!
+  names.parallelStream().filter(n -> n.length() > 3)
+      .forEach(results::add); // ConcurrentModificationException or data loss!
+
+  // GOOD: Use collect (thread-safe by design)
+  List<String> results = names.parallelStream()
+      .filter(n -> n.length() > 3)
+      .collect(Collectors.toList()); // combiner handles thread merging
+
+─────────────────────────────────────────────────────────────────────
+Q40. Stream vs for-loop performance benchmarks.
+─────────────────────────────────────────────────────────────────────
+  Small data (<1K): for-loop ~2x faster (no pipeline overhead)
+  Medium data (1K-100K): Similar performance
+  Large data (100K+) CPU-heavy: parallel stream 2-4x faster
+
+  Key overhead of streams:
+  - Object creation: Spliterator, Sink chain, lambda objects
+  - Auto-boxing: Use primitive streams to avoid
+  - Pipeline setup: ~10-50ns per call (negligible for large data)
+
+─────────────────────────────────────────────────────────────────────
+Q41. Stream debugging techniques.
+─────────────────────────────────────────────────────────────────────
+  1. peek() with logging
+  2. IntelliJ "Trace Current Stream Chain" → visual per-element flow
+  3. Break stream into variables for debugging each stage
+  4. Use intermediary collect() to inspect intermediate results
+  5. JFR (Java Flight Recorder) for stream performance profiling
+
+─────────────────────────────────────────────────────────────────────
+Q42. Memory impact of stream operations.
+─────────────────────────────────────────────────────────────────────
+  Low memory: filter, map, flatMap (process one element at a time)
+  High memory: sorted (buffers ALL), distinct (Set of ALL unique), collect (result)
+
+  For 10M elements sorted() allocates ~400MB for Object[] buffer.
+  Solution: Sort at database level (ORDER BY) before streaming.
+
+─────────────────────────────────────────────────────────────────────
+Q43. Stream reuse and side effects — common mistakes.
+─────────────────────────────────────────────────────────────────────
+  Mistake 1: Reusing stream → IllegalStateException
+  Mistake 2: Modifying source during stream → ConcurrentModificationException
+  Mistake 3: Using non-thread-safe collector in parallel streams
+  Mistake 4: I/O in parallel streams → blocks ForkJoin pool
+  Mistake 5: Relying on peek() execution order
+  Mistake 6: forEach with index (use IntStream.range instead)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PART 5: SCENARIO-BASED + PRODUCTION (Q44-Q50)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+─────────────────────────────────────────────────────────────────────
+*** Q44. Scenario: Flatten nested DTOs into a report.
+─────────────────────────────────────────────────────────────────────
+  // Departments → Employees → Skills → flat list of skilled employees
+  Map<String, List<String>> javaDevsByDept = departments.stream()
+      .flatMap(d -> d.getEmployees().stream()
+          .filter(e -> e.getSkills().contains("Java"))
+          .map(e -> Map.entry(d.getName(), e.getName())))
+      .collect(Collectors.groupingBy(Map.Entry::getKey,
+          Collectors.mapping(Map.Entry::getValue, Collectors.toList())));
+
+─────────────────────────────────────────────────────────────────────
+*** Q45. Scenario: Process CSV file with streams.
+─────────────────────────────────────────────────────────────────────
+  try (Stream<String> lines = Files.lines(Path.of("claims.csv"))) {
+      Map<String, DoubleSummaryStatistics> report = lines
+          .skip(1) // header
+          .map(line -> line.split(","))
+          .filter(parts -> parts.length >= 4)
+          .collect(Collectors.groupingBy(
+              parts -> parts[2], // status column
+              Collectors.summarizingDouble(parts -> Double.parseDouble(parts[3]))));
+      // Per-status: count, sum, min, max, average
+  }
+  // Files.lines() is LAZY — reads line-by-line, not entire file into memory
+
+─────────────────────────────────────────────────────────────────────
+Q46. Scenario: Find second highest salary.
+─────────────────────────────────────────────────────────────────────
+  Optional<Double> secondHighest = employees.stream()
+      .map(Employee::getSalary)
+      .distinct()
+      .sorted(Comparator.reverseOrder())
+      .skip(1)
+      .findFirst();
+
+─────────────────────────────────────────────────────────────────────
+Q47. Scenario: Word frequency count from text.
+─────────────────────────────────────────────────────────────────────
+  Map<String, Long> wordFreq = Arrays.stream(text.split("\\s+"))
+      .map(String::toLowerCase)
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+  // Top 5 words:
+  wordFreq.entrySet().stream()
+      .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+      .limit(5)
+      .forEach(e -> System.out.println(e.getKey() + ": " + e.getValue()));
+
+─────────────────────────────────────────────────────────────────────
+Q48. Scenario: Convert Map to sorted list of values.
+─────────────────────────────────────────────────────────────────────
+  List<Employee> sortedByDept = deptMap.entrySet().stream()
+      .sorted(Map.Entry.comparingByKey())
+      .flatMap(e -> e.getValue().stream())
+      .collect(Collectors.toList());
+
+─────────────────────────────────────────────────────────────────────
+Q49. Scenario: Implement pagination with streams (and why not to).
+─────────────────────────────────────────────────────────────────────
+  // Works but INEFFICIENT — O(n) per page
+  List<T> page = items.stream().skip(offset).limit(pageSize).toList();
+  
+  // Production: Use DB-level pagination
+  // SELECT * FROM items ORDER BY id LIMIT 10 OFFSET 50
+  // Or keyset: WHERE id > lastSeenId ORDER BY id LIMIT 10
+
+─────────────────────────────────────────────────────────────────────
+Q50. Scenario: Batch process with streams.
+─────────────────────────────────────────────────────────────────────
+  // Process in batches of 1000
+  int batchSize = 1000;
+  List<Policy> allPolicies = policyRepo.findAll();
+  IntStream.range(0, (allPolicies.size() + batchSize - 1) / batchSize)
+      .mapToObj(i -> allPolicies.subList(
+          i * batchSize, Math.min((i + 1) * batchSize, allPolicies.size())))
+      .forEach(batch -> {
+          processBatch(batch);
+          log.info("Processed batch of {}", batch.size());
+      });
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE: ALL *** QUESTIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+*** Q1. Stream vs Collection
+*** Q2. Intermediate vs Terminal operations
+*** Q3. Lazy evaluation with proof
+*** Q4. Stream single-use
+*** Q11. filter() — Predicate internal working
+*** Q12. map() — Function internal working
+*** Q13. map vs flatMap deep comparison
+*** Q14. sorted() stateful behavior
+*** Q23. forEach — Consumer internal working
+*** Q24. reduce — BinaryOperator internal working
+*** Q25. collect — Collector 4 components
+*** Q26. Collectors.groupingBy deep
+*** Q27. partitioningBy
+*** Q31. Short-circuit terminal ops
+*** Q36. Parallel streams + ForkJoinPool + Spliterator
+*** Q37. When to use/avoid parallel streams
+*** Q44. Flatten nested DTOs scenario
+*** Q45. CSV file processing scenario
+
+================================================================================
+END OF STREAMS ANALYSIS (50 Questions)
+================================================================================
+
+
+================================================================================
+JAVA 8 OPTIONAL - DEEP DIVE + INTERVIEW QUESTIONS (Q51-Q65)
+================================================================================
+
+OPTIONAL INTERNAL ARCHITECTURE:
+  Optional<T> = a value container. Either EMPTY or holds exactly ONE value.
+  Internally: private final T value; (null means empty, non-null means present)
+
+  Optional.of(value)       â†’ value MUST NOT be null (NPE if null)
+  Optional.ofNullable(v)   â†’ value may be null (EMPTY Optional if null)
+  Optional.empty()         â†’ creates EMPTY Optional (statically cached)
+
+Flow:
+  Optional.ofNullable(policyRepo.findByNumber(num))
+       â†“
+  [PRESENT] value != null â†’ carry value through chain
+  [EMPTY]   value == null â†’ skip processing, use orElse/orElseGet/orElseThrow
+
+================================================================================
+
+*** Q51. Why was Optional introduced? What problem does it solve?
+
+Problem (Pre-Java 8):
+  Null references cause NullPointerException â€” no way to signal "no value".
+
+  // BAD: Caller has no idea null is possible
+  public User findUserById(Long id) { return userMap.get(id); } // Returns null!
+  user.getName(); // NullPointerException crash!
+
+Optional Solution:
+  // GOOD: Return type explicitly signals absence
+  public Optional<User> findUserById(Long id) {
+      return Optional.ofNullable(userMap.get(id));
+  }
+  opt.map(User::getName).orElse("Unknown"); // NO NPE â€” forced to handle absence
+
+Internal: Optional.ofNullable(null) returns static Optional.EMPTY instance.
+          Optional.ofNullable("Teja") returns new Optional<>("Teja").
+
+================================================================================
+
+*** Q52. Optional.of() vs ofNullable() vs empty() â€” with real-time examples.
+
+  Optional<String> opt1 = Optional.of("Hello");          // present, never null
+  Optional<String> opt2 = Optional.of(null);             // NullPointerException!
+  Optional<String> opt3 = Optional.ofNullable("Hello");  // present
+  Optional<String> opt4 = Optional.ofNullable(null);     // empty
+  Optional<String> opt5 = Optional.empty();              // always empty
+
+  // Real-time:
+  public Optional<Policy> findByPolicyNumber(String num) {
+      return Optional.ofNullable(jdbcTemplate.queryForObject(sql, Policy.class, num));
+  }
+  // Caller forced to handle absent case â€” no accidental NPE.
+
+================================================================================
+
+*** Q53. orElse() vs orElseGet() vs orElseThrow() â€” performance critical question.
+
+  Optional<Policy> opt = policyRepo.findById(id);
+
+  // orElse(T): ALWAYS evaluates default, even if value present!
+  Policy p = opt.orElse(new Policy("DEFAULT"));  // new Policy() called even if opt.isPresent()!
+
+  // orElseGet(Supplier): LAZY â€” only called if empty (PREFERRED for expensive defaults)
+  Policy p = opt.orElseGet(() -> policyRepo.findDefaultPolicy()); // DB call only if empty
+
+  // orElseThrow(Supplier): throw custom exception if empty
+  Policy p = opt.orElseThrow(() -> new PolicyNotFoundException("Not found: " + id));
+  // Java 10+: orElseThrow() â†’ NoSuchElementException (no arg)
+
+  Rule: ALWAYS use orElseGet() when default is expensive (object creation, DB/API call).
+
+  // Production example â€” incorrect:
+  return opt.orElse(externalApiService.fetchDefault()); // API called every time!
+  // Correct:
+  return opt.orElseGet(() -> externalApiService.fetchDefault()); // API called only if empty
+
+================================================================================
+
+*** Q54. Optional.map() vs flatMap() â€” deep comparison with real-time code.
+
+  map(Function<T,R>): If present, applies Function, wraps result in Optional
+  flatMap(Function<T,Optional<R>>): Same but when mapper itself returns Optional
+
+  // Without Optional â€” nested null checks:
+  String city = null;
+  if (policy != null && policy.getCustomer() != null && policy.getCustomer().getCity() != null)
+      city = policy.getCustomer().getCity().toUpperCase();
+
+  // With Optional.map() â€” clean chain:
+  String city = Optional.ofNullable(policy)
+      .map(Policy::getCustomer)       // Policy â†’ Optional<Customer>
+      .map(Customer::getCity)         // Customer â†’ Optional<String>
+      .map(String::toUpperCase)       // String â†’ Optional<String>
+      .orElse("UNKNOWN");
+
+  // flatMap() â€” when method returns Optional:
+  Optional<String> city = customerRepo.findById(id)   // Optional<Customer>
+      .flatMap(Customer::getAddress)                   // Customer::getAddress returns Optional<Address>
+      .map(Address::getCity);                          // Optional<String>
+  // If used map() here: Optional<Optional<Address>> â€” wrong!
+
+  Execution Flow:
+  Optional.ofNullable(policy)
+       â†“ [PRESENT]
+  .map(Policy::getCustomer) â†’ Optional<Customer>
+       â†“ [PRESENT if customer not null]
+  .map(Customer::getCity) â†’ Optional<String>
+       â†“ [EMPTY if city null]
+  .orElse("UNKNOWN") â†’ "UNKNOWN"
+
+================================================================================
+
+*** Q55. Optional.filter() â€” conditional validation chain.
+
+  // Without Optional:
+  if (policy != null && "ACTIVE".equals(policy.getStatus()) && policy.getPremium() > 0) {
+      processPolicy(policy);
+  }
+
+  // With Optional.filter():
+  findPolicy(id)
+      .filter(p -> "ACTIVE".equals(p.getStatus()))
+      .filter(p -> p.getPremium().compareTo(BigDecimal.ZERO) > 0)
+      .filter(p -> p.getEndDate().isAfter(LocalDate.now()))
+      .ifPresent(this::processPolicy);
+
+  // filter() returns:
+  //   Same Optional if predicate passes
+  //   Empty Optional if predicate fails or Optional was already empty
+
+================================================================================
+
+*** Q56. ifPresent() and ifPresentOrElse() â€” Java 9.
+
+  // ifPresent(): execute action only if present
+  findUserById(userId).ifPresent(user -> emailService.sendWelcome(user));
+
+  // ifPresentOrElse(): Java 9 â€” handle both cases
+  findUserById(userId).ifPresentOrElse(
+      user -> emailService.sendWelcome(user),
+      () -> log.warn("User not found, skipping email: {}", userId)
+  );
+
+  // Real-time claim service:
+  policyRepo.findByNumber(policyNumber).ifPresentOrElse(
+      policy -> claimProcessor.process(policy, claimRequest),
+      () -> { throw new PolicyNotFoundException("Policy not found: " + policyNumber); }
+  );
+
+================================================================================
+
+Q57. isPresent() vs isEmpty() (Java 11).
+
+  opt.isPresent() â†’ true if value present          (Java 8+)
+  opt.isEmpty()   â†’ true if empty                  (Java 11+, cleaner)
+
+  ANTI-PATTERN: if (opt.isPresent()) { Policy p = opt.get(); ... }
+  BETTER: opt.ifPresent() / opt.map(...).orElse(...) / opt.orElseThrow(...)
+
+================================================================================
+
+Q58. Optional.or() â€” chaining alternative Optionals (Java 9).
+
+  // Return first non-empty Optional from a chain of sources
+  Optional<Policy> policy = cacheRepo.findByNumber(num)         // try cache first
+      .or(() -> dbRepo.findByNumber(num))                        // try DB
+      .or(() -> archiveRepo.findByNumber(num));                  // try archive
+
+  // or() vs orElse():
+  //   or(Supplier<Optional<T>>) â†’ returns Optional<T> (stays wrapped, chainable)
+  //   orElse(T)                 â†’ returns unwrapped T
+
+================================================================================
+
+Q59. Optional.stream() â€” bridge to Stream API (Java 9).
+
+  // Old way (Java 8):
+  List<Policy> found = ids.stream()
+      .map(policyRepo::findById)      // Stream<Optional<Policy>>
+      .filter(Optional::isPresent)    // filter empty
+      .map(Optional::get)             // unwrap
+      .collect(Collectors.toList());
+
+  // Java 9+ with Optional.stream():
+  List<Policy> found = ids.stream()
+      .map(policyRepo::findById)      // Stream<Optional<Policy>>
+      .flatMap(Optional::stream)      // filter+unwrap in ONE step
+      .collect(Collectors.toList());
+
+================================================================================
+
+*** Q60. Optional anti-patterns â€” what NOT to do.
+
+  ANTI-PATTERN 1: Optional as method parameter â€” forces caller to wrap
+  // BAD:  public void process(Optional<Policy> policy)
+  // GOOD: public void process(Policy policy) + @Nullable annotation
+
+  ANTI-PATTERN 2: Optional as class field (not Serializable)
+  // BAD:  private Optional<String> phone;
+  // GOOD: private String phone; (use null, handle in getter)
+
+  ANTI-PATTERN 3: Calling get() without guard
+  // BAD:  opt.get() â†’ NoSuchElementException
+  // GOOD: opt.orElse() / opt.orElseThrow() / opt.ifPresent()
+
+  ANTI-PATTERN 4: orElse() with expensive default
+  // BAD:  opt.orElse(expensiveApiCall())  // API always called
+  // GOOD: opt.orElseGet(() -> expensiveApiCall()) // API only if empty
+
+  ANTI-PATTERN 5: Using Optional to wrap every return value
+  // NOT every nullable return needs Optional
+  // Use Optional for: return types of methods that semantically "may not find"
+  // DON'T use for: internal methods, setters, collections (return empty list)
+
+================================================================================
+
+*** Q61. Optional in Spring Data JPA repository â€” real project usage.
+
+  // Repository auto-wraps result in Optional
+  public interface PolicyRepository extends JpaRepository<Policy, Long> {
+      Optional<Policy> findByPolicyNumber(String policyNumber);
+      Optional<Policy> findTopByCustomerIdOrderByCreatedAtDesc(Long customerId);
+  }
+
+  // Service layer usage:
+  @Service
+  public class PolicyService {
+
+      // Pattern 1: Transform or throw
+      public PolicyDTO getById(Long id) {
+          return policyRepo.findById(id)
+              .map(policyMapper::toDTO)
+              .orElseThrow(() -> new PolicyNotFoundException("Policy not found: " + id));
+      }
+
+      // Pattern 2: Safe default
+      public String getPolicyStatus(String policyNumber) {
+          return policyRepo.findByPolicyNumber(policyNumber)
+              .map(Policy::getStatus)
+              .orElse("NOT_FOUND");
+      }
+
+      // Pattern 3: Conditional action (audit service)
+      public void auditPolicyAccess(String policyNumber, String user) {
+          policyRepo.findByPolicyNumber(policyNumber)
+              .ifPresentOrElse(
+                  p -> auditLog.record(user, policyNumber, "ACCESS_SUCCESS"),
+                  () -> auditLog.record(user, policyNumber, "ACCESS_FAILED_NOT_FOUND")
+              );
+      }
+  }
+
+================================================================================
+
+*** Q62. Real-time scenario: Insurance claim validation chain with Optional.
+
+  // Validate: policy exists, active, not expired, sufficient coverage
+  public ClaimResponse validateAndSubmitClaim(String policyNumber, BigDecimal claimAmount) {
+      return policyRepo.findByPolicyNumber(policyNumber)
+          .filter(p -> "ACTIVE".equals(p.getStatus()))
+          .filter(p -> p.getEndDate().isAfter(LocalDate.now()))
+          .filter(p -> p.getCoverageAmount().compareTo(claimAmount) >= 0)
+          .map(p -> claimService.createClaim(p, claimAmount))  // create claim if valid
+          .orElseThrow(() -> new ClaimValidationException(
+              "Policy not found, inactive, expired, or insufficient coverage: " + policyNumber));
+  }
+
+  Execution Flow:
+  findByPolicyNumber("P123") â†’ Optional<Policy>
+       â†“ filter: status == ACTIVE â†’ EMPTY if LAPSED
+       â†“ filter: endDate > today â†’ EMPTY if expired
+       â†“ filter: coverage >= claimAmount â†’ EMPTY if insufficient
+       â†“ map: create claim if all filters passed â†’ Optional<ClaimResponse>
+       â†“ orElseThrow: throw if any filter removed the value
+
+================================================================================
+
+*** Q63. Complex chaining â€” nested Optional from service layer.
+
+  // Get discount rate: customer â†’ best active policy â†’ tier â†’ discount
+  public BigDecimal getDiscountForCustomer(Long customerId) {
+      return customerRepo.findById(customerId)          // Optional<Customer>
+          .map(Customer::getPolicies)                   // Optional<List<Policy>>
+          .flatMap(policies -> policies.stream()
+              .filter(p -> "ACTIVE".equals(p.getStatus()))
+              .max(Comparator.comparing(Policy::getPremium)))  // Optional<Policy>
+          .filter(p -> p.getPremium().compareTo(new BigDecimal("50000")) > 0)
+          .map(p -> p.getTier().getDiscountRate())      // Optional<BigDecimal>
+          .orElse(BigDecimal.ZERO);                     // default: no discount
+  }
+
+================================================================================
+
+Q64. Null vs Optional â€” when to choose which.
+
+  Return null when:
+    - Internal private methods (overhead of Optional not worth it)
+    - Collections (return empty list, not null or Optional<List>)
+    - Performance-critical hot paths
+
+  Return Optional when:
+    - Public API methods that semantically "search" for something
+    - JPA repository methods (findBy*, findTop*)
+    - Service methods that query potentially absent resources
+    - To replace "magic null" returns
+
+================================================================================
+
+*** Q65. Optional + Stream â€” top combination patterns.
+
+  // Pattern 1: Filter empty Optionals from list
+  List<Optional<String>> opts = List.of(Optional.of("Teja"), Optional.empty(), Optional.of("Priya"));
+  List<String> names = opts.stream()
+      .flatMap(Optional::stream)        // Java 9: flatMap unwraps + filters empty
+      .collect(Collectors.toList());    // [Teja, Priya]
+
+  // Pattern 2: Try multiple sources, return first hit
+  Optional<Policy> found = Stream.<Supplier<Optional<Policy>>>of(
+      () -> redisCache.find(num),
+      () -> dbRepo.findByNumber(num),
+      () -> archiveRepo.findByNumber(num)
+  ).map(Supplier::get)
+   .filter(Optional::isPresent)
+   .findFirst()
+   .flatMap(Function.identity());
+
+  // Pattern 3: Aggregate Optional results per customer
+  Map<Long, Optional<Policy>> bestPolicyPerCustomer = customers.stream()
+      .collect(Collectors.toMap(
+          Customer::getId,
+          c -> c.getPolicies().stream()
+              .filter(p -> "ACTIVE".equals(p.getStatus()))
+              .max(Comparator.comparing(Policy::getPremium))
+      ));
+
+================================================================================
+OPTIONAL QUICK REFERENCE CARD
+================================================================================
+
+CREATION:
+  Optional.of(v)             -> present (v must be non-null)
+  Optional.ofNullable(v)     -> present or empty
+  Optional.empty()           -> always empty
+
+TERMINAL (extract value):
+  get()                      -> value or NoSuchElementException (AVOID!)
+  orElse(T)                  -> value or default (always evaluated)
+  orElseGet(Supplier<T>)     -> value or lazy default (PREFERRED)
+  orElseThrow(Supplier<E>)   -> value or throw exception
+
+NON-TERMINAL (returns Optional):
+  map(Function<T,R>)         -> transform if present
+  flatMap(Function<T,Opt>)   -> transform when mapper returns Optional
+  filter(Predicate<T>)       -> keep value only if predicate passes
+  or(Supplier<Optional<T>>)  -> alternative Optional if empty (Java 9)
+
+SIDE EFFECTS:
+  ifPresent(Consumer)        -> action if present
+  ifPresentOrElse(C,R)       -> action if present/else (Java 9)
+
+UTILITY:
+  isPresent()                -> true if present
+  isEmpty()                  -> true if empty (Java 11)
+  stream()                   -> Stream of 0 or 1 elements (Java 9)
+
+================================================================================
+END OF OPTIONAL SECTION (Q51-Q65)
+ALL *** QUESTIONS: Q51, Q52, Q53, Q54, Q55, Q56, Q60, Q61, Q62, Q63, Q65
+================================================================================
+
+
+================================================================================
+REAL-TIME SCENARIO-BASED JAVA STREAM CODING PROBLEMS
+Added: 2026-03-23
+Reference Class: TestPack.SequencyBraker (sequence breaker, char count, word count,
+                 missing numbers single-gap and multi-gap using IntStream + flatMap)
+================================================================================
+
+================================================================================
+SECTION A -- BEGINNER (Problems 1-9)
+================================================================================
+
+------------------------------------------------------------------------------
+Problem 1 (Beginner): Filter Active Products from a Catalog
+------------------------------------------------------------------------------
+Scenario:
+  An e-commerce platform maintains a product catalog. Return only the products
+  that are currently "ACTIVE" and have stock > 0.
+
+Input:
+  List<Product> products = List.of(
+      new Product("Laptop",  "ACTIVE",   10),
+      new Product("Phone",   "INACTIVE",  0),
+      new Product("Tablet",  "ACTIVE",    5),
+      new Product("Monitor", "INACTIVE",  3)
+  );
+
+Output:
+  [Laptop, Tablet]
+
+Solution:
+  List<String> activeProducts = products.stream()
+      .filter(p -> "ACTIVE".equals(p.getStatus()) && p.getStock() > 0)
+      .map(Product::getName)
+      .collect(Collectors.toList());
+
+Explanation:
+  filter() removes products that fail either condition.
+  map() extracts just the name for the output list.
+
+------------------------------------------------------------------------------
+Problem 2 (Beginner): Calculate Total Order Value
+------------------------------------------------------------------------------
+Scenario:
+  A billing system needs the total price of all orders for a daily summary.
+
+Input:
+  List<Order> orders = List.of(
+      new Order("O1", 1500.0),
+      new Order("O2",  800.0),
+      new Order("O3", 2200.0)
+  );
+
+Output:
+  Total: 4500.0
+
+Solution:
+  double total = orders.stream()
+      .mapToDouble(Order::getAmount)
+      .sum();
+  System.out.println("Total: " + total);
+
+Explanation:
+  mapToDouble() creates a DoubleStream avoiding boxing overhead.
+  .sum() is a terminal operation that adds all values.
+
+------------------------------------------------------------------------------
+Problem 3 (Beginner): Remove Duplicate Employee IDs
+------------------------------------------------------------------------------
+Scenario:
+  During a data migration, duplicate employee IDs crept into a list.
+  Return only unique IDs in sorted order.
+
+Input:
+  List<Integer> empIds = List.of(101, 203, 101, 305, 203, 407);
+
+Output:
+  [101, 203, 305, 407]
+
+Solution:
+  List<Integer> uniqueSorted = empIds.stream()
+      .distinct()
+      .sorted()
+      .collect(Collectors.toList());
+
+Explanation:
+  distinct() relies on equals/hashCode internally.
+  sorted() uses natural order for integers.
+
+------------------------------------------------------------------------------
+Problem 4 (Beginner): Find the Most Expensive Product
+------------------------------------------------------------------------------
+Scenario:
+  An inventory dashboard needs to highlight the highest-priced product.
+
+Input:
+  List<Product> products -- each has getName() and getPrice()
+
+Output:
+  Laptop (price 85000.0)
+
+Solution:
+  Optional<Product> mostExpensive = products.stream()
+      .max(Comparator.comparingDouble(Product::getPrice));
+  mostExpensive.ifPresent(p ->
+      System.out.println(p.getName() + " (" + p.getPrice() + ")"));
+
+Explanation:
+  max() is a terminal short-evaluating operation using Comparator.
+  Returns Optional to handle empty lists safely -- no NPE.
+
+------------------------------------------------------------------------------
+Problem 5 (Beginner): Convert a List of Names to Uppercase CSV
+------------------------------------------------------------------------------
+Scenario:
+  A report generator needs employee names in uppercase, comma-separated.
+
+Input:
+  List<String> names = List.of("Teja", "Pradeep", "Rakesh", "Sai");
+
+Output:
+  "TEJA, PRADEEP, RAKESH, SAI"
+
+Solution:
+  String result = names.stream()
+      .map(String::toUpperCase)
+      .collect(Collectors.joining(", "));
+
+Explanation:
+  map(String::toUpperCase) transforms each element.
+  Collectors.joining() uses StringJoiner internally -- efficient.
+
+------------------------------------------------------------------------------
+Problem 6 (Beginner): Count Transactions Above a Threshold
+------------------------------------------------------------------------------
+Scenario:
+  A fraud detection module needs to know how many transactions exceed Rs.10,000.
+
+Input:
+  List<Double> amounts = List.of(500.0, 12000.0, 9999.0, 15000.0, 3000.0, 10001.0);
+
+Output:
+  3
+
+Solution:
+  long count = amounts.stream()
+      .filter(a -> a > 10000.0)
+      .count();
+  System.out.println(count);  // 3
+
+Explanation:
+  filter() narrows the stream; count() is a terminal size-returning operation.
+  A preceding filter() prevents Java 11+ size-optimization for count() --
+  full traversal occurs here.
+
+------------------------------------------------------------------------------
+Problem 7 (Beginner): Check if Any Order is Pending
+------------------------------------------------------------------------------
+Scenario:
+  An order management dashboard banner should appear only if at least one
+  order has status "PENDING".
+
+Input:
+  List<Order> orders -- each has getStatus()
+
+Output:
+  true / false
+
+Solution:
+  boolean hasPending = orders.stream()
+      .anyMatch(o -> "PENDING".equals(o.getStatus()));
+  System.out.println("Has pending: " + hasPending);
+
+Explanation:
+  anyMatch() is a short-circuit terminal operation -- stops at the first match.
+  Far more efficient than filtering and counting.
+
+------------------------------------------------------------------------------
+Problem 8 (Beginner): Find Average Salary of All Employees
+------------------------------------------------------------------------------
+Scenario:
+  HR needs the company-wide average salary for a compensation report.
+
+Input:
+  List<Employee> employees -- each has getSalary() returning double
+
+Output:
+  Average Salary: 65000.00
+
+Solution:
+  OptionalDouble avg = employees.stream()
+      .mapToDouble(Employee::getSalary)
+      .average();
+  avg.ifPresent(a -> System.out.printf("Average Salary: %.2f%n", a));
+
+Explanation:
+  mapToDouble() avoids boxing. average() returns OptionalDouble -- handles
+  an empty stream without NPE.
+
+------------------------------------------------------------------------------
+Problem 9 (Beginner): Sequence Breaker -- Find Elements Just Before Each Gap
+------------------------------------------------------------------------------
+Scenario:
+  Given a sorted list of integers (consecutive IDs), find the elements just
+  before each gap (sequence-breaking elements).
+  [From SequencyBraker class -- real interview problem]
+
+Input:
+  List<Integer> list = List.of(1, 2, 3, 6, 7, 9, 11, 12, 13, 14, 17, 18, 19);
+
+Output:
+  [3, 7, 9, 14, 19]
+
+Solution:
+  // Version 1: original from SequencyBraker -- elements before gap (excludes last)
+  public static List<Integer> sequenceBreaker(List<Integer> list) {
+      return IntStream.range(0, list.size() - 1)
+          .filter(i -> list.get(i) + 1 != list.get(i + 1))
+          .mapToObj(i -> list.get(i))
+          .collect(Collectors.toList());
+  }
+
+  // Version 2: include the final element (last element ends the last group)
+  public static List<Integer> sequenceBreakerFull(List<Integer> list) {
+      List<Integer> result = IntStream.range(0, list.size() - 1)
+          .filter(i -> list.get(i) + 1 != list.get(i + 1))
+          .mapToObj(list::get)
+          .collect(Collectors.toCollection(ArrayList::new));
+      result.add(list.get(list.size() - 1));  // always add last element
+      return result;
+  }
+
+  //version 3 : find missing numbers in the list using flatMap 
+  //Input: [1, 2, 3, 6, 7, 9, 11, 12, 13, 14, 17, 18, 19]
+  //Output: [4, 5, 8, 10, 15, 16]
+  	public static List<Integer> missingmultiNumbers(List<Integer> list) {
+		return IntStream.range(0, list.size() - 1)
+				.flatMap(num -> IntStream.range(list.get(num) + 1, list.get(num + 1)))
+				.boxed()
+				.collect(Collectors.toList());
+
+Explanation:
+  IntStream.range() iterates indices (not elements).
+  mapToObj() converts primitive int index to the actual Integer from the list.
+  The last element is added manually because there is no next element to compare.
+
+================================================================================
+SECTION B -- INTERMEDIATE (Problems 10-19)
+================================================================================
+
+------------------------------------------------------------------------------
+Problem 10 (Intermediate): Group Employees by Department
+------------------------------------------------------------------------------
+Scenario:
+  HR wants to know which employees belong to each department.
+
+Input:
+  List<Employee> -- fields: name, department, salary
+
+Output:
+  {IT=[Teja, Pradeep], HR=[Rakesh], Finance=[Sai]}
+
+Solution:
+  Map<String, List<String>> byDept = employees.stream()
+      .collect(Collectors.groupingBy(
+          Employee::getDepartment,
+          Collectors.mapping(Employee::getName, Collectors.toList())
+      ));
+  byDept.forEach((dept, names) ->
+      System.out.println(dept + " => " + names));
+
+Explanation:
+  groupingBy() classifies elements by department key.
+  The downstream Collectors.mapping() transforms Employee to just its name
+  before collecting -- avoids needing a separate map() step.
+
+------------------------------------------------------------------------------
+Problem 11 (Intermediate): Find the Highest-Paid Employee per Department
+------------------------------------------------------------------------------
+Scenario:
+  Finance needs a report of the top earner in every department.
+
+Input:
+  List<Employee> -- multiple departments and employees
+
+Output:
+  IT -> Teja (95000.0)
+  HR -> Rakesh (72000.0)
+
+Solution:
+  Map<String, Optional<Employee>> topEarners = employees.stream()
+      .collect(Collectors.groupingBy(
+          Employee::getDepartment,
+          Collectors.maxBy(Comparator.comparingDouble(Employee::getSalary))
+      ));
+  topEarners.forEach((dept, emp) ->
+      emp.ifPresent(e ->
+          System.out.println(dept + " -> " + e.getName() + " (" + e.getSalary() + ")")));
+
+Explanation:
+  Collectors.maxBy() returns an Optional per group -- safe for empty groups.
+  Combine groupingBy + maxBy in one pass instead of two separate operations.
+
+------------------------------------------------------------------------------
+Problem 12 (Intermediate): Partition Orders into High-Value and Low-Value
+------------------------------------------------------------------------------
+Scenario:
+  Logistics: high-value orders (>= Rs.5000) go via courier; others via standard.
+
+Input:
+  List<Order> orders -- amounts vary
+
+Output:
+  High-value: [O2(8000), O4(5500)]
+  Low-value:  [O1(1200), O3(3400)]
+
+Solution:
+  Map<Boolean, List<Order>> partitioned = orders.stream()
+      .collect(Collectors.partitioningBy(o -> o.getAmount() >= 5000));
+
+  List<Order> highValue = partitioned.get(true);
+  List<Order> lowValue  = partitioned.get(false);
+
+Explanation:
+  partitioningBy() always produces both true and false keys -- safer than
+  groupingBy with a boolean (which may omit absent keys).
+
+------------------------------------------------------------------------------
+Problem 13 (Intermediate): Sort Employees by Salary DESC, Then Name ASC
+------------------------------------------------------------------------------
+Scenario:
+  Payroll dashboard shows employees sorted by salary (highest first);
+  ties broken alphabetically by name.
+
+Input:
+  List<Employee> with varying salaries, some tied
+
+Output:
+  [Teja(95000), Sai(85000), Pradeep(85000), Rakesh(72000)]
+
+Solution:
+  List<Employee> sorted = employees.stream()
+      .sorted(Comparator.comparingDouble(Employee::getSalary)
+                        .reversed()
+                        .thenComparing(Employee::getName))
+      .collect(Collectors.toList());
+
+Explanation:
+  Comparator chaining: .reversed() gives DESC salary; .thenComparing() adds
+  natural-order sort on name as the tiebreaker. Fully composable.
+
+------------------------------------------------------------------------------
+Problem 14 (Intermediate): Character Frequency Count
+------------------------------------------------------------------------------
+Scenario:
+  A text analytics service counts how often each character appears in a string.
+  [From SequencyBraker.countChars() -- real interview problem]
+
+Input:
+  String str = "AABBCDBBAC";
+
+Output:
+  A=4, B=4, C=2, D=1
+
+Solution:
+  public static Map<Character, Long> countChars(String str) {
+      return str.chars()
+          .mapToObj(c -> (char) c)   // IntStream -> Stream<Character>
+          .collect(Collectors.groupingBy(
+              c -> c,
+              Collectors.counting()
+          ));
+  }
+
+Explanation:
+  str.chars() returns an IntStream of Unicode code points.
+  mapToObj(c -> (char) c) boxes each int to Character for use with groupingBy.
+  counting() tallies occurrences per character key.
+
+------------------------------------------------------------------------------
+Problem 15 (Intermediate): Word Frequency Count in a Sentence
+------------------------------------------------------------------------------
+Scenario:
+  A log analysis tool counts word occurrences in a log message.
+  [From SequencyBraker.countStrings() -- real interview problem]
+
+Input:
+  String str = "Hi Hi This and this is and Sai Teja Teja";
+
+Output:
+  Hi=2, This=1, and=2, this=1, is=1, Sai=1, Teja=2
+
+Solution:
+  public static Map<String, Long> countStrings(String str) {
+      return Arrays.stream(str.split(" "))
+          .collect(Collectors.groupingBy(
+              word -> word,
+              Collectors.counting()
+          ));
+  }
+
+Explanation:
+  Case-sensitive grouping -- "This" != "this".
+  Use .map(String::toLowerCase) before groupingBy for case-insensitive counting.
+
+------------------------------------------------------------------------------
+Problem 16 (Intermediate): Avg Salary per Department with Minimum Threshold
+------------------------------------------------------------------------------
+Scenario:
+  Compensation analytics: show only departments where average salary > Rs.60,000
+  for a budget review report.
+
+Input:
+  List<Employee> -- multiple departments
+
+Output:
+  {IT=82500.0, Finance=75000.0}   (HR filtered out as avg < 60000)
+
+Solution:
+  Map<String, Double> result = employees.stream()
+      .collect(Collectors.groupingBy(
+          Employee::getDepartment,
+          Collectors.averagingDouble(Employee::getSalary)
+      ))
+      .entrySet().stream()
+      .filter(e -> e.getValue() > 60000)
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+Explanation:
+  Two-pass approach: first groupingBy + averagingDouble, then a second stream
+  on entrySet() filters by computed average value.
+
+------------------------------------------------------------------------------
+Problem 17 (Intermediate): Find Second Highest Salary
+------------------------------------------------------------------------------
+Scenario:
+  HR benchmarks the second-highest earner for salary band analysis.
+
+Input:
+  List<Employee> with salaries [95000, 85000, 85000, 72000, 65000]
+
+Output:
+  2nd Highest: 85000.0
+
+Solution:
+  Optional<Double> secondHighest = employees.stream()
+      .map(Employee::getSalary)
+      .distinct()                              // remove duplicates
+      .sorted(Comparator.reverseOrder())       // sort DESC
+      .skip(1)                                 // skip the highest
+      .findFirst();
+
+  secondHighest.ifPresent(s -> System.out.println("2nd Highest: " + s));
+
+Explanation:
+  distinct() ensures duplicate salaries do not fill the "second" slot.
+  skip(1) bypasses the max value. findFirst() is short-circuit -- efficient.
+
+------------------------------------------------------------------------------
+Problem 18 (Intermediate): Build Employee ID-to-Name Map (Handling Duplicates)
+------------------------------------------------------------------------------
+Scenario:
+  A user-lookup service needs Map<Integer, String> of ID -> Name.
+  Duplicate IDs must keep the existing (first-wins) entry.
+
+Input:
+  List<Employee> -- some have duplicate IDs from a data sync issue
+
+Output:
+  Map<Integer, String>
+
+Solution:
+  Map<Integer, String> idToName = employees.stream()
+      .collect(Collectors.toMap(
+          Employee::getId,
+          Employee::getName,
+          (existing, replacement) -> existing  // first-wins merge
+      ));
+
+Explanation:
+  Without the merge function, toMap() throws IllegalStateException on
+  duplicate keys. Use (e, r) -> r for "last-wins" policy instead.
+
+------------------------------------------------------------------------------
+Problem 19 (Intermediate): Null-Safe Processing with Optional
+------------------------------------------------------------------------------
+Scenario:
+  A customer record may have a null address or null city.
+  Safely extract the city in uppercase, defaulting to "UNKNOWN".
+
+Input:
+  Customer customer = new Customer("Teja", null);  // address is null
+
+Output:
+  "UNKNOWN"
+
+Solution:
+  String city = Optional.ofNullable(customer)
+      .map(Customer::getAddress)       // Optional<Address> or empty
+      .map(Address::getCity)           // Optional<String> or empty
+      .map(String::toUpperCase)
+      .orElse("UNKNOWN");
+
+Explanation:
+  Each map() returns empty Optional when the value is null -- short-circuits
+  cleanly. Eliminates three nested if-null checks with a single fluent chain.
+
+================================================================================
+SECTION C -- EXPERT (Problems 20-25)
+================================================================================
+
+------------------------------------------------------------------------------
+Problem 20 (Expert): Find Missing Numbers -- Single-Gap Version
+------------------------------------------------------------------------------
+Scenario:
+  Audit system detects exactly one missing sequence number between
+  consecutive IDs. Return the first missing number in each gap.
+  [From SequencyBraker.missingNumbers() -- real interview problem]
+
+Input:
+  List.of(1, 2, 3, 6, 7, 9, 11, 12, 13, 14, 17, 18, 19)
+
+Output:
+  [4, 8, 10, 15]
+
+Solution:
+  public static List<Integer> missingNumbers(List<Integer> list) {
+      return IntStream.range(0, list.size() - 1)
+          .filter(i -> list.get(i) + 1 != list.get(i + 1))   // gap detected
+          .mapToObj(i -> list.get(i) + 1)                     // first missing number
+          .collect(Collectors.toList());
+  }
+
+Explanation:
+  Where a gap exists at index i, list.get(i)+1 is the first missing number.
+  Returns ONE missing number per gap -- use Problem 21 for multi-number gaps.
+
+------------------------------------------------------------------------------
+Problem 21 (Expert): Find ALL Missing Numbers -- Multi-Gap Version
+------------------------------------------------------------------------------
+Scenario:
+  Extended audit: gaps may span multiple numbers. Return every missing number.
+  [From SequencyBraker.missingmultiNumbers() -- real interview problem]
+
+Input:
+  List.of(1, 2, 3, 6, 7, 9, 11, 12, 13, 14, 17, 18, 19)
+
+Output:
+  [4, 5, 8, 10, 15, 16]
+
+Solution:
+  public static List<Integer> missingMultiNumbers(List<Integer> list) {
+      return IntStream.range(0, list.size() - 1)
+          .flatMap(i ->
+              IntStream.range(list.get(i) + 1, list.get(i + 1))  // all missing in gap
+          )
+          .boxed()
+          .collect(Collectors.toList());
+  }
+
+Explanation:
+  IntStream.flatMap() expands each gap into a range of integers.
+  Gap between 3 and 6: IntStream.range(4, 6) -> [4, 5].
+  Gap between 7 and 9: IntStream.range(8, 9) -> [8].
+  .boxed() converts primitive IntStream to Stream<Integer> for collection.
+
+------------------------------------------------------------------------------
+Problem 22 (Expert): Flatten Department -> Employee -> Skills into a Report
+------------------------------------------------------------------------------
+Scenario:
+  HR analytics: for each department, list all unique skills across employees.
+  Input: Department -> List<Employee> -> List<String> skills (nested).
+
+Input:
+  List<Department> departments -- each has getName(), getEmployees()
+  Each Employee has getSkills() returning List<String>
+
+Output:
+  {IT=[Java, Spring, Docker], HR=[Excel, SAP], Finance=[SQL, Python]}
+
+Solution:
+  Map<String, Set<String>> deptSkills = departments.stream()
+      .collect(Collectors.toMap(
+          Department::getName,
+          dept -> dept.getEmployees().stream()
+              .flatMap(emp -> emp.getSkills().stream())  // flatten all skills
+              .collect(Collectors.toSet())               // unique per dept
+      ));
+
+Explanation:
+  flatMap(emp -> emp.getSkills().stream()) collapses Employee x Skills nesting
+  into a flat skill stream per department.
+  Collecting into a Set automatically deduplicates skills.
+
+------------------------------------------------------------------------------
+Problem 23 (Expert): Transaction Summary Statistics per Customer
+------------------------------------------------------------------------------
+Scenario:
+  Banking analytics: per customer compute count, total, min, max, average
+  transaction amount -- in a single stream pass.
+
+Input:
+  List<Transaction> -- fields: customerId, amount
+
+Output:
+  C001: count=3, total=27000, avg=9000
+  C002: count=2, total=8000,  avg=4000
+
+Solution:
+  Map<String, DoubleSummaryStatistics> stats = transactions.stream()
+      .collect(Collectors.groupingBy(
+          Transaction::getCustomerId,
+          Collectors.summarizingDouble(Transaction::getAmount)
+      ));
+  stats.forEach((cid, s) ->
+      System.out.printf("Customer %s: count=%d, total=%.0f, avg=%.0f%n",
+          cid, s.getCount(), s.getSum(), s.getAverage()));
+
+Explanation:
+  summarizingDouble() computes count/sum/min/max/average in ONE reduction pass.
+  Far better than calling count(), sum(), min(), max() as separate streams.
+
+------------------------------------------------------------------------------
+Problem 24 (Expert): Policy Batch Processing + Status Partition Report
+------------------------------------------------------------------------------
+Scenario:
+  Insurance system processes all policies in batches of 500 (DB bulk update +
+  notifications), then reports Active vs Lapsed count.
+
+Input:
+  List<Policy> allPolicies (100,000+ entries)
+
+Output:
+  Processed batch of 500 ... (logs)
+  Active: X, Lapsed: Y
+
+Solution:
+  int batchSize = 500;
+
+  // Step 1: batch processing using mapToObj
+  IntStream.range(0, (allPolicies.size() + batchSize - 1) / batchSize)
+      .mapToObj(i -> allPolicies.subList(
+          i * batchSize,
+          Math.min((i + 1) * batchSize, allPolicies.size())))
+      .forEach(batch -> {
+          renewalService.processBatch(batch);
+          System.out.println("Processed batch of " + batch.size());
+      });
+
+  // Step 2: partition for final report
+  Map<Boolean, Long> summary = allPolicies.stream()
+      .collect(Collectors.partitioningBy(
+          p -> "ACTIVE".equals(p.getStatus()),
+          Collectors.counting()
+      ));
+  System.out.println("Active: "  + summary.get(true));
+  System.out.println("Lapsed: "  + summary.get(false));
+
+Explanation:
+  mapToObj() on IntStream converts each batch-index into a subList view
+  (O(1) view, no copy) -- memory efficient for large collections.
+  Downstream counting() inside partitioningBy avoids a separate pass.
+
+------------------------------------------------------------------------------
+Problem 25 (Expert): Detecting Duplicate Transactions (Amount + Time Window)
+------------------------------------------------------------------------------
+Scenario:
+  Fraud prevention: two transactions from the same customer for the same amount
+  within 5 minutes are flagged as duplicates.
+
+Input:
+  List<Transaction> -- fields: customerId, amount, timestamp (Instant)
+
+Output:
+  List<Transaction> (suspected duplicates)
+
+Solution:
+  // Step 1: Group by customerId + amount composite key
+  Map<String, List<Transaction>> grouped = transactions.stream()
+      .collect(Collectors.groupingBy(
+          t -> t.getCustomerId() + "_" + t.getAmount()
+      ));
+
+  // Step 2: Within each group, find pairs within 5 minutes
+  List<Transaction> duplicates = grouped.values().stream()
+      .filter(group -> group.size() > 1)
+      .flatMap(group -> {
+          List<Transaction> sorted = group.stream()
+              .sorted(Comparator.comparing(Transaction::getTimestamp))
+              .collect(Collectors.toList());
+          return IntStream.range(0, sorted.size() - 1)
+              .filter(i -> Duration.between(
+                  sorted.get(i).getTimestamp(),
+                  sorted.get(i + 1).getTimestamp()).toMinutes() < 5)
+              .mapToObj(i -> sorted.get(i + 1));  // second tx flagged as dup
+      })
+      .collect(Collectors.toList());
+
+Explanation:
+  Two-level processing: first group by composite key, then scan adjacent pairs.
+  IntStream.range + mapToObj bridges primitive indices to Transaction objects.
+  flatMap() combines per-group duplicate lists into one flat result list.
+
+------------------------------------------------------------------------------
+Problem 26 (Expert): PartitioningBy of Employees based on Salary
+------------------------------------------------------------------------------
+
+Map<Boolean,List<Employee>> SalarypartMap = employees.stream()
+	    		                                        .collect(Collectors
+	    		                                        		.partitioningBy(emp -> emp.getSalary()>=90000));
+	
+	     System.out.println("Employees with salary >= 90000:");
+	     SalarypartMap.get(true)
+	                  .forEach(emp -> System.out.println("Employee name : "+emp.getEmployeeName()+ 
+	                		  " --- "+" Employee Salary "+emp.getSalary()));
+	     
+	     System.out.println("Employees with salary <= 90000:");
+	     SalarypartMap.get(false)
+	                  .forEach(emp -> System.out.println("Employee name : "+emp.getEmployeeName()+ 
+	                		  " --- "+" Employee Salary "+emp.getSalary()));
+
+So for Example  the output is:
+Employees with salary >= 90000:
+Employee name : Teja  ---  Employee Salary 100000.0
+Employee name : Sai Teja  ---  Employee Salary 120000.0
+Employees with salary <= 90000:
+Employee name : Sai  ---  Employee Salary 80000.0
+Employee name : Teja  ---  Employee Salary 70000.0
+                      
+================================================================================
+SECTION D -- ADVANCED (flatMap / mapToObj / mapToInt / mapToDouble /
+             parallelStream / Stream vs Parallel Performance)
+================================================================================
+
+------------------------------------------------------------------------------
+Advanced Problem A: flatMap -- Flatten Nested Order -> Items List
+------------------------------------------------------------------------------
+Scenario:
+  Inventory system needs a flat list of all items across all orders of a customer.
+
+Input:
+  List<Order> orders -- each Order has List<String> getItems()
+  Order1=[Laptop, Mouse], Order2=[Keyboard], Order3=[Monitor, Webcam]
+
+Output:
+  [Laptop, Mouse, Keyboard, Monitor, Webcam]
+
+Solution:
+  List<String> allItems = orders.stream()
+      .flatMap(order -> order.getItems().stream())  // Stream<List<String>> -> Stream<String>
+      .collect(Collectors.toList());
+
+Interview tip:
+  flatMap = map + flatten.
+  Each element maps to a stream; all streams are concatenated into one.
+  Use when each element "contains" multiple sub-elements.
+
+------------------------------------------------------------------------------
+Advanced Problem B: mapToObj -- Convert IntStream Char Codes to String Tokens
+------------------------------------------------------------------------------
+Scenario:
+  A tokenization library receives a string and extracts individual character tokens.
+  mapToObj() converts an IntStream (char codes) into typed objects.
+
+Input:
+  String sentence = "HELLO";
+
+Output:
+  ["H", "E", "L", "L", "O"]
+
+Solution:
+  List<String> tokens = sentence.chars()            // IntStream of char codes
+      .mapToObj(c -> String.valueOf((char) c))       // IntStream -> Stream<String>
+      .collect(Collectors.toList());
+
+Extended -- character frequency using mapToObj:
+  Map<Character, Long> freq = "AABBCC".chars()
+      .mapToObj(c -> (char) c)                      // IntStream -> Stream<Character>
+      .collect(Collectors.groupingBy(c -> c, Collectors.counting()));
+
+Interview tip:
+  mapToObj() bridges a primitive stream (IntStream / LongStream / DoubleStream)
+  to a typed object stream (Stream<T>).
+  Required when you need to collect or chain operations that expect Stream<T>.
+
+------------------------------------------------------------------------------
+Advanced Problem C: mapToInt / mapToDouble -- Salary Stats Without Boxing
+------------------------------------------------------------------------------
+Scenario:
+  Performance-critical payroll service: compute salary statistics without
+  auto-boxing overhead (avoid Stream<Integer> / Stream<Double>).
+
+Input:
+  List<Employee> employees
+
+Output:
+  Count: 6  Total: 450000  Average: 75000.0  Max: 95000  Min: 55000
+
+Solution:
+  // Using mapToInt for integer-level salaries
+  IntSummaryStatistics salaryStats = employees.stream()
+      .mapToInt(e -> (int) e.getSalary())
+      .summaryStatistics();
+
+  System.out.println("Count:   " + salaryStats.getCount());
+  System.out.println("Total:   " + salaryStats.getSum());
+  System.out.println("Average: " + salaryStats.getAverage());
+  System.out.println("Max:     " + salaryStats.getMax());
+  System.out.println("Min:     " + salaryStats.getMin());
+
+  // For precise double salaries:
+  DoubleSummaryStatistics precise = employees.stream()
+      .mapToDouble(Employee::getSalary)
+      .summaryStatistics();
+
+Interview tip:
+  mapToInt() / mapToDouble() / mapToLong() produce PRIMITIVE streams.
+  They avoid boxing that occurs with Stream<Integer> / Stream<Double>.
+  Significant GC savings for large datasets.
+  summaryStatistics() = count + sum + min + max + avg in ONE pass.
+
+------------------------------------------------------------------------------
+Advanced Problem D: parallelStream -- Bulk Email Notification Processing
+------------------------------------------------------------------------------
+Scenario:
+  Marketing system sends renewal reminders to 100,000 policyholders.
+  Each email is CPU-bound (template rendering + SMTP call is independent).
+
+Input:
+  List<Policy> policies (100,000 entries)
+
+Output:
+  All emails sent concurrently; order doesn't matter.
+
+Solution:
+  // Simple parallelStream usage
+  policies.parallelStream()
+      .filter(p -> "ACTIVE".equals(p.getStatus()))
+      .filter(p -> p.getRenewalDate().isBefore(LocalDate.now().plusDays(30)))
+      .forEach(p -> emailService.sendRenewalReminder(p));
+
+  // With custom ForkJoinPool (avoid blocking the common pool):
+  ForkJoinPool pool = new ForkJoinPool(8);
+  pool.submit(() ->
+      policies.parallelStream()
+          .filter(p -> "ACTIVE".equals(p.getStatus()))
+          .forEach(p -> emailService.sendRenewalReminder(p))
+  ).get();
+  pool.shutdown();
+
+Interview tip:
+  parallelStream() uses ForkJoinPool.commonPool() (threads = cores - 1).
+  Use ONLY for CPU-bound stateless work.
+  For I/O-bound tasks (HTTP, DB), use CompletableFuture + Executor instead --
+  parallelStream() will block ForkJoin worker threads during I/O waits.
+
+------------------------------------------------------------------------------
+Advanced Problem E: Stream vs parallelStream -- Performance Benchmark
+------------------------------------------------------------------------------
+Scenario:
+  Data science team benchmarks: compute sum of squares of 10 million integers
+  -- sequential vs parallel -- and understand when parallel wins.
+
+Solution:
+  List<Long> numbers = LongStream.rangeClosed(1, 10_000_000)
+      .boxed().collect(Collectors.toList());
+
+  // Sequential
+  long seqStart = System.currentTimeMillis();
+  long seqSum = numbers.stream()
+      .mapToLong(n -> n * n)
+      .sum();
+  long seqTime = System.currentTimeMillis() - seqStart;
+
+  // Parallel
+  long parStart = System.currentTimeMillis();
+  long parSum = numbers.parallelStream()
+      .mapToLong(n -> n * n)
+      .sum();
+  long parTime = System.currentTimeMillis() - parStart;
+
+  System.out.println("Sequential: " + seqTime + "ms | Parallel: " + parTime + "ms");
+  // On 8-core machine: parallel is ~3-5x faster for pure CPU-bound ops
+
+Performance Rules (interview answer):
+  Use parallelStream() when:
+    1. Data size > 10,000 elements
+    2. Operations are CPU-intensive (no I/O, no blocking)
+    3. Source splits efficiently: ArrayList / arrays -- NOT LinkedList
+    4. Operations are stateless (no shared mutable state)
+    5. Order of results does NOT matter
+
+  Use sequential stream() when:
+    1. Data < 1,000 elements (parallel overhead exceeds benefit)
+    2. Operations involve I/O (DB calls, HTTP requests)
+    3. Operations modify shared external state (race conditions)
+    4. Debugging (parallel makes peek() order unpredictable)
+
+------------------------------------------------------------------------------
+Advanced Problem F: Converting Nested Collections into Flat Structures
+(Course -> Module -> Lesson deep flatten)
+------------------------------------------------------------------------------
+Scenario:
+  E-learning platform: each Course has multiple Modules, each Module has
+  multiple Lessons. Build a flat list of all lesson titles for all courses.
+
+Input:
+  List<Course> courses
+  Each Course has List<Module> getModules()
+  Each Module has List<Lesson> getLessons()
+  Each Lesson has getTitle() and getStatus()
+
+Output:
+  ["Intro to Java", "OOP Basics", "Lambda Expressions", "Streams API", ...]
+
+Solution:
+  // All lesson titles -- flat
+  List<String> allLessons = courses.stream()
+      .flatMap(course -> course.getModules().stream())     // Stream<Module>
+      .flatMap(module -> module.getLessons().stream())     // Stream<Lesson>
+      .map(Lesson::getTitle)                              // Stream<String>
+      .collect(Collectors.toList());
+
+  // Published lessons grouped by course name
+  Map<String, List<String>> publishedByCourse = courses.stream()
+      .collect(Collectors.toMap(
+          Course::getName,
+          course -> course.getModules().stream()
+              .flatMap(m -> m.getLessons().stream())
+              .filter(l -> "PUBLISHED".equals(l.getStatus()))
+              .map(Lesson::getTitle)
+              .collect(Collectors.toList())
+      ));
+
+Interview tip:
+  Each flatMap() adds one level of flattening.
+  For N levels of nesting, chain N flatMap() calls.
+  Key insight: flatMap replaces each element with a stream, then concatenates
+  all those streams into one -- this is "deep flatten".
+
+================================================================================
+QUICK RECAP TABLE -- 25 SCENARIO-BASED PROBLEMS + 6 ADVANCED
+================================================================================
+
+Level        | # | Topic
+-------------|---|---------------------------------------------------------------
+Beginner     | 1 | Filter active products (filter + map)
+Beginner     | 2 | Total order value (mapToDouble + sum)
+Beginner     | 3 | Remove duplicate IDs (distinct + sorted)
+Beginner     | 4 | Most expensive product (max + Optional)
+Beginner     | 5 | Names to uppercase CSV (map + joining)
+Beginner     | 6 | Count transactions above threshold (filter + count)
+Beginner     | 7 | Any pending order (anyMatch short-circuit)
+Beginner     | 8 | Average salary (mapToDouble + average)
+Beginner     | 9 | Sequence breaker -- elements before gaps (IntStream + mapToObj)
+-------------|---|---------------------------------------------------------------
+Intermediate |10 | Group employees by department (groupingBy + mapping)
+Intermediate |11 | Highest-paid per department (groupingBy + maxBy)
+Intermediate |12 | Partition orders high/low value (partitioningBy)
+Intermediate |13 | Sort by salary DESC, then name ASC (chained Comparator)
+Intermediate |14 | Character frequency (chars + mapToObj + groupingBy)
+Intermediate |15 | Word frequency in sentence (split + groupingBy + counting)
+Intermediate |16 | Avg salary per dept above threshold (groupingBy + entrySet filter)
+Intermediate |17 | Second highest salary (distinct + sorted + skip + findFirst)
+Intermediate |18 | ID-to-name map handling duplicates (toMap + merge function)
+Intermediate |19 | Null-safe city extraction (Optional chain)
+-------------|---|---------------------------------------------------------------
+Expert       |20 | Missing numbers single-gap (IntStream.range + mapToObj)
+Expert       |21 | Missing numbers multi-gap (IntStream.range + flatMap + boxed)
+Expert       |22 | Dept -> Employee -> Skills flatten (flatMap + toSet)
+Expert       |23 | Transaction summary stats per customer (summarizingDouble)
+Expert       |24 | Policy batch processing + partition report (mapToObj + subList)
+Expert       |25 | Duplicate transaction detection (composite key + IntStream)
+-------------|---|---------------------------------------------------------------
+Advanced     | A | flatMap -- flatten Order -> Items (one-level)
+Advanced     | B | mapToObj -- char codes to String/Character tokens
+Advanced     | C | mapToInt/mapToDouble -- salary stats, zero boxing overhead
+Advanced     | D | parallelStream -- bulk renewal email notifications
+Advanced     | E | Stream vs parallelStream -- performance benchmark + rules
+Advanced     | F | Deep flatten: Course -> Module -> Lesson (two-level flatMap)
+
+================================================================================
+END OF REAL-TIME SCENARIO-BASED PROBLEMS SECTION (2026-03-23)
+================================================================================
+
+
+================================================================================
+REAL INTERVIEW QUESTION (Asked in Last Interview) -- 2026-04-22
+================================================================================
+
+Problem: Character Frequency Map → Find Non-Duplicate Characters → First Unique (Uppercase)
+------------------------------------------------------------------------------
+
+Question:
+  Given a string, use Java Streams to:
+  1. Build a frequency map of each character.
+  2. Filter out characters that appear MORE than once (keep only unique chars).
+  3. From those unique characters, find the FIRST one and print it in UPPERCASE.
+
+Code:
+  import java.util.*;
+  import java.util.stream.*;
+
+  class Main {
+      public static void main(String[] args) {
+          String str = "abcghta";
+
+          // Step 1: Build frequency map  →  {a=2, b=1, c=1, g=1, h=1, t=1}
+          Map<Character, Long> map = str.chars()
+                                        .mapToObj(c -> (char) c)
+                                        .collect(Collectors.groupingBy(
+                                            c -> c,
+                                            Collectors.counting()));
+
+          // Step 2: Keep only characters that appear exactly once (non-duplicates)
+          List<Character> list = map.entrySet()
+                                    .stream()
+                                    .filter(entry -> entry.getValue() <= 1)
+                                    .map(entry -> entry.getKey())
+                                    .collect(Collectors.toList());
+
+          // Step 3: From those, pick the FIRST character and convert to UPPERCASE
+          Optional<Character> chars = list.stream()
+                                          .map(Character::toUpperCase)
+                                          .findFirst();
+
+          System.out.println(map);    // {a=2, b=1, c=1, g=1, h=1, t=1}
+          System.out.println(list);   // [b, c, g, h, t]  (order may vary — HashMap)
+          chars.ifPresent(System.out::println);  // B  (or first unique char found)
+      }
+  }
+
+Key Concepts Tested:
+  1. str.chars()
+       - Returns an IntStream of char code points.
+       - .mapToObj(c -> (char) c) converts each int back to a Character object.
+
+  2. Collectors.groupingBy(c -> c, Collectors.counting())
+       - Groups identical characters together and counts occurrences.
+       - Result: Map<Character, Long>
+
+  3. .filter(entry -> entry.getValue() <= 1)
+       - Retains only entries where the character appears at most once.
+       - NOTE: The condition is <= 1, meaning frequency == 1 (unique chars).
+
+  4. Character::toUpperCase (method reference)
+       - Maps each Character to its uppercase equivalent.
+       - Equivalent to: .map(c -> Character.toUpperCase(c))
+
+  5. findFirst() → Optional<Character>
+       - Short-circuit terminal operation: returns the first element (if any).
+       - Returns Optional to safely handle the case of an empty stream.
+
+  6. ifPresent(System.out::println)
+       - Prints the value only if the Optional is non-empty.
+       - Avoids calling get() directly (anti-pattern).
+
+Output (for "abcghta"):
+  map  → {a=2, b=1, c=1, g=1, h=1, t=1}
+  list → [b, c, g, h, t]   ← order depends on HashMap iteration order
+  chars → B  (first element of list, uppercased)
+
+  ⚠ NOTE: HashMap does NOT guarantee insertion order.
+           Output list order may differ across JVM runs.
+           Use LinkedHashMap to guarantee encounter order:
+             .collect(Collectors.groupingBy(c -> c,
+                      LinkedHashMap::new, Collectors.counting()))
+
+Follow-up Questions an Interviewer May Ask:
+  Q: Why use str.chars().mapToObj() instead of str.toCharArray()?
+  A: str.chars() returns an IntStream. mapToObj wraps ints as Character objects
+     for use with object-based collectors. toCharArray() is an alternative but
+     requires Arrays.stream() and explicit char boxing.
+
+  Q: What is the difference between filter(entry -> entry.getValue() == 1)
+     and filter(entry -> entry.getValue() <= 1)?
+  A: For this problem both give the same result (min frequency is 1).
+     <= 1 is slightly more defensive; == 1 is more precise and preferred.
+
+  Q: What if the string has all duplicate characters?
+  A: list will be empty → list.stream().findFirst() returns Optional.empty()
+     → ifPresent does nothing. No exception thrown.
+
+  Q: How to maintain insertion (original string) order of unique characters?
+  A: Use LinkedHashMap in groupingBy, then filter in that order.
+     Or: stream str characters individually and filter using the frequency map:
+       str.chars()
+          .mapToObj(c -> (char) c)
+          .filter(c -> map.get(c) == 1)
+          .map(Character::toUpperCase)
+          .findFirst()
+          .ifPresent(System.out::println);
+     This preserves the original string's character order.
+
+================================================================================
+END OF INTERVIEW QUESTION (2026-04-22)
+================================================================================
+
+
+================================================================================
+PRACTICED CODE -- DUPLICATE FREQUENCY DETECTION (2026-04-25)
+================================================================================
+
+I Have Practised The Code:
+
+// Online Java Compiler
+// Use this editor to write, compile and run your Java code online
+
+// You are given a List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);.
+// Write a Java 8 Stream-based solution to count the frequency of each element using Collectors.groupingBy and Collectors.counting. What will be the output map structure?
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+class Main {
+    public static void main(String[] args) {
+        List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);
+        Map<Integer,Long> mapRes = numbers.stream()
+                                  .collect(Collectors.groupingBy(num->num,
+                                  TreeMap::new,
+                                  Collectors.counting()));
+    System.out.println(mapRes);
+//     Using the same list, how would you extract only the elements that appear more than once using Streams?
+// Explain the steps involved in transforming the grouped result into the final list.
+
+ List<Integer> ResultList = mapRes.entrySet()
+                                .stream()
+                                .filter(entry-> entry.getValue()>1)
+                                .map(Map.Entry::getKey)
+                                .collect(Collectors.toList());
+System.out.println(ResultList);
+
+// 3rd Given a list of integers, write a Stream pipeline that returns a Set<Integer> of duplicate elements (elements with frequency > 1).
+   Set<Integer> sets =  numbers.stream()
+                        .collect(Collectors.groupingBy(
+                            Function.identity(),
+                            Collectors.counting()))
+                            .entrySet()
+                            .stream()
+                            .filter(entry-> entry.getValue()>1)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toSet());
+   System.out.println(sets);
+
+//   Suppose the input list is very large (millions of elements).
+// How would you modify your Stream-based approach using groupingBy and counting to maintain readability while also being mindful of performance and memory usage?
+List<Integer> ResultLists = numbers.parallelStream()
+                        .collect(Collectors.groupingBy(
+                            Function.identity(),
+                            Collectors.counting()))
+                            .entrySet()
+                            .stream()
+                            .filter(entry->entry.getValue()>1)
+                            .map(Map.Entry::getKey)
+                            .collect(Collectors.toList());
+  System.out.println(ResultLists);
+
+//   Instead of using Collectors.groupingBy, design an alternative Stream-based or non-Stream-based approach to find duplicate elements.
+// Compare its time and space complexity with the groupingBy + counting approach, and discuss when you would prefer one over the other.
+
+  Set<Integer> seen = new HashSet<>();
+
+  Set<Integer> InList = numbers.stream()
+                        .filter(num -> !seen.add(num))
+                        .collect(Collectors.toSet());
+
+   System.out.println("----------------");
+   System.out.println(seen);
+   System.out.println(InList);
+
+   //Normal MAP and List Approach
+
+     System.out.println("----------------");
+
+     List<Integer> ressList = new ArrayList<>();
+     Map<Integer,Integer> mapress = new HashMap<>();
+
+     for(Integer num : numbers)
+     {
+         mapress.put(num,mapress.getOrDefault(num,0)+ 1);
+     }
+
+     for(Integer num : numbers)
+     {
+         if(mapress.get(num)>1)
+         {
+            ressList.add(num);
+         }
+     }
+      System.out.println(ressList);
+
+
+//   Consider using parallelStream() for the same problem.
+// What potential issues or considerations arise when using groupingBy and counting in a parallel stream context (e.g., thread safety, performance overhead, ordering)?
+// How would you handle edge cases such as null values or extremely skewed data distributions?
+System.out.println("----------------");
+  List<Integer> clist = numbers.parallelStream()
+                        .collect(Collectors.groupingByConcurrent(num->num,
+                        Collectors.counting()
+                        )).entrySet()
+                        .stream()
+                        .filter(entryV -> entryV.getValue()>1)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+   System.out.println(clist);
+    }
+}
+
+================================================================================
+ANALYSIS OF PRACTICED CODE -- APPROACHES COMPARED (2026-04-25)
+================================================================================
+
+Problem Statement:
+  Given: List<Integer> numbers = Arrays.asList(1, 2, 2, 3, 4, 4, 4);
+  Goal:  Find elements that appear more than once (duplicates).
+
+--------------------------------------------------------------------------------
+APPROACH 1: groupingBy + counting → TreeMap (sorted output)
+--------------------------------------------------------------------------------
+Code:
+  Map<Integer,Long> mapRes = numbers.stream()
+      .collect(Collectors.groupingBy(num -> num,
+               TreeMap::new,
+               Collectors.counting()));
+  // {1=1, 2=2, 3=1, 4=3}
+
+Key Points:
+  - TreeMap::new as map factory → output is SORTED by natural order of keys.
+  - Collectors.counting() returns Long (not int).
+  - Single-pass O(n) time; O(k) space where k = distinct elements.
+  - Then filter entrySet for getValue() > 1 → [2, 4]
+
+When to Use:
+  - When you need a sorted frequency map.
+  - When downstream processing requires a NavigableMap (ceiling, floor, range).
+
+--------------------------------------------------------------------------------
+APPROACH 2: groupingBy → entrySet filter → Set<Integer>
+--------------------------------------------------------------------------------
+Code:
+  Set<Integer> sets = numbers.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(entry -> entry.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+  // [2, 4]  (order not guaranteed — backed by HashMap)
+
+Key Points:
+  - Function.identity() is identical to num -> num but more expressive.
+  - Returns Set → automatically deduplicates (no duplicates of duplicates).
+  - Two-stream pass: first groupBy, then entrySet stream.
+
+When to Use:
+  - When you only need the SET of duplicate values, not their count.
+  - Order doesn't matter.
+
+--------------------------------------------------------------------------------
+APPROACH 3: parallelStream() + groupingBy (large dataset)
+--------------------------------------------------------------------------------
+Code:
+  List<Integer> ResultLists = numbers.parallelStream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(entry -> entry.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+Key Points:
+  - parallelStream() on the first collect step uses ForkJoinPool.
+  - groupingBy with default HashMap is NOT thread-safe for parallel streams.
+  - Safe because Collectors.groupingBy merges partial results from each thread
+    internally via combiner — it IS designed for concurrent use with collect().
+  - The second entrySet().stream() is sequential — fine for post-processing.
+
+When to Use:
+  - Input list has millions of elements.
+  - CPU-bound (no I/O inside the pipeline).
+  - Acceptable if result order is not guaranteed.
+
+⚠ CAUTION:
+  - Do NOT use parallelStream() with stateful lambda expressions.
+  - Do NOT collect into a non-thread-safe collection inside a parallel forEach.
+
+--------------------------------------------------------------------------------
+APPROACH 4: HashSet.add() trick (stateful filter) — Most Memory Efficient
+--------------------------------------------------------------------------------
+Code:
+  Set<Integer> seen = new HashSet<>();
+  Set<Integer> InList = numbers.stream()
+      .filter(num -> !seen.add(num))   // add returns false if already present
+      .collect(Collectors.toSet());
+  // seen  → {1, 2, 3, 4}   (all elements ever added)
+  // InList → {2, 4}         (elements that failed to add = duplicates)
+
+Key Points:
+  - seen.add(x) returns false if x already exists → stream keeps it as duplicate.
+  - Space: O(k) for seen + O(d) for duplicates (d = distinct duplicate values).
+  - Time: O(n) single pass.
+  - ⚠ SIDE EFFECT WARNING: Uses external mutable state (seen). NOT safe with
+    parallelStream(). Only use with sequential stream().
+  - Preferred for minimal memory footprint when you don't need the count.
+
+Complexity vs groupingBy:
+  | Approach            | Time  | Space       | Thread-Safe  |
+  |---------------------|-------|-------------|--------------|
+  | groupingBy+counting | O(n)  | O(k) full   | Yes (collect)|
+  | HashSet.add trick   | O(n)  | O(k) lean   | NO           |
+  | Normal Map+List     | O(n)  | O(k)+O(n)   | No           |
+
+--------------------------------------------------------------------------------
+APPROACH 5: Normal Map + List (Classic Imperative Approach)
+--------------------------------------------------------------------------------
+Code:
+  Map<Integer,Integer> mapress = new HashMap<>();
+  for(Integer num : numbers)
+      mapress.put(num, mapress.getOrDefault(num, 0) + 1);
+
+  List<Integer> ressList = new ArrayList<>();
+  for(Integer num : numbers)
+      if(mapress.get(num) > 1)
+          ressList.add(num);
+  // ressList → [2, 2, 4, 4, 4]  (keeps ALL occurrences, not just unique duplicates)
+
+Key Points:
+  - Two loops (two passes over the list).
+  - getOrDefault(num, 0) is a clean way to initialize count.
+  - Result includes ALL occurrences of duplicate elements, not just one entry.
+  - Most readable for junior developers; no Stream knowledge needed.
+
+When to Use:
+  - Codebase is Java 7 or older.
+  - You need ALL occurrences (not just the distinct duplicate values).
+  - Pair programming with someone unfamiliar with Streams.
+
+--------------------------------------------------------------------------------
+APPROACH 6: groupingByConcurrent + parallelStream (True Concurrent Collection)
+--------------------------------------------------------------------------------
+Code:
+  List<Integer> clist = numbers.parallelStream()
+      .collect(Collectors.groupingByConcurrent(num -> num, Collectors.counting()))
+      .entrySet().stream()
+      .filter(entryV -> entryV.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+Key Points:
+  - groupingByConcurrent returns a ConcurrentHashMap instead of HashMap.
+  - Threads write directly to the shared map concurrently (no combiner step).
+  - Faster than groupingBy in HIGHLY parallel workloads (less merge overhead).
+  - ⚠ Result order inside the map is NOT guaranteed (ConcurrentHashMap is unordered).
+  - Use groupingByConcurrent when MAXIMIZING parallel throughput, but only when
+    result ordering is irrelevant.
+
+groupingBy vs groupingByConcurrent:
+  | Feature              | groupingBy        | groupingByConcurrent     |
+  |----------------------|-------------------|--------------------------|
+  | Map type             | HashMap           | ConcurrentHashMap        |
+  | Thread-safety model  | combiner/merge    | shared concurrent writes |
+  | Order preserved?     | No (HashMap)      | No (ConcurrentHashMap)   |
+  | Parallel performance | Good              | Better for large data    |
+  | Safe with parallel?  | Yes               | Yes                      |
+
+================================================================================
+ADDITIONAL SNIPPETS -- REAL SCENARIOS & USE CASES (2026-04-25)
+================================================================================
+
+--------------------------------------------------------------------------------
+Snippet 1: Find TOP N most frequent elements
+--------------------------------------------------------------------------------
+Scenario: "Given a list of words from a search log, find the top 3 most searched terms."
+
+  List<String> searchLog = Arrays.asList("java","python","java","sql","java","python","go");
+
+  List<String> top3 = searchLog.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+      .limit(3)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
+  System.out.println(top3);  // [java, python, sql] or [java, python, go]
+
+Key Concept:
+  Map.Entry.comparingByValue(Comparator.reverseOrder()) sorts entries DESC by count.
+  .limit(3) picks top N.
+
+--------------------------------------------------------------------------------
+Snippet 2: Frequency Map → Remove Singletons → Sorted by Frequency DESC
+--------------------------------------------------------------------------------
+Scenario: "From a product view log, keep only products viewed more than once and sort by popularity."
+
+  List<String> viewLog = Arrays.asList("P1","P2","P1","P3","P2","P1","P4");
+
+  Map<String, Long> popularProducts = viewLog.stream()
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(e -> e.getValue() > 1)
+      .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+      .collect(Collectors.toMap(
+          Map.Entry::getKey,
+          Map.Entry::getValue,
+          (a, b) -> a,
+          LinkedHashMap::new   // preserve sorted insertion order
+      ));
+
+  System.out.println(popularProducts);  // {P1=3, P2=2}
+
+Key Concept:
+  LinkedHashMap::new preserves the sorted order from the sorted() step.
+  Without it, toMap() uses HashMap which loses order.
+
+--------------------------------------------------------------------------------
+Snippet 3: Detect Anagram Groups
+--------------------------------------------------------------------------------
+Scenario: "Group a list of words into anagram families."
+
+  List<String> words = Arrays.asList("eat","tea","tan","ate","nat","bat");
+
+  Map<String, List<String>> anagramGroups = words.stream()
+      .collect(Collectors.groupingBy(word -> {
+          char[] chars = word.toCharArray();
+          Arrays.sort(chars);
+          return new String(chars);   // canonical key = sorted characters
+      }));
+
+  anagramGroups.forEach((key, group) -> System.out.println(group));
+  // [eat, tea, ate]
+  // [tan, nat]
+  // [bat]
+
+Key Concept:
+  The classifier function sorts characters → anagrams share the same key.
+  groupingBy automatically builds the List<String> per group.
+
+--------------------------------------------------------------------------------
+Snippet 4: Null-Safe Duplicate Detection (handle null values in list)
+--------------------------------------------------------------------------------
+Scenario: "A list may contain nulls. Find duplicate non-null elements safely."
+
+  List<Integer> dataWithNulls = Arrays.asList(1, null, 2, 2, null, 3, 4, 4);
+
+  Set<Integer> duplicatesNullSafe = dataWithNulls.stream()
+      .filter(Objects::nonNull)                 // skip null values first
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+      .entrySet().stream()
+      .filter(e -> e.getValue() > 1)
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toSet());
+
+  System.out.println(duplicatesNullSafe);  // [2, 4]
+
+Key Concept:
+  Objects::nonNull is a clean null-guard method reference.
+  groupingBy throws NullPointerException if a null key reaches it → filter first.
+
+--------------------------------------------------------------------------------
+Snippet 5: Count Duplicates across Two Lists (Intersection Frequency)
+--------------------------------------------------------------------------------
+Scenario: "Find elements that appear in BOTH list A and list B."
+
+  List<Integer> listA = Arrays.asList(1, 2, 3, 4, 5);
+  List<Integer> listB = Arrays.asList(3, 4, 5, 6, 7);
+
+  Set<Integer> setA = new HashSet<>(listA);
+  Set<Integer> intersection = listB.stream()
+      .filter(setA::contains)
+      .collect(Collectors.toSet());
+
+  System.out.println(intersection);  // [3, 4, 5]
+
+Key Concept:
+  setA::contains is O(1) lookup → entire pipeline is O(n + m).
+  For very large lists, this is far better than nested loops O(n*m).
+
+--------------------------------------------------------------------------------
+Snippet 6: parallelStream + groupingByConcurrent — Thread-Safe Frequency Map
+--------------------------------------------------------------------------------
+Scenario: "Process millions of log entries in parallel and count IP address frequencies."
+
+  List<String> ipLogs = // ... millions of IP strings
+
+  ConcurrentMap<String, Long> ipFrequency = ipLogs.parallelStream()
+      .collect(Collectors.groupingByConcurrent(
+          Function.identity(),
+          Collectors.counting()
+      ));
+
+  // Find IPs hitting more than 1000 times (potential DDoS)
+  ipFrequency.entrySet().stream()
+      .filter(e -> e.getValue() > 1000)
+      .forEach(e -> System.out.println("Suspicious IP: " + e.getKey() + " → " + e.getValue()));
+
+Key Concept:
+  groupingByConcurrent returns ConcurrentMap — safe for parallelStream.
+  No need to synchronize externally; threads write concurrently to shared map.
+  Far more efficient than groupingBy + parallelStream for very large inputs.
+
+--------------------------------------------------------------------------------
+Snippet 7: Skewed Data — Handling one element dominating frequency
+--------------------------------------------------------------------------------
+Scenario: "Data has 1 million records but 99% are the same value. Parallel stream
+           performance degrades due to skew — use sequential for known-skewed data."
+
+  // Anti-pattern: parallel on skewed data
+  // List<String> skewed = ... (999,000 "A" + 1,000 unique values)
+  // parallelStream → all threads fight over "A" bucket → worse than sequential
+
+  // Best practice: profile first, choose accordingly
+  long distinctCount = numbers.stream().distinct().count();
+  boolean isHighlySkewed = distinctCount < numbers.size() * 0.01; // < 1% distinct
+
+  Stream<Integer> chosen = isHighlySkewed
+      ? numbers.stream()           // sequential for skewed
+      : numbers.parallelStream();  // parallel for uniform
+
+  Map<Integer, Long> freqMap = chosen
+      .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
+Key Concept:
+  Skewed data degrades parallel performance due to lock contention on hot buckets.
+  Adaptive stream selection based on data profile is production-grade thinking.
+
+================================================================================
+QUICK REFERENCE TABLE -- DUPLICATE DETECTION APPROACHES (2026-04-25)
+================================================================================
+
+Approach                     | Returns              | Ordered | Thread-Safe | Use When
+-----------------------------|----------------------|---------|-------------|----------------------------------
+groupingBy + TreeMap         | Map<K,Long> sorted   | YES     | Sequential  | Need sorted frequency map
+groupingBy + HashMap         | Map<K,Long>          | NO      | Sequential  | General frequency count
+groupingBy → Set filter      | Set<K>               | NO      | Sequential  | Just want duplicate values (set)
+parallelStream + groupingBy  | Map<K,Long>          | NO      | YES         | Large CPU-bound dataset
+groupingByConcurrent         | ConcurrentMap<K,Long>| NO      | YES         | Max parallel throughput
+HashSet.add() trick          | Set<K>               | NO      | NO          | Minimal memory, fast, sequential
+Normal Map + List loop       | List<K> (all occ.)   | YES     | NO          | All occurrences, Java 7 compat
+
+================================================================================
+END OF PRACTICED CODE SECTION (2026-04-25)
+================================================================================

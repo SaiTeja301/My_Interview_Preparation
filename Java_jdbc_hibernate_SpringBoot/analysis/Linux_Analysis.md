@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
 LINUX COMMANDS - COMPREHENSIVE INTERVIEW & REVISION GUIDE
 Extracted from: Linux and Shell Scripting.txt (Deduplicated)
 For: DevOps Engineers | System Administrators | Java Developers
