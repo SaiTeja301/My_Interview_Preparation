@@ -1,4 +1,4 @@
-================================================================================
+﻿================================================================================
 JAVA CORE - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 For: Akula Venkata Sai Teja | Target: 7+ Years Experience Level
 ================================================================================
@@ -422,6 +422,7 @@ Answer:
   String s1 = "Hello";  // Created in String Pool
   String s2 = "Hello";  // Reuses same reference from pool
   String s3 = new String("Hello");  // New object in Heap (NOT in pool)
+  String s4 = new String("Hello");  // New object in Heap (NOT in pool)
 
   s1 == s2  → true  (same pool reference)
   s1 == s3  → false (s3 is heap object)
@@ -431,6 +432,8 @@ Answer:
   s3 = s1.intern(); -> s3 will point to the same reference as s2 (s3 == s2) -> true
   s1 = s2.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
   s2 = s1.intern(); -> s2 will point to the same reference as s2 (s2 == s2) -> true
+  s1 = s4.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
+
   
 
   String.intern():
@@ -895,6 +898,454 @@ SECTION 5: BEST PRACTICES
    L - Liskov Substitution Principle
    I - Interface Segregation Principle
    D - Dependency Inversion Principle
+
+─────────────────────────────────────────────────────────────────────
+*** SOLID PRINCIPLES – DETAILED EXPLANATION (Interview Ready)
+─────────────────────────────────────────────────────────────────────
+
+  SOLID is an acronym coined by Robert C. Martin ("Uncle Bob").
+  These 5 principles help build software that is:
+    - Maintainable   → easy to change without breaking other things
+    - Scalable       → easy to extend with new features
+    - Testable       → easy to write unit tests
+    - Decoupled      → low dependency between modules
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+S — Single Responsibility Principle (SRP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Definition:
+    "A class should have ONLY ONE reason to change."
+    → Each class should do ONE thing and do it well.
+
+  Why it matters:
+    If a class handles multiple responsibilities, a change in one
+    responsibility may break unrelated functionality, making code
+    fragile and harder to test.
+
+  Real-World Analogy:
+    A doctor treats patients. A doctor should NOT also manage billing,
+    appointments, and housekeeping. Each role has its own responsibility.
+
+  BAD Example (Violates SRP):
+    class EmployeeService {
+        public Employee findById(int id) { ... }         // Business logic
+        public void saveToDatabase(Employee e) { ... }   // DB concern
+        public void sendWelcomeEmail(Employee e) { ... } // Notification concern
+        public String generateReport(Employee e) { ... } // Reporting concern
+        // Multiple reasons to change: DB schema, email template, report format
+    }
+
+  GOOD Example (Follows SRP):
+    class EmployeeRepository {
+        public Employee findById(int id) { ... }
+        public void save(Employee e) { ... }
+    }
+
+    class EmailService {
+        public void sendWelcomeEmail(Employee e) { ... }
+    }
+
+    class EmployeeReportService {
+        public String generateReport(Employee e) { ... }
+    }
+
+    class EmployeeService {
+        // Orchestrates only — delegates to each specialist class
+        public void onboardEmployee(Employee e) {
+            employeeRepository.save(e);
+            emailService.sendWelcomeEmail(e);
+        }
+    }
+
+  Production Scenario (Insurance Domain):
+    // BAD: PolicyService doing too much
+    class PolicyService {
+        public Policy getPolicy(String id) { ... }
+        public void exportPolicyToPDF(Policy p) { ... }    // PDF logic here?
+        public void sendRenewalEmail(Policy p) { ... }     // Email here?
+    }
+
+    // GOOD: Each class has one job
+    class PolicyService         { Policy getPolicy(String id) {...} }
+    class PolicyPDFExporter     { void export(Policy p) {...} }
+    class PolicyEmailNotifier   { void sendRenewal(Policy p) {...} }
+
+  Interview Tip:
+    "SRP reduces coupling. Each class is focused, easy to test in
+     isolation, and changes don't ripple across unrelated code."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+O — Open/Closed Principle (OCP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Definition:
+    "Software entities should be OPEN for extension, but CLOSED
+     for modification."
+    → Add new behavior by writing NEW code, not by changing existing code.
+
+  Why it matters:
+    Modifying existing code risks introducing bugs. Instead, use
+    abstraction (interfaces/abstract classes) to plug in new behavior.
+
+  Real-World Analogy:
+    A USB port is "open for extension" (you can plug any USB device)
+    but the port itself is "closed for modification" (you don't rewire
+    your laptop for each new device).
+
+  BAD Example (Violates OCP):
+    class DiscountService {
+        public double applyDiscount(String type, double price) {
+            if (type.equals("SEASONAL")) return price * 0.90;
+            else if (type.equals("EMPLOYEE")) return price * 0.80;
+            else if (type.equals("VIP")) return price * 0.70;
+            // Adding new type = modifying this method → OCP violation!
+            return price;
+        }
+    }
+
+  GOOD Example (Follows OCP):
+    interface DiscountStrategy {
+        double apply(double price);
+    }
+
+    class SeasonalDiscount implements DiscountStrategy {
+        public double apply(double price) { return price * 0.90; }
+    }
+
+    class EmployeeDiscount implements DiscountStrategy {
+        public double apply(double price) { return price * 0.80; }
+    }
+
+    class VIPDiscount implements DiscountStrategy {
+        public double apply(double price) { return price * 0.70; }
+    }
+
+    // New discount type? Just add a new class — no existing code changes!
+    class LoyaltyDiscount implements DiscountStrategy {
+        public double apply(double price) { return price * 0.85; }
+    }
+
+    class DiscountService {
+        public double applyDiscount(DiscountStrategy strategy, double price) {
+            return strategy.apply(price); // Closed for modification
+        }
+    }
+
+  Production Scenario (IKEA Product Pricing):
+    // Adding new payment gateway? Don't touch existing code.
+    interface PaymentGateway { void processPayment(Order o); }
+    class StripeGateway implements PaymentGateway { ... }
+    class PayPalGateway implements PaymentGateway { ... }
+    class RazorpayGateway implements PaymentGateway { ... } // New → just add class
+
+  Interview Tip:
+    "OCP is achieved through Strategy Pattern, Template Method Pattern,
+     or Spring's polymorphism via @Component + interface injection.
+     Adding a new feature = new class, not editing old classes."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+L — Liskov Substitution Principle (LSP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Definition:
+    "Objects of a superclass should be replaceable with objects of
+     its subclasses WITHOUT breaking the application."
+    → If S is a subtype of T, then objects of type T may be replaced
+      with objects of type S without altering any of the desirable
+      properties of the program. (Barbara Liskov, 1987)
+
+  Why it matters:
+    Violations of LSP break polymorphism. If subclasses behave
+    unexpectedly when used in place of the parent, your code becomes
+    unreliable and hard to reason about.
+
+  Real-World Analogy:
+    A SavingsAccount IS-A BankAccount. You should be able to use
+    SavingsAccount wherever BankAccount is expected and it should
+    behave correctly. But if SavingsAccount throws an exception for
+    deposit(), it violates LSP.
+
+  BAD Example (Violates LSP — Classic Square/Rectangle problem):
+    class Rectangle {
+        protected int width, height;
+        public void setWidth(int w)  { this.width = w; }
+        public void setHeight(int h) { this.height = h; }
+        public int area() { return width * height; }
+    }
+
+    class Square extends Rectangle {
+        @Override
+        public void setWidth(int w)  { this.width = w; this.height = w; }
+        @Override
+        public void setHeight(int h) { this.height = h; this.width = h; }
+        // Square forces width == height → breaks Rectangle's contract!
+    }
+
+    // Client code breaks:
+    Rectangle r = new Square(); // LSP says this should work
+    r.setWidth(5);
+    r.setHeight(10);
+    System.out.println(r.area()); // Expected 50, Got 100 → BROKEN!
+
+  GOOD Example (Follows LSP — separate hierarchy):
+    interface Shape { int area(); }
+
+    class Rectangle implements Shape {
+        int width, height;
+        public int area() { return width * height; }
+    }
+
+    class Square implements Shape {
+        int side;
+        public int area() { return side * side; }
+    }
+    // Both can be used via Shape interface without surprising behavior
+
+  BAD Example 2 (Throwing UnsupportedOperationException):
+    class Bird {
+        public void fly() { System.out.println("Flying"); }
+    }
+
+    class Penguin extends Bird {
+        @Override
+        public void fly() {
+            throw new UnsupportedOperationException("Penguins can't fly!");
+            // Violates LSP — caller expects all Birds to fly
+        }
+    }
+
+  GOOD Example 2:
+    interface Bird     { void eat(); }
+    interface FlyingBird extends Bird { void fly(); }
+
+    class Sparrow implements FlyingBird {
+        public void eat() { ... }
+        public void fly() { System.out.println("Sparrow flying"); }
+    }
+
+    class Penguin implements Bird {
+        public void eat() { ... }
+        // No fly() — does not claim it can fly
+    }
+
+  Production Scenario:
+    // Insurance Domain: All policies can be renewed, but TermPolicy
+    // cannot be renewed after expiry. If TermPolicy.renew() throws
+    // an exception when base Policy.renew() is expected to work,
+    // it breaks LSP. Use a separate RenewablePolicy interface instead.
+
+  Interview Tip:
+    "LSP ensures true IS-A relationships. The contract of the parent
+     must be honored by children. Watch for: overridden methods that
+     throw exceptions or weaken behavior — these signal LSP violations."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+I — Interface Segregation Principle (ISP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Definition:
+    "Clients should NOT be forced to depend on interfaces they do not use."
+    → Create small, specific interfaces rather than one large "fat" interface.
+
+  Why it matters:
+    A fat interface forces implementing classes to provide empty or
+    dummy implementations for methods they don't need, leading to
+    misleading code and unnecessary coupling.
+
+  Real-World Analogy:
+    A Printer interface with print(), scan(), fax(), photocopy().
+    A basic printer only prints. Why should it implement scan/fax?
+    Split into IPrinter, IScanner, IFax.
+
+  BAD Example (Violates ISP — Fat Interface):
+    interface Worker {
+        void work();
+        void eat();
+        void sleep();
+        void attendMeetings();
+    }
+
+    class Robot implements Worker {
+        public void work() { System.out.println("Working"); }
+        public void eat()  { /* Robots don't eat! Forced empty impl */ }
+        public void sleep(){ /* Robots don't sleep! */ }
+        public void attendMeetings() { ... }
+        // Robot is forced to implement irrelevant methods
+    }
+
+  GOOD Example (Follows ISP):
+    interface Workable      { void work(); }
+    interface Feedable      { void eat(); }
+    interface Sleepable     { void sleep(); }
+    interface MeetingGoer   { void attendMeetings(); }
+
+    class Human implements Workable, Feedable, Sleepable, MeetingGoer {
+        public void work()           { System.out.println("Human working"); }
+        public void eat()            { System.out.println("Human eating"); }
+        public void sleep()          { System.out.println("Human sleeping"); }
+        public void attendMeetings() { System.out.println("In meeting"); }
+    }
+
+    class Robot implements Workable, MeetingGoer {
+        public void work()           { System.out.println("Robot working"); }
+        public void attendMeetings() { System.out.println("Robot logs meeting"); }
+        // No eat() or sleep() → clean!
+    }
+
+  Production Scenario (Spring Boot / Microservices):
+    // BAD: One fat service interface
+    interface PolicyService {
+        Policy findById(String id);
+        void createPolicy(Policy p);
+        void renewPolicy(Policy p);
+        void exportToPDF(Policy p);
+        void sendRenewalEmail(Policy p);
+    }
+
+    // GOOD: Segregated interfaces
+    interface PolicyQueryService   { Policy findById(String id); }
+    interface PolicyCommandService { void createPolicy(Policy p); void renewPolicy(Policy p); }
+    interface PolicyExportService  { void exportToPDF(Policy p); }
+    interface PolicyNotifyService  { void sendRenewalEmail(Policy p); }
+
+    // Clients only depend on what they need:
+    // PDF module uses PolicyExportService → no dependency on email/DB logic
+
+  Interview Tip:
+    "ISP is about cohesion in interfaces. In Spring, we often split
+     service interfaces by read vs write (CQRS pattern), which naturally
+     follows ISP. Avoid creating 'god interfaces' that try to do everything."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+D — Dependency Inversion Principle (DIP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Definition:
+    "High-level modules should NOT depend on low-level modules.
+     Both should depend on abstractions."
+    "Abstractions should not depend on details.
+     Details should depend on abstractions."
+    → Depend on interfaces, not concrete classes.
+
+  Why it matters:
+    If a high-level module (business logic) directly depends on a
+    low-level module (DB, email, API), changing the low-level module
+    breaks the high-level module. DIP decouples them via interfaces.
+
+  Real-World Analogy:
+    Your TV remote (high-level) doesn't care if the TV is Sony or LG
+    (low-level). It communicates via a standard IR protocol (abstraction).
+    You can swap the TV without changing the remote.
+
+  BAD Example (Violates DIP — High level depends on concrete class):
+    class MySQLDatabase {
+        public void save(Object data) { System.out.println("Saving to MySQL"); }
+    }
+
+    class OrderService {
+        private MySQLDatabase db = new MySQLDatabase(); // Tightly coupled!
+
+        public void placeOrder(Order o) {
+            // Business logic
+            db.save(o); // Directly depends on MySQL — what if we switch to PostgreSQL?
+        }
+    }
+
+  GOOD Example (Follows DIP):
+    // Abstraction (interface)
+    interface Database {
+        void save(Object data);
+    }
+
+    // Low-level modules depend on the abstraction
+    class MySQLDatabase implements Database {
+        public void save(Object data) { System.out.println("Saving to MySQL"); }
+    }
+
+    class MongoDatabase implements Database {
+        public void save(Object data) { System.out.println("Saving to MongoDB"); }
+    }
+
+    // High-level module depends on abstraction (not concrete class)
+    class OrderService {
+        private final Database db;
+
+        // Dependency injected via constructor (NOT created internally)
+        public OrderService(Database db) { this.db = db; }
+
+        public void placeOrder(Order o) {
+            db.save(o); // Works with MySQL, Mongo, or any Database impl
+        }
+    }
+
+    // Usage:
+    OrderService service = new OrderService(new MySQLDatabase());
+    // Or easily swap:
+    OrderService service2 = new OrderService(new MongoDatabase());
+
+  Production Scenario (Spring Boot — DIP in Action):
+    // Spring's @Autowired IS DIP in action!
+    // The service doesn't know if it's getting JPA, JDBC, or MongoDB repo.
+
+    public interface PolicyRepository extends JpaRepository<Policy, String> {}
+
+    @Service
+    public class PolicyService {
+        private final PolicyRepository repo; // Depends on interface
+
+        @Autowired
+        public PolicyService(PolicyRepository repo) { this.repo = repo; }
+        // Spring injects the concrete implementation — DIP + IoC!
+    }
+
+    // Switching from JPA to MongoDB: just change the implementation,
+    // PolicyService code doesn't change at all.
+
+  DIP vs Dependency Injection (DI):
+    DIP  = PRINCIPLE  → "Depend on abstractions"
+    DI   = PATTERN    → Mechanism to supply dependencies from outside
+    IoC  = FRAMEWORK  → Spring container manages object creation & wiring
+    DI is one way to achieve DIP, but they are NOT the same thing.
+
+  Interview Tip:
+    "DIP is what makes Spring's IoC container so powerful. By injecting
+     interfaces instead of concrete classes, we can swap implementations
+     (e.g., for testing with mocks) without touching business logic.
+     DIP + OCP together make code truly extensible and testable."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SOLID — Quick Cheat Sheet
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ┌───┬────────────────────────────┬────────────────────────────────────┐
+  │   │ Principle                  │ One-line Rule                      │
+  ├───┼────────────────────────────┼────────────────────────────────────┤
+  │ S │ Single Responsibility      │ One class = one job                │
+  │ O │ Open/Closed                │ Extend with new code, don't edit   │
+  │ L │ Liskov Substitution        │ Subtypes must honor parent contract │
+  │ I │ Interface Segregation      │ Many small interfaces > one fat    │
+  │ D │ Dependency Inversion       │ Depend on abstractions, not impls  │
+  └───┴────────────────────────────┴────────────────────────────────────┘
+
+  Design Patterns that enforce SOLID:
+  ┌────────────────────┬─────────────────────────────────────────┐
+  │ SOLID Principle    │ Supported By                            │
+  ├────────────────────┼─────────────────────────────────────────┤
+  │ SRP                │ Facade, Service Layer, CQRS             │
+  │ OCP                │ Strategy, Decorator, Template Method    │
+  │ LSP                │ Proper Inheritance + Interfaces         │
+  │ ISP                │ Role Interfaces, CQRS                   │
+  │ DIP                │ Dependency Injection, Factory, IoC      │
+  └────────────────────┴─────────────────────────────────────────┘
+
+  How to answer in interview:
+    1. State the principle in one line
+    2. Give the real-world analogy
+    3. Show BAD vs GOOD code
+    4. Relate to Spring Boot / your project experience
+
+─────────────────────────────────────────────────────────────────────
 
 2. Always close resources (try-with-resources):
    try (Connection conn = dataSource.getConnection();
