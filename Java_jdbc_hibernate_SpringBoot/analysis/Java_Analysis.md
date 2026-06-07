@@ -1,1481 +1,314 @@
-# JAVA CORE - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
+# JAVA CORE — COMPREHENSIVE INTERVIEW PREPARATION GUIDE
 > *For: Akula Venkata Sai Teja | Target: 7+ Years Experience Level*
 
-## SECTION 1: SOURCE FILE ANALYSIS
+---
 
-Total Notes File: Java_Notes.txt (14,076 lines / 483 KB)
+## Concept Coverage Summary
 
-Concept Coverage Summary:
-✅ JVM Architecture (JDK, JRE, JVM layers)
-✅ Variables (Instance vs Local), Memory Maps
-✅ Methods, Delegation, Method Overloading
-✅ Arrays (1D, 2D, 3D, Jagged Arrays)
-✅ OOPs Concepts (Inheritance, Polymorphism, Encapsulation, Abstraction)
-✅ Constructors and this/super keywords
-✅ Exception Handling
-✅ String handling (String, StringBuilder, StringBuffer)
-✅ Collections Framework (List, Set, Map)
-✅ Generics
-✅ Java 8 Features (Lambda, Streams, Optional, Functional Interfaces)
-✅ Multithreading basics
-✅ File I/O
+```mermaid
+graph TD
+    Root["Java Core Mastery"] --> Sec1["JVM & Runtime"]
+    Root --> Sec2["Core OOP & Patterns"]
+    Root --> Sec3["Data & Collections"]
+    Root --> Sec4["Concurrency & Modern Java"]
 
-Missing/Weak Areas:
-❌ JVM Internals - ClassLoader hierarchy deep dive
-❌ GC Algorithms (G1GC, ZGC, Shenandoah internals)
-❌ JMM (Java Memory Model) - happens-before relationship
-❌ CompletableFuture advanced chaining
-❌ Executor Framework - ThreadPoolExecutor internals
-❌ ConcurrentHashMap internal working (segments vs. buckets)
-❌ HashMap collision resolution (LinkedList → Tree after Java 8)
-❌ WeakHashMap, IdentityHashMap
-❌ Fork/Join Framework
-❌ Volatile keyword internals
-❌ AtomicInteger / AtomicReference internals
-❌ String Pool internals (String.intern())
+    Sec1 --> P1["JVM Architecture"]
+    Sec1 --> P2["Garbage Collection"]
+    Sec1 --> P3["Exceptions & Generics"]
 
-## SECTION 2: JVM ARCHITECTURE
+    Sec2 --> P4["OOP Pillars"]
+    Sec2 --> P5["SOLID Principles"]
+    Sec2 --> P6["Design Patterns"]
 
-JVM Architecture Diagram:
-```text
-  ┌────────────────────────────────────────────────────┐
-  │                  Java Source (.java)               │
-  └─────────────────────┬──────────────────────────────┘
-                        │ javac
-  ┌─────────────────────▼──────────────────────────────┐
-  │               Bytecode (.class)                    │
-  └─────────────────────┬──────────────────────────────┘
-                        │
-  ┌─────────────────────▼──────────────────────────────┐
-  │                       JVM                         │
-  │  ┌──────────────────────────────────────────────┐ │
-  │  │             Class Loader Subsystem           │ │
-  │  │  Bootstrap → Extension → Application        │ │
-  │  └────────────────────┬─────────────────────────┘ │
-  │  ┌─────────────────────▼────────────────────────┐ │
-  │  │              Runtime Data Areas              │ │
-  │  │  Method Area | Heap | Stack | PC Reg | NMS  │ │
-  │  └────────────────────┬─────────────────────────┘ │
-  │  ┌─────────────────────▼────────────────────────┐ │
-  │  │            Execution Engine                  │ │
-  │  │   Interpreter + JIT Compiler + GC            │ │
-  │  └──────────────────────────────────────────────┘ │
-  └────────────────────────────────────────────────────┘
+    Sec3 --> P7["Strings & Arrays"]
+    Sec3 --> P8["Collections Framework"]
+    Sec3 --> P9["Advanced Concepts"]
 
+    Sec4 --> P10["Multithreading"]
+    Sec4 --> P11["Java 8+ Features"]
+    Sec4 --> P12["Top 50 Q&A"]
+
+    classDef main fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:3px;
+    classDef module1 fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px;
+    classDef module2 fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef module3 fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
+    classDef module4 fill:#7F1D1D,stroke:#EF4444,color:#FEF2F2,stroke-width:1px;
+
+    class Root main;
+    class Sec1,P1,P2,P3 module1;
+    class Sec2,P4,P5,P6 module2;
+    class Sec3,P7,P8,P9 module3;
+    class Sec4,P10,P11,P12 module4;
 ```
-## SECTION 3: INTERVIEW ROUNDS - 5 COMPLETE ROUNDS
 
-## ROUND 1 – BASIC + RESUME DISCUSSION
+### Core Study Roadmap & Navigation
 
-#### Q1. Tell me about yourself and your Java experience.
+| Topic Pillar | Core Focus / Key Sub-topics | Status | Navigation Link |
+|:---|:---|:---:|:---:|
+| **JVM Architecture** | JDK vs JRE vs JVM, ClassLoader subsystem, JVM memory areas | ✅ Complete | [Section 1](#section-1-jvm-architecture--memory-model) |
+| **Garbage Collection** | GC algorithms (Serial, Parallel, G1GC, ZGC, Shenandoah), diagnostics | ✅ Complete | [Section 1.4](#14-object-lifecycle--garbage-collection-gc) |
+| **OOP Pillars** | Encapsulation, Inheritance, Polymorphism, Abstraction, Composition | ✅ Complete | [Section 2](#section-2-object-oriented-programming-oop) |
+| **SOLID Principles** | SRP, OCP, LSP, ISP, DIP with production Spring Boot examples | ✅ Complete | [Section 3](#section-3-solid-principles) |
+| **Strings & Arrays** | SCP, immutability, `intern()`, Builder/Buffer, 1D/2D/Jagged, conversions | ✅ Complete | [Section 4](#section-4-data-types-arrays-and-strings) |
+| **Generics & Exceptions** | PECS rule, type erasure, checked/unchecked exceptions, custom exceptions | ✅ Complete | [Section 5](#section-5-generics--exception-handling) |
+| **Collections Framework** | ArrayList vs LinkedList, HashMap internals, Set types, Comparable/Comparator | ✅ Complete | [Section 6](#section-6-collections-framework--concurrency) |
+| **Multithreading** | Thread lifecycle, locks, wait/notify, `volatile`, thread-safe pools | ✅ Complete | [Section 6.7](#67-multithreading--thread-safety) |
+| **Layered Caching** | L1/L2 caching architecture, Spring Cache + Redis configuration | ✅ Complete | [Section 7](#section-7-high-performance-caching) |
+| **Java 8+ Features** | Lambdas, Streams, Optional API, `CompletableFuture`, Records, Sealed Classes | ✅ Complete | [Section 8](#section-8-java-8-features--functional-programming) |
+| **Design Patterns** | Thread-safe Singleton, Factory, Builder pattern implementations | ✅ Complete | [Section 9](#section-9-design-patterns) |
+| **Advanced Concepts** | equals/hashCode contract, shallow vs deep cloning, daemon threads | ✅ Complete | [Section 10](#section-10-advanced-java-concepts) |
+| **Performance Best Practices** | Auto-boxing overhead, String concat, Stream vs Loop performance | ✅ Complete | [Section 11](#section-11-performance-best-practices) |
+| **Top 50 Q&A** | 50 essential interview questions with interactive self-testing cards | ✅ Complete | [Section 12](#section-12-top-50-interview-questions--quick-reference) |
 
-Answer:
-I am a Full Stack Java Developer with 4 years of experience (3.5 years
-professional + 5 months internship). I work extensively with Java 8,
-Spring Boot, Microservices, Hibernate/JPA, and Angular. Currently working
-at Cognizant on Nationwide Insurance project, building and optimizing
-Microservices and RESTful APIs. Previously worked on IKEA Internal Systems
-integrating OpenAI/LLM RAG capabilities with Java Spring Boot backend.
+---
 
-#### Q2. What is the difference between JDK, JRE, and JVM?
 
-Answer:
-JDK (Java Development Kit):
-- Complete development environment
-- Includes JRE + development tools (javac, javadoc, javap, jdb)
-- Used by developers to write and compile Java programs
-- Contains: JRE + Compiler + Debugger + JavaDoc + other tools
+## SECTION 1: JVM ARCHITECTURE & MEMORY MODEL
 
-JRE (Java Runtime Environment):
-- Environment to RUN Java programs (not develop)
-- Includes: JVM + Runtime Libraries (java.lang, java.util, etc.)
+### 1.1 Core Components (JDK vs JRE vs JVM)
 
-JVM (Java Virtual Machine):
-- Abstract computing machine
-- Executes Java bytecode
-- Platform-specific implementation
-- Provides: Memory management, GC, security sandbox
+- **JDK (Java Development Kit)**: Complete development environment. Contains the JRE, compiler (`javac`), archiver (`jar`), documentation generator (`javadoc`), and other tools.
+- **JRE (Java Runtime Environment)**: Environment to **run** Java programs. Contains: JVM + Runtime Libraries (`java.lang`, `java.util`, etc.).
+- **JVM (Java Virtual Machine)**: Abstract engine that loads, verifies, and executes Java bytecode. Platform-specific implementation that provides platform independence for Java code.
 
-Hierarchy: JDK ⊃ JRE ⊃ JVM
+> **Hierarchy**: `JDK ⊃ JRE ⊃ JVM`
 
-Real-time Example:
-Your production server only needs JRE to run the Spring Boot JAR.
-Your developer laptop needs JDK to compile and run the code.
+> **Production Tip**: Your production server only needs JRE to run the Spring Boot JAR. Your developer laptop needs JDK to compile and run the code.
 
-#### Q3. Explain OOPs principles with real-world examples.
+```mermaid
+graph TD
+    A["Java Source (.java)"] -->|javac| B["Bytecode (.class)"]
+    B --> JVM
 
-Answer:
+    subgraph JVM ["JVM — Java Virtual Machine"]
+        direction TB
+        subgraph CL ["Class Loader Subsystem"]
+            direction LR
+            CL1["Bootstrap"] --> CL2["Extension"] --> CL3["Application"]
+        end
 
-1) ENCAPSULATION:
-- Binding data (variables) and methods together in a class
-- Hiding implementation details using access modifiers
-- Real Example: BankAccount class - balance is private; only accessible
-via getBalance()/deposit()/withdraw() methods
+        subgraph RDA ["Runtime Data Areas"]
+            direction LR
+            MA["Method Area"] --- HP["Heap"] --- ST["Stack"] --- PC["PC Reg"] --- NMS["Native Method Stack"]
+        end
 
-Code Example:
-public class BankAccount {
-    private double balance;  // Hidden from outside
+        subgraph EE ["Execution Engine"]
+            direction LR
+            INT["Interpreter"] --- JIT["JIT Compiler"] --- GC["Garbage Collector"]
+        end
 
-    public void deposit(double amount) {
-        if (amount > 0) balance += amount;
-    }
+        CL --> RDA
+        RDA --> EE
+    end
 
-    public double getBalance() { return balance; }
-}
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef clClass fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px;
+    classDef rdaClass fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef eeClass fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
 
-2) INHERITANCE:
-- One class inherits properties/behavior of another
-- Promotes code reuse
-- Real Example: Vehicle → Car, Bike, Truck (IS-A relationship)
+    class CL1,CL2,CL3 clClass;
+    class MA,HP,ST,PC,NMS rdaClass;
+    class INT,JIT,GC eeClass;
 
-Code Example:
-public class Vehicle {
-    protected String brand;
-    public void startEngine() {
-        System.out.println("Engine started");
-    }
-}
-public class Car extends Vehicle {
-    private int numDoors;
+    style JVM fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
+    style CL fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px
+    style RDA fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
+    style EE fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
+```
+
+---
+
+### 1.2 ClassLoader Subsystem
+
+The ClassLoader loads classes dynamically into memory during runtime. It has three phases:
+
+1. **Loading**: Reads the binary `.class` file and creates a corresponding `java.lang.Class` object in the Method Area.
+2. **Linking**:
+   - *Verification*: Validates that bytecode is safe and complies with JVM guidelines.
+   - *Preparation*: Allocates memory for static variables and initializes them to default values.
+   - *Resolution*: Resolves symbolic references in the constant pool to actual memory addresses.
+3. **Initialization**: Executes static initializers and assigns explicit initial values to static variables.
+
+#### ClassLoader Hierarchy (Delegation Model)
+
+ClassLoader uses a delegation model — it delegates class-loading requests to its parent before loading itself:
+
+- **Bootstrap ClassLoader**: Loads core classes from `rt.jar` (e.g., `java.lang.*`). Written in native C/C++.
+- **Extension/Platform ClassLoader**: Loads extension libraries from `jre/lib/ext`.
+- **Application ClassLoader**: Loads classes defined in the application's classpath.
+
+---
+
+### 1.3 JVM Memory Areas
+
+JVM divides its runtime data areas into thread-shared and per-thread regions:
+
+| Area | Access Scope | Stores |
+|:---|:---|:---|
+| **Method Area** | Shared | Class structures, metadata, constant pools, static variables, method bytecode. (Metaspace since Java 8) |
+| **Heap** | Shared | Instantiated objects and instance variables. Primary target for Garbage Collection |
+| **JVM Stack** | Per-Thread | Stack frames containing local variables, operand stacks, and method execution metadata. LIFO — `StackOverflowError` on infinite recursion |
+| **PC Registers** | Per-Thread | Address of the JVM instruction currently executing |
+| **Native Method Stack** | Per-Thread | Holds state for native methods executed via JNI (C/C++) |
+
+> **PermGen vs Metaspace**: Before Java 8, class metadata lived in PermGen (fixed-size, frequent `OutOfMemoryError`). Java 8+ replaced it with **Metaspace** which uses native memory and auto-grows, eliminating `OutOfMemoryError: PermGen`.
+
+```mermaid
+graph LR
+    subgraph HEAP ["Java Heap Memory"]
+        subgraph YG ["Young Generation"]
+            direction LR
+            Eden["Eden"] --- S0["S0 / From"] --- S1["S1 / To"]
+        end
+        subgraph OG ["Old Generation"]
+            Old["Old / Tenured"]
+        end
+    end
+
+    style HEAP fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
+    style YG fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
+    style OG fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
+
+    classDef ygNode fill:#0F766E,stroke:#2DD4BF,color:#F0FDFA,stroke-width:1px;
+    classDef ogNode fill:#9A3412,stroke:#F97316,color:#FFF7ED,stroke-width:1px;
+    class Eden,S0,S1 ygNode;
+    class Old ogNode;
+```
+
+---
+
+### 1.4 Object Lifecycle & Garbage Collection (GC)
+
+An object is eligible for GC when it is no longer reachable through any active references (e.g., reference set to `null`, reference out of scope, or only circular references remain in an isolated island).
+
+```mermaid
+graph TD
+    A["Object created (new keyword)"] --> B["Eden Space (Young Gen)"]
+    B -->|"Minor GC triggered"| C["Survivors (S0 ↔ S1 alternating)"]
+    C --> D["Age counter incremented each GC"]
+    D -->|"Age > 15 (default)"| E["Old Generation"]
+    E -->|"Major GC triggered"| F["Objects with no references → Collected"]
+    F --> G["Memory released"]
+
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef startNode fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:2px;
+    classDef ygNode fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef ogNode fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
+    classDef gcNode fill:#7F1D1D,stroke:#EF4444,color:#FEF2F2,stroke-width:1px;
+    classDef endNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
+
+    class A startNode;
+    class B,C,D ygNode;
+    class E ogNode;
+    class F gcNode;
+    class G endNode;
+```
+
+#### GC Types:
+- **Minor GC** → Young Generation (Eden + Survivor). Fast, frequent.
+- **Major GC** → Old Generation. Slower, less frequent.
+- **Full GC** → Entire Heap. Most expensive, causes Stop-The-World pause.
+
+#### Code Example — GC in Action:
+```java
+class Resource {
     @Override
-    public void startEngine() {
-        super.startEngine();
-        System.out.println("Car ready to drive");
+    protected void finalize() { // Called before GC destroys object (deprecated)
+        System.out.println("Resource cleaned up by GC");
     }
 }
 
-3) POLYMORPHISM:
-- One interface, many implementations
-- Compile-time (Method Overloading) / Runtime (Method Overriding)
-- Real Example: Payment.pay() → CreditCardPayment, UPIPayment, NetBanking
-
-Runtime Polymorphism Example:
-Payment payment = new CreditCardPayment();
-payment.pay(1000); // Calls CreditCardPayment's pay() at runtime
-
-4) ABSTRACTION:
-- Hiding complexity, showing only essential features
-- Achieved via abstract classes or interfaces
-- Real Example: ATM machine - you press "Withdraw" without knowing
-the underlying database/network calls
-
-Code Example:
-public abstract class Shape {
-    public abstract double area(); // Force subclasses to implement
-}
-public class Circle extends Shape {
-    private double radius;
-    @Override
-    public double area() { return Math.PI * radius * radius; }
-}
-
-Flowchart:
-Client Request
-       ↓
-  Abstraction (Interface/Abstract) - What to do
-       ↓
-  Polymorphism - Which implementation to use
-       ↓
-  Encapsulation - Data protection within class
-       ↓
-  Inheritance - Reuse parent behavior
-       ↓
-  Result returned
-
-─────────────────────────────────────────────────────────────────────
-Q4. What is the difference between abstract class and interface?
-─────────────────────────────────────────────────────────────────────
-Answer:
-
-| Feature | Abstract Class | Interface |
-| --- | --- | --- |
-| Methods | Abstract + Concrete | Abstract + Default + Static (Java 8) |
-| Variables | Any type | public static final (constants) |
-| Constructors | Yes | No |
-| Multiple Inherit. | No (single) | Yes (multiple interfaces) |
-| Access Modifiers | Any | public (default) |
-| IS-A relationship | Strong IS-A | CAN-DO / HAS-ABILITY-TO |
-| Use Case | Template pattern | Contract definition |
-
-Real-time Example:
-Abstract Class: Vehicle (has engine, wheels - common template)
-Interface: Flyable, Swimmable (specific capabilities)
-
-Production Scenario:
-In Insurance project - PaymentProcessor is an interface implemented by
-CreditCardProcessor, WireTransferProcessor. The base validation logic is
-in an abstract AbstractPaymentProcessor class.
-
-## ROUND 2 – CORE TECHNICAL DEEP DIVE
-
-#### Q5. Explain JVM Memory Model in detail.
-
-Answer:
-JVM Memory is divided into 5 main areas:
-
-1) METHOD AREA (MetaSpace since Java 8):
-- Stores class metadata, static variables, constant pool
-- Shared across all threads
-- Was PermGen (before Java 8) → Now MetaSpace (native memory)
-- MetaSpace auto-grows unlike PermGen (eliminates OutOfMemoryError: PermGen)
-
-2) HEAP:
-- Dynamic object allocation
-- Divided into: Young Gen + Old Gen (+ MetaSpace)
-- Young Gen → Eden + Survivor S0 + Survivor S1
-- Objects start in Eden, move to Survivor after minor GC
-- Objects that survive multiple GC cycles move to Old Gen
-
-3) STACK:
-- Per-thread memory
-- Each method call creates a Stack Frame
-- Stack Frame contains: Local Variables + Operand Stack + Frame Data
-- LIFO structure - last method called, first to be removed
-- StackOverflowError when stack is full (infinite recursion)
-
-4) PC REGISTER (Program Counter):
-- Per-thread, holds address of current executing instruction
-- Points to next instruction to execute
-
-5) NATIVE METHOD STACK:
-- For native (C/C++) method execution
-- Used with JNI (Java Native Interface)
-
-Heap Memory Diagram:
-```text
-  ┌─────────────────────────────────────────┐
-  │              HEAP                       │
-  │  ┌──────────────────────┐  ┌─────────┐ │
-  │  │    Young Generation  │  │  Old    │ │
-  │  │  ┌──────┐ ┌──┐ ┌──┐ │  │  Gen    │ │
-  │  │  │ Eden │ │S0│ │S1│ │  │(Tenured)│ │
-  │  │  └──────┘ └──┘ └──┘ │  │         │ │
-  │  └──────────────────────┘  └─────────┘ │
-  └─────────────────────────────────────────┘
-
-```
-Real-time Production Scenario:
-In Nationwide Insurance project, processing millions of policy claims
-caused frequent GC pauses. Tuning Young Gen size and using G1GC:
--XX:+UseG1GC -Xms4g -Xmx8g -XX:NewRatio=3
-Reduced GC pause times from 2s to 200ms.
-
-#### Q6. Explain HashMap internal working in Java 8+.
-
-Answer:
-
-Internal Structure:
-- Array of Node<K,V>[] (called table/bucket array)
-- Default capacity: 16 buckets
-- Default Load Factor: 0.75 (resize at 75% full)
-- Initial threshold = capacity * loadFactor = 16 * 0.75 = 12
-
-put(key, value) Flow:
-1. Compute key.hashCode()
-2. Apply hash spreading: hash = (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16)
-3. Calculate index: index = hash & (capacity - 1)
-4. Check bucket at index:
-```text
-a. If empty → Insert new Node
-b. If same key exists → Update value
-
-```
-c. If collision (different key, same bucket):
-- Before Java 8: LinkedList (O(n) lookup)
-```text
-- Java 8+: LinkedList → Tree (TreeNode) when chain length > 8 (TREEIFY_THRESHOLD)
-- Tree → LinkedList when shrinks < 6 (UNTREEIFY_THRESHOLD)
-
-```
-get(key) Flow:
-1. Hash key → find bucket index
-2. Traverse LinkedList or Tree in bucket
-3. Compare keys: (k = e.key) == key || (key != null && key.equals(k))
-
-Execution Flowchart:
-put("name", "Teja")
-       ↓
-  hashCode("name") = 3373752
-```text
-       ↓
-  hash spreading → apply XOR with upper 16 bits
-       ↓
-
-```
-  index = hash & 15 = 8 (example)
-```text
-       ↓
-  bucket[8] empty? → Insert Node{"name","Teja"}
-       ↓
-
-```
-  bucket[8] has entry?
-```text
-       ↓ (if collision)
-  Chain length < 8? → LinkedList
-  Chain length >= 8? → Convert to Red-Black Tree
-
-```
-Code Example:
-Map<String, Integer> map = new HashMap<>();
-map.put("apple", 1);   // Goes to bucket based on hash
-map.put("mango", 2);   // Different bucket
-// If "apple" and "mango" hash to same bucket -> LinkedList/Tree
-
-Production Issue:
-HashMap is NOT thread-safe. In multi-threaded environments, infinite
-loop can occur during concurrent resize. Use:
-- ConcurrentHashMap for thread-safety
-- Collections.synchronizedMap() (less efficient)
-
-[CODE EXAMPLE - ConcurrentHashMap vs HashMap vs synchronizedMap]
-
-import java.util.*;
-import java.util.concurrent.*;
-
-// ── 1. HashMap (NOT thread-safe) ──────────────────────────────────
-Map<String, Integer> hashMap = new HashMap<>();
-```text
-// Risk: if two threads call put() during resize → infinite loop / data loss
-
-// ── 2. Collections.synchronizedMap (thread-safe, but coarse lock) ─
-
-```
-Map<String, Integer> syncMap = Collections.synchronizedMap(new HashMap<>());
-```text
-// Entire map is locked on every read AND write → low concurrency
-
-// ── 3. ConcurrentHashMap (Best choice for concurrent access) ───────
-
-```
-ConcurrentHashMap<String, Integer> concurrentMap = new ConcurrentHashMap<>();
-
-// Basic operations (same API as HashMap)
-concurrentMap.put("Alice", 1);
-concurrentMap.put("Bob",   2);
-concurrentMap.put("Carol", 3);
-
-// Atomic "putIfAbsent" — adds only if key is not already present
-concurrentMap.putIfAbsent("Alice", 99);           // Ignored; Alice already exists
-concurrentMap.putIfAbsent("Dave",  4);            // Dave=4 added
-
-// Atomic "computeIfAbsent" — compute value only if key is absent
-concurrentMap.computeIfAbsent("Eve", k -> k.length()); // Eve=3 (length of "Eve")
-
-// Atomic "compute" — update value based on existing value
-concurrentMap.compute("Alice", (k, v) -> (v == null) ? 1 : v + 10); // Alice=11
-
-// Atomic "merge" — merges old and new value using the given function
-concurrentMap.merge("Bob", 5, Integer::sum);      // Bob = 2 + 5 = 7
-
-System.out.println(concurrentMap);
-// OUTPUT (order may vary): {Alice=11, Bob=7, Carol=3, Dave=4, Eve=3}
-
-// ── Multi-threaded Counter Demo ────────────────────────────────────
-ConcurrentHashMap<String, Integer> wordCount = new ConcurrentHashMap<>();
-
-Runnable task = () -> {
-    String[] words = {"java", "spring", "java", "kafka", "spring", "java"};
-    for (String word : words) {
-        // Thread-safe increment — no explicit synchronization needed
-        wordCount.merge(word, 1, Integer::sum);
+public class GCDemo {
+    public void executeDemo() {
+        Resource r = new Resource();
+        r = null;       // Eligible for GC
+        System.gc();    // Request JVM to run GC (not guaranteed instantly)
     }
-};
-
-// Launch 3 threads processing the same word list
-ExecutorService executor = Executors.newFixedThreadPool(3);
-executor.submit(task);
-executor.submit(task);
-executor.submit(task);
-executor.shutdown();
-executor.awaitTermination(5, TimeUnit.SECONDS);
-
-System.out.println(wordCount);
-// OUTPUT: {java=9, spring=6, kafka=3}  (3 threads × 3/2/1 occurrences)
-
-```text
-// ── Key Differences Table ──────────────────────────────────────────
-// +------------------------+------------+--------------+--------------------+
-
+}
 ```
-// | Feature                | HashMap    | synchronizedMap| ConcurrentHashMap|
-// +------------------------+------------+--------------+--------------------+
-| // | Thread-safe | No | Yes | Yes |
-| --- | --- | --- | --- | --- |
-| // | Lock granularity | N/A | Whole map | Bucket-level (CAS) |
-| // | Null key/value | Yes | Yes | NO |
-| // | Performance (multi-th) | Unsafe | Low | High |
-| // | Atomic ops (merge etc) | No | No | Yes |
-| // | Iteration safety | Fail-fast | Fail-fast | Weakly consistent |
-// +------------------------+------------+--------------+--------------------+
 
-NOTE:
-- ConcurrentHashMap uses CAS (Compare-And-Swap) + bucket-level locking (Java 8+)
-  instead of locking the entire map → allows many threads to read/write in parallel.
-- It does NOT allow null keys or null values (throws NullPointerException).
-- For interview: "Use ConcurrentHashMap when multiple threads read/write the map;
-  use synchronizedMap only for legacy code compatibility."
+#### GC Algorithms:
 
-#### Q7. What is String Pool? Explain String immutability.
+| Algorithm | Release | Focus |
+|:---|:---|:---|
+| **Serial GC** | Legacy | Single-threaded STW collector. Best for small apps |
+| **Parallel GC** | Java 9 default | Multi-threaded, throughput-focused |
+| **CMS** | Deprecated | Low-pause concurrent marking |
+| **G1GC** | Java 9+ default | Region-based, balanced pause/throughput. Divides heap into equal-sized regions (~2MB) |
+| **ZGC** | Java 15+ | Ultra-low latency (<10ms), even for multi-TB heaps |
+| **Shenandoah** | Java 12+ | Low-pause concurrent evacuations (RedHat) |
 
-Answer:
+---
 
-String Pool (String Literal Pool / String Intern Pool):
-- Special area in Heap (since Java 7, moved from PermGen to Heap)
-- Stores unique String literals
-- JVM reuses String objects to save memory
+### 1.5 GC Diagnostics & Memory Leaks
 
-How it Works:
-String s1 = "Hello";  // Created in String Pool
-String s2 = "Hello";  // Reuses same reference from pool
-String s3 = new String("Hello");  // New object in Heap (NOT in pool)
-String s4 = new String("Hello");  // New object in Heap (NOT in pool)
-
+**Production Tuning Flags (G1GC)**:
 ```text
-s1 == s2  → true  (same pool reference)
-s1 == s3  → false (s3 is heap object)
-s1.equals(s3) → true (content same)
-
-s1 = s3.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
-s3 = s1.intern(); -> s3 will point to the same reference as s2 (s3 == s2) -> true
-s1 = s2.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
-s2 = s1.intern(); -> s2 will point to the same reference as s2 (s2 == s2) -> true
-s1 = s4.intern(); -> s1 will point to the same reference as s2 (s1 == s2) -> true
-
-```
-String.intern():
-- Manually adds string to pool
-- s3.intern() → if "Hello" exists in pool, returns pool ref
-
-Why String is Immutable:
-1. Security: Connection strings, passwords can't be changed mid-use
-2. Thread Safety: Multiple threads can safely share strings
-3. Hashcode Caching: String's hashcode is cached (used in HashMap keys)
-4. String Pool: Immutability enables safe pool sharing
-
-Code Example:
-String url = "jdbc:mysql://localhost:3306/db";
-// If String were mutable, malicious code could modify url
-// between your security check and actual connection
-
-Internal Representation (Java 9+):
-- Before Java 9: char[] array (2 bytes per char)
-- Java 9+: byte[] with charset encoding (Compact Strings)
-  - Latin-1 (1 byte/char) for ASCII strings
-  - UTF-16 (2 bytes/char) for others
-  - Saves ~30-40% memory
-
-## ROUND 3 – ADVANCED + INTERNAL WORKING
-
-#### Q8. Explain Garbage Collection in Java - all algorithms.
-
-Answer:
-
-GC Types and When They Run:
-1. Minor GC → Young Generation (Eden + Survivor)
-- Fast, frequent
-- Objects that survive copied to Survivor S0/S1 alternately
-- After N generations (default 15), promoted to Old Gen
-
-2. Major GC (Old Gen GC) → Old Generation
-- Slower, less frequent
-- Triggered when Old Gen is nearly full
-
-3. Full GC → Entire Heap
-- Most expensive, causes Stop-The-World pause
-
-GC Algorithms:
-```text
-  ┌─────────────────────────────────────────────────────────────────┐
-  │Algorithm       │ Release │ Focus                               │
-  ├─────────────────┼─────────┼─────────────────────────────────────┤
-  │Serial GC        │ Old     │ Single thread, small apps           │
-  │Parallel GC      │ Java 9  │ Multiple threads, throughput focus  │
-  │CMS (deprecated) │ Old     │ Low pause time (concurrent)         │
-  │G1GC             │ Java 9+ │ Large heaps, balanced pause/thput   │
-  │ZGC              │ Java 15 │ Ultra-low pause (<10ms)             │
-  │Shenandoah       │ Java 12 │ Low pause, RedHat                   │
-  └─────────────────────────────────────────────────────────────────┘
-
-```
-G1GC Internal Working:
-- Divides heap into equal-sized Regions (2MB each by default)
-- Regions designated as: Eden, Survivor, Old, Humongous (large objects)
-- Builds "Collection Set" - regions with most garbage first
-- Concurrent marking → Evacuation pause
-- Target: -XX:MaxGCPauseMillis=200
-
-Production Tuning Flags:
 -XX:+UseG1GC
 -Xms4g -Xmx8g
 -XX:MaxGCPauseMillis=200
 -XX:G1HeapRegionSize=8m
 -XX:InitiatingHeapOccupancyPercent=45
 -XX:G1ReservePercent=10
-
-Flowchart - Object Lifecycle:
-Object created (new keyword)
-       ↓
-  Eden Space (Young Gen)
-```text
-       ↓ Minor GC triggered
-  Survivors (S0 ↔ S1 alternating)
-
 ```
-  Age counter incremented each GC
-       ↓ Age > 15 (default)
-  Old Generation
-```text
-       ↓ Major GC triggered
-  Objects with no references → Collected
-       ↓
 
-```
-  Memory released
+> **Production Scenario**: In Nationwide Insurance project, processing millions of policy claims caused frequent GC pauses. Tuning Young Gen size with G1GC: `-XX:+UseG1GC -Xms4g -Xmx8g -XX:NewRatio=3` reduced GC pause times from 2s to 200ms.
 
-─────────────────────────────────────────────────────────────────────
-*** Q9. Explain Java 8 Lambda and Functional Interfaces.
-─────────────────────────────────────────────────────────────────────
-Answer:
+**Memory Leak Detection Process**:
+1. **Enable GC Logging**: `-XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:/var/log/myapp-gc.log`
+2. **Take Heap Dump**: `jmap -dump:format=b,file=heap.hprof <PID>` or via Spring Actuator: `/actuator/heapdump`
+3. **Analyze with Eclipse MAT**: Find Leak Suspects report → Look for objects with large retained heap
+4. **Common Causes**:
+   - Static collections growing without bounds
+   - Unclosed connections (JDBC, HTTP)
+   - Event listeners not removed
+   - Caches without eviction policy
+   - ThreadLocal variables not cleared
 
-Functional Interface:
-- Interface with exactly ONE abstract method
-- Can have multiple default/static methods
-- Annotated with @FunctionalInterface (optional but recommended)
-
-Built-in Functional Interfaces:
-```text
-  ┌────────────────────┬──────────────────────┬─────────────────────┐
-  │Interface           │ Method               │ Use Case            │
-  ├────────────────────┼──────────────────────┼─────────────────────┤
-  │Predicate<T>        │ boolean test(T t)    │ Filtering           │
-  │Function<T,R>       │ R apply(T t)         │ Transformation      │
-  │Consumer<T>         │ void accept(T t)     │ Side effects        │
-  │Supplier<T>         │ T get()              │ Lazy generation     │
-  │BiFunction<T,U,R>   │ R apply(T t, U u)   │ Two args → result   │
-  │UnaryOperator<T>    │ T apply(T t)         │ Same type in/out    │
-  │BinaryOperator<T>   │ T apply(T t1, T t2) │ Two same type args  │
-  └────────────────────┴──────────────────────┴─────────────────────┘
-
-```
-Lambda Syntax:
-```text
-(parameters) -> expression
-(parameters) -> { statements; }
-
-```
-Code Examples:
-// Before Lambda (Anonymous class)
-Runnable r = new Runnable() {
-    @Override
-    public void run() { System.out.println("Running"); }
-};
-
-// With Lambda
-Runnable r = () -> System.out.println("Running");
-
-// Predicate example (Insurance domain)
-Predicate<Policy> isActive = policy -> policy.getStatus().equals("ACTIVE");
-List<Policy> activePolicies = policies.stream()
-    .filter(isActive)
-    .collect(Collectors.toList());
-
-// Function example
-Function<String, Integer> stringLength = String::length;
-int len = stringLength.apply("Hello");  // 5
-
-// Consumer example
-Consumer<Policy> logPolicy = p -> logger.info("Processing: {}", p.getId());
-activePolicies.forEach(logPolicy);
-
-Internal Working:
-- Lambda expressions are NOT anonymous inner classes
-- JVM uses invokedynamic bytecode instruction
-- Lambda body converted to a static method in the enclosing class
-- LambdaMetafactory creates a functional interface implementation
-- More efficient than anonymous classes (no extra .class files)
-
-#### Q10. Explain Optional class - purpose and usage.
-
-Answer:
-Optional<T> - container that may or may not contain a non-null value.
-Introduced in Java 8 to eliminate NullPointerException.
-
-Creation:
-Optional<String> empty = Optional.empty();
-Optional<String> name = Optional.of("Teja");        // throws NPE if null
-Optional<String> nullable = Optional.ofNullable(name); // safe for null
-
-Usage Methods:
-```text
-optional.isPresent()        → true if value exists
-optional.isEmpty()          → true if empty (Java 11)
-optional.get()              → returns value (throws if empty)
-optional.orElse("default")  → returns value or default
-optional.orElseGet(supplier)→ returns value or executes supplier
-optional.orElseThrow(...)   → throws exception if empty
-optional.map(f)             → transforms value if present
-optional.flatMap(f)         → for Optional-returning functions
-optional.filter(predicate)  → filters value
-
-```
-Production Code Example (Insurance Service):
-// Finding a policy by ID - avoiding null checks
-public PolicyDTO findPolicy(String policyId) {
-    return policyRepository.findById(policyId)
-```text
-        .map(policy -> new PolicyDTO(policy))
-        .orElseThrow(() -> new PolicyNotFoundException(
-
-```
-            "Policy not found: " + policyId));
-}
-
-// Nested null check scenario
-// Before Optional:
-if (user != null && user.getAddress() != null
-    && user.getAddress().getCity() != null) {
-    return user.getAddress().getCity();
-}
-
-// With Optional:
-return Optional.ofNullable(user)
-    .map(User::getAddress)
-    .map(Address::getCity)
-    .orElse("Unknown City");
-
-When NOT to use Optional:
-- As method parameter type (use overloading instead)
-- As collection element (use empty collection instead)
-- As field type in a class (serialization issues)
-
-## ROUND 4 – SCENARIO-BASED + DEBUGGING
-
-#### Q11. How do you debug a memory leak in a Java application?
-
-Answer:
-
-Signs of Memory Leak:
-- Heap usage keeps growing over time
-- Frequent Full GC with no memory recovery
-- OutOfMemoryError: Java heap space
-- Application slows down over time
-
-Step-by-step Debug Process:
-1. Enable GC Logging:
--XX:+PrintGCDetails -XX:+PrintGCDateStamps
--Xloggc:/var/log/myapp-gc.log
--XX:+UseGCLogFileRotation
-
-2. Take Heap Dump:
-jmap -dump:format=b,file=heap.hprof <pid>
-Or via Actuator: /actuator/heapdump
-
-3. Analyze with Eclipse MAT (Memory Analyzer Tool):
-- Find Leak Suspects report
-- Look for objects with large retention
-
-4. Common Causes:
-- Static collections growing without bounds
-- Unclosed connections (JDBC, HTTP)
-- Event listeners not removed
-- Caches without eviction policy
-- ThreadLocal variables not cleared
-- Classloader leaks
-
-Real Production Scenario (IKEA Project):
-A memory leak was found in the product onboarding service. Each request
-created a new ObjectMapper without caching it. After switching to a
-singleton ObjectMapper bean, memory stabilized.
-
-Code Fix:
-// BAD - creates new ObjectMapper per request
+**Production Fix Example (IKEA Project)**:
+```java
+// BAD - creates new ObjectMapper per request (memory leak!)
 public String serialize(Object obj) {
-    return new ObjectMapper().writeValueAsString(obj); // LEAK!
+    return new ObjectMapper().writeValueAsString(obj);
 }
 
-// GOOD - singleton bean
+// GOOD - singleton bean (reusable)
 @Bean
 public ObjectMapper objectMapper() {
     return new ObjectMapper();
 }
-
-// Inject and reuse
-@Autowired
-private ObjectMapper objectMapper;
-
-#### Q12. Scenario: Your HashMap application has poor performance in
-
-multi-threaded environment. How do you fix?
-
-#### Answer:
-
-Problem: HashMap is not thread-safe.
-- Concurrent puts can cause infinite loop (Java < 8)
-- In Java 8, causes data corruption
-
-Solutions (in order of preference):
-
-1. ConcurrentHashMap:
-- Best performance for concurrent access
-- Uses segment locking (Java 7) or CAS + synchronized per bucket (Java 8)
-- Multiple threads can READ simultaneously
-- Write locks: Only lock the single bucket being modified
-- No full-map locking
-
-Code:
-   Map<String, Policy> policyCache =
-       new ConcurrentHashMap<>();
-
-2. Collections.synchronizedMap():
-   - Wraps HashMap with synchronized methods
-   - All operations are synchronized (full lock)
-   - Less efficient than ConcurrentHashMap
-
-3. Hashtable (legacy):
-   - All methods synchronized
-   - Very poor performance, avoid in new code
-
-ConcurrentHashMap Internal (Java 8):
-- Lock-free reads using volatile fields
-- CAS (Compare-And-Swap) for updates
-- synchronized block only for specific node operations
-- Allows full concurrent reads + N/16 concurrent writes
-
-Production Implementation:
-@Service
-public class PolicyCacheService {
-    private final ConcurrentHashMap<String, Policy> cache =
-        new ConcurrentHashMap<>(1000, 0.75f, 16);
-    // 16 = concurrency level (estimated concurrent writers)
-
-    public Policy getOrLoad(String policyId) {
-        return cache.computeIfAbsent(policyId,
-            id -> policyRepository.findById(id).orElseThrow());
-    }
-}
-
-## ROUND 5 – SYSTEM DESIGN + ARCHITECTURE + OPTIMIZATION
-
-#### Q13. How would you design a high-performance caching system
-
-         for a Java microservice?
-─────────────────────────────────────────────────────────────────────
-Answer:
-
-  Layered Caching Architecture:
-  Client Request
-       ↓
-  L1 Cache: In-Process (ConcurrentHashMap / Caffeine)
-       ↓ miss
-  L2 Cache: Distributed (Redis)
-       ↓ miss
-  Database (MySQL / SQL Server)
-
-  Implementation with Spring Cache + Redis:
-
-  1. Dependency (pom.xml):
-     <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-data-redis</artifactId>
-     </dependency>
-     <dependency>
-         <groupId>org.springframework.boot</groupId>
-         <artifactId>spring-boot-starter-cache</artifactId>
-     </dependency>
-
-  2. Configuration:
-     @Configuration
-     @EnableCaching
-     public class CacheConfig {
-         @Bean
-         public RedisCacheManager cacheManager(RedisConnectionFactory f) {
-             RedisCacheConfiguration config = RedisCacheConfiguration
-                 .defaultCacheConfig()
-                 .entryTtl(Duration.ofMinutes(30))
-                 .serializeValuesWith(
-                     RedisSerializationContext.SerializationPair
-                         .fromSerializer(new GenericJackson2JsonRedisSerializer()));
-             return RedisCacheManager.create(f);
-         }
-     }
-
-  3. Service Layer:
-     @Service
-     public class PolicyService {
-         @Cacheable(value = "policies", key = "#policyId",
-                    unless = "#result == null")
-         public Policy getPolicy(String policyId) {
-             return policyRepository.findById(policyId).orElse(null);
-         }
-
-         @CacheEvict(value = "policies", key = "#policy.id")
-         public Policy updatePolicy(Policy policy) {
-             return policyRepository.save(policy);
-         }
-
-         @CachePut(value = "policies", key = "#policy.id")
-         public Policy savePolicy(Policy policy) {
-             return policyRepository.save(policy);
-         }
-     }
-
-  Cache Eviction Strategies:
-  - TTL (Time-To-Live): Auto expire after N minutes
-  - LRU (Least Recently Used): Evict least used when full
-  - LFU (Least Frequently Used): Evict least frequent
-
-  Production Considerations:
-  - Cache stampede prevention: Use Caffeine with async loading
-  - Cache coherency: Use @CacheEvict on update/delete
-  - Distributed locks: Redis SETNX for cache warming
-
-#### Q14. Explain CompletableFuture and async programming in Java 8.
-
-Answer:
-
-CompletableFuture = Future + Completion stage chaining
-
-Key Methods:
-```text
-- supplyAsync(Supplier)     → Async computation returning value
-- runAsync(Runnable)        → Async computation, no return
-- thenApply(Function)       → Transform result (sync)
-- thenApplyAsync(Function)  → Transform result (async)
-- thenAccept(Consumer)      → Consume result
-- thenCombine(CF, BiFunc)   → Combine two futures
-- allOf(CF...)              → Wait for all
-- anyOf(CF...)              → Wait for any one
-- exceptionally(Function)   → Error handling
-- handle(BiFunction)        → Handle result or exception
-
 ```
-Production Example (Nationwide Insurance):
-// Parallel API calls to reduce latency
-public ClaimSummaryDTO getClaimSummary(String claimId) {
-    CompletableFuture<ClaimDetails> detailsFuture =
-        CompletableFuture.supplyAsync(
-            () -> claimService.getDetails(claimId));
 
-    CompletableFuture<List<Document>> docsFuture =
-        CompletableFuture.supplyAsync(
-            () -> documentService.getDocuments(claimId));
+#### Key Takeaways
+* JDK includes JRE and development tools; JRE includes JVM and standard libraries.
+* Heap memory is shared across all threads; local variables are isolated inside the per-thread JVM Stack.
+* The ClassLoader relies on a delegation hierarchy to prevent namespace clashes and security threats.
+* Metaspace (Java 8+) replaced PermGen, using native memory that auto-grows.
+* Memory leaks require profiling the retained heap usage path (Eclipse MAT) to identify static leaks or unclosed resources.
 
-    CompletableFuture<PolicyInfo> policyFuture =
-        CompletableFuture.supplyAsync(
-            () -> policyService.getPolicy(claimId));
+---
 
-    // Wait for all 3 to complete (parallel execution)
-    return CompletableFuture.allOf(detailsFuture, docsFuture, policyFuture)
-        .thenApply(v -> new ClaimSummaryDTO(
-            detailsFuture.join(),
-            docsFuture.join(),
-            policyFuture.join()))
-        .exceptionally(ex -> {
-            logger.error("Failed to get claim summary", ex);
-            return new ClaimSummaryDTO(); // fallback
-        })
-        .join();
-}
+## SECTION 2: OBJECT-ORIENTED PROGRAMMING (OOP)
 
-// Before:  Sequential = 300ms + 200ms + 150ms = 650ms
-// After:   Parallel   = max(300ms, 200ms, 150ms) = 300ms
-// Latency improvement: ~54%
+### 2.1 The Four Pillars of OOP
 
-## SECTION 4: PERFORMANCE CONSIDERATIONS
+```mermaid
+flowchart LR
+    A["Client Request"] --> B["Abstraction<br>(What to do)"]
+    B --> C["Polymorphism<br>(Which impl)"]
+    C --> D["Encapsulation<br>(Data protection)"]
+    D --> E["Inheritance<br>(Code reuse)"]
+    E --> F["Result"]
 
-1. String Concatenation:
-BAD:  String s = "Hello" + name + "!";  // Creates multiple objects
-GOOD: StringBuilder sb = new StringBuilder()
-.append("Hello").append(name).append("!"); // Faster
-
-2. ArrayList vs LinkedList:
-```text
-ArrayList:  O(1) get, O(n) insert/delete middle → use for read-heavy
-LinkedList: O(n) get, O(1) insert/delete middle → use for write-heavy
-
+    classDef concept fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef pillar fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    class A,F concept
+    class B,C,D,E pillar
 ```
-3. Auto-boxing overhead:
-BAD:  Integer sum = 0;
-      for(int i = 0; i < 1000000; i++) sum += i;  // 1M boxing/unboxing
-GOOD: int sum = 0;
-      for(int i = 0; i < 1000000; i++) sum += i;  // No boxing
 
-4. Stream vs Traditional for-loop:
-- Parallel streams only worth it for: large data + CPU-intensive operations
-- Sequential stream has overhead vs for-loop for small data
-- For I/O bound operations, use CompletableFuture instead
+**1. Encapsulation** — Binding data and methods together. Hiding state using access modifiers.
 
-## SECTION 5: BEST PRACTICES
-
-1. Follow SOLID Principles:
-S - Single Responsibility Principle
-O - Open/Closed Principle
-L - Liskov Substitution Principle
-I - Interface Segregation Principle
-D - Dependency Inversion Principle
-
-#### SOLID PRINCIPLES – DETAILED EXPLANATION (Interview Ready)
-
-SOLID is an acronym coined by Robert C. Martin ("Uncle Bob").
-These 5 principles help build software that is:
-```text
-- Maintainable   → easy to change without breaking other things
-- Scalable       → easy to extend with new features
-- Testable       → easy to write unit tests
-- Decoupled      → low dependency between modules
-
-```
-## S — Single Responsibility Principle (SRP)
-
-Definition:
-"A class should have ONLY ONE reason to change."
-- Each class should do ONE thing and do it well.
-
-Why it matters:
-If a class handles multiple responsibilities, a change in one
-responsibility may break unrelated functionality, making code
-fragile and harder to test.
-
-Real-World Analogy:
-A doctor treats patients. A doctor should NOT also manage billing,
-appointments, and housekeeping. Each role has its own responsibility.
-
-BAD Example (Violates SRP):
-  class EmployeeService {
-      public Employee findById(int id) { ... }         // Business logic
-      public void saveToDatabase(Employee e) { ... }   // DB concern
-      public void sendWelcomeEmail(Employee e) { ... } // Notification concern
-      public String generateReport(Employee e) { ... } // Reporting concern
-      // Multiple reasons to change: DB schema, email template, report format
-  }
-
-GOOD Example (Follows SRP):
-  class EmployeeRepository {
-      public Employee findById(int id) { ... }
-      public void save(Employee e) { ... }
-  }
-
-  class EmailService {
-      public void sendWelcomeEmail(Employee e) { ... }
-  }
-
-  class EmployeeReportService {
-      public String generateReport(Employee e) { ... }
-  }
-
-  class EmployeeService {
-      // Orchestrates only — delegates to each specialist class
-      public void onboardEmployee(Employee e) {
-          employeeRepository.save(e);
-          emailService.sendWelcomeEmail(e);
-      }
-  }
-
-Production Scenario (Insurance Domain):
-  // BAD: PolicyService doing too much
-  class PolicyService {
-      public Policy getPolicy(String id) { ... }
-      public void exportPolicyToPDF(Policy p) { ... }    // PDF logic here?
-      public void sendRenewalEmail(Policy p) { ... }     // Email here?
-  }
-
-  // GOOD: Each class has one job
-  class PolicyService         { Policy getPolicy(String id) {...} }
-  class PolicyPDFExporter     { void export(Policy p) {...} }
-  class PolicyEmailNotifier   { void sendRenewal(Policy p) {...} }
-
-Interview Tip:
-  "SRP reduces coupling. Each class is focused, easy to test in
-   isolation, and changes don't ripple across unrelated code."
-
-## O — Open/Closed Principle (OCP)
-
-Definition:
-"Software entities should be OPEN for extension, but CLOSED
-   for modification."
-  → Add new behavior by writing NEW code, not by changing existing code.
-
-Why it matters:
-  Modifying existing code risks introducing bugs. Instead, use
-  abstraction (interfaces/abstract classes) to plug in new behavior.
-
-Real-World Analogy:
-  A USB port is "open for extension" (you can plug any USB device)
-  but the port itself is "closed for modification" (you don't rewire
-  your laptop for each new device).
-
-BAD Example (Violates OCP):
-  class DiscountService {
-      public double applyDiscount(String type, double price) {
-          if (type.equals("SEASONAL")) return price * 0.90;
-          else if (type.equals("EMPLOYEE")) return price * 0.80;
-          else if (type.equals("VIP")) return price * 0.70;
-          // Adding new type = modifying this method → OCP violation!
-          return price;
-      }
-  }
-
-GOOD Example (Follows OCP):
-  interface DiscountStrategy {
-      double apply(double price);
-  }
-
-  class SeasonalDiscount implements DiscountStrategy {
-      public double apply(double price) { return price * 0.90; }
-  }
-
-  class EmployeeDiscount implements DiscountStrategy {
-      public double apply(double price) { return price * 0.80; }
-  }
-
-  class VIPDiscount implements DiscountStrategy {
-      public double apply(double price) { return price * 0.70; }
-  }
-
-  // New discount type? Just add a new class — no existing code changes!
-  class LoyaltyDiscount implements DiscountStrategy {
-      public double apply(double price) { return price * 0.85; }
-  }
-
-  class DiscountService {
-      public double applyDiscount(DiscountStrategy strategy, double price) {
-          return strategy.apply(price); // Closed for modification
-      }
-  }
-
-Production Scenario (IKEA Product Pricing):
-  // Adding new payment gateway? Don't touch existing code.
-  interface PaymentGateway { void processPayment(Order o); }
-  class StripeGateway implements PaymentGateway { ... }
-  class PayPalGateway implements PaymentGateway { ... }
-  class RazorpayGateway implements PaymentGateway { ... } // New → just add class
-
-Interview Tip:
-  "OCP is achieved through Strategy Pattern, Template Method Pattern,
-   or Spring's polymorphism via @Component + interface injection.
-   Adding a new feature = new class, not editing old classes."
-
-## L — Liskov Substitution Principle (LSP)
-
-Definition:
-"Objects of a superclass should be replaceable with objects of
-its subclasses WITHOUT breaking the application."
-- If S is a subtype of T, then objects of type T may be replaced
-with objects of type S without altering any of the desirable
-properties of the program. (Barbara Liskov, 1987)
-
-Why it matters:
-Violations of LSP break polymorphism. If subclasses behave
-unexpectedly when used in place of the parent, your code becomes
-unreliable and hard to reason about.
-
-Real-World Analogy:
-A SavingsAccount IS-A BankAccount. You should be able to use
-SavingsAccount wherever BankAccount is expected and it should
-behave correctly. But if SavingsAccount throws an exception for
-deposit(), it violates LSP.
-
-BAD Example (Violates LSP — Classic Square/Rectangle problem):
-  class Rectangle {
-      protected int width, height;
-      public void setWidth(int w)  { this.width = w; }
-      public void setHeight(int h) { this.height = h; }
-      public int area() { return width * height; }
-  }
-
-  class Square extends Rectangle {
-      @Override
-      public void setWidth(int w)  { this.width = w; this.height = w; }
-      @Override
-      public void setHeight(int h) { this.height = h; this.width = h; }
-      // Square forces width == height → breaks Rectangle's contract!
-  }
-
-  // Client code breaks:
-  Rectangle r = new Square(); // LSP says this should work
-  r.setWidth(5);
-  r.setHeight(10);
-  System.out.println(r.area()); // Expected 50, Got 100 → BROKEN!
-
-GOOD Example (Follows LSP — separate hierarchy):
-  interface Shape { int area(); }
-
-  class Rectangle implements Shape {
-      int width, height;
-      public int area() { return width * height; }
-  }
-
-  class Square implements Shape {
-      int side;
-      public int area() { return side * side; }
-  }
-  // Both can be used via Shape interface without surprising behavior
-
-BAD Example 2 (Throwing UnsupportedOperationException):
-  class Bird {
-      public void fly() { System.out.println("Flying"); }
-  }
-
-  class Penguin extends Bird {
-      @Override
-      public void fly() {
-          throw new UnsupportedOperationException("Penguins can't fly!");
-          // Violates LSP — caller expects all Birds to fly
-      }
-  }
-
-GOOD Example 2:
-  interface Bird     { void eat(); }
-  interface FlyingBird extends Bird { void fly(); }
-
-  class Sparrow implements FlyingBird {
-      public void eat() { ... }
-      public void fly() { System.out.println("Sparrow flying"); }
-  }
-
-  class Penguin implements Bird {
-      public void eat() { ... }
-      // No fly() — does not claim it can fly
-  }
-
-Production Scenario:
-  // Insurance Domain: All policies can be renewed, but TermPolicy
-  // cannot be renewed after expiry. If TermPolicy.renew() throws
-  // an exception when base Policy.renew() is expected to work,
-  // it breaks LSP. Use a separate RenewablePolicy interface instead.
-
-Interview Tip:
-  "LSP ensures true IS-A relationships. The contract of the parent
-   must be honored by children. Watch for: overridden methods that
-   throw exceptions or weaken behavior — these signal LSP violations."
-
-## I — Interface Segregation Principle (ISP)
-
-Definition:
-"Clients should NOT be forced to depend on interfaces they do not use."
-- Create small, specific interfaces rather than one large "fat" interface.
-
-Why it matters:
-A fat interface forces implementing classes to provide empty or
-dummy implementations for methods they don't need, leading to
-misleading code and unnecessary coupling.
-
-Real-World Analogy:
-A Printer interface with print(), scan(), fax(), photocopy().
-A basic printer only prints. Why should it implement scan/fax?
-Split into IPrinter, IScanner, IFax.
-
-BAD Example (Violates ISP — Fat Interface):
-  interface Worker {
-      void work();
-      void eat();
-      void sleep();
-      void attendMeetings();
-  }
-
-  class Robot implements Worker {
-      public void work() { System.out.println("Working"); }
-      public void eat()  { /* Robots don't eat! Forced empty impl */ }
-      public void sleep(){ /* Robots don't sleep! */ }
-      public void attendMeetings() { ... }
-      // Robot is forced to implement irrelevant methods
-  }
-
-GOOD Example (Follows ISP):
-  interface Workable      { void work(); }
-  interface Feedable      { void eat(); }
-  interface Sleepable     { void sleep(); }
-  interface MeetingGoer   { void attendMeetings(); }
-
-  class Human implements Workable, Feedable, Sleepable, MeetingGoer {
-      public void work()           { System.out.println("Human working"); }
-      public void eat()            { System.out.println("Human eating"); }
-      public void sleep()          { System.out.println("Human sleeping"); }
-      public void attendMeetings() { System.out.println("In meeting"); }
-  }
-
-  class Robot implements Workable, MeetingGoer {
-      public void work()           { System.out.println("Robot working"); }
-      public void attendMeetings() { System.out.println("Robot logs meeting"); }
-      // No eat() or sleep() → clean!
-  }
-
-Production Scenario (Spring Boot / Microservices):
-  // BAD: One fat service interface
-  interface PolicyService {
-      Policy findById(String id);
-      void createPolicy(Policy p);
-      void renewPolicy(Policy p);
-      void exportToPDF(Policy p);
-      void sendRenewalEmail(Policy p);
-  }
-
-  // GOOD: Segregated interfaces
-  interface PolicyQueryService   { Policy findById(String id); }
-  interface PolicyCommandService { void createPolicy(Policy p); void renewPolicy(Policy p); }
-  interface PolicyExportService  { void exportToPDF(Policy p); }
-  interface PolicyNotifyService  { void sendRenewalEmail(Policy p); }
-
-  // Clients only depend on what they need:
-  // PDF module uses PolicyExportService → no dependency on email/DB logic
-
-Interview Tip:
-  "ISP is about cohesion in interfaces. In Spring, we often split
-   service interfaces by read vs write (CQRS pattern), which naturally
-   follows ISP. Avoid creating 'god interfaces' that try to do everything."
-
-## D — Dependency Inversion Principle (DIP)
-
-Definition:
-"High-level modules should NOT depend on low-level modules.
-Both should depend on abstractions."
-"Abstractions should not depend on details.
-Details should depend on abstractions."
-- Depend on interfaces, not concrete classes.
-
-Why it matters:
-If a high-level module (business logic) directly depends on a
-low-level module (DB, email, API), changing the low-level module
-breaks the high-level module. DIP decouples them via interfaces.
-
-Real-World Analogy:
-Your TV remote (high-level) doesn't care if the TV is Sony or LG
-(low-level). It communicates via a standard IR protocol (abstraction).
-You can swap the TV without changing the remote.
-
-BAD Example (Violates DIP — High level depends on concrete class):
-  class MySQLDatabase {
-      public void save(Object data) { System.out.println("Saving to MySQL"); }
-  }
-
-  class OrderService {
-      private MySQLDatabase db = new MySQLDatabase(); // Tightly coupled!
-
-      public void placeOrder(Order o) {
-          // Business logic
-          db.save(o); // Directly depends on MySQL — what if we switch to PostgreSQL?
-      }
-  }
-
-GOOD Example (Follows DIP):
-  // Abstraction (interface)
-  interface Database {
-      void save(Object data);
-  }
-
-  // Low-level modules depend on the abstraction
-  class MySQLDatabase implements Database {
-      public void save(Object data) { System.out.println("Saving to MySQL"); }
-  }
-
-  class MongoDatabase implements Database {
-      public void save(Object data) { System.out.println("Saving to MongoDB"); }
-  }
-
-  // High-level module depends on abstraction (not concrete class)
-  class OrderService {
-      private final Database db;
-
-      // Dependency injected via constructor (NOT created internally)
-      public OrderService(Database db) { this.db = db; }
-
-      public void placeOrder(Order o) {
-          db.save(o); // Works with MySQL, Mongo, or any Database impl
-      }
-  }
-
-  // Usage:
-  OrderService service = new OrderService(new MySQLDatabase());
-  // Or easily swap:
-  OrderService service2 = new OrderService(new MongoDatabase());
-
-Production Scenario (Spring Boot — DIP in Action):
-  // Spring's @Autowired IS DIP in action!
-  // The service doesn't know if it's getting JPA, JDBC, or MongoDB repo.
-
-  public interface PolicyRepository extends JpaRepository<Policy, String> {}
-
-  @Service
-  public class PolicyService {
-      private final PolicyRepository repo; // Depends on interface
-
-      @Autowired
-      public PolicyService(PolicyRepository repo) { this.repo = repo; }
-      // Spring injects the concrete implementation — DIP + IoC!
-  }
-
-  // Switching from JPA to MongoDB: just change the implementation,
-  // PolicyService code doesn't change at all.
-
-DIP vs Dependency Injection (DI):
-```text
-  DIP  = PRINCIPLE  → "Depend on abstractions"
-  DI   = PATTERN    → Mechanism to supply dependencies from outside
-  IoC  = FRAMEWORK  → Spring container manages object creation & wiring
-
-```
-  DI is one way to achieve DIP, but they are NOT the same thing.
-
-Interview Tip:
-  "DIP is what makes Spring's IoC container so powerful. By injecting
-   interfaces instead of concrete classes, we can swap implementations
-   (e.g., for testing with mocks) without touching business logic.
-   DIP + OCP together make code truly extensible and testable."
-
-## SOLID — Quick Cheat Sheet
-
-```text
-  ┌───┬────────────────────────────┬────────────────────────────────────┐
-  │   │ Principle                  │ One-line Rule                      │
-  ├───┼────────────────────────────┼────────────────────────────────────┤
-  │ S │ Single Responsibility      │ One class = one job                │
-  │ O │ Open/Closed                │ Extend with new code, don't edit   │
-  │ L │ Liskov Substitution        │ Subtypes must honor parent contract │
-  │ I │ Interface Segregation      │ Many small interfaces > one fat    │
-  │ D │ Dependency Inversion       │ Depend on abstractions, not impls  │
-  └───┴────────────────────────────┴────────────────────────────────────┘
-
-```
-Design Patterns that enforce SOLID:
-```text
-  ┌────────────────────┬─────────────────────────────────────────┐
-  │ SOLID Principle    │ Supported By                            │
-  ├────────────────────┼─────────────────────────────────────────┤
-  │ SRP                │ Facade, Service Layer, CQRS             │
-  │ OCP                │ Strategy, Decorator, Template Method    │
-  │ LSP                │ Proper Inheritance + Interfaces         │
-  │ ISP                │ Role Interfaces, CQRS                   │
-  │ DIP                │ Dependency Injection, Factory, IoC      │
-  └────────────────────┴─────────────────────────────────────────┘
-
-```
-How to answer in interview:
-1. State the principle in one line
-2. Give the real-world analogy
-3. Show BAD vs GOOD code
-4. Relate to Spring Boot / your project experience
-
-#### 2. Always close resources (try-with-resources):
-
-try (Connection conn = dataSource.getConnection();
-     PreparedStatement ps = conn.prepareStatement(sql)) {
-    // use resources
-} // Auto-closed
-
-3. Prefer composition over inheritance
-4. Use final for constants: static final
-5. Program to interfaces, not implementations
-6. Use Optional instead of null returns
-7. Use meaningful exception types
-
-## SECTION 6: MOST IMPORTANT QUESTIONS QUICK REFERENCE
-
-1. JDK vs JRE vs JVM
-2. OOPs 4 pillars with examples
-3. Abstract class vs Interface
-4. JVM Memory Model - all 5 areas
-5. HashMap internal working (Java 8)
-6. String Pool and immutability
-7. GC algorithms - G1GC, ZGC
-8. Java 8 Lambda and Functional Interfaces
-9. Optional class usage
-10. CompletableFuture and async programming
-11. ConcurrentHashMap vs HashMap vs Hashtable
-12. Memory leak detection and debugging
-
-## END OF JAVA CORE ANALYSIS
-
-# JAVA CORE CONCEPTS - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-
-Last Updated: March 20, 2026
-
-## This document covers all major Java interview topics: JVM internals, OOP,
-
-Strings, Generics, Exception Handling, Multi-threading, and Collections.
-Each section has clear theory, memory diagrams, and runnable code examples.
-
-## SECTION 1: JVM ARCHITECTURE & MEMORY MODEL
-
-The JVM (Java Virtual Machine) is the engine that allows Java to be platform-
-independent ("Write Once, Run Anywhere").
-
---- 1.1 Three Core Components ---
-JDK  = JRE + Development tools (javac, jar, javadoc)
-JRE  = JVM + Java Class Libraries (rt.jar, java.util, etc.)
-JVM  = ClassLoader + Runtime Memory + Execution Engine
-
---- 1.2 JVM Memory Areas ---
-
-| Area | Scope | Stores |
-| --- | --- | --- |
-| Stack | Per Thread | Method frames, local vars |
-| Heap | Shared (all) | Objects, instance vars |
-| Method Area | Shared (all) | Class info, static vars |
-| PC Registers | Per Thread | Current instruction ptr |
-| Native Method Stack | Per Thread | Native (C/C++) methods |
-
-HEAP sub-divisions:
-```text
-Young Generation  -> Eden + Survivor1 + Survivor2 (Short-lived objects)
-Old Generation    -> Long-lived objects (survive many GC cycles)
-Metaspace (Java 8+) -> Class metadata (replaced PermGen)
-
-```
---- 1.3 ClassLoader Subsystem ---
-Phases:
-1. Loading: Reads .class file, creates java.lang.Class object.
-2. Linking:
-a. Verification: Checks bytecode correctness.
-b. Preparation: Allocates memory for class variables.
-c. Resolution: Resolves symbolic references.
-3. Initialization: Executes static blocks and variable assignments.
-
-ClassLoader Hierarchy (Delegation Model):
-Bootstrap ClassLoader  (rt.jar, java.*)
-- Extension ClassLoader (ext/*.jar)
-- Application ClassLoader (classpath)
-
---- 1.4 Garbage Collection (GC) ---
-GC Types:
-```text
-1. Serial GC     -> Single-threaded, for small apps
-2. Parallel GC   -> Multi-threaded, for throughput
-3. CMS GC        -> Low pause, concurrent marking
-4. G1 GC         -> Region-based, Java 9+ default
-5. ZGC           -> Ultra-low latency (Java 15+)
-
-```
-Object becomes eligible for GC when:
-- Reference set to null
-- Reference goes out of scope
-- Only circular references remain
-
-[CODE EXAMPLE - GC in Action]
-class Resource {
-    @Override
-    protected void finalize() { // Called before GC destroys object
-        System.out.println("Resource cleaned up by GC");
-    }
-}
-
-public void gcDemo() {
-    Resource r = new Resource();
-    r = null;       // Now eligible for GC
-    System.gc();    // Hint to JVM (not guaranteed to run immediately)
-    // Output: "Resource cleaned up by GC"
-}
-
-## SECTION 2: OOPS CONCEPTS
-
---- 2.1 Four Pillars ---
-1. Encapsulation : Binding data + methods. Control via access modifiers.
-2. Inheritance   : "IS-A" relationship. Code reuse via extends / implements.
-3. Polymorphism  : Same name, different behavior (Compile/Runtime).
-4. Abstraction   : Hide implementation. Expose only functionality (abstract/interface).
-
---- 2.2 Encapsulation ---
-[CODE EXAMPLE]
+```java
 public class BankAccount {
     private double balance; // Hidden state
 
@@ -1485,14 +318,32 @@ public class BankAccount {
         if (amount > 0) balance += amount; // Validation logic
     }
 }
+```
 
---- 2.3 Inheritance & Method Overriding ---
-Rules:
-- Cannot reduce visibility (public -> private not allowed)
-- Return type can be covariant (subtype of parent return type)
-- Cannot override static/final methods
+**2. Inheritance** — "IS-A" relationship. Code reuse via `extends` / `implements`.
 
-[CODE EXAMPLE]
+```java
+public class Vehicle {
+    protected String brand;
+    public void startEngine() { System.out.println("Engine started"); }
+}
+public class Car extends Vehicle {
+    private int numDoors;
+    @Override
+    public void startEngine() {
+        super.startEngine();
+        System.out.println("Car ready to drive");
+    }
+}
+```
+
+> **Overriding Rules**: Cannot reduce visibility (`public` → `private` not allowed). Return type can be covariant (subtype of parent). Cannot override `static` / `final` methods.
+
+**3. Polymorphism** — One interface, many implementations.
+- *Compile-Time (Overloading)*: Different parameter signatures.
+- *Runtime (Overriding)*: Subclass replaces parent method. Resolved via Dynamic Method Dispatch.
+
+```java
 class Animal {
     public String speak() { return "Some sound"; }
 }
@@ -1500,29 +351,53 @@ class Dog extends Animal {
     @Override
     public String speak() { return "Woof!"; } // Runtime Polymorphism
 }
-// Animal ref = new Dog(); ref.speak(); -> "Woof!" (Dynamic dispatch)
+// Animal ref = new Dog(); ref.speak(); → "Woof!" (Dynamic dispatch)
+```
 
---- 2.4 Abstraction: Abstract Class vs Interface ---
+**4. Abstraction** — Hiding complexity, showing only essential features via abstract classes and interfaces.
+
+```java
+public abstract class Shape {
+    public abstract double area(); // Force subclasses to implement
+}
+public class Circle extends Shape {
+    private double radius;
+    @Override
+    public double area() { return Math.PI * radius * radius; }
+}
+```
+
+---
+
+### 2.2 Abstract Class vs Interface
 
 | Feature | Abstract Class | Interface |
-| --- | --- | --- |
-| Methods | Abstract + Concrete | Abstract, default,static |
-| Variables | Instance vars allowed | Only public static final |
-| Constructor | Yes | No |
-| Multiple Inherit | No (single extends) | Yes (multiple implements) |
-| When to use | Shared base behavior | Contract / capability |
+|:---|:---|:---|
+| **Methods** | Abstract + Concrete | Abstract + Default + Static (Java 8+) |
+| **Variables** | Any type (instance vars allowed) | `public static final` constants only |
+| **Constructors** | Yes | No |
+| **Multiple Inheritance** | No (single `extends`) | Yes (multiple `implements`) |
+| **Access Modifiers** | Any | `public` (default) |
+| **Relationship** | Strong IS-A | CAN-DO / HAS-ABILITY-TO |
+| **Use Case** | Template pattern / shared base behavior | Contract / capability definition |
 
-[CODE EXAMPLE - Interface default method]
+```java
 interface Flyable {
-    void fly(); // abstract
+    void fly();                                              // Abstract
     default void land() { System.out.println("Landing..."); } // Java 8
-    static void rules() { System.out.println("Follow air rules"); } // Java 8
+    static void rules() { System.out.println("Federal Air Rules"); } // Java 8
 }
+```
 
---- 2.5 Delegation (Composition over Inheritance) ---
+> **Production Scenario**: In Insurance project — `PaymentProcessor` is an interface implemented by `CreditCardProcessor`, `WireTransferProcessor`. Base validation logic is in an abstract `AbstractPaymentProcessor` class.
+
+---
+
+### 2.3 Composition over Inheritance (Delegation)
+
 Prefer HAS-A over IS-A when behavior can change at runtime.
 
-[CODE EXAMPLE]
+```java
 class Engine {
     void start() { System.out.println("Engine started"); }
 }
@@ -1531,127 +406,503 @@ class Car {
     Car(Engine e) { this.engine = e; }
     void drive() { engine.start(); System.out.println("Car moving"); }
 }
+```
 
-## SECTION 3: STRINGS IN JAVA
+#### Key Takeaways
+* Encapsulation guards data validity by restricting direct variable access.
+* Runtime polymorphism is resolved via Dynamic Method Dispatch.
+* Abstract classes allow constructors and instance state; interfaces define behavioral contracts.
+* Prefer composition when behavior varies at runtime; use inheritance for strict IS-A hierarchies.
 
---- 3.1 String Constant Pool (SCP) ---
-- Literals are stored in SCP inside the Heap.
-- JVM reuses existing SCP objects (no duplicates in SCP).
-- `new String(...)` forces a fresh Heap object (SCP also gets one).
-- SCP objects are NOT eligible for GC until JVM shutdown.
+---
 
-[CODE EXAMPLE]
-String s1 = "Java";           // SCP
-String s2 = "Java";           // Reuses SCP object
-String s3 = new String("Java"); // New Heap object
+## SECTION 3: SOLID PRINCIPLES
 
-System.out.println(s1 == s2);      // true  (same SCP reference)
-System.out.println(s1 == s3);      // false (different: SCP vs Heap)
-System.out.println(s1.equals(s3)); // true  (same content)
+> SOLID is an acronym coined by Robert C. Martin ("Uncle Bob"). These 5 principles build software that is **Maintainable**, **Scalable**, **Testable**, and **Decoupled**.
 
-// intern(): Move a Heap string to SCP
-String s4 = s3.intern();
-System.out.println(s1 == s4); // true
+---
 
---- 3.2 String vs StringBuilder vs StringBuffer ---
+### S — Single Responsibility Principle (SRP)
 
-| Class | Mutable | Thread-Safe | When to Use |
-| --- | --- | --- | --- |
-| String | No | Yes (immut) | Default |
-| StringBuilder | Yes | No | Single-threaded |
-| StringBuffer | Yes | Yes (sync) | Multi-threaded |
+> *"A class should have ONLY ONE reason to change."*
 
-[CODE EXAMPLE]
+**Real-World Analogy**: A doctor treats patients. A doctor should NOT also manage billing, appointments, and housekeeping.
+
+```java
+// BAD — EmployeeService doing too much (4 reasons to change)
+class EmployeeService {
+    public Employee findById(int id) { ... }         // Business logic
+    public void saveToDatabase(Employee e) { ... }   // DB concern
+    public void sendWelcomeEmail(Employee e) { ... } // Notification concern
+    public String generateReport(Employee e) { ... } // Reporting concern
+}
+
+// GOOD — Each class has one job
+class EmployeeRepository    { public void save(Employee e) { ... } }
+class EmailService          { public void sendWelcomeEmail(Employee e) { ... } }
+class EmployeeReportService { public String generateReport(Employee e) { ... } }
+
+class EmployeeService {
+    private final EmployeeRepository repo;
+    private final EmailService email;
+    public EmployeeService(EmployeeRepository repo, EmailService email) {
+        this.repo = repo; this.email = email;
+    }
+    public void onboardEmployee(Employee e) {
+        repo.save(e); email.sendWelcomeEmail(e);
+    }
+}
+```
+
+> **Interview Tip**: "SRP reduces coupling. Each class is focused, easy to test in isolation, and changes don't ripple across unrelated code."
+
+---
+
+### O — Open/Closed Principle (OCP)
+
+> *"Software entities should be OPEN for extension but CLOSED for modification."*
+
+**Real-World Analogy**: A USB port is "open for extension" (plug any USB device) but "closed for modification" (you don't rewire your laptop for each new device).
+
+```mermaid
+graph TD
+    DiscountService["DiscountService<br>(Closed for modification)"] -->|Applies| DiscountStrategy["DiscountStrategy<br>interface"]
+    SeasonalDiscount["SeasonalDiscount"] -->|Implements| DiscountStrategy
+    EmployeeDiscount["EmployeeDiscount"] -->|Implements| DiscountStrategy
+    VIPDiscount["VIPDiscount"] -->|Implements| DiscountStrategy
+    LoyaltyDiscount["LoyaltyDiscount<br>(New Extension)"] -->|Implements| DiscountStrategy
+
+    classDef closed fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef strategy fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
+    classDef ext fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:2px;
+    classDef newExt fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:2px;
+
+    class DiscountService closed;
+    class DiscountStrategy strategy;
+    class SeasonalDiscount,EmployeeDiscount,VIPDiscount ext;
+    class LoyaltyDiscount newExt;
+```
+
+```java
+// BAD — Adding new type = modifying this method → OCP violation!
+class DiscountService {
+    public double applyDiscount(String type, double price) {
+        if (type.equals("SEASONAL")) return price * 0.90;
+        else if (type.equals("EMPLOYEE")) return price * 0.80;
+        else if (type.equals("VIP")) return price * 0.70;
+        return price;
+    }
+}
+
+// GOOD — New discount type? Just add a new class!
+interface DiscountStrategy { double apply(double price); }
+class SeasonalDiscount implements DiscountStrategy { public double apply(double p) { return p * 0.90; } }
+class EmployeeDiscount implements DiscountStrategy { public double apply(double p) { return p * 0.80; } }
+class VIPDiscount implements DiscountStrategy { public double apply(double p) { return p * 0.70; } }
+class LoyaltyDiscount implements DiscountStrategy { public double apply(double p) { return p * 0.85; } }
+
+class DiscountService {
+    public double applyDiscount(DiscountStrategy strategy, double price) {
+        return strategy.apply(price); // Closed for modification
+    }
+}
+```
+
+> **Interview Tip**: "OCP is achieved through Strategy Pattern, Template Method, or Spring's polymorphism via `@Component` + interface injection."
+
+---
+
+### L — Liskov Substitution Principle (LSP)
+
+> *"Objects of a superclass should be replaceable with objects of its subclasses WITHOUT breaking the application."* — Barbara Liskov, 1987
+
+```java
+// BAD — Classic Square/Rectangle problem (LSP violation)
+class Rectangle {
+    protected int width, height;
+    public void setWidth(int w)  { this.width = w; }
+    public void setHeight(int h) { this.height = h; }
+    public int area() { return width * height; }
+}
+class Square extends Rectangle {
+    @Override public void setWidth(int w)  { this.width = w; this.height = w; }
+    @Override public void setHeight(int h) { this.height = h; this.width = h; }
+    // Square forces width == height → breaks Rectangle's contract!
+}
+// Rectangle r = new Square(); r.setWidth(5); r.setHeight(10);
+// r.area() → Expected 50, Got 100 → BROKEN!
+
+// GOOD — Separate hierarchy
+interface Shape { int area(); }
+class Rectangle implements Shape { int width, height; public int area() { return width * height; } }
+class Square implements Shape { int side; public int area() { return side * side; } }
+```
+
+```java
+// BAD — Penguin throws UnsupportedOperationException → LSP violation
+class Bird { public void fly() { System.out.println("Flying"); } }
+class Penguin extends Bird {
+    @Override public void fly() { throw new UnsupportedOperationException("Can't fly!"); }
+}
+
+// GOOD — Segregated interfaces
+interface Bird     { void eat(); }
+interface FlyingBird extends Bird { void fly(); }
+class Sparrow implements FlyingBird { public void eat() {} public void fly() {} }
+class Penguin implements Bird { public void eat() {} } // No fly() needed
+```
+
+> **Interview Tip**: "LSP ensures true IS-A relationships. Watch for overridden methods that throw exceptions or weaken behavior — these signal LSP violations."
+
+---
+
+### I — Interface Segregation Principle (ISP)
+
+> *"Clients should NOT be forced to depend on interfaces they do not use."*
+
+**Real-World Analogy**: A Printer interface with `print()`, `scan()`, `fax()`. A basic printer only prints — why should it implement `scan`/`fax`?
+
+```java
+// BAD — Fat Interface (Robot forced to implement eat/sleep)
+interface Worker { void work(); void eat(); void sleep(); void attendMeetings(); }
+class Robot implements Worker {
+    public void work() { ... }
+    public void eat()  { /* Robots don't eat! Forced empty impl */ }
+    public void sleep(){ /* Robots don't sleep! */ }
+    public void attendMeetings() { ... }
+}
+
+// GOOD — Small, focused interfaces
+interface Workable    { void work(); }
+interface Feedable    { void eat(); }
+interface Sleepable   { void sleep(); }
+interface MeetingGoer { void attendMeetings(); }
+
+class Human implements Workable, Feedable, Sleepable, MeetingGoer { ... }
+class Robot implements Workable, MeetingGoer { ... } // No eat()/sleep() → clean!
+```
+
+> **Production Scenario (Spring Boot)**: Split service interfaces by read vs write (CQRS pattern) — `PolicyQueryService` and `PolicyCommandService` instead of one fat `PolicyService`.
+
+---
+
+### D — Dependency Inversion Principle (DIP)
+
+> *"High-level modules should NOT depend on low-level modules. Both should depend on abstractions."*
+
+**Real-World Analogy**: Your TV remote (high-level) communicates via IR protocol (abstraction) — you can swap the TV (low-level) without changing the remote.
+
+```mermaid
+graph TD
+    subgraph TightCoupling ["Tightly Coupled (Violates DIP)"]
+        OrderServiceBad["OrderService"] -->|Depends Directly| MySQLBad["MySQLDatabase"]
+    end
+
+    subgraph Decoupled ["Decoupled via Abstraction (DIP)"]
+        OrderServiceGood["OrderService"] -->|Depends On| DbInterface["Database<br>interface"]
+        MySQLGood["MySQLDatabase"] -->|Implements| DbInterface
+        MongoGood["MongoDatabase"] -->|Implements| DbInterface
+    end
+
+    classDef bad fill:#7F1D1D,stroke:#DC2626,color:#FEF2F2,stroke-width:1px;
+    classDef good fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef strategy fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
+
+    class OrderServiceBad,MySQLBad bad;
+    class OrderServiceGood,MySQLGood,MongoGood good;
+    class DbInterface strategy;
+```
+
+```java
+// Abstraction
+interface Database { void save(Object data); }
+
+// Low-level modules depend on the abstraction
+class MySQLDatabase implements Database { public void save(Object data) { ... } }
+class MongoDatabase implements Database { public void save(Object data) { ... } }
+
+// High-level module depends on abstraction (not concrete class)
+class OrderService {
+    private final Database db;
+    public OrderService(Database db) { this.db = db; } // Injected
+    public void placeOrder(Order o) { db.save(o); }    // Works with any impl
+}
+```
+
+> **DIP vs DI vs IoC**:
+> - **DIP** = PRINCIPLE → "Depend on abstractions"
+> - **DI** = PATTERN → Mechanism to supply dependencies from outside
+> - **IoC** = FRAMEWORK → Spring container manages object creation & wiring
+
+> **Interview Tip**: "DIP is what makes Spring's IoC container powerful. By injecting interfaces instead of concrete classes, we can swap implementations (e.g., for testing with mocks) without touching business logic."
+
+---
+
+### SOLID Quick Cheat Sheet
+
+| Code | Principle | One-line Rule | Supported By |
+|:---:|:---|:---|:---|
+| **S** | Single Responsibility | One class = one job | Facade, Service Layer, CQRS |
+| **O** | Open/Closed | Extend with new code, don't edit | Strategy, Decorator, Template Method |
+| **L** | Liskov Substitution | Subtypes must honor parent contract | Proper Inheritance + Interfaces |
+| **I** | Interface Segregation | Many small interfaces > one fat | Role Interfaces, CQRS |
+| **D** | Dependency Inversion | Depend on abstractions, not impls | DI, Factory, IoC Container |
+
+#### Key Takeaways
+* SRP keeps classes focused and testable; changes don't ripple across unrelated code.
+* OCP is implemented using interfaces and the Strategy Pattern — add new behavior without editing existing code.
+* LSP ensures subclass contracts honor parent assumptions; watch for `UnsupportedOperationException`.
+* ISP splits fat interfaces into granular role-based contracts.
+* DIP + IoC decouples high-level business logic from low-level infrastructure.
+
+---
+
+## SECTION 4: DATA TYPES, ARRAYS, AND STRINGS
+
+### 4.1 Static vs Instance Members & Autoboxing
+
+- **Static members**: Shared across all instances. Stored in the Method Area.
+- **Instance members**: Unique to each instantiated object. Stored in the Heap.
+- **Autoboxing**: Automatic conversion of primitive → wrapper (e.g., `int` → `Integer`). **Unboxing**: wrapper → primitive.
+
+```java
+class Config {
+    static int instanceCount = 0; // Shared across instances (Method Area)
+    String name;                  // Per-instance (Heap)
+    Config(String name) { this.name = name; instanceCount++; }
+}
+```
+
+> ⚠️ **Avoid autoboxing inside loops** — creates massive wrapper object overhead:
+```java
+// BAD: Creates 1M wrapper objects → GC pressure
+Integer sum = 0;
+for (int i = 0; i < 1000000; i++) sum += i;  // 1M boxing/unboxing
+
+// GOOD: Primitive types (zero allocations)
+int sum = 0;
+for (int i = 0; i < 1000000; i++) sum += i;  // No boxing
+```
+
+---
+
+### 4.2 Arrays
+
+- Fixed size, contiguous memory blocks in the Heap.
+- Type-safe at compile-time. Cannot grow after creation.
+
+```java
+// 1D Array
+int[] arr = {10, 20, 30};
+
+// 2D Matrix
+int[][] matrix = new int[3][4]; // 3 rows, 4 columns
+
+// Jagged Array (rows have different lengths)
+int[][] jagged = new int[3][];
+jagged[0] = new int[2]; // Row 0 has 2 columns
+jagged[1] = new int[4]; // Row 1 has 4 columns
+jagged[2] = new int[3]; // Row 2 has 3 columns
+
+// Sorting & Searching
+int[] nums = {5, 3, 1, 4, 2};
+Arrays.sort(nums);                       // [1, 2, 3, 4, 5]
+int pos = Arrays.binarySearch(nums, 3);  // returns index 2
+```
+
+#### Array ↔ List Conversions:
+```java
+String[] fruits = {"Apple", "Banana", "Cherry"};
+
+// Array → List:
+List<String> list1 = Arrays.asList(fruits);                   // Fixed-size wrapper (set OK, add/remove NOT)
+List<String> list2 = new ArrayList<>(Arrays.asList(fruits));  // Fully mutable ArrayList
+List<String> list3 = List.of(fruits);                         // Java 9+ Immutable List (no nulls allowed)
+
+// List → Array:
+List<String> list = Arrays.asList("Apple", "Banana", "Cherry");
+String[] strArray1 = list.toArray(new String[0]);             // Type-safe (preferred)
+String[] strArray2 = list.toArray(String[]::new);             // Java 11+ method reference
+```
+
+---
+
+### 4.3 String Constant Pool (SCP) & Immutability
+
+- **Immutability**: Strings cannot be modified after creation. Modifications create new String objects.
+  - *Why?* Security (connection strings can't be tampered), Thread-Safety (multiple threads can share safely), Hashcode Caching (`hashCode` computed once).
+- **String Constant Pool (SCP)**: Special area inside the Heap that caches unique string literals. SCP objects are NOT eligible for GC until JVM shutdown.
+- **`intern()`**: Moves a Heap string reference into the SCP, returning the cached pool reference.
+
+```java
+String s1 = "Hello";              // Created in String Pool
+String s2 = "Hello";              // Reuses same reference from pool
+String s3 = new String("Hello");  // New object in Heap (NOT in pool)
+String s4 = new String("Hello");  // Another new object in Heap
+
+// Comparisons:
+s1 == s2;                         // true  (same SCP reference)
+s1 == s3;                         // false (SCP vs Heap)
+s1.equals(s3);                    // true  (same content)
+
+// intern() forces SCP reference:
+String s5 = s3.intern();          // s5 points to pool reference
+s1 == s5;                         // true
+```
+
+> **Internal Representation (Java 9+)**: Before Java 9: `char[]` (2 bytes/char). Java 9+: `byte[]` with Compact Strings — Latin-1 (1 byte/char) for ASCII, UTF-16 for others. Saves ~30-40% memory.
+
+#### String vs StringBuilder vs StringBuffer:
+
+| Feature | String | StringBuilder | StringBuffer |
+|:---|:---|:---|:---|
+| **Mutable** | No | Yes | Yes |
+| **Thread-Safe** | Yes (immutable) | No | Yes (synchronized methods) |
+| **Performance** | Low (if modified) | High | Medium (lock overhead) |
+| **Use Case** | Constants / Literals | Single-thread concatenation | Multi-thread concatenation |
+
+```java
 public void stringDemo() {
     String s = "Hello";
     s += " World"; // Creates NEW object, old "Hello" stays in SCP
 
     StringBuilder sb = new StringBuilder("Hello");
     sb.append(" World"); // Modifies SAME object
-    sb.insert(5, ",");   // Hello, World
-    sb.reverse();        // dlroW ,olleH
-    System.out.println(sb.toString());
+    sb.insert(5, ",");   // "Hello, World"
+    sb.reverse();        // "dlroW ,olleH"
+}
+```
+
+#### Key String Methods:
+```text
+s.length()            → Length of string
+s.charAt(i)           → Character at index i
+s.substring(from,to)  → Extracts substring [from, to)
+s.indexOf("x")        → First index of x
+s.toUpperCase()       → Uppercase version
+s.trim()              → Strips leading/trailing whitespace
+s.split(",")          → Splits into array
+s.replace("a","b")    → Replaces all occurrences
+```
+
+#### Key Takeaways
+* Static variables reside in the Method Area; instance variables are stored in the Heap.
+* Autoboxing inside loops creates unnecessary wrapper objects, increasing GC load.
+* Strings are immutable to ensure safety in hash keys, database connections, and multithreading.
+* `String.intern()` caches strings in the SCP to save heap space.
+* Use `char[]` instead of `String` for passwords — you can explicitly zero it out after use.
+
+---
+
+## SECTION 5: GENERICS & EXCEPTION HANDLING
+
+### 5.1 Generics & Bounded Wildcards
+
+Generics provide compile-time type safety. The compiler uses **Type Erasure** to remove type parameters after compile-time checks, ensuring backward compatibility (`List<String>` becomes `List` in bytecode).
+
+- **PECS Rule (Producer Extends, Consumer Super)**:
+  - `<? extends T>` — read from a collection (Upper Bound / Producer)
+  - `<? super T>` — write into a collection (Lower Bound / Consumer)
+
+```java
+// Generic Class
+class Pair<A, B> {
+    private final A first;
+    private final B second;
+    public Pair(A first, B second) { this.first = first; this.second = second; }
+    public A getFirst()  { return first; }
+    public B getSecond() { return second; }
 }
 
---- 3.3 Key String Methods ---
-```text
-s.length()           -> Length of string
-s.charAt(i)          -> Character at index i
-s.substring(from,to) -> Extracts substring [from, to)
-s.indexOf("x")       -> First index of x
-s.toUpperCase()      -> Uppercase version
-s.trim()             -> Strips leading/trailing whitespace
-s.split(",")         -> Splits into array
-s.replace("a","b")   -> Replaces all occurrences
-
+// Bounded Wildcards:
+public double sumList(List<? extends Number> numbers) { // Upper Bound (Producer)
+    return numbers.stream().mapToDouble(Number::doubleValue).sum();
+}
+public void copyInto(List<Integer> src, List<? super Integer> dest) { // Lower Bound (Consumer)
+    dest.addAll(src);
+}
 ```
-## SECTION 4: ARRAYS
 
---- 4.1 Array Memory Allocation ---
-- Contiguous memory blocks in Heap.
-- Always type-safe at compile time.
-- Fixed size, cannot grow.
+#### Real-Time Generic Use Cases:
 
---- 4.2 Types of Arrays ---
+```java
+// 1. Generic Repository Pattern
+interface GenericRepository<T, ID> {
+    void save(T entity);
+    Optional<T> findById(ID id);
+    List<T> findAll();
+    void delete(ID id);
+}
+class UserRepository implements GenericRepository<User, Long> { /* ... */ }
+class OrderRepository implements GenericRepository<Order, Integer> { /* ... */ }
 
-[CODE EXAMPLE - 1D]
-int[] arr = {10, 20, 30};
+// 2. Generic API Response
+class ApiResponse<T> {
+    private T data;
+    public ApiResponse(T data) { this.data = data; }
+    public T getData() { return data; }
+}
 
-[CODE EXAMPLE - 2D Matrix]
-int[][] matrix = new int[3][4]; // 3 rows, 4 columns
+// 3. Generic Result Wrapper (Success / Failure)
+class Result<T> {
+    private final T value;
+    private final String error;
+    private final boolean success;
+    private Result(T v, String e, boolean s) { this.value = v; this.error = e; this.success = s; }
+    public static <T> Result<T> success(T val) { return new Result<>(val, null, true); }
+    public static <T> Result<T> failure(String err) { return new Result<>(null, err, false); }
+}
 
-[CODE EXAMPLE - Jagged Array]
-int[][] jagged = new int[3][];
-jagged[0] = new int[2]; // Row 0 has 2 columns
-jagged[1] = new int[4]; // Row 1 has 4 columns
-jagged[2] = new int[3]; // Row 2 has 3 columns
+// 4. Generic Cache
+class GenericCache<K, V> {
+    private final Map<K, V> store = new ConcurrentHashMap<>();
+    public void put(K key, V value) { store.put(key, value); }
+    public Optional<V> get(K key) { return Optional.ofNullable(store.get(key)); }
+}
 
-[CODE EXAMPLE - Sorting and Searching]
-int[] nums = {5, 3, 1, 4, 2};
-Arrays.sort(nums);              // [1, 2, 3, 4, 5]
-int pos = Arrays.binarySearch(nums, 3); // returns index 2
+// 5. Generic Event Bus
+interface EventListener<E> { void onEvent(E event); }
+class EventBus<E> {
+    private final List<EventListener<E>> listeners = new ArrayList<>();
+    public void subscribe(EventListener<E> l) { listeners.add(l); }
+    public void publish(E event) { listeners.forEach(l -> l.onEvent(event)); }
+}
 
-//Converting Arrays to List Example
-String[] fruits = {"Apple", "Banana", "Cherry"};
+// 6. Generic Typed Configuration Holder
+class ConfigProperty<T> {
+    private final String key;
+    private final T defaultValue;
+    private T value;
+    public ConfigProperty(String key, T defaultValue) { this.key = key; this.defaultValue = defaultValue; }
+    public T getValue() { return value != null ? value : defaultValue; }
+    public void setValue(T value) { this.value = value; }
+}
+```
 
-// 1. Arrays.asList() - Fixed-size list (cannot add/remove)
-List<String> list1 = Arrays.asList(fruits);
-list1.add("Mango"); // Throws UnsupportedOperationException
+| # | Use Case | Benefit |
+|:---:|:---|:---|
+| 1 | Generic Repository | One CRUD interface for all entities |
+| 2 | ApiResponse\<T\> | Unified REST response structure |
+| 3 | Result\<T\> Wrapper | Type-safe success/failure return |
+| 4 | GenericCache\<K,V\> | Reusable cache for any types |
+| 5 | EventBus\<E\> | Decoupled typed event publishing |
+| 6 | ConfigProperty\<T\> | Type-safe configuration holding |
 
-// 2. ArrayList constructor - Full mutable list
-List<String> list2 = new ArrayList<>(Arrays.asList(fruits));
-list2.add("Mango"); // Works fine
+---
 
-// 3. Java 9+ List.of() - Immutable list
-List<String> list3 = List.of(fruits);
-list3.add("Mango"); // Throws UnsupportedOperationException
+### 5.2 Exception Handling
 
-#### //Converting List to Array Example
-
-List<String> list = Arrays.asList("Apple", "Banana", "Cherry");
-
-// 1. toArray() - Returns Object[] (need casting)
-Object[] objArray = list.toArray();
-String[] strArray1 = (String[]) objArray; // Unsafe cast, may throw ClassCastException
-
-// 2. toArray(T[] a) - Type-safe (preferred)
-String[] strArray2 = list.toArray(new String[0]);
-String[] strArray3 = list.toArray(new String[list.size()]);
-
-// 3. Java 11+ toArray(IntFunction<T[]> generator)
-String[] strArray4 = list.toArray(String[]::new);
-
-## SECTION 5: EXCEPTION HANDLING
-
---- 5.1 Exception Hierarchy ---
+**Exception Hierarchy**:
+```text
 Throwable
-+-- Error          (JVM issues, OutOfMemoryError, StackOverflowError)
-+-- Exception
-+-- Checked    (IOException, SQLException) - Must handle
-+-- Unchecked  (RuntimeException: NPE, ArrayIndexOutOfBounds)
+├── Error           (JVM issues: OutOfMemoryError, StackOverflowError)
+└── Exception
+    ├── Checked     (IOException, SQLException) — Must handle/declare
+    └── Unchecked   (RuntimeException: NPE, ArrayIndexOutOfBounds) — Optional handling
+```
 
---- 5.2 try-catch-finally-throw-throws ---
-[CODE EXAMPLE]
+```java
+// try-catch-finally-throw-throws
 public int divide(int a, int b) throws ArithmeticException {
     try {
         return a / b;
@@ -1663,398 +914,282 @@ public int divide(int a, int b) throws ArithmeticException {
     }
 }
 
---- 5.3 try-with-resources (Auto-Closeable) ---
-Any class implementing AutoCloseable is auto-closed after try block.
-[CODE EXAMPLE]
+// try-with-resources (AutoCloseable auto-closes resources)
 try (BufferedReader br = new BufferedReader(new FileReader("data.txt"))) {
     String line = br.readLine();
 } // br.close() called automatically, even if exception occurs
 
---- 5.4 Custom Exception ---
-[CODE EXAMPLE]
-public class InsufficientFundsException extends RuntimeException {
-    private double amount;
+// Multi-Catch & Exception Chaining
+try {
+    // potentially throws multiple exception types
+} catch (IOException | SQLException e) { // Multi-catch (Java 7+)
+    throw new RuntimeException("DB/IO Error", e); // Exception chaining: wraps cause
+}
 
+// Custom Exception
+public class InsufficientFundsException extends RuntimeException {
+    private final double amount;
     public InsufficientFundsException(double amount) {
         super("Insufficient funds: needed " + amount);
         this.amount = amount;
     }
-
     public double getAmount() { return amount; }
 }
-
-// Usage
-throw new InsufficientFundsException(500.0);
-
---- 5.5 Multi-Catch & Exception Chaining ---
-[CODE EXAMPLE]
-try {
-    // potentially throws multiple
-} catch (IOException | SQLException e) { // Multi-catch
-    throw new RuntimeException("DB/IO Error", e); // Exception chaining: wraps cause
-}
-
-## SECTION 6: GENERICS
-
---- 6.1 Why Generics? ---
-Before Java 1.5: Collections held Object. Each get() needed a cast.
-Problem: ClassCastException only at runtime, no compile-time safety.
-Solution: Generics enforce type safety at compile-time.
-
---- 6.2 Generic Class & Method ---
-[CODE EXAMPLE - Generic Class]
-class Pair<A, B> {
-    private A first;
-    private B second;
-
-    public Pair(A first, B second) {
-        this.first = first;
-        this.second = second;
-    }
-
-    public A getFirst()  { return first; }
-    public B getSecond() { return second; }
-}
-
-Pair<String, Integer> point = new Pair<>("Alice", 30);
-
-[CODE EXAMPLE - Generic Method]
-public <T extends Comparable<T>> T findMax(List<T> list) {
-    T max = list.get(0);
-    for (T item : list) if (item.compareTo(max) > 0) max = item;
-    return max;
-}
-
---- 6.3 Bounded Wildcards ---
-```text
-<?>             -> Unknown type (read-only)
-<? extends T>   -> Upper bound - T or its subclasses (use for reading/producers)
-<? super T>     -> Lower bound - T or its superclasses (use for writing/consumers)
-
 ```
-PECS Rule: Producer Extends, Consumer Super
 
-[CODE EXAMPLE]
-// Reading (Producer) - extends
-public double sumList(List<? extends Number> numbers) {
-    return numbers.stream().mapToDouble(Number::doubleValue).sum();
+#### Key Takeaways
+* Generics enforce type safety at compile time via Type Erasure — no runtime overhead.
+* The PECS rule: use `extends` when retrieving, `super` when adding.
+* Try-with-resources automatically closes `AutoCloseable` resources.
+* Exception chaining preserves root cause by passing it to the wrapper constructor.
+* Always override both `throw` and `throws`: `throw` creates instance, `throws` declares in signature.
+
+---
+
+## SECTION 6: COLLECTIONS FRAMEWORK & CONCURRENCY
+
+### 6.1 Collections Hierarchy
+
+```mermaid
+graph TD
+    Iterable["Iterable"] --> Collection["Collection"]
+    Collection --> List["List"]
+    Collection --> Set["Set"]
+    Collection --> Queue["Queue"]
+
+    List --> ArrayList["ArrayList"]
+    List --> LinkedList["LinkedList"]
+    List --> Vector["Vector / Stack"]
+
+    Set --> HashSet["HashSet"]
+    Set --> LinkedHashSet["LinkedHashSet"]
+    Set --> TreeSet["TreeSet"]
+
+    Queue --> PriorityQueue["PriorityQueue"]
+    Queue --> ArrayDeque["ArrayDeque"]
+
+    Map["Map (separate)"] --> HashMap["HashMap"]
+    Map --> LinkedHashMap["LinkedHashMap"]
+    Map --> TreeMap["TreeMap"]
+    Map --> Hashtable["Hashtable"]
+    Map --> WeakHashMap["WeakHashMap"]
+
+    classDef iface fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef impl fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    class Iterable,Collection,List,Set,Queue,Map iface
+    class ArrayList,LinkedList,Vector,HashSet,LinkedHashSet,TreeSet,PriorityQueue,ArrayDeque,HashMap,LinkedHashMap,TreeMap,Hashtable,WeakHashMap impl
+```
+
+---
+
+### 6.2 List Implementations
+
+| Feature | ArrayList | LinkedList |
+|:---|:---|:---|
+| **Backing Structure** | Dynamic array | Doubly-linked list |
+| **Random Access** | O(1) | O(n) |
+| **Insert/Delete (middle)** | O(n) | O(1) once positioned |
+| **Default Capacity** | 10 (grows by 50%) | N/A |
+| **Thread-Safe** | No | No |
+| **Best For** | Read-heavy workloads | Write-heavy / Queue operations |
+
+```java
+List<String> al = new ArrayList<>(Arrays.asList("C", "A", "B"));
+al.sort(Comparator.naturalOrder()); // ["A", "B", "C"]
+System.out.println(al.get(0));      // Random access O(1)
+```
+
+---
+
+### 6.3 HashMap Internals (Java 8+)
+
+- Backed by an array of `Node<K,V>[]` (bucket array).
+- **Default capacity**: 16 buckets. **Load factor**: 0.75 (resize at 75% full → threshold = 12).
+- Uses `hashCode()` and `equals()` to place and find key-value pairs.
+- **Hash Spreading**: `hash = (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16)` — reduces collisions.
+- **Collision Resolution**: LinkedList → **Red-Black Tree** when chain ≥ 8 AND capacity ≥ 64.
+- **Untreeification**: Tree → LinkedList when bucket drops below 6 during resize.
+
+```mermaid
+graph TD
+    Start(["put('name', 'Teja')"]) --> HC["hashCode('name') = 3373752"]
+    HC --> HS["Hash Spreading: XOR with upper 16 bits"]
+    HS --> Idx["Index = hash & 15 = 8"]
+    Idx --> Cond{"bucket[8] empty?"}
+
+    Cond -->|Yes| InsertNode["Insert Node('name', 'Teja')"]
+    Cond -->|"No (Collision)"| ChainType{"Chain length >= 8?"}
+
+    ChainType -->|Yes| Treeify["Convert to Red-Black Tree"]
+    ChainType -->|No| LinkNode["Append to LinkedList"]
+
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef startNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef checkNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef successNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef warningNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+
+    class Start startNode;
+    class Cond,ChainType checkNode;
+    class InsertNode,LinkNode successNode;
+    class Treeify warningNode;
+```
+
+#### HashMap vs ConcurrentHashMap vs synchronizedMap:
+
+| Feature | HashMap | synchronizedMap | ConcurrentHashMap |
+|:---|:---|:---|:---|
+| **Thread-safe** | No | Yes | Yes |
+| **Lock granularity** | N/A | Whole map | Bucket-level (CAS) |
+| **Null key/value** | Yes | Yes | **No** |
+| **Performance (multi-thread)** | Unsafe | Low | High |
+| **Atomic ops (merge, compute)** | No | No | Yes |
+| **Iteration safety** | Fail-fast | Fail-fast | Weakly consistent |
+
+```java
+ConcurrentHashMap<String, Integer> concurrentMap = new ConcurrentHashMap<>();
+concurrentMap.put("Alice", 1);
+concurrentMap.putIfAbsent("Alice", 99);                           // Ignored (exists)
+concurrentMap.computeIfAbsent("Eve", k -> k.length());            // Eve=3
+concurrentMap.compute("Alice", (k, v) -> (v == null) ? 1 : v + 10); // Alice=11
+concurrentMap.merge("Bob", 5, Integer::sum);                      // Atomic merge
+```
+
+---
+
+### 6.4 Set Implementations & Operations
+
+| Set Type | Backing | Ordering | Null | Time Complexity |
+|:---|:---|:---|:---|:---|
+| **HashSet** | HashMap | Unordered | 1 null | O(1) |
+| **LinkedHashSet** | LinkedHashMap | Insertion order | 1 null | O(1) |
+| **TreeSet** | Red-Black Tree | Sorted (natural) | No null | O(log n) |
+
+> **How does HashSet guarantee uniqueness?** HashSet is backed by a HashMap — elements are stored as map **keys**, and a constant dummy object is the value. HashMap key uniqueness prevents duplicates.
+
+```java
+Set<Integer> s1 = new HashSet<>(Arrays.asList(1, 2, 3, 4));
+Set<Integer> s2 = new HashSet<>(Arrays.asList(3, 4, 5, 6));
+
+Set<Integer> union     = new HashSet<>(s1); union.addAll(s2);         // {1,2,3,4,5,6}
+Set<Integer> intersect = new HashSet<>(s1); intersect.retainAll(s2);  // {3,4}
+Set<Integer> diff      = new HashSet<>(s1); diff.removeAll(s2);       // {1,2}
+```
+
+---
+
+### 6.5 Comparable vs Comparator & Fail-Fast vs Fail-Safe
+
+| Concept | Comparable | Comparator |
+|:---|:---|:---|
+| **Defined In** | Object itself | External class/lambda |
+| **Method** | `compareTo()` | `compare()` |
+| **Ordering** | Natural order (one per class) | Custom (multiple strategies) |
+
+```java
+class Student implements Comparable<Student> {
+    String name; int score;
+    @Override public int compareTo(Student o) { return this.name.compareTo(o.name); }
 }
 
-// Writing (Consumer) - super
-public void copyInto(List<Integer> src, List<? super Integer> dest) {
-    dest.addAll(src);
+// External Comparators
+Comparator<Student> byScore = Comparator.comparingInt(s -> s.score);
+Comparator<Student> byNameThenScore = Comparator.comparing(Student::getName)
+                                                .thenComparingInt(Student::getScore);
+students.sort(byScore.reversed()); // Reversed order
+```
+
+| Iteration Type | Behavior | Example Collections |
+|:---|:---|:---|
+| **Fail-Fast** | Throws `ConcurrentModificationException` if modified during iteration | ArrayList, HashMap, HashSet |
+| **Fail-Safe** | Iterates over snapshot; safe modifications during iteration | CopyOnWriteArrayList, ConcurrentHashMap |
+
+```java
+List<String> list = new CopyOnWriteArrayList<>(Arrays.asList("A", "B", "C"));
+for (String s : list) {
+    if (s.equals("B")) list.add("D"); // No CME thrown (fail-safe)
 }
+System.out.println(list); // [A, B, C, D]
+```
 
---- 6.4 Generic Class: ApiResponse<T> ---
-Real-world use case: REST APIs return different data types but share the same
-response structure (status, message, data). Generics let you model this cleanly.
+---
 
-[CODE EXAMPLE]
-package TestPack;
+### 6.6 LRU Cache using LinkedHashMap
 
-//Generic class
-class ApiResponse<T> {
+```java
+public class LRUCache<K, V> extends LinkedHashMap<K, V> {
+    private final int capacity;
 
-    private T data;
-
-    // Constructor
-    public ApiResponse(T data) {
-        this.data = data;
+    public LRUCache(int capacity) {
+        super(capacity, 0.75f, true); // accessOrder = true
+        this.capacity = capacity;
     }
 
-    // Getter
-    public T getData() {
-        return data;
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+        return size() > capacity;
     }
-
-    // Setter
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    // Display method
-    public void printDataType() {
-        System.out.println("Data: " + data);
-        System.out.println("Type: " + data.getClass().getSimpleName());
-    }
-}
-
-public class TestT1 {
-    public static void main(String[] args) {
-
-        // Integer type response
-        ApiResponse<Integer> intResponse = new ApiResponse<>(101);
-        intResponse.printDataType();
-
-        System.out.println("------------------");
-
-        // String type response
-        ApiResponse<String> stringResponse = new ApiResponse<>("Success");
-        stringResponse.printDataType();
-    }
-}
-
-OUTPUT:
-Data: 101
-Type: Integer
-
-Data: Success
-Type: String
-
-WHY GENERICS HERE?
-- Without generics, getData() would return Object, requiring an unsafe cast.
-- With generics, the compiler enforces the type — no ClassCastException at runtime.
-- One ApiResponse class handles Integer, String, List, custom DTO — no duplication.
-
---- 6.5 Real-Time Generic Use Cases ---
-
-[USE CASE 1: Generic Repository Pattern]
-// In Spring Data / custom DAO layers, a base repository uses generics to
-// avoid writing separate DAO classes for each entity.
-
-interface GenericRepository<T, ID> {
-    void save(T entity);
-    Optional<T> findById(ID id);
-    List<T> findAll();
-    void delete(ID id);
-}
-
-class UserRepository implements GenericRepository<User, Long> {
-    // Only User-specific logic here; CRUD logic comes from the generic interface
-    @Override public void save(User u) { /* persist to DB */ }
-    @Override public Optional<User> findById(Long id) { return Optional.empty(); }
-    @Override public List<User> findAll() { return List.of(); }
-    @Override public void delete(Long id) { /* remove from DB */ }
-}
-
-// Same interface works for Order, Product, Payment — zero code duplication.
-class OrderRepository implements GenericRepository<Order, Integer> { /* ... */ }
-
-#### [USE CASE 2: Generic Result Wrapper (Success / Failure)]
-
-// Used in service layers to avoid throwing exceptions for expected failures.
-// Common in functional-style Spring Boot services.
-
-class Result<T> {
-    private final T value;
-    private final String errorMessage;
-    private final boolean success;
-
-    private Result(T value, String error, boolean success) {
-        this.value = value;
-        this.errorMessage = error;
-        this.success = success;
-    }
-
-    public static <T> Result<T> success(T value) {
-        return new Result<>(value, null, true);
-    }
-
-    public static <T> Result<T> failure(String error) {
-        return new Result<>(null, error, false);
-    }
-
-    public boolean isSuccess()     { return success; }
-    public T getValue()            { return value; }
-    public String getError()       { return errorMessage; }
-}
-
-// Usage in a service method:
-public Result<User> findUser(Long id) {
-    User u = userRepo.findById(id).orElse(null);
-    if (u == null) return Result.failure("User not found: " + id);
-    return Result.success(u);
-}
-
-// Caller:
-Result<User> result = userService.findUser(42L);
-if (result.isSuccess()) {
-    System.out.println("Found: " + result.getValue().getName());
-} else {
-    System.out.println("Error: " + result.getError());
-}
-
-#### [USE CASE 3: Generic In-Memory Cache]
-
-// A type-safe cache that can hold any object type.
-// Used in caching layers (before Redis), config holders, session stores.
-
-class GenericCache<K, V> {
-    private final Map<K, V> store = new ConcurrentHashMap<>();
-    private final int maxSize;
-
-    public GenericCache(int maxSize) { this.maxSize = maxSize; }
-
-    public void put(K key, V value) {
-        if (store.size() >= maxSize) {
-            // Evict first entry (simple LRU replacement)
-            store.remove(store.keySet().iterator().next());
-        }
-        store.put(key, value);
-    }
-
-    public Optional<V> get(K key) { return Optional.ofNullable(store.get(key)); }
-
-    public void evict(K key) { store.remove(key); }
 }
 
 // Usage:
-GenericCache<String, UserDTO>    userCache    = new GenericCache<>(1000);
-GenericCache<Long,   ProductDTO> productCache = new GenericCache<>(500);
-
-userCache.put("alice@mail.com", new UserDTO("Alice", 30));
-userCache.get("alice@mail.com").ifPresent(u -> System.out.println(u.getName()));
-
-#### [USE CASE 4: Generic Event Bus / Publisher-Subscriber]
-
-// Microservices and Spring apps use generic event buses to decouple
-// producers from consumers. Each event type is type-safe.
-
-interface EventListener<E> {
-    void onEvent(E event);
-}
-
-class EventBus<E> {
-    private final List<EventListener<E>> listeners = new ArrayList<>();
-
-    public void subscribe(EventListener<E> listener) {
-        listeners.add(listener);
-    }
-
-    public void publish(E event) {
-        listeners.forEach(l -> l.onEvent(event));
-    }
-}
-
-// Domain events
-class OrderPlacedEvent {
-    String orderId;
-    OrderPlacedEvent(String id) { this.orderId = id; }
-}
-
-// Usage:
-EventBus<OrderPlacedEvent> orderBus = new EventBus<>();
-```text
-orderBus.subscribe(e -> System.out.println("Email: Order " + e.orderId + " placed!"));
-orderBus.subscribe(e -> System.out.println("SMS: Order " + e.orderId + " confirmed!"));
-
+LRUCache<Integer, String> cache = new LRUCache<>(3);
+cache.put(1, "A"); cache.put(2, "B"); cache.put(3, "C");
+cache.get(1);       // Access 1 (now Most Recently Used)
+cache.put(4, "D");  // Evicts 2 (Least Recently Used)
+System.out.println(cache.keySet()); // [3, 1, 4]
 ```
-orderBus.publish(new OrderPlacedEvent("ORD-001"));
 
-// OUTPUT:
-// Email: Order ORD-001 placed!
-// SMS: Order ORD-001 confirmed!
+---
 
-#### [USE CASE 5: Generic Pair / Triple (used in batch processing & APIs)]
+### 6.7 Multithreading & Thread-Safety
 
-// When a method needs to return two or three related values, a generic
-// Pair avoids creating extra wrapper classes each time.
-
-class Pair<A, B> {
-    public final A first;
-    public final B second;
-    public Pair(A first, B second) { this.first = first; this.second = second; }
-    @Override public String toString() { return "(" + first + ", " + second + ")"; }
-}
-
-// Service returning paginated result:
-public Pair<List<Order>, Long> getOrders(int page, int size) {
-    List<Order> orders = orderRepo.findPage(page, size);
-    long total         = orderRepo.countAll();
-    return new Pair<>(orders, total);
-}
-
-// Caller:
-Pair<List<Order>, Long> result = orderService.getOrders(0, 10);
-System.out.println("Orders: " + result.first.size() + " / Total: " + result.second);
-
-#### [USE CASE 6: Generic Typed Configuration Holder]
-
-  // Spring applications often store configuration values of different types
-  // (String, Integer, Boolean). A generic holder keeps them type-safe.
-
-  class ConfigProperty<T> {
-      private final String key;
-      private final T defaultValue;
-      private T value;
-
-      public ConfigProperty(String key, T defaultValue) {
-          this.key = key;
-          this.defaultValue = defaultValue;
-      }
-
-      public void setValue(T value)  { this.value = value; }
-      public T    getValue()         { return value != null ? value : defaultValue; }
-      public String getKey()         { return key; }
-  }
-
-  // Usage:
-  ConfigProperty<Integer> timeoutConfig  = new ConfigProperty<>("db.timeout", 30);
-  ConfigProperty<Boolean> featureToggle  = new ConfigProperty<>("feature.newUI", false);
-  ConfigProperty<String>  appNameConfig  = new ConfigProperty<>("app.name", "MyApp");
-
-  timeoutConfig.setValue(60);
-  System.out.println(timeoutConfig.getKey() + " = " + timeoutConfig.getValue()); // db.timeout = 60
-  System.out.println(featureToggle.getValue()); // false (default)
-  System.out.println(appNameConfig.getValue()); // MyApp (default)
-
-  SUMMARY TABLE - Generic Real-Time Use Cases:
-  +----+---------------------------+----------------------------------+
-  | #  | Use Case                  | Benefit                          |
-  +----+---------------------------+----------------------------------+
-| 1 | Generic Repository | One CRUD interface for all DBOs |
-| --- | --- | --- |
-| 2 | Result<T> Wrapper | Type-safe success/failure return |
-| 3 | Generic Cache<K,V> | Reusable cache for any types |
-| 4 | EventBus<E> | Decoupled typed event publishing |
-| 5 | Pair<A,B> | Multi-return without extra class |
-| 6 | ConfigProperty<T> | Type-safe configuration holding |
-  +----+---------------------------+----------------------------------+
-# SECTION 7: MULTITHREADING & CONCURRENCY
-
-
---- 7.1 Creating Threads ---
-[CODE EXAMPLE - Way 1: extends Thread]
-class MyThread extends Thread {
-    public void run() { System.out.println("Thread: " + getName()); }
-}
+#### Thread Creation:
+```java
+// 1. extends Thread
+class MyThread extends Thread { public void run() { System.out.println("Thread run"); } }
 new MyThread().start();
 
-[CODE EXAMPLE - Way 2: implements Runnable (Preferred)]
+// 2. implements Runnable (Preferred — allows extending other classes)
 Runnable task = () -> System.out.println("Lambda Thread");
 new Thread(task).start();
 
-[CODE EXAMPLE - Way 3: ExecutorService (Best Practice)]
+// 3. ExecutorService (Best Practice)
 ExecutorService pool = Executors.newFixedThreadPool(4);
 pool.submit(() -> System.out.println("Thread pool task"));
 pool.shutdown();
+```
 
---- 7.2 Thread States & Lifecycle ---
-NEW -> RUNNABLE -> WAITING/BLOCKED/TIMED_WAITING -> TERMINATED
-|
-+-(gets CPU)-> RUNNING
-|
-+-(wait/sleep/join)-> WAITING / TIMED_WAITING
+#### Thread Lifecycle:
 
---- 7.3 Synchronization & Locks ---
-[CODE EXAMPLE - synchronized block]
+```mermaid
+stateDiagram-v2
+    [*] --> NEW
+    NEW --> RUNNABLE : start()
+    RUNNABLE --> RUNNING : gets CPU
+    RUNNING --> WAITING : wait() / join()
+    RUNNING --> TIMED_WAITING : sleep(ms) / wait(ms)
+    RUNNING --> BLOCKED : waiting for lock
+    WAITING --> RUNNABLE : notify() / notifyAll()
+    TIMED_WAITING --> RUNNABLE : timeout / notify()
+    BLOCKED --> RUNNABLE : lock acquired
+    RUNNING --> TERMINATED : run() completes
+```
+
+#### Synchronization:
+```java
 class Counter {
     private int count = 0;
 
-    public synchronized void increment() { count++; } // Method level lock
+    public synchronized void increment() { count++; } // Method-level lock
 
     public void safeIncrement() {
-        synchronized(this) { count++; } // Block level (finer granularity)
+        synchronized(this) { count++; } // Block-level lock (finer granularity)
     }
 }
+```
 
---- 7.4 wait(), notify(), notifyAll() ---
-- Called ONLY inside synchronized blocks.
-- wait(): Releases lock and waits for notification.
-- notify(): Wakes one waiting thread on this object.
-- notifyAll(): Wakes all waiting threads.
-
-[CODE EXAMPLE - Producer-Consumer]
+#### wait(), notify(), notifyAll() — Producer-Consumer:
+```java
 class SharedBuffer {
     private Queue<Integer> queue = new LinkedList<>();
     private final int MAX = 5;
@@ -2062,40 +1197,32 @@ class SharedBuffer {
     public synchronized void produce(int val) throws InterruptedException {
         while (queue.size() == MAX) wait(); // Buffer full, wait
         queue.add(val);
-        System.out.println("Produced: " + val);
         notifyAll(); // Wake consumers
     }
 
     public synchronized int consume() throws InterruptedException {
         while (queue.isEmpty()) wait(); // Buffer empty, wait
         int val = queue.poll();
-        System.out.println("Consumed: " + val);
         notifyAll(); // Wake producers
         return val;
     }
 }
+```
 
---- 7.5 volatile Keyword ---
-- Guarantees visibility across threads.
-- Every read/write goes to main memory, not CPU cache.
+#### volatile Keyword:
+Guarantees cross-thread visibility (reads/writes go to main memory). Does NOT guarantee atomicity.
 
-[CODE EXAMPLE]
+```java
 class TaskRunner {
     private volatile boolean running = true; // Visible to all threads
 
-    public void run() {
-        while (running) { /* do work */ }
-    }
-
+    public void run()  { while (running) { /* work */ } }
     public void stop() { running = false; } // Seen immediately by run()
 }
+```
 
---- 7.6 Thread-Safe Collections ---
-- ConcurrentHashMap        : Segment/bucket-level locking (Java 8 = CAS)
-- CopyOnWriteArrayList     : Snapshot on every write, fast reads
-- BlockingQueue            : Thread-safe queue with blocking operations
-
-[CODE EXAMPLE - BlockingQueue Producer-Consumer]
+#### BlockingQueue Producer-Consumer:
+```java
 BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(5);
 
 Thread producer = new Thread(() -> {
@@ -2117,223 +1244,321 @@ Thread consumer = new Thread(() -> {
 });
 
 producer.start(); consumer.start();
-
-## SECTION 8: COLLECTIONS FRAMEWORK
-
---- 8.1 Framework Hierarchy ---
-Iterable
-+-- Collection
-```text
-+-- List      -> ArrayList, LinkedList, Vector, Stack
-+-- Set       -> HashSet, LinkedHashSet, TreeSet
-+-- Queue     -> LinkedList, PriorityQueue, ArrayDeque
-
 ```
-Map (NOT a Collection)
-        +-- HashMap, LinkedHashMap, TreeMap, Hashtable, WeakHashMap
 
---- 8.2 List Implementations ---
-ArrayList:
-- Dynamic array, O(1) random access, O(n) insertion in middle.
-- Default capacity 10, grows by 50% when full.
-- NOT thread-safe. Use Collections.synchronizedList() if needed.
+#### Key Takeaways
+* HashMap collision resolution shifts to Red-Black Tree (O(log N)) at threshold ≥ 8.
+* ConcurrentHashMap uses CAS + bucket-level locking — far superior to `synchronizedMap`.
+* Fail-safe collections iterate over snapshots; fail-fast throw `ConcurrentModificationException`.
+* `volatile` ensures visibility but NOT atomicity — use `AtomicInteger` for atomic operations.
+* Prefer `ExecutorService` over raw `Thread` creation for production code.
 
-LinkedList:
-- Doubly linked list, O(1) insert/delete at ends, O(n) random access.
-- Implements both List and Deque.
+---
 
-[CODE EXAMPLE]
-List<String> al = new ArrayList<>();
-al.add("A"); al.add("B"); al.add("C");
-al.remove("B");                           // Remove by value
-al.sort(Comparator.naturalOrder());       // Sort
-System.out.println(al.get(0));            // Random access O(1)
+## SECTION 7: HIGH-PERFORMANCE CACHING
 
---- 8.3 Map Implementations ---
-HashMap:
-- Hash table, O(1) average get/put, unordered, allows 1 null key.
-- Java 8+: Linked list in bucket -> Tree (Red-Black) when bucket >= 8.
-- Default capacity 16, load factor 0.75.
+### 7.1 Layered Caching Architecture
 
-LinkedHashMap:
-- Extends HashMap, maintains insertion order via doubly-linked list.
-- Slightly slower than HashMap. Use for predictable iteration order.
+```mermaid
+graph TD
+    Client(["Client Request"]) --> L1{"L1 Cache: In-Process<br>(ConcurrentHashMap / Caffeine)"}
+    L1 -->|Hit| ReturnClient["Return Data to Client"]
+    L1 -->|Miss| L2{"L2 Cache: Distributed<br>(Redis)"}
 
-TreeMap:
-- Red-Black Tree, O(log n) operations, sorted by key.
-- Use when you need sorted keys or range queries.
+    L2 -->|Hit| UpdateL1["Update L1 Cache"] --> ReturnClient
+    L2 -->|Miss| DB[("Database<br>(MySQL / SQL Server)")]
 
-[CODE EXAMPLE - HashMap Internal]
-HashMap<String, Integer> map = new HashMap<>();
-map.put("Alice", 1);
-map.put("Bob", 2);
+    DB --> UpdateL2["Update L2 Cache"] --> UpdateL1
 
-// Java 8 compute methods
-```text
-map.compute("Alice", (k, v) -> v == null ? 1 : v + 10); // 1 + 10 = 11
-map.computeIfAbsent("Charlie", k -> 99);
+    classDef clientNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef cacheNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef dbNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef updateNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+    classDef returnNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
 
+    class Client clientNode;
+    class L1,L2 cacheNode;
+    class DB dbNode;
+    class UpdateL1,UpdateL2 updateNode;
+    class ReturnClient returnNode;
 ```
-map.merge("Alice", 5, Integer::sum); // 11 + 5 = 16
 
-[CODE EXAMPLE - Sorting by value using Stream]
-Map<String, Integer> sorted = map.entrySet()
-    .stream()
-    .sorted(Map.Entry.comparingByValue())
-    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-        (e1, e2) -> e1, LinkedHashMap::new));
+### 7.2 Spring Cache + Redis Configuration
 
---- 8.4 Set Implementations ---
-```text
-HashSet     -> Hash table, O(1) ops, unordered, allows 1 null.
-LinkedHashSet -> Maintains insertion order.
-TreeSet     -> Red-Black tree, sorted, O(log n) ops, no null.
-
+```xml
+<!-- pom.xml dependencies -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-cache</artifactId>
+</dependency>
 ```
-[CODE EXAMPLE - Set Operations]
-Set<Integer> s1 = new HashSet<>(Arrays.asList(1, 2, 3, 4));
-Set<Integer> s2 = new HashSet<>(Arrays.asList(3, 4, 5, 6));
 
-Set<Integer> union = new HashSet<>(s1); union.addAll(s2); // {1,2,3,4,5,6}
-Set<Integer> intersect = new HashSet<>(s1); intersect.retainAll(s2); // {3,4}
-Set<Integer> diff = new HashSet<>(s1); diff.removeAll(s2); // {1,2}
-
---- 8.5 Comparable vs Comparator ---
-```text
-Comparable  -> Implemented by object itself (natural order), compareTo().
-Comparator  -> External comparison strategy, compare().
-
-```
-[CODE EXAMPLE]
-class Student implements Comparable<Student> {
-    String name; int score;
-
-    @Override // Natural ordering by name
-    public int compareTo(Student other) { return this.name.compareTo(other.name); }
-}
-
-// External Comparator
-Comparator<Student> byScore = Comparator.comparingInt(Student::getScore);
-Comparator<Student> byNameThenScore = Comparator.comparing(Student::getName)
-                                                .thenComparingInt(Student::getScore);
-
-List<Student> students = ...;
-Collections.sort(students);            // Uses Comparable (by name)
-students.sort(byScore);                // Uses Comparator (by score)
-students.sort(byScore.reversed());     // Reversed
-
---- 8.6 Fail-Fast vs Fail-Safe ---
-Fail-Fast : Throws ConcurrentModificationException if collection is modified
-during iteration. (ArrayList, HashMap, HashSet...)
-Fail-Safe : Iterates over a snapshot. Safe for modifications during iteration.
-(CopyOnWriteArrayList, ConcurrentHashMap...)
-
-[CODE EXAMPLE - Fail-Safe]
-List<String> list = new CopyOnWriteArrayList<>(Arrays.asList("A","B","C"));
-for (String s : list) {
-    if (s.equals("B")) list.add("D"); // No CME thrown
-}
-System.out.println(list); // [A, B, C, D]
-
---- 8.7 LRU Cache using LinkedHashMap ---
-[CODE EXAMPLE]
-public class LRUCache<K, V> extends LinkedHashMap<K, V> {
-    private final int capacity;
-
-    public LRUCache(int capacity) {
-        super(capacity, 0.75f, true); // accessOrder = true
-        this.capacity = capacity;
-    }
-
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-        return size() > capacity;
-    }
-
-    public static void main(String[] args) {
-        LRUCache<Integer, String> cache = new LRUCache<>(3);
-        cache.put(1, "A"); cache.put(2, "B"); cache.put(3, "C");
-        cache.get(1);       // Access 1 (1 is now Most Recently Used)
-        cache.put(4, "D");  // Evicts 2 (Least Recently Used)
-        System.out.println(cache.keySet()); // [3, 1, 4]
+```java
+@Configuration
+@EnableCaching
+public class CacheConfig {
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory f) {
+        RedisCacheConfiguration config = RedisCacheConfiguration
+            .defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(30))
+            .serializeValuesWith(
+                RedisSerializationContext.SerializationPair
+                    .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+        return RedisCacheManager.create(f);
     }
 }
+```
 
-## SECTION 9: JAVA 8 FEATURES (LAMBDA, STREAMS, OPTIONALS)
+```java
+@Service
+public class PolicyService {
+    @Cacheable(value = "policies", key = "#policyId", unless = "#result == null")
+    public Policy getPolicy(String policyId) {
+        return policyRepository.findById(policyId).orElse(null);
+    }
 
---- 9.1 Functional Interfaces & Lambdas ---
-[CODE EXAMPLE]
-// Pre-Java 8
-Runnable r1 = new Runnable() {
-    @Override public void run() { System.out.println("Old way"); }
-};
+    @CacheEvict(value = "policies", key = "#policy.id")
+    public Policy updatePolicy(Policy policy) {
+        return policyRepository.save(policy);
+    }
 
-// Java 8 Lambda
-Runnable r2 = () -> System.out.println("Lambda way");
+    @CachePut(value = "policies", key = "#policy.id")
+    public Policy savePolicy(Policy policy) {
+        return policyRepository.save(policy);
+    }
+}
+```
 
-// Functional interface (single abstract method)
+**Cache Eviction Strategies**: TTL (Time-To-Live), LRU (Least Recently Used), LFU (Least Frequently Used).
+
+**Production Considerations**: Cache stampede prevention (Caffeine async loading), Cache coherency (`@CacheEvict` on update/delete), Distributed locks (Redis SETNX for cache warming).
+
+#### Key Takeaways
+* Use a layered cache (L1 in-process + L2 distributed) to minimize database load.
+* Spring's `@Cacheable`, `@CacheEvict`, `@CachePut` abstract caching behind annotations.
+* Always set TTL to prevent stale data; use `@CacheEvict` on mutating operations.
+
+---
+
+## SECTION 8: JAVA 8+ FEATURES & FUNCTIONAL PROGRAMMING
+
+### 8.1 Functional Interfaces & Lambdas
+
+A **Functional Interface** has exactly one abstract method. Can have multiple `default`/`static` methods. Lambda expressions are NOT anonymous inner classes — JVM uses `invokedynamic` + `LambdaMetafactory` (more efficient, no extra `.class` files).
+
+| Interface | Method | Use Case |
+|:---|:---|:---|
+| `Predicate<T>` | `boolean test(T t)` | Filtering |
+| `Function<T,R>` | `R apply(T t)` | Transformation |
+| `Consumer<T>` | `void accept(T t)` | Side effects |
+| `Supplier<T>` | `T get()` | Lazy generation |
+| `BiFunction<T,U,R>` | `R apply(T t, U u)` | Two args → result |
+| `UnaryOperator<T>` | `T apply(T t)` | Same type in/out |
+| `BinaryOperator<T>` | `T apply(T t1, T t2)` | Two same type args |
+
+```java
+// Lambda Syntax: (parameters) -> expression OR (parameters) -> { statements; }
+
 @FunctionalInterface
 interface MathOp { int operate(int a, int b); }
 
-```text
 MathOp add = (a, b) -> a + b;
 MathOp mul = (a, b) -> a * b;
-
-```
 System.out.println(add.operate(3, 5)); // 8
 
---- 9.2 Streams API ---
-[CODE EXAMPLE - Chained Pipeline]
-List<String> names = Arrays.asList("Alice","Bob","Charlie","David","Anna");
+// Predicate example (Insurance domain)
+Predicate<Policy> isActive = policy -> policy.getStatus().equals("ACTIVE");
+List<Policy> activePolicies = policies.stream()
+    .filter(isActive)
+    .collect(Collectors.toList());
+
+// Method References (shorthand for lambdas)
+// Static:      ClassName::methodName   → String::valueOf
+// Instance:    obj::methodName         → System.out::println
+// Unbound:     ClassName::methodName   → String::toLowerCase
+// Constructor: ClassName::new          → ArrayList::new
+```
+
+---
+
+### 8.2 Streams API
+
+Streams allow declarative pipeline transformations on collections (filter → map → collect).
+
+```java
+List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "David", "Anna");
 
 List<String> result = names.stream()
     .filter(n -> n.startsWith("A"))          // Intermediate: filter
     .map(String::toUpperCase)                 // Intermediate: transform
     .sorted()                                 // Intermediate: sort
     .collect(Collectors.toList());            // Terminal: collect
-
-System.out.println(result); // [ALICE, ANNA]
+// Result: [ALICE, ANNA]
 
 // Statistics
 IntSummaryStatistics stats = List.of(10, 20, 30, 40)
-    .stream()
-    .mapToInt(Integer::intValue)
-    .summaryStatistics();
+    .stream().mapToInt(Integer::intValue).summaryStatistics();
 System.out.println("Max: " + stats.getMax() + " Avg: " + stats.getAverage());
 
---- 9.3 Stream Grouping & Partitioning ---
-[CODE EXAMPLE]
+// Grouping & Partitioning
 Map<String, Long> wordCounts = Arrays.stream("java spring java kafka".split(" "))
     .collect(Collectors.groupingBy(w -> w, Collectors.counting()));
 // {java=2, spring=1, kafka=1}
 
-Map<Boolean, List<Integer>> parts = List.of(1,2,3,4,5,6)
-    .stream()
+Map<Boolean, List<Integer>> parts = List.of(1,2,3,4,5,6).stream()
     .collect(Collectors.partitioningBy(n -> n % 2 == 0));
 // {false=[1,3,5], true=[2,4,6]}
+```
 
---- 9.4 Optional ---
-[CODE EXAMPLE]
-Optional<String> opt = Optional.ofNullable(getUserName()); // May be null
+> **Performance Note**: Parallel streams only worth it for large data + CPU-intensive operations. Sequential stream has overhead vs for-loop for small data. For I/O-bound operations, use `CompletableFuture` instead.
 
-String name = opt
-    .filter(n -> n.length() > 3)
-    .map(String::toUpperCase)
-    .orElse("GUEST"); // Default if empty
+---
 
-## SECTION 10: DESIGN PATTERNS (ESSENTIAL FOR INTERVIEWS)
+### 8.3 Optional Class
 
---- 10.1 Singleton ---
-[CODE EXAMPLE - Thread-Safe Double-Checked Locking]
+A type-safe container representing the presence or absence of a value, replacing risky `null` returns.
+
+```mermaid
+graph TD
+    Start(["Optional Container"]) --> Check{"Check Presence?"}
+    Start --> Extract{"Extract Value?"}
+    Start --> Trans{"Transform / Filter?"}
+
+    Check -->|"isPresent()"| Pres["true if value exists"]
+    Check -->|"isEmpty()"| Emp["true if empty (Java 11)"]
+
+    Extract -->|"get()"| GetVal["Value (throws if empty)"]
+    Extract -->|"orElse(default)"| DefaultVal["Value or Default"]
+    Extract -->|"orElseGet(supplier)"| LazyVal["Value or Executed Supplier"]
+    Extract -->|"orElseThrow(...)"| ExVal["Value or Exception"]
+
+    Trans -->|"map(f)"| MapVal["Transform if present"]
+    Trans -->|"flatMap(f)"| FlatVal["Flat-map Optional-returning fn"]
+    Trans -->|"filter(predicate)"| FiltVal["Filter by condition"]
+
+    classDef container fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef action fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+
+    class Start container;
+    class Check,Extract,Trans action;
+```
+
+```java
+// Safe navigation avoiding NullPointerExceptions
+// Before Optional:
+if (user != null && user.getAddress() != null && user.getAddress().getCity() != null) {
+    return user.getAddress().getCity();
+}
+
+// With Optional:
+return Optional.ofNullable(user)
+    .map(User::getAddress)
+    .map(Address::getCity)
+    .orElse("Unknown City");
+```
+
+> **When NOT to use Optional**: As method parameter type (use overloading), as collection element (use empty collection), as field type in a class (serialization issues).
+
+---
+
+### 8.4 CompletableFuture & Async Programming
+
+Implements asynchronous computation by chaining stages using completion events.
+
+**Key Methods**:
+
+| Method | Description |
+|:---|:---|
+| `supplyAsync(Supplier)` | Async computation returning value |
+| `runAsync(Runnable)` | Async computation, no return |
+| `thenApply(Function)` | Transform result (sync) |
+| `thenAccept(Consumer)` | Consume result |
+| `thenCombine(CF, BiFunc)` | Combine two futures |
+| `allOf(CF...)` | Wait for all to complete |
+| `anyOf(CF...)` | Wait for any one |
+| `exceptionally(Function)` | Error handling fallback |
+| `handle(BiFunction)` | Handle result or exception |
+
+```java
+// Production Example (Nationwide Insurance) — Parallel API calls
+public ClaimSummaryDTO getClaimSummary(String claimId) {
+    CompletableFuture<ClaimDetails> detailsFuture =
+        CompletableFuture.supplyAsync(() -> claimService.getDetails(claimId));
+
+    CompletableFuture<List<Document>> docsFuture =
+        CompletableFuture.supplyAsync(() -> documentService.getDocuments(claimId));
+
+    CompletableFuture<PolicyInfo> policyFuture =
+        CompletableFuture.supplyAsync(() -> policyService.getPolicy(claimId));
+
+    // Wait for all 3 to complete (parallel execution)
+    return CompletableFuture.allOf(detailsFuture, docsFuture, policyFuture)
+        .thenApply(v -> new ClaimSummaryDTO(
+            detailsFuture.join(),
+            docsFuture.join(),
+            policyFuture.join()))
+        .exceptionally(ex -> {
+            logger.error("Failed to get claim summary", ex);
+            return new ClaimSummaryDTO(); // fallback
+        })
+        .join();
+}
+```
+
+**Latency Performance Comparison**:
+- **Before (Sequential)**: 300ms + 200ms + 150ms = **650ms**
+- **After (Parallel)**: max(300ms, 200ms, 150ms) = **300ms**
+- **Latency Reduction**: **~54% improvement** 🚀
+
+---
+
+### 8.5 Java Records (Java 14+) & Sealed Classes (Java 17)
+
+**Records** — Compact, immutable data carriers. Auto-generate: constructor, getters (no `get` prefix), `equals()`, `hashCode()`, `toString()`. Cannot extend other classes but can implement interfaces.
+
+```java
+public record Employee(int id, String name, double salary) {}
+
+Employee e = new Employee(101, "John", 75000.0);
+System.out.println(e.name());  // Getter (no "get" prefix)
+System.out.println(e);         // Employee[id=101, name=John, salary=75000.0]
+```
+
+**Sealed Classes (Java 17)** — Restrict which classes can extend/implement. Enables exhaustive pattern matching.
+
+```java
+public sealed interface Shape permits Circle, Rectangle, Triangle {}
+```
+
+#### Key Takeaways
+* Functional Interfaces define exactly one abstract method and enable lambda syntax.
+* Optionals model presence/absence to avoid NullPointerExceptions.
+* `CompletableFuture` executes async tasks and coordinates parallel API calls with significant latency reduction.
+* Java Records eliminate boilerplate for immutable data carriers.
+* Sealed classes enable exhaustive `switch` pattern matching.
+
+---
+
+## SECTION 9: DESIGN PATTERNS
+
+### 9.1 Singleton — Thread-Safe Double-Checked Locking
+
+Ensures a class has only one instance and provides a global access point:
+
+```java
 public class DatabaseConnection {
     private static volatile DatabaseConnection instance;
-
-    private DatabaseConnection() {}
+    private DatabaseConnection() {} // Private constructor
 
     public static DatabaseConnection getInstance() {
-        if (instance == null) {                     // First check (no lock)
+        if (instance == null) {                             // First check (no lock)
             synchronized (DatabaseConnection.class) {
-                if (instance == null) {             // Second check (with lock)
+                if (instance == null) {                     // Second check (with lock)
                     instance = new DatabaseConnection();
                 }
             }
@@ -2341,9 +1566,15 @@ public class DatabaseConnection {
         return instance;
     }
 }
+```
 
---- 10.2 Factory Pattern ---
-[CODE EXAMPLE]
+---
+
+### 9.2 Factory Pattern
+
+Defines an interface for creating objects, letting subclasses decide which class to instantiate:
+
+```java
 interface Notification { void send(String msg); }
 class EmailNotification implements Notification {
     public void send(String msg) { System.out.println("Email: " + msg); }
@@ -2355,34 +1586,32 @@ class SMSNotification implements Notification {
 class NotificationFactory {
     public static Notification create(String type) {
         return switch (type) {
-```text
             case "EMAIL" -> new EmailNotification();
             case "SMS"   -> new SMSNotification();
             default -> throw new IllegalArgumentException("Unknown: " + type);
-
-```
         };
     }
 }
+```
 
---- 10.3 Builder Pattern ---
-[CODE EXAMPLE]
+---
+
+### 9.3 Builder Pattern
+
+Separates construction of complex objects from their representation:
+
+```java
 public class Person {
     private final String name;
     private final int age;
     private final String email;
 
-    private Person(Builder b) {
-        this.name = b.name;
-        this.age = b.age;
-        this.email = b.email;
-    }
+    private Person(Builder b) { this.name = b.name; this.age = b.age; this.email = b.email; }
 
     public static class Builder {
         private String name;
         private int age;
         private String email;
-
         public Builder name(String name)   { this.name = name;   return this; }
         public Builder age(int age)         { this.age = age;     return this; }
         public Builder email(String email) { this.email = email; return this; }
@@ -2391,19 +1620,30 @@ public class Person {
 }
 
 Person p = new Person.Builder().name("Alice").age(30).email("a@b.com").build();
+```
 
-## SECTION 11: ADVANCED JAVA CONCEPTS
+#### Key Takeaways
+* Singleton uses `volatile` + double-checked locking for thread-safe lazy instantiation.
+* Factory Pattern removes hardcoded creation dependencies — decisions move to factory classes.
+* Builder Pattern constructs complex objects step-by-step with fluent API.
 
---- 11.1 equals() and hashCode() Contract ---
-Rules:
-1. Reflexive:   x.equals(x) is true.
-2. Symmetric:   x.equals(y) => y.equals(x).
-3. Transitive:  x.equals(y) && y.equals(z) => x.equals(z).
-4. Consistent:  Multiple calls return same result.
-5. hashCode must be same if equals returns true.
-6. If equals is false, hashCode MAY differ (collisions are allowed).
+---
 
-[CODE EXAMPLE - Custom Key for HashMap]
+## SECTION 10: ADVANCED JAVA CONCEPTS
+
+### 10.1 equals() and hashCode() Contract
+
+**Rules**:
+1. **Reflexive**: `x.equals(x)` is true.
+2. **Symmetric**: `x.equals(y)` ⟹ `y.equals(x)`.
+3. **Transitive**: `x.equals(y) && y.equals(z)` ⟹ `x.equals(z)`.
+4. **Consistent**: Multiple calls return the same result.
+5. If `equals()` is true, `hashCode()` **must** be the same.
+6. If `equals()` is false, `hashCode()` **may** differ (collisions allowed).
+
+> ⚠️ If you override `equals()` but NOT `hashCode()`, HashMap/HashSet will store duplicate objects or fail to locate existing entries.
+
+```java
 class Point {
     int x, y;
     Point(int x, int y) { this.x = x; this.y = y; }
@@ -2418,315 +1658,515 @@ class Point {
     @Override
     public int hashCode() { return Objects.hash(x, y); }
 }
+```
 
---- 11.2 Cloning: Shallow vs Deep ---
-Shallow: clone() copies top-level fields. Nested objects share same references.
-Deep:    Copies everything recursively (nested objects are also new copies).
+---
 
-[CODE EXAMPLE - Deep Copy via Serialization]
+### 10.2 Cloning: Shallow vs Deep
+
+| Clone Type | Behavior |
+|:---|:---|
+| **Shallow** | Copies top-level fields. Nested objects share same references |
+| **Deep** | Copies everything recursively. Nested objects are new copies |
+
+```java
+// Deep Copy via Serialization
 public <T extends Serializable> T deepCopy(T object) throws Exception {
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     new ObjectOutputStream(bos).writeObject(object);
     ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
     return (T) new ObjectInputStream(bis).readObject();
 }
-
---- 11.3 Static vs Instance Members ---
-Static:   Belongs to Class. Single copy shared across all instances.
-Instance: Belongs to each object. Separate copy per object.
-
-[CODE EXAMPLE]
-class Config {
-    static int instanceCount = 0;    // Shared
-    String name;                     // Per-object
-
-    Config(String name) {
-        this.name = name;
-        instanceCount++;             // Tracker
-    }
-}
-
---- 11.4 Java Records (Java 14+) ---
-Automates: constructor, getters, equals(), hashCode(), toString()
-
-[CODE EXAMPLE]
-record Employee(int id, String name, double salary) {}
-
-Employee e = new Employee(101, "John", 75000.0);
-System.out.println(e.name()); // Getter (no "get" prefix in records)
-System.out.println(e);        // Employee[id=101, name=John, salary=75000.0]
-
-## SECTION 12: INTERVIEW QUICK REFERENCE (TOP 50 Q&A)
-
-#### Q1. What is the difference between JDK, JRE and JVM?
-
-A1. JDK = Development kit (JRE + compiler + tools).
-JRE = Runtime environment (JVM + libraries).
-JVM = Runs bytecode, platform specific.
-
-#### Q2. Why is Java platform independent but JVM is not?
-
-A2. Java compiles to platform-neutral bytecode (.class).
-Each OS has its own JVM implementation that translates bytecode to native code.
-
-#### Q3. What is the default value of int, boolean, String in Java?
-
-A3. int=0, boolean=false, Object references=null, double=0.0.
-
-#### Q4. What happens if we do not override hashCode() but override equals()?
-
-A4. Two objects that are "equal" may end up in DIFFERENT HashMap buckets.
-The HashMap would fail to find them. Always override BOTH.
-
-#### Q5. Can an abstract class have a constructor?
-
-A5. Yes! Constructors of abstract classes are called when a subclass instantiates.
-They cannot be instantiated directly.
-
-#### Q6. Can we catch Error (OutOfMemoryError)?
-
-A6. Technically yes, but we should NOT. Errors indicate JVM problems that
-cannot be recovered from.
-
-#### Q7. What is the difference between throw and throws?
-
-A7. throw: Used to explicitly throw an exception instance.
-throws: Declared in method signature to signal checked exceptions.
-
-#### Q8. Differences among final, finally, and finalize?
-
-```text
-A8. final     -> keyword: var = constant, method = no override, class = no extend.
-finally   -> block always executed after try/catch.
-finalize  -> deprecated method called by GC before object destruction.
-
 ```
-#### Q9. What is a Marker Interface?
 
-A9. An interface with NO methods. Signals capability to JVM or frameworks.
-Examples: Serializable, Cloneable, RandomAccess.
+---
+
+### 10.3 Additional Concepts
+
+- **`var` (Java 10+)**: Local Variable Type Inference. Compiler infers type: `var list = new ArrayList<String>();`. Cannot be used for fields, method params, or return types.
+- **Static Initializer Block**: Runs once when class is loaded: `class Config { static { props.load(...); } }`
+- **`instanceof` Pattern Matching (Java 16+)**: `if (obj instanceof String s) { s.length(); }`
+- **Marker Interface**: An interface with NO methods (e.g., `Serializable`, `Cloneable`). Signals capability to JVM/frameworks.
+- **Static Nested Class vs Inner Class**: Static nested class has no access to outer instance. Inner class holds implicit reference to outer and can access outer members.
+- **Diamond Problem**: Two interfaces define same default method → Java forces you to override: `class C implements A, B { @Override public void m() { A.super.m(); } }`
+- **Daemon Thread**: Background thread that does NOT prevent JVM from exiting. `thread.setDaemon(true);` (must call before `start()`). GC thread is a daemon thread.
+- **WeakHashMap**: Keys are `WeakReferences` — if a key is no longer strongly referenced, GC removes the entry. Use for caches/metadata.
+
+#### Key Takeaways
+* Always override both `equals()` and `hashCode()` to maintain hash-based collection integrity.
+* Deep cloning via serialization creates fully independent copies of object graphs.
+* Java Records (14+) and Sealed Classes (17) are modern additions that reduce boilerplate and enable exhaustive pattern matching.
+
+---
+
+## SECTION 11: PERFORMANCE BEST PRACTICES
+
+| # | Optimization | Details |
+|:---:|:---|:---|
+| 1 | **String Concatenation** | Use `StringBuilder.append()` instead of `+` in loops (avoids creating intermediate objects) |
+| 2 | **ArrayList vs LinkedList** | ArrayList for read-heavy (`O(1)` get); LinkedList for write-heavy (rare, prefer ArrayDeque) |
+| 3 | **Auto-boxing overhead** | Use primitives (`int`, `long`) in loops; avoid `Integer`, `Long` wrapper types |
+| 4 | **Streams vs for-loop** | Parallel streams only for large data + CPU-intensive. Use `CompletableFuture` for I/O-bound |
+| 5 | **Close resources** | Always use try-with-resources for JDBC, HTTP, File I/O |
+| 6 | **Prefer composition** | Over inheritance when behavior varies at runtime |
+| 7 | **Program to interfaces** | Not implementations — enables DI and testing |
+| 8 | **Use Optional** | Instead of null returns for method return types |
+| 9 | **Meaningful exceptions** | Custom domain exceptions instead of generic RuntimeException |
+| 10 | **final for constants** | `static final` for compile-time constants |
+
+---
+
+## SECTION 12: TOP 50 INTERVIEW QUESTIONS — QUICK REFERENCE
+
+### 12.1 Quick-Scan Q&A Index
+
+| Q# | Category | Question | Key Takeaway / Core Concept |
+|:---:|:---|:---|:---|
+| 1 | `JVM & Memory` | Difference between JDK, JRE, and JVM? | JDK (Tools + JRE) ⊃ JRE (JVM + Libs) ⊃ JVM (Runs bytecode). |
+| 2 | `JVM & Memory` | Why is Java platform-independent but JVM is platform-dependent? | Code compiles to neutral bytecode (`.class`); each OS requires its specific JVM. |
+| 3 | `Strings & Data` | Difference between `==` and `equals()`? | `==` compares references/primitives; `equals()` compares values (when overridden). |
+| 4 | `Collections` | What happens if you override `equals()` but not `hashCode()`? | Violates contract; causes duplicates or search failures in hash-based collections. |
+| 5 | `OOP Concepts` | Can an abstract class have constructors? | Yes, initialized via `super()` inside subclass constructors. |
+| 6 | `JVM & Memory` | Difference between final, finally, and finalize? | `final` (modifier), `finally` (try-catch cleanup block), `finalize` (deprecated GC hook). |
+| 7 | `OOP Concepts` | What is a Marker Interface? | An empty interface (e.g. `Serializable`) acting as metadata for the JVM. |
+| 8 | `Java 8+ Features` | What is `var` in Java 10+? | Local variable type inference; resolved at compile-time. |
+| 9 | `Strings & Data` | Why is String immutable in Java? | Security, thread-safety, string pooling caching, hashcode caching. |
+| 10 | `Exceptions` | Difference between `throw` and `throws`? | `throw` (instantiates/fires exception), `throws` (method signature declaration). |
+| 11 | `OOP Concepts` | Explain method hiding vs method overriding. | Overriding (runtime polymorphism on instances), Hiding (static methods resolved at compile-time). |
+| 12 | `OOP Concepts` | Can a constructor be private? | Yes, standard for Singletons and static utility classes. |
+| 13 | `OOP Concepts` | Explain covariant return types. | Subclass overriding method can return a subtype of the parent method's return type. |
+| 14 | `Collections` | Difference between ArrayList and LinkedList? | ArrayList (dynamic array, `O(1)` random read), LinkedList (doubly-linked, fast ends insert). |
+| 15 | `Collections` | How does HashMap resolve hash collisions? | Bucket chaining; converts chain to Red-Black Tree if length ≥ 8 and capacity ≥ 64. |
+| 16 | `Collections` | How does ConcurrentHashMap achieve concurrency? | CAS for lock-free reads, bucket-level synchronization for writes. |
+| 17 | `Collections` | What is fail-fast vs fail-safe iteration? | Fail-fast throws `ConcurrentModificationException` on write; fail-safe reads snapshot. |
+| 18 | `Collections` | How does HashSet guarantee uniqueness? | Backed internally by a HashMap, storing elements as keys with dummy values. |
+| 19 | `Generics` | What is type erasure in Generics? | Compiler replaces generic types with raw type/bounds for backward compatibility. |
+| 20 | `Concurrency` | Difference between Callable and Runnable? | Runnable (`run()`, no return/checked exceptions), Callable (`call()`, returns value/throws). |
+| 21 | `Concurrency` | Difference between `sleep()` and `wait()`? | `sleep()` (pauses without releasing lock), `wait()` (releases lock, waits for notify). |
+| 22 | `Concurrency` | What happens if you call `start()` twice on a Thread? | Throws `IllegalThreadStateException`. |
+| 23 | `Concurrency` | What is the volatile keyword? | Guarantees visibility across threads; bypasses CPU cache to read/write main memory. |
+| 24 | `JVM & Memory` | Explain Metaspace vs PermGen. | PermGen (fixed-size heap space), Metaspace (dynamic native memory, Java 8+). |
+| 25 | `JVM & Memory` | What is a ForkJoinPool? | Parallel work-stealing pool used by parallel streams. |
+| 26 | `Collections` | Difference between `List.of()` and `Arrays.asList()`? | `List.of()` is truly immutable & null-hostile; `Arrays.asList()` is fixed-size view. |
+| 27 | `Java 8+ Features` | What is a functional interface? | Interface with exactly one abstract method (e.g. `Predicate`, `Consumer`). |
+| 28 | `Java 8+ Features` | Difference between `stream()` and `parallelStream()`? | `stream()` is sequential; `parallelStream()` leverages ForkJoinPool for multi-core. |
+| 29 | `Java 8+ Features` | What are Records in Java 14? | Immutable, boilerplate-free data carriers. |
+| 30 | `Strings & Data` | Explain String vs char[] for passwords. | Strings stay in pool/memory; `char[]` can be zeroed out immediately for security. |
+| 31 | `Java 8+ Features` | What is a method reference? | Lambda shorthand (e.g. `System.out::println`). |
+| 32 | `Collections` | Difference between Iterable and Iterator? | `Iterable` (allows for-each loop), `Iterator` (traversal object with `next()`). |
+| 33 | `Java 8+ Features` | What is the Optional class? | Container representing optional value to prevent NullPointerExceptions. |
+| 34 | `OOP Concepts` | What is a default method in an interface? | Concrete method within interface (Java 8+) for backward-compatible evolution. |
+| 35 | `Collections` | What is Comparable vs Comparator? | Comparable (natural ordering via `compareTo`), Comparator (custom external strategy). |
+| 36 | `Collections` | What is a WeakHashMap? | Map with weak keys; entries collected when key is no longer strongly referenced. |
+| 37 | `Collections` | What is CopyOnWriteArrayList? | Thread-safe list copying backing array on write; best for read-heavy use cases. |
+| 38 | `Exceptions` | Difference between checked and unchecked exceptions? | Checked (compile-time enforced), Unchecked (runtime, subclass of `RuntimeException`). |
+| 39 | `Exceptions` | What is a static initializer block? | Code block run once when class is loaded by JVM. |
+| 40 | `Strings & Data` | What is autoboxing and unboxing? | Autoboxing (`int` → `Integer`), Unboxing (`Integer` → `int`); watch out for NPEs. |
+| 41 | `Java 8+ Features` | What is the `instanceof` operator? | Dynamic type checking; Java 16+ supports pattern matching. |
+| 42 | `OOP Concepts` | What is a static nested class vs inner class? | Static nested (no outer reference), Inner (holds implicit reference to outer instance). |
+| 43 | `OOP Concepts` | What is the diamond problem and its resolution? | Multiple inheritance conflict on default methods; solved by explicit override. |
+| 44 | `OOP Concepts` | What is a sealed class (Java 17)? | Class restricting its subtypes; enables compiler-checked exhaustive switch. |
+| 45 | `Strings & Data` | What is `String.intern()`? | Forces string cache lookup in String Constant Pool; returns pool reference. |
+| 46 | `Concurrency` | Difference between notify() and notifyAll()? | `notify()` wakes a random thread; `notifyAll()` wakes all threads (safest choice). |
+| 47 | `Concurrency` | What is a daemon thread? | Background helper thread (e.g. GC) that doesn't block JVM shutdown. |
+| 48 | `Collections` | How does ConcurrentHashMap work internally? | Segment/bucket level synchronization and CAS operations. |
+| 49 | `OOP Concepts` | What is the `super()` keyword? | Calls parent constructor; must be first statement in child constructor. |
+| 50 | `Strings & Data` | What are default values in Java? | Primitives (0, false, 0.0), Objects (`null`). Local variables have no default! |
+
+---
+
+### 12.2 Interactive Self-Study Cards
+
+<details>
+<summary><b>Q1. What is the difference between JDK, JRE, and JVM?</b> <code>JVM & Memory</code></summary>
 
-#### Q10. What is var in Java (Java 10+)?
+* **JDK (Java Development Kit)**: Complete development toolkit containing JRE, compiler (`javac`), archiver (`jar`), and documentation tools.
+* **JRE (Java Runtime Environment)**: Runtime environment to execute Java applications. Consists of JVM + Runtime Class Libraries.
+* **JVM (Java Virtual Machine)**: Platform-dependent engine executing compiled bytecode.
+* **Key Takeaway**: `JDK ⊃ JRE ⊃ JVM`.
+</details>
 
-A10. Local Variable Type Inference. Compiler infers type.
-var list = new ArrayList<String>(); // inferred as ArrayList<String>
-Cannot be used for fields, method params, or return types.
+<details>
+<summary><b>Q2. Why is Java platform-independent but JVM is platform-dependent?</b> <code>JVM & Memory</code></summary>
 
-#### Q11. Difference between == and equals() for Strings?
+* **Java Source**: Compiles to platform-neutral bytecode (`.class` files) containing JVM instructions.
+* **JVM**: Translates bytecode to machine-specific instructions for the target OS. Each OS has its specific JVM implementation.
+* **Key Takeaway**: Write once (neutral bytecode), run anywhere (via OS-specific JVMs).
+</details>
 
-A11. == compares references.  equals() compares characters/content.
+<details>
+<summary><b>Q3. What is the difference between `==` and `equals()` in Java?</b> <code>Strings & Data</code></summary>
 
-#### Q12. What is method hiding vs method overriding?
+* **`==` Operator**: Compares primitives for value equality, and objects for reference/memory location equality.
+* **`equals()` Method**: Compares object contents for logical equivalence. Must be overridden (by default in `Object`, it behaves like `==`).
+* **Key Takeaway**: Always use `.equals()` for strings and object comparisons.
+</details>
 
-A12. Overriding: Runtime polymorphism with instance methods.
-Method hiding: When a static method in the subclass has the same signature.
-Static methods are resolved at compile-time (no dynamic dispatch).
+<details>
+<summary><b>Q4. What happens if you override `equals()` but not `hashCode()`?</b> <code>Collections</code></summary>
 
-#### Q13. Can a constructor be private?
+* **Contract Violation**: If `x.equals(y) == true`, then `x.hashCode() == y.hashCode()` must hold.
+* **Collection Failure**: In hash-based collections (`HashMap`, `HashSet`), objects are placed in buckets based on `hashCode()`. Without consistent hashes, two equal objects can reside in different buckets, resulting in duplicates or lookup failures.
+* **Key Takeaway**: Always override both in tandem.
+</details>
 
-A13. Yes! Used in Singleton pattern to prevent external instantiation.
+<details>
+<summary><b>Q5. Can an abstract class have constructors?</b> <code>OOP Concepts</code></summary>
 
-#### Q14. What is the use of super()?
+* **Initialization**: Yes. Although you cannot instantiate an abstract class directly, its constructor is called when subclass instances are created to initialize shared base fields.
+* **Invocation**: Subclass constructors invoke the base constructor implicitly or explicitly via `super()`.
+</details>
 
-A14. Invokes parent class constructor. Must be the first statement in child constructor.
+<details>
+<summary><b>Q6. What is the difference between final, finally, and finalize?</b> <code>JVM & Memory</code></summary>
 
-#### Q15. Explain covariant return type.
+* **`final`**: Keyword. Variables are constants; methods cannot be overridden; classes cannot be extended.
+* **`finally`**: Block in try-catch-finally structure that guarantees execution (for resource cleanup) unless JVM exits abruptly.
+* **`finalize()`**: Deprecated method in `Object` called by GC before object reclamation. Never rely on it.
+</details>
 
-A15. Overriding method can return a subtype of the parent's return type (Java 5+).
+<details>
+<summary><b>Q7. What is a Marker Interface?</b> <code>OOP Concepts</code></summary>
 
-#### Q16. What is the difference between an ArrayList and a LinkedList?
+* **Definition**: An interface with no declared methods or fields (e.g. `Serializable`, `Cloneable`, `RandomAccess`).
+* **Purpose**: Acts as metadata or a "tag" informing the JVM or compilation compiler of special capabilities or behaviors.
+</details>
 
-A16. ArrayList: Dynamic array, O(1) get, O(n) insert/delete at middle.
-LinkedList: Doubly linked, O(1) insert/delete at ends, O(n) get.
+<details>
+<summary><b>Q8. What is `var` in Java 10+?</b> <code>Java 8+ Features</code></summary>
 
-#### Q17. When does HashMap become a TreeMap internally (Java 8)?
+* **Description**: Local Variable Type Inference. Allows declaring local variables without specifying type: `var list = new ArrayList<String>();`.
+* **Scope**: Restricts type inference to local variables inside methods. Cannot be used for class fields, method arguments, or return types.
+* **Key Takeaway**: Reduces boilerplate without sacrificing type-safety (type is resolved at compile time).
+</details>
 
-A17. When a bucket has >= 8 entries AND total HashMap capacity >= 64,
-the linked list bucket converts to a Red-Black Tree for O(log n) ops.
+<details>
+<summary><b>Q9. Why is String immutable in Java?</b> <code>Strings & Data</code></summary>
 
-#### Q18. What is the difference between HashMap and ConcurrentHashMap?
+* **Security**: Essential for sharing parameters like db credentials, socket addresses, and file paths safely.
+* **Thread-Safety**: Immutable instances are inherently thread-safe and can be shared among threads without synchronization.
+* **String Pool (SCP)**: Caching literals saves massive heap space, which requires immutable strings to prevent corruption.
+* **Hashcode Caching**: The hash is computed once and cached, speeding up key lookups in maps.
+</details>
 
-A18. HashMap: Not thread-safe. ConcurrentHashMap: Thread-safe using CAS + bucket
-locking in Java 8. No null keys allowed in ConcurrentHashMap.
+<details>
+<summary><b>Q10. What is the difference between throw and throws?</b> <code>Exceptions</code></summary>
 
-#### Q19. What is fail-fast and fail-safe iteration?
+* **`throw`**: Keyword used inside method body to explicitly throw a single exception instance (e.g., `throw new IllegalArgumentException();`).
+* **`throws`**: Keyword in method signature declaring that the method might throw the specified checked exceptions, forcing callers to handle them.
+</details>
 
-A19. Fail-fast: Throws ConcurrentModificationException (ArrayList iterator).
-Fail-safe: Iterates over snapshot, no exception (CopyOnWriteArrayList).
+<details>
+<summary><b>Q11. Explain method hiding vs method overriding.</b> <code>OOP Concepts</code></summary>
 
-#### Q20. How does HashSet guarantee uniqueness internally?
+* **Method Overriding**: Subclass defines an **instance** method with same signature as parent. Resolved at runtime (Runtime Polymorphism).
+* **Method Hiding**: Subclass defines a **static** method with same signature as parent. Resolved at compile-time based on reference type.
+</details>
 
-A20. HashSet is backed by a HashMap. Elements are stored as KEYS.
-HashMap's key uniqueness rule guarantees no duplicate elements.
+<details>
+<summary><b>Q12. Can a constructor be private?</b> <code>OOP Concepts</code></summary>
 
-#### Q21. What is the difference between Comparable and Comparator?
+* **A**: Yes. Private constructors prevent instantiation from outside the class.
+* **Use Cases**: Implementing the Singleton design pattern, creating builder subclasses, or structuring utility classes containing only static methods (e.g., `java.lang.Math`).
+</details>
 
-A21. Comparable: Object defines its own natural order (compareTo).
-Comparator: External sorting strategy (compare). Multiple can exist.
+<details>
+<summary><b>Q13. Explain covariant return types.</b> <code>OOP Concepts</code></summary>
 
-#### Q22. What is a WeakHashMap?
+* **Definition**: Allows an overriding method in a subclass to return a subtype of the return type declared in the parent method.
+* **Utility**: Prevents redundant type casting. For example, `ShapeFactory.create()` returns `Shape`, while `CircleFactory.create()` returns `Circle`.
+</details>
 
-A22. A Map where keys are WeakReferences. If a key is no longer strongly referenced,
-GC removes the entry. Use for caches/metadata.
+<details>
+<summary><b>Q14. What is the difference between ArrayList and LinkedList?</b> <code>Collections</code></summary>
 
-#### Q23. What is CopyOnWriteArrayList? When to use it?
+* **ArrayList**: Backed by a dynamic array. Fast `O(1)` random access. Resizing or middle insertions are slow (`O(n)`).
+* **LinkedList**: Backed by a doubly-linked list. Fast insertion/deletion at nodes (`O(1)`), but slow sequential search (`O(n)`) to find nodes.
+* **Key Takeaway**: Use `ArrayList` by default unless you have frequent head/tail structural mutations.
+</details>
 
-A23. Thread-safe list. On write, it copies the backing array.
-Best for READ-heavy, rarely-written scenarios (like listener lists).
+<details>
+<summary><b>Q15. How does HashMap resolve hash collisions?</b> <code>Collections</code></summary>
 
-#### Q24. What is type erasure in Generics?
+* **Algorithm**: Chaining. Colliding keys are appended to a linked list inside the target bucket.
+* **Treeification (Java 8+)**: If a bucket's linked list grows to `≥ 8` nodes AND map capacity is `≥ 64`, the list converts into a self-balancing Red-Black Tree.
+* **Performance**: Improves worst-case lookups from `O(n)` to `O(log n)`.
+</details>
 
-A24. At compile time, generic type info is used for type checking.
-At runtime, type params are erased: List<String> == List<Object> in bytecode.
+<details>
+<summary><b>Q16. How does ConcurrentHashMap achieve concurrency?</b> <code>Collections</code></summary>
 
-#### Q25. What is the difference between Callable and Runnable?
+* **Locking Strategy**: Unlike `synchronizedMap` which locks the entire collection, `ConcurrentHashMap` uses bucket-level locking.
+* **CAS**: Reads are lock-free. Writes lock only the head node of the target bucket.
+* **Constraints**: Does not allow `null` keys or values.
+</details>
 
-A25. Runnable: No return value, cannot throw checked exceptions.
-Callable: Returns a Future<V>, can throw checked exceptions.
-Use Callable with ExecutorService.submit().
+<details>
+<summary><b>Q17. What is fail-fast vs fail-safe iteration?</b> <code>Collections</code></summary>
 
-#### Q26. What is the difference between sleep() and wait()?
+* **Fail-Fast**: Iterators throw `ConcurrentModificationException` immediately if the collection is structurally modified during iteration (e.g., `ArrayList`, `HashMap`).
+* **Fail-Safe / Weakly Consistent**: Iterators traverse a snapshot or write-copy of the collection, allowing concurrent writes without throwing exceptions (e.g., `CopyOnWriteArrayList`, `ConcurrentHashMap`).
+</details>
 
-A26. sleep() : Thread sleeps without releasing the lock. (Thread method)
-wait()  : Thread releases lock and waits for notify(). (Object method)
+<details>
+<summary><b>Q18. How does HashSet guarantee uniqueness?</b> <code>Collections</code></summary>
 
-#### Q27. What happens when you call start() twice on a Thread?
+* **Implementation**: `HashSet` is built on top of a `HashMap` instance.
+* **Mechanism**: When you add element `E` to the `HashSet`, it puts `E` as a key in the backing `HashMap` alongside a constant dummy object (`PRESENT`) as the value.
+* **Key Takeaway**: HashMap key uniqueness guarantees HashSet uniqueness.
+</details>
 
-A27. Throws IllegalThreadStateException on second call.
+<details>
+<summary><b>Q19. What is type erasure in Generics?</b> <code>Generics</code></summary>
 
-#### Q28. What is the volatile keyword?
+* **Definition**: Compiler type check enforcement mechanism where generic type parameters are removed and replaced by their bound (or `Object`) in compiled bytecode.
+* **Rationale**: Maintains backward compatibility with legacy non-generic pre-Java 5 bytecode.
+* **Runtime**: JVM is unaware of the generic type parameters (e.g., `List<String>` is simply seen as `List`).
+</details>
 
-A28. Ensures all reads/writes go to main memory directly.
-Prevents threads from caching a variable in CPU registers.
-Does NOT guarantee atomicity (use AtomicInteger for that).
+<details>
+<summary><b>Q20. What is the difference between Callable and Runnable?</b> <code>Concurrency</code></summary>
 
-#### Q29. What is the difference between parallelStream() and stream()?
+* **Runnable**: Declares `void run()`. Cannot return a value or throw checked exceptions.
+* **Callable**: Declares `V call()`. Can return a value of type `V` and throws checked exceptions.
+* **Key Takeaway**: Use `Callable` for tasks where you need asynchronous results wrapped in a `Future`.
+</details>
 
-A29. stream() processes elements sequentially.
-parallelStream() uses ForkJoinPool.commonPool() for concurrent processing.
-Use parallel only when the source is large and work per element is CPU-intensive.
+<details>
+<summary><b>Q21. Explain the difference between `sleep()` and `wait()`.</b> <code>Concurrency</code></summary>
 
-#### Q30. What are Records in Java 14?
+* **`Thread.sleep(ms)`**: Pauses thread execution for a duration. **Keeps** all acquired locks/monitors.
+* **`object.wait()`**: Releases lock on the object monitor, putting thread to sleep until another thread calls `notify()`/`notifyAll()` on that same object.
+* **Context**: `wait()` must be called from a synchronized context.
+</details>
 
-A30. Compact, immutable data carrier classes.
-Auto-generates: constructor, getters (no "get" prefix), equals, hashCode, toString.
-Cannot extend other classes, but can implement interfaces.
+<details>
+<summary><b>Q22. What happens if you call `start()` twice on a Thread?</b> <code>Concurrency</code></summary>
 
-#### Q31. Explain the difference between String and char[] for passwords.
+* **Result**: Throws an `IllegalThreadStateException` at runtime.
+* **Rationale**: A thread can only be executed once. After completion, it transitions to the `TERMINATED` state and cannot be restarted.
+</details>
 
-A31. String: Immutable, stays in SCP, visible until GC (security risk).
-char[]: Can be explicitly zeroed out (Arrays.fill(pwd, '0')) after use.
-Recommended for passwords.
+<details>
+<summary><b>Q23. What is the volatile keyword?</b> <code>Concurrency</code></summary>
 
-#### Q32. What is method reference? Give types.
+* **Memory Visibility**: Instructs the JVM and CPU to read and write variables directly to main memory, skipping CPU registers/caches.
+* **Order Enforcement**: Prevents instruction reordering around the volatile field.
+* **Atomicity**: Does not guarantee atomicity (e.g. `count++` is still unsafe). Use `AtomicInteger` or locks for atomic operations.
+</details>
 
-A32. Shorthand for lambdas calling an existing method:
-```text
-Static method:     ClassName::methodName  -> String::valueOf
-Instance method:   obj::methodName        -> System.out::println
-Instance (unbound):ClassName::methodName  -> String::toLowerCase
-Constructor:       ClassName::new         -> ArrayList::new
+<details>
+<summary><b>Q24. Explain Metaspace vs PermGen.</b> <code>JVM & Memory</code></summary>
 
-```
-#### Q33. What is the difference between Iterable and Iterator?
+* **PermGen (pre-Java 8)**: Fixed-size allocation on the Java Heap for class definitions, static constants. Susceptible to `java.lang.OutOfMemoryError: PermGen space`.
+* **Metaspace (Java 8+)**: Relocated out of the heap into native memory. It grows dynamically based on OS memory availability unless limited via `-XX:MaxMetaspaceSize`.
+</details>
 
-A33. Iterable: Interface with iterator() method. Allows for-each loop.
-Iterator: Interface with hasNext() and next(). Provides actual traversal.
+<details>
+<summary><b>Q25. What is a ForkJoinPool?</b> <code>JVM & Memory</code></summary>
 
-#### Q34. What is the Optional class? Why use it?
+* **Definition**: Specialized executor service using a work-stealing algorithm to run parallelized tasks.
+* **Work-stealing**: Idle threads steal sub-tasks from busy threads' queues, maximizing CPU utilization.
+* **Core engine**: Powers the Java 8+ parallel streams API.
+</details>
 
-A34. Represents a value that may or may not be present. Avoids NullPointerException.
-opt.isPresent(), opt.get(), opt.orElse(), opt.map(), opt.flatMap() etc.
+<details>
+<summary><b>Q26. What is the difference between `List.of()` and `Arrays.asList()`?</b> <code>Collections</code></summary>
 
-#### Q35. What is a default method in an interface?
+* **`List.of()`**: Returns a truly immutable list. Adding, setting, or removing elements throws `UnsupportedOperationException`. Does not allow `null` elements.
+* **`Arrays.asList()`**: Returns a fixed-size wrapper view of the backing array. Element updates (`set()`) are allowed and propagate to the array, but `add`/`remove` throw exceptions. Allows `null` elements.
+</details>
 
-A35. Concrete method defined in an interface (Java 8+).
-Allows backward-compatible evolution of interfaces.
-Resolves diamond problem: class method > interface default method.
+<details>
+<summary><b>Q27. What is a functional interface?</b> <code>Java 8+ Features</code></summary>
 
-#### Q36. Explain Metaspace vs PermGen.
+* **Definition**: An interface with exactly one abstract method (e.g., `Runnable`, `Callable`, `Comparator`). Can contain any number of default or static methods.
+* **Annotation**: Optional `@FunctionalInterface` forces compiler validation.
+* **Key Takeaway**: Enables lambda expression instantiation.
+</details>
 
-A36. PermGen (pre-Java 8): Fixed size, held class metadata. OOM if too many classes.
-Metaspace (Java 8+):  Native memory, auto-grows (or bounded with -XX:MaxMetaspaceSize).
+<details>
+<summary><b>Q28. What is the difference between `stream()` and `parallelStream()`?</b> <code>Java 8+ Features</code></summary>
 
-#### Q37. What is a ForkJoinPool?
+* **`stream()`**: Processes collection items sequentially in a single thread.
+* **`parallelStream()`**: Splits the collection into segments and processes elements concurrently using the common `ForkJoinPool`.
+* **Heuristics**: Use parallel streams only for huge datasets combined with computationally intense CPU operations.
+</details>
 
-A37. Framework for parallelizing large tasks by splitting (fork) and merging (join).
-Used internally by parallelStream(). Uses work-stealing algorithm.
+<details>
+<summary><b>Q29. What are Records in Java 14?</b> <code>Java 8+ Features</code></summary>
 
-#### Q38. What is the difference between List.of() and Arrays.asList()?
+* **Purpose**: Compact data carrier objects representing immutable data.
+* **Boilerplate-free**: Auto-generates public getters (matching field names), `equals()`, `hashCode()`, `toString()`, and constructor.
+* **Restrictions**: Immutability is enforced. Cannot extend other classes, nor declare instance fields (other than constructor arguments).
+</details>
 
-A38. List.of(): Truly immutable. No add/remove/set. Null not allowed.
-Arrays.asList(): Fixed size (no add/remove), but set() is allowed. Returns a view.
+<details>
+<summary><b>Q30. Explain String vs char[] for passwords.</b> <code>Strings & Data</code></summary>
 
-#### Q39. What is a functional interface?
+* **String**: Immutable. Stored inside the String Constant Pool (SCP) and remains in memory until garbage collected, leaving a window for memory dump security exploits.
+* **`char[]`**: Mutable. Arrays can be explicitly wiped clean (e.g., `Arrays.fill(pwd, '0')`) immediately after verification, eliminating sensitive data exposure.
+</details>
 
-A39. Interface with exactly ONE abstract method (can have default/static).
-@FunctionalInterface annotation (optional but recommended).
-Examples: Runnable, Callable, Comparator, Consumer, Supplier, Function, Predicate.
+<details>
+<summary><b>Q31. What is method reference? Give types.</b> <code>Java 8+ Features</code></summary>
 
-#### Q40. What is the difference between checked and unchecked exceptions?
+Shorthand notation for lambdas that call existing methods.
+* **Static method**: `ClassName::methodName` (e.g., `String::valueOf`)
+* **Instance method (specific object)**: `instance::methodName` (e.g., `System.out::println`)
+* **Instance method (arbitrary object)**: `ClassName::methodName` (e.g., `String::toLowerCase`)
+* **Constructor**: `ClassName::new` (e.g., `ArrayList::new`)
+</details>
 
-A40. Checked: Must be declared/handled. Subclass of Exception (not RuntimeException).
-Unchecked: Not mandatory to handle. Subclass of RuntimeException.
+<details>
+<summary><b>Q32. What is the difference between Iterable and Iterator?</b> <code>Collections</code></summary>
 
-#### Q41. What is a static initializer block?
+* **`Iterable`**: Interface exposing the `iterator()` method. Implementing it allows an object to be targeted by the enhanced for-each loop.
+* **`Iterator`**: Traversal helper interface with `hasNext()`, `next()`, and `remove()` methods used to iterate through a collection sequentially.
+</details>
 
-A41. A code block { } prefixed with static that runs once when the class is loaded.
-Used to initialize static variables with complex logic.
-class Config { static { props.load(...); } }
+<details>
+<summary><b>Q33. What is the Optional class? Why use it?</b> <code>Java 8+ Features</code></summary>
 
-#### Q42. What is autoboxing and unboxing?
+* **Definition**: A container object which may or may not contain a non-null value.
+* **Purpose**: Avoids nested null checks and `NullPointerException` (NPE) bugs by providing a functional way to handle absent values (e.g., `.orElse("default")` or `.ifPresent()`).
+* **Design Guideline**: Use strictly as a method return type. Do not use as class fields or method parameters.
+</details>
 
-```text
-A42. Autoboxing: Automatic conversion from primitive to wrapper (int -> Integer).
-Unboxing:   Automatic conversion from wrapper to primitive (Integer -> int).
+<details>
+<summary><b>Q34. What is a default method in an interface?</b> <code>OOP Concepts</code></summary>
 
-```
-Beware of NullPointerException when unboxing a null Integer.
+* **Definition**: Interface method declaring a default implementation using the `default` keyword (Java 8+).
+* **Rationale**: Enables adding new methods to interfaces without breaking existing implementing classes.
+* **Resolution**: If a class implements two interfaces sharing identical default methods, the class is forced to override the method to resolve the conflict.
+</details>
 
-#### Q43. What is the instanceof operator?
+<details>
+<summary><b>Q35. What is a Comparable vs Comparator?</b> <code>Collections</code></summary>
 
-A43. Tests if an object is an instance of a class/interface.
-Java 16+: Pattern matching: if (obj instanceof String s) { s.length(); }
+* **`Comparable`**: Implemented by the class itself via `compareTo()`. Defines the natural ordering of objects (e.g., alphabetical order for Strings).
+* **`Comparator`**: External strategy class or lambda via `compare()`. Allows defining multiple custom sorting orderings without modifying the target class.
+</details>
 
-#### Q44. What is a static nested class vs inner class?
+<details>
+<summary><b>Q36. What is a WeakHashMap?</b> <code>Collections</code></summary>
 
-A44. Static nested class: No access to outer instance. Created as Outer.Inner obj.
-Inner class: Holds implicit ref to outer. Can access outer members.
+* **Description**: Map implementation where keys are stored using `WeakReference` objects.
+* **GC Interaction**: If a key is no longer strongly referenced, the entry is eligible for garbage collection and automatically removed from the map.
+* **Use Case**: Thread-safe caching and metadata storage.
+</details>
 
-#### Q45. What is the diamond problem and how does Java solve it?
+<details>
+<summary><b>Q37. What is CopyOnWriteArrayList? When to use it?</b> <code>Collections</code></summary>
 
-A45. Two interfaces define the same default method. Java forces you to override it.
-class C implements A, B { @Override public void m() { A.super.m(); } }
+* **Description**: Thread-safe list where all mutative operations (`add`, `set`) create a fresh copy of the underlying backing array.
+* **Read performance**: `O(1)` reads are extremely fast and lock-free.
+* **Use Case**: Best for read-heavy, rarely mutated shared lists (e.g., event listener arrays).
+</details>
 
-#### Q46. What is a sealed class (Java 17)?
+<details>
+<summary><b>Q38. What is the difference between checked and unchecked exceptions?</b> <code>Exceptions</code></summary>
 
-A46. Restricts which classes can extend/implement it.
-sealed interface Shape permits Circle, Rectangle, Triangle {}
-Enables exhaustive pattern matching.
+* **Checked Exceptions**: Subclasses of `Exception` (excluding `RuntimeException`). Enforced at compile time; must be caught or declared in the method signature.
+* **Unchecked Exceptions**: Subclasses of `RuntimeException`. Occur at runtime; handling is optional.
+</details>
 
-#### Q47. What is String.intern()?
+<details>
+<summary><b>Q39. What is a static initializer block?</b> <code>Exceptions</code></summary>
 
-A47. Moves a Heap string into the SCP and returns the SCP reference.
-After intern, multiple Heap copies share one SCP object.
+* **Definition**: A block of code inside a class marked with `static { ... }`.
+* **Execution**: Executed exactly once when the class is loaded by the ClassLoader, prior to constructors or object instantiation.
+* **Use Case**: Initializing complex static constants.
+</details>
 
-#### Q48. What is the difference between notify() and notifyAll()?
+<details>
+<summary><b>Q40. What is autoboxing and unboxing?</b> <code>Strings & Data</code></summary>
 
-A48. notify(): Randomly wakes ONE thread waiting on this object's monitor.
-notifyAll(): Wakes ALL waiting threads (safest, avoids missed notifications).
+* **Autoboxing**: Compiler-assisted conversion of primitives to wrapper objects (e.g., `int` → `Integer`).
+* **Unboxing**: Automatic conversion of wrapper objects to primitives (e.g., `Integer` → `int`).
+* **Warning**: Heavy looping with wrapper objects creates massive GC memory pressure. Unboxing `null` values throws a `NullPointerException`.
+</details>
 
-#### Q49. What is a daemon thread?
+<details>
+<summary><b>Q41. What is the `instanceof` operator?</b> <code>Java 8+ Features</code></summary>
 
-A49. Background thread that does not prevent JVM from exiting.
-thread.setDaemon(true); (must be called before start())
-GC thread, Log background writers are daemon threads.
+* **Definition**: Relational operator checking if an object reference is an instance of a specific type.
+* **Pattern Matching (Java 16+)**: Casts type automatically: `if (obj instanceof String s) { System.out.println(s.length()); }`, removing manual typecasting.
+</details>
 
-#### Q50. How does ConcurrentHashMap work internally in Java 8?
+<details>
+<summary><b>Q42. What is a static nested class vs inner class?</b> <code>OOP Concepts</code></summary>
 
-A50. Divided into segments (buckets). Each bucket uses CAS for lock-free reading.
-Writes use synchronized only on the specific bucket, not the whole map.
-No null keys/values allowed. Size() is approximate.
+* **Static Nested Class**: Independent class nested within an outer class. Declared static, it has no access to instance variables/methods of the outer class.
+* **Inner Class**: Non-static nested class. Holds an implicit reference to the enclosing outer object, allowing direct access to all outer instance fields.
+</details>
 
-## END OF JAVA CORE CONCEPTS GUIDE
+<details>
+<summary><b>Q43. What is the diamond problem and how does Java solve it?</b> <code>OOP Concepts</code></summary>
 
+* **Problem**: Class implements two interfaces containing default methods with identical signatures, creating ambiguity.
+* **Solution**: Compiler forces class to explicitly override the conflicting method. The overridden method can call a specific parent's method using: `ParentInterface.super.methodName();`.
+</details>
+
+<details>
+<summary><b>Q44. What is a sealed class (Java 17)?</b> <code>OOP Concepts</code></summary>
+
+* **Definition**: Classes/interfaces restricting which subclasses can extend/implement them via the `permits` clause.
+* **Benefit**: Allows defining closed hierarchies, enabling compiler validation for exhaustive pattern-matching switches.
+</details>
+
+<details>
+<summary><b>Q45. What is `String.intern()`?</b> <code>Strings & Data</code></summary>
+
+* **Description**: Method checking if the String is already in the String Constant Pool.
+* **Result**: If present, returns the pooled instance. If absent, adds the String to the pool and returns its reference.
+* **Purpose**: Saves memory by deduplicating identical String values dynamically.
+</details>
+
+<details>
+<summary><b>Q46. What is the difference between notify() and notifyAll()?</b> <code>Concurrency</code></summary>
+
+* **`notify()`**: Wakes up a single arbitrary thread waiting on this object's monitor. Can lead to deadlocks if the wrong thread is woken.
+* **`notifyAll()`**: Wakes up all threads waiting on this object's monitor.
+* **Best Practice**: Always use `notifyAll()` to avoid missed signals.
+</details>
+
+<details>
+<summary><b>Q47. What is a daemon thread?</b> <code>Concurrency</code></summary>
+
+* **Definition**: A low-priority background thread providing auxiliary services (e.g., Garbage Collection, log writing).
+* **JVM Lifecycle**: The JVM exits automatically once all active user threads complete, terminating any active daemon threads.
+* **Usage**: Set using `thread.setDaemon(true)` prior to calling `start()`.
+</details>
+
+<details>
+<summary><b>Q48. How does ConcurrentHashMap work internally (Java 8)?</b> <code>Collections</code></summary>
+
+* **Concurrency**: CAS operations for lock-free node placement in empty buckets, combined with `synchronized` locks targeting only the bucket's head node during collisions.
+* **Granularity**: Extremely high write concurrency, as threads writing to different buckets do not block each other.
+</details>
+
+<details>
+<summary><b>Q49. What is the `super()` keyword?</b> <code>OOP Concepts</code></summary>
+
+* **Definition**: Reference keyword invoking the parent class constructor.
+* **Restriction**: Must be the very first statement executed in the subclass constructor.
+</details>
+
+<details>
+<summary><b>Q50. What are the default values in Java?</b> <code>Strings & Data</code></summary>
+
+* **Instance Fields**: `int`/`byte`/`short` = `0`, `long` = `0L`, `float` = `0.0f`, `double` = `0.0d`, `char` = `\u0000`, `boolean` = `false`, Object references = `null`.
+* **Local Variables**: No default values! Must be explicitly initialized prior to compilation, or it will throw a compile-time error.
+</details>
+
+---
+
+## END OF JAVA CORE COMPREHENSIVE GUIDErent class constructor. Must be the first statement in child constructor.
+
+#### Q50. What are the default values in Java?
+`int` = 0, `boolean` = false, `double` = 0.0, Object references = `null`. Local variables have NO default — must be initialized before use.
+
+---
+
+## END OF JAVA CORE COMPREHENSIVE GUIDE
