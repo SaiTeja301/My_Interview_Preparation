@@ -1,0 +1,44 @@
+# ============================================================
+# KUBERNETES SERVICE — bedrock-api
+# ============================================================
+#
+# A Service provides a stable network endpoint for pods.
+# Since pods are ephemeral (they can be created/destroyed),
+# you never call a pod directly. Instead, you call the Service,
+# which routes traffic to healthy pods.
+#
+# SERVICE TYPES:
+#   ClusterIP    → Internal only (other services in the cluster)
+#   NodePort     → Exposes on each node's IP at a static port
+#   LoadBalancer → Creates cloud load balancer (AWS ALB/NLB)
+#
+# APPLY:
+#   kubectl apply -f k8s/service.yaml
+#
+# VERIFY:
+#   kubectl get svc bedrock-api-service
+#
+# ACCESS (from within the cluster):
+#   curl http://bedrock-api-service:8080/api/v1/health
+# ============================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: bedrock-api-service
+  labels:
+    app: bedrock-api
+spec:
+  # ClusterIP — accessible only within the Kubernetes cluster
+  # Use LoadBalancer type to expose externally
+  type: ClusterIP
+
+  # Route traffic to pods with this label
+  selector:
+    app: bedrock-api
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080           # Service port (what clients connect to)
+      targetPort: 8080     # Container port (what the pod listens on)
