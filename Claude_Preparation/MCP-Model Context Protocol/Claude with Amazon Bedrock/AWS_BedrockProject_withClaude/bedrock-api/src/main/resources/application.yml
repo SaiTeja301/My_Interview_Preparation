@@ -1,0 +1,158 @@
+# ============================================================
+# APPLICATION.YML — Main Configuration File
+# ============================================================
+#
+# Spring Boot reads this file at startup to configure the app.
+# YAML format uses indentation (2 spaces) for nesting.
+#
+# CONFIGURATION LOADING ORDER (highest to lowest priority):
+#   1. Command-line arguments (--server.port=9090)
+#   2. Environment variables (SERVER_PORT=9090)
+#   3. application-{profile}.yml (e.g., application-dev.yml)
+#   4. application.yml (this file)
+#
+# ENVIRONMENT VARIABLE BINDING:
+#   Spring Boot automatically binds env vars to config properties.
+#   Replace dots with underscores, uppercase everything:
+#     aws.bedrock.region → AWS_BEDROCK_REGION
+#     server.port → SERVER_PORT
+# ============================================================
+
+# ----------------------------------------------------------
+# SERVER CONFIGURATION
+# ----------------------------------------------------------
+server:
+  port: 8080                    # Port the app listens on
+  servlet:
+    context-path: /             # Base URL path (/ means no prefix)
+  tomcat:
+    max-threads: 200            # Max concurrent request threads
+    connection-timeout: 30s     # Close idle connections after 30s
+
+# ----------------------------------------------------------
+# SPRING CONFIGURATION
+# ----------------------------------------------------------
+spring:
+  application:
+    name: bedrock-api           # Application name (used in logging, metrics)
+  profiles:
+    active: dev                 # Active profile (dev, prod) — change for deployment
+
+  # Jackson JSON serialization settings
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false    # Use ISO format for dates
+      indent-output: true                 # Pretty-print JSON (disable in prod)
+    default-property-inclusion: non_null   # Omit null fields from JSON
+
+  # ----------------------------------------------------------
+  # DATABASE CONFIGURATION (MySQL)
+  # ----------------------------------------------------------
+  # Connects to the linkedin_naukr_jobs database containing the jobs table.
+  #
+  # CONNECTION URL FORMAT:
+  #   jdbc:mysql://HOST:PORT/DATABASE_NAME
+  #
+  # ENVIRONMENT VARIABLE OVERRIDE:
+  #   SPRING_DATASOURCE_URL=jdbc:mysql://your-rds-host:3306/linkedin_naukr_jobs
+  #   SPRING_DATASOURCE_USERNAME=your_user
+  #   SPRING_DATASOURCE_PASSWORD=your_password
+  datasource:
+    url: jdbc:mysql://localhost:3306/linkedin_naukr_jobs
+    username: root
+    password: 2580          # CHANGE THIS! Use environment variables in production
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # HikariCP connection pool settings (Spring Boot default pool)
+    hikari:
+      minimum-idle: 2           # Minimum idle connections in the pool
+      maximum-pool-size: 10     # Maximum connections (match your DB capacity)
+      idle-timeout: 30000       # Close idle connections after 30 seconds
+      connection-timeout: 20000 # Fail if can't get connection in 20 seconds
+      pool-name: BedrockJobsPool
+
+  # ----------------------------------------------------------
+  # JPA / HIBERNATE CONFIGURATION
+  # ----------------------------------------------------------
+  jpa:
+    # Do NOT auto-create/update tables — we use an existing database
+    hibernate:
+      ddl-auto: none            # Options: none, validate, update, create, create-drop
+                                # 'none' → don't touch the schema (production-safe)
+                                # 'validate' → check entity matches table (useful for dev)
+
+    # Show SQL queries in logs (disable in production)
+    show-sql: true
+
+    properties:
+      hibernate:
+        # Use MySQL-specific SQL dialect for optimal query generation
+        dialect: org.hibernate.dialect.MySQLDialect
+
+        # Format SQL in logs for readability
+        format_sql: true
+
+# ----------------------------------------------------------
+# AWS BEDROCK CONFIGURATION
+# ----------------------------------------------------------
+# These values are injected into AwsBedrockConfig and BedrockServiceImpl
+# via @Value("${aws.bedrock.region}") etc.
+aws:
+  bedrock:
+    # AWS Region where Bedrock is available
+    # Common: us-east-1, us-west-2, eu-west-1, ap-northeast-1
+    # IMPORTANT: Not all models are available in all regions!
+    region: ap-south-1
+    access-key-id: AKIAUY4V3WX24H6AHAO3
+    secret-access-key: 14bFkqEEnr7oRk8g4OjgzbOKyVHeduAxp4Ivegup
+
+
+    # Default model used when client doesn't specify one
+    # Change this to your preferred model
+    default-model: apac.anthropic.claude-3-sonnet-20240229-v1:0
+
+    # Default maximum response tokens
+    # 1 token ≈ 0.75 words, so 4096 tokens ≈ 3000 words
+    max-tokens: 4096
+
+    # Default temperature (creativity level)
+    # 0.0 = deterministic, 1.0 = most creative
+    temperature: 0.7
+
+# ----------------------------------------------------------
+# RATE LIMITING CONFIGURATION
+# ----------------------------------------------------------
+rate-limit:
+  # Maximum API calls allowed per minute (per JVM instance)
+  # Adjust based on your Bedrock quota and expected traffic
+  requests-per-minute: 10
+
+# ----------------------------------------------------------
+# ACTUATOR CONFIGURATION (Health, Metrics, Info)
+# ----------------------------------------------------------
+# Spring Boot Actuator exposes operational endpoints:
+#   GET /actuator/health  → { "status": "UP" }
+#   GET /actuator/info    → Application info
+#   GET /actuator/metrics → JVM metrics, HTTP metrics
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics   # Which endpoints to expose
+  endpoint:
+    health:
+      show-details: when-authorized     # Show health details only for authorized users
+
+# ----------------------------------------------------------
+# LOGGING CONFIGURATION
+# ----------------------------------------------------------
+# Log levels: TRACE < DEBUG < INFO < WARN < ERROR
+# Set specific packages to different levels for debugging
+logging:
+  level:
+    root: INFO                               # Default log level
+    com.awsbedrock.api: DEBUG                # Our app — show DEBUG logs
+    software.amazon.awssdk: WARN             # AWS SDK — only warnings/errors
+    org.springframework.web: INFO            # Spring MVC
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

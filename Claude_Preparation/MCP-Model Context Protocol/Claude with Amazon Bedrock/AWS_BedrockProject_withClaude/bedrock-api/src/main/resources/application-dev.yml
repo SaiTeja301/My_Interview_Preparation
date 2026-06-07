@@ -1,0 +1,46 @@
+# ============================================================
+# APPLICATION-DEV.YML — Development Profile Configuration
+# ============================================================
+# Activated by: spring.profiles.active=dev (in application.yml)
+# Or by: mvn spring-boot:run -Dspring.profiles.active=dev
+#
+# This file OVERRIDES values in application.yml for development.
+# Only put development-specific settings here.
+# ============================================================
+
+server:
+  port: 8080
+
+# Development-specific Bedrock settings
+aws:
+  bedrock:
+    region: ap-south-1
+    # OPTIONAL: Define credentials here for local development.
+    # Note: Do NOT commit active keys to source control!
+    access-key-id: "AKIAUY4V3WX24H6AHAO3"
+    secret-access-key: "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"
+
+    # Use a cheaper model for development/testing
+    default-model: apac.anthropic.claude-3-sonnet-20240229-v1:0
+    max-tokens: 1024            # Lower tokens to save costs during dev
+    temperature: 0.7
+
+# More generous rate limiting for development
+rate-limit:
+  requests-per-minute: 30
+
+# Verbose logging for development
+logging:
+  level:
+    root: INFO
+    com.awsbedrock.api: DEBUG
+    software.amazon.awssdk: DEBUG    # See full AWS SDK logs in dev
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss} [%thread] %-5level %logger{20} - %msg%n"
+
+# Pretty-print JSON in development
+spring:
+  jackson:
+    serialization:
+      indent-output: true

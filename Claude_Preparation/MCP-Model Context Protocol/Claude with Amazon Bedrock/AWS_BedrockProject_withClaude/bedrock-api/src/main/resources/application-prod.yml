@@ -1,0 +1,52 @@
+# ============================================================
+# APPLICATION-PROD.YML — Production Profile Configuration
+# ============================================================
+# Activated by: spring.profiles.active=prod
+# Or by: java -jar bedrock-api.jar --spring.profiles.active=prod
+#
+# PRODUCTION BEST PRACTICES:
+# 1. Disable pretty-print JSON (saves bandwidth)
+# 2. Reduce log verbosity (INFO level)
+# 3. Stricter rate limiting
+# 4. Health check details hidden from public
+# ============================================================
+
+server:
+  port: 8080
+  tomcat:
+    max-threads: 400            # Higher thread count for production load
+    connection-timeout: 20s
+
+aws:
+  bedrock:
+    region: ap-south-1
+    default-model: apac.anthropic.claude-3-sonnet-20240229-v1:0
+    max-tokens: 4096
+    temperature: 0.7
+
+# Strict rate limiting in production
+rate-limit:
+  requests-per-minute: 60
+
+# Compact JSON in production (no pretty-print)
+spring:
+  jackson:
+    serialization:
+      indent-output: false
+
+# Production logging — less verbose
+logging:
+  level:
+    root: WARN
+    com.awsbedrock.api: INFO
+    software.amazon.awssdk: WARN
+    org.springframework.web: WARN
+  pattern:
+    # Structured logging format for log aggregation (ELK, CloudWatch)
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSZ} level=%level service=bedrock-api thread=%thread logger=%logger{36} msg=\"%msg\"%n"
+
+# Hide health check details in production
+management:
+  endpoint:
+    health:
+      show-details: never

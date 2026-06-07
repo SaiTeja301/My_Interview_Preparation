@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ============================================================
+         PARENT: Spring Boot 3.2.5 Starter Parent
+         Provides dependency management, plugin defaults, and
+         opinionated configuration for Spring Boot applications.
+    ============================================================ -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <!-- ============================================================
+         PROJECT COORDINATES
+         groupId    → your organisation's reverse-domain
+         artifactId → the deployable unit name
+         version    → follows semantic versioning
+    ============================================================ -->
+    <groupId>com.awsbedrock</groupId>
+    <artifactId>bedrock-api</artifactId>
+    <version>1.0.0</version>
+    <name>bedrock-api</name>
+    <description>Production-ready Spring Boot REST API integrated with AWS Bedrock Foundation Models</description>
+
+    <!-- ============================================================
+         PROPERTIES
+         Centralise all version numbers here for easy upgrades.
+    ============================================================ -->
+    <properties>
+        <!-- Java version — must be 17+ for Spring Boot 3.x -->
+        <java.version>17</java.version>
+
+        <!-- AWS SDK v2 BOM version — manages ALL AWS SDK module versions -->
+        <aws.sdk.version>2.26.15</aws.sdk.version>
+
+        <!-- Bucket4j — token-bucket rate limiting library -->
+        <bucket4j.version>8.10.1</bucket4j.version>
+    </properties>
+
+    <!-- ============================================================
+         DEPENDENCY MANAGEMENT
+         The AWS SDK BOM ensures all AWS modules use compatible versions.
+         You import it here, then declare individual modules below
+         WITHOUT specifying <version>.
+    ============================================================ -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws.sdk.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <!-- =======================================================
+             1. SPRING BOOT STARTERS
+        ======================================================= -->
+
+        <!-- Web starter: embedded Tomcat, Spring MVC, Jackson JSON -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Validation starter: @Valid, @NotBlank, @Size, etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Actuator: /health, /info, /metrics endpoints for monitoring -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- =======================================================
+             2. AWS SDK v2 — BEDROCK RUNTIME
+             This is the core dependency that lets us call Bedrock
+             models (Converse API, InvokeModel, etc.)
+        ======================================================= -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrockruntime</artifactId>
+            <!-- Version managed by AWS BOM above -->
+        </dependency>
+
+        <!-- AWS Bedrock (non-runtime) — for ListFoundationModels, etc. -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>bedrock</artifactId>
+        </dependency>
+
+        <!-- AWS STS — needed for AssumeRole and temporary credentials -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sts</artifactId>
+        </dependency>
+
+        <!-- AWS Auth — credential providers (DefaultCredentialsProvider) -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+        </dependency>
+
+        <!-- =======================================================
+             3. DATABASE — Spring Data JPA + MySQL
+             For querying the jobs database and feeding data to Bedrock
+        ======================================================= -->
+
+        <!-- Spring Data JPA: ORM, repositories, entity management -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- MySQL JDBC Driver — connects to MySQL database -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- =======================================================
+             4. RATE LIMITING — Bucket4j
+             Token-bucket algorithm for API rate limiting.
+        ======================================================= -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
+        </dependency>
+
+        <!-- =======================================================
+             4. DEVELOPER TOOLS
+        ======================================================= -->
+
+        <!-- Lombok — reduces boilerplate (getters, setters, builders, loggers) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- =======================================================
+             5. TESTING
+        ======================================================= -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ============================================================
+         BUILD PLUGINS
+    ============================================================ -->
+    <build>
+        <plugins>
+            <!-- Spring Boot Maven Plugin: creates executable fat JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- Exclude Lombok from the production JAR -->
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

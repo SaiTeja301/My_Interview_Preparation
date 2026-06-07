@@ -1,0 +1,173 @@
+# ============================================================
+# KUBERNETES DEPLOYMENT — bedrock-api
+# ============================================================
+#
+# This creates a Deployment with 2 replicas of the bedrock-api
+# container, with resource limits, health probes, and
+# AWS credential injection via Kubernetes Secrets.
+#
+# APPLY:
+#   kubectl apply -f k8s/deployment.yaml
+#
+# VERIFY:
+#   kubectl get pods -l app=bedrock-api
+#   kubectl logs -f deployment/bedrock-api
+#
+# KEY CONCEPTS:
+#   Deployment → Manages ReplicaSets → Manages Pods → Runs Containers
+#   - Deployment ensures desired number of replicas are running
+#   - Rolling updates replace pods one-by-one (zero downtime)
+#   - If a pod crashes, Kubernetes auto-restarts it
+# ============================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bedrock-api
+  labels:
+    app: bedrock-api
+    version: "1.0.0"
+spec:
+  # Number of pod replicas (instances)
+  # 2 replicas = high availability (if one pod crashes, the other serves traffic)
+  replicas: 2
+
+  # Selector tells the Deployment which pods to manage
+  selector:
+    matchLabels:
+      app: bedrock-api
+
+  # Rolling update strategy for zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Create 1 extra pod during update
+      maxUnavailable: 0    # Never have fewer pods than replicas
+
+  # Pod template — defines what each pod looks like
+  template:
+    metadata:
+      labels:
+        app: bedrock-api
+        version: "1.0.0"
+    spec:
+      containers:
+        - name: bedrock-api
+          # Docker image — replace with your ECR or Docker Hub image
+          image: bedrock-api:1.0.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+
+          # =============================================
+          # ENVIRONMENT VARIABLES
+          # =============================================
+          # AWS credentials injected from Kubernetes Secrets
+          # NEVER put credentials in plain text in YAML files!
+          env:
+            # AWS credentials from a Kubernetes Secret
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials    # Secret name
+                  key: access-key-id       # Key within the Secret
+
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret-access-key
+
+            - name: AWS_REGION
+              value: "us-east-1"
+
+            # Spring profile
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+
+            # JVM memory settings (match resource limits below)
+            - name: JAVA_OPTS
+              value: "-XX:MaxRAMPercentage=75.0"
+
+          # =============================================
+          # RESOURCE LIMITS
+          # =============================================
+          # Prevents a pod from consuming too many cluster resources
+          resources:
+            requests:
+              cpu: "250m"        # 0.25 CPU cores (minimum guaranteed)
+              memory: "512Mi"    # 512 MB RAM (minimum guaranteed)
+            limits:
+              cpu: "1000m"       # 1 CPU core (maximum allowed)
+              memory: "1024Mi"   # 1 GB RAM (maximum allowed)
+
+          # =============================================
+          # HEALTH PROBES
+          # =============================================
+
+          # Readiness probe — Is the pod READY to receive traffic?
+          # Kubernetes only sends traffic to "ready" pods
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 30    # Wait 30s for Spring Boot to start
+            periodSeconds: 10          # Check every 10 seconds
+            timeoutSeconds: 5
+            failureThreshold: 3        # Mark unready after 3 failures
+
+          # Liveness probe — Is the pod ALIVE?
+          # If this fails, Kubernetes RESTARTS the pod
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 60    # Wait longer before first liveness check
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          # Startup probe — Has the pod STARTED successfully?
+          # Prevents liveness probe from killing slow-starting pods
+          startupProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30       # Allow up to 150s for startup
+
+      # Graceful shutdown — give pods time to finish active requests
+      terminationGracePeriodSeconds: 30
+
+---
+# ============================================================
+# KUBERNETES SECRET — AWS Credentials
+# ============================================================
+#
+# IMPORTANT: In production, use:
+#   - AWS IAM Roles for Service Accounts (IRSA) on EKS
+#   - External Secrets Operator with AWS Secrets Manager
+#   - HashiCorp Vault
+#
+# This is a BASIC example for learning. Replace with IRSA for production.
+#
+# CREATE SECRET (command line — don't check secrets into git!):
+#   kubectl create secret generic aws-credentials \
+#     --from-literal=access-key-id=YOUR_ACCESS_KEY \
+#     --from-literal=secret-access-key=YOUR_SECRET_KEY
+# ============================================================
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-credentials
+type: Opaque
+data:
+  # Base64-encoded values (replace with your actual credentials)
+  # echo -n 'YOUR_ACCESS_KEY' | base64
+  access-key-id: REPLACE_WITH_BASE64_ENCODED_ACCESS_KEY
+  secret-access-key: REPLACE_WITH_BASE64_ENCODED_SECRET_KEY
