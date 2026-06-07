@@ -28,11 +28,17 @@ graph TD
     Sec4 --> P11["Java 8+ Features"]
     Sec4 --> P12["Top 50 Q&A"]
 
-    style Root fill:#f9fafd,stroke:#333,stroke-width:3px
-    style Sec1 fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style Sec2 fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style Sec3 fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
-    style Sec4 fill:#fce8e6,stroke:#ea4335,stroke-width:1px
+    classDef main fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:3px;
+    classDef module1 fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px;
+    classDef module2 fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef module3 fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
+    classDef module4 fill:#7F1D1D,stroke:#EF4444,color:#FEF2F2,stroke-width:1px;
+
+    class Root main;
+    class Sec1,P1,P2,P3 module1;
+    class Sec2,P4,P5,P6 module2;
+    class Sec3,P7,P8,P9 module3;
+    class Sec4,P10,P11,P12 module4;
 ```
 
 ### Core Study Roadmap & Navigation
@@ -95,10 +101,19 @@ graph TD
         RDA --> EE
     end
 
-    style JVM fill:#f9fafd,stroke:#333,stroke-width:2px
-    style CL fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style RDA fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style EE fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef clClass fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px;
+    classDef rdaClass fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef eeClass fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
+
+    class CL1,CL2,CL3 clClass;
+    class MA,HP,ST,PC,NMS rdaClass;
+    class INT,JIT,GC eeClass;
+
+    style JVM fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
+    style CL fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px
+    style RDA fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
+    style EE fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
 ```
 
 ---
@@ -150,9 +165,14 @@ graph LR
         end
     end
 
-    style HEAP fill:#f9fafd,stroke:#333,stroke-width:2px
-    style YG fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style OG fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
+    style HEAP fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
+    style YG fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
+    style OG fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
+
+    classDef ygNode fill:#0F766E,stroke:#2DD4BF,color:#F0FDFA,stroke-width:1px;
+    classDef ogNode fill:#9A3412,stroke:#F97316,color:#FFF7ED,stroke-width:1px;
+    class Eden,S0,S1 ygNode;
+    class Old ogNode;
 ```
 
 ---
@@ -170,13 +190,18 @@ graph TD
     E -->|"Major GC triggered"| F["Objects with no references → Collected"]
     F --> G["Memory released"]
 
-    style A fill:#f9fafd,stroke:#333,stroke-width:2px
-    style B fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style C fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style D fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style E fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
-    style F fill:#fce8e6,stroke:#ea4335,stroke-width:1px
-    style G fill:#fff,stroke:#333,stroke-dasharray: 5 5
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef startNode fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:2px;
+    classDef ygNode fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
+    classDef ogNode fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
+    classDef gcNode fill:#7F1D1D,stroke:#EF4444,color:#FEF2F2,stroke-width:1px;
+    classDef endNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
+
+    class A startNode;
+    class B,C,D ygNode;
+    class E ogNode;
+    class F gcNode;
+    class G endNode;
 ```
 
 #### GC Types:
@@ -275,9 +300,9 @@ flowchart LR
     D --> E["Inheritance<br>(Code reuse)"]
     E --> F["Result"]
 
-    classDef concept fill:#eef3fe,stroke:#4285f4,color:#000
+    classDef concept fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef pillar fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
     class A,F concept
-    classDef pillar fill:#e6f4ea,stroke:#34a853,color:#000
     class B,C,D,E pillar
 ```
 
@@ -447,9 +472,15 @@ graph TD
     VIPDiscount["VIPDiscount"] -->|Implements| DiscountStrategy
     LoyaltyDiscount["LoyaltyDiscount<br>(New Extension)"] -->|Implements| DiscountStrategy
 
-    style DiscountStrategy fill:#eef3fe,stroke:#4285f4,stroke-width:2px
-    style DiscountService fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style LoyaltyDiscount fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
+    classDef closed fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef strategy fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
+    classDef ext fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:2px;
+    classDef newExt fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:2px;
+
+    class DiscountService closed;
+    class DiscountStrategy strategy;
+    class SeasonalDiscount,EmployeeDiscount,VIPDiscount ext;
+    class LoyaltyDiscount newExt;
 ```
 
 ```java
@@ -573,12 +604,13 @@ graph TD
         MongoGood["MongoDatabase"] -->|Implements| DbInterface
     end
 
-    style DbInterface fill:#eef3fe,stroke:#4285f4,stroke-width:2px
-    style OrderServiceBad fill:#fce8e6,stroke:#ea4335,stroke-width:1px
-    style MySQLBad fill:#fce8e6,stroke:#ea4335,stroke-width:1px
-    style OrderServiceGood fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style MySQLGood fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style MongoGood fill:#e6f4ea,stroke:#34a853,stroke-width:1px
+    classDef bad fill:#7F1D1D,stroke:#DC2626,color:#FEF2F2,stroke-width:1px;
+    classDef good fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef strategy fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
+
+    class OrderServiceBad,MySQLBad bad;
+    class OrderServiceGood,MySQLGood,MongoGood good;
+    class DbInterface strategy;
 ```
 
 ```java
@@ -942,8 +974,8 @@ graph TD
     Map --> Hashtable["Hashtable"]
     Map --> WeakHashMap["WeakHashMap"]
 
-    classDef iface fill:#eef3fe,stroke:#4285f4,color:#000
-    classDef impl fill:#e6f4ea,stroke:#34a853,color:#000
+    classDef iface fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef impl fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
     class Iterable,Collection,List,Set,Queue,Map iface
     class ArrayList,LinkedList,Vector,HashSet,LinkedHashSet,TreeSet,PriorityQueue,ArrayDeque,HashMap,LinkedHashMap,TreeMap,Hashtable,WeakHashMap impl
 ```
@@ -991,12 +1023,16 @@ graph TD
     ChainType -->|Yes| Treeify["Convert to Red-Black Tree"]
     ChainType -->|No| LinkNode["Append to LinkedList"]
 
-    style Start fill:#f9fafd,stroke:#333,stroke-width:2px
-    style Cond fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style ChainType fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style InsertNode fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style LinkNode fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style Treeify fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
+    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef startNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef checkNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef successNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef warningNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+
+    class Start startNode;
+    class Cond,ChainType checkNode;
+    class InsertNode,LinkNode successNode;
+    class Treeify warningNode;
 ```
 
 #### HashMap vs ConcurrentHashMap vs synchronizedMap:
@@ -1234,13 +1270,17 @@ graph TD
 
     DB --> UpdateL2["Update L2 Cache"] --> UpdateL1
 
-    style Client fill:#f9fafd,stroke:#333,stroke-width:2px
-    style L1 fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style L2 fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style DB fill:#e6f4ea,stroke:#34a853,stroke-width:1px
-    style ReturnClient fill:#fff,stroke:#333,stroke-dasharray: 5 5
-    style UpdateL1 fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
-    style UpdateL2 fill:#fef7e0,stroke:#fbbc05,stroke-width:1px
+    classDef clientNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef cacheNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef dbNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef updateNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+    classDef returnNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
+
+    class Client clientNode;
+    class L1,L2 cacheNode;
+    class DB dbNode;
+    class UpdateL1,UpdateL2 updateNode;
+    class ReturnClient returnNode;
 ```
 
 ### 7.2 Spring Cache + Redis Configuration
@@ -1401,10 +1441,11 @@ graph TD
     Trans -->|"flatMap(f)"| FlatVal["Flat-map Optional-returning fn"]
     Trans -->|"filter(predicate)"| FiltVal["Filter by condition"]
 
-    style Start fill:#f9fafd,stroke:#333,stroke-width:2px
-    style Check fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style Extract fill:#eef3fe,stroke:#4285f4,stroke-width:1px
-    style Trans fill:#eef3fe,stroke:#4285f4,stroke-width:1px
+    classDef container fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
+    classDef action fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+
+    class Start container;
+    class Check,Extract,Trans action;
 ```
 
 ```java
