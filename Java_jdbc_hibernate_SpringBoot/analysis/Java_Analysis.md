@@ -6,7 +6,7 @@
 ## Concept Coverage Summary
 
 ```mermaid
-graph TD
+flowchart TD
     Root["Java Core Mastery"] --> Sec1["JVM & Runtime"]
     Root --> Sec2["Core OOP & Patterns"]
     Root --> Sec3["Data & Collections"]
@@ -48,19 +48,23 @@ graph TD
 | **JVM Architecture** | JDK vs JRE vs JVM, ClassLoader subsystem, JVM memory areas | ✅ Complete | [Section 1](#section-1-jvm-architecture--memory-model) |
 | **Garbage Collection** | GC algorithms (Serial, Parallel, G1GC, ZGC, Shenandoah), diagnostics | ✅ Complete | [Section 1.4](#14-object-lifecycle--garbage-collection-gc) |
 | **OOP Pillars** | Encapsulation, Inheritance, Polymorphism, Abstraction, Composition | ✅ Complete | [Section 2](#section-2-object-oriented-programming-oop) |
+| **static / final / this / super** | Keyword deep-dives, JVM memory, constructor chaining, access modifiers | ✅ Complete | [Section 2.4–2.9](#24-static-keyword--deep-dive) |
 | **SOLID Principles** | SRP, OCP, LSP, ISP, DIP with production Spring Boot examples | ✅ Complete | [Section 3](#section-3-solid-principles) |
-| **Strings & Arrays** | SCP, immutability, `intern()`, Builder/Buffer, 1D/2D/Jagged, conversions | ✅ Complete | [Section 4](#section-4-data-types-arrays-and-strings) |
+| **Strings, Arrays & Wrapper Classes** | SCP, immutability, Integer Cache, StringBuilder, 1D/2D/Jagged | ✅ Complete | [Section 4](#section-4-data-types-arrays-and-strings) |
 | **Generics & Exceptions** | PECS rule, type erasure, checked/unchecked exceptions, custom exceptions | ✅ Complete | [Section 5](#section-5-generics--exception-handling) |
 | **Collections Framework** | ArrayList vs LinkedList, HashMap internals, Set types, Comparable/Comparator | ✅ Complete | [Section 6](#section-6-collections-framework--concurrency) |
 | **Multithreading** | Thread lifecycle, locks, wait/notify, `volatile`, thread-safe pools | ✅ Complete | [Section 6.7](#67-multithreading--thread-safety) |
 | **Layered Caching** | L1/L2 caching architecture, Spring Cache + Redis configuration | ✅ Complete | [Section 7](#section-7-high-performance-caching) |
 | **Java 8+ Features** | Lambdas, Streams, Optional API, `CompletableFuture`, Records, Sealed Classes | ✅ Complete | [Section 8](#section-8-java-8-features--functional-programming) |
 | **Design Patterns** | Thread-safe Singleton, Factory, Builder pattern implementations | ✅ Complete | [Section 9](#section-9-design-patterns) |
-| **Advanced Concepts** | equals/hashCode contract, shallow vs deep cloning, daemon threads | ✅ Complete | [Section 10](#section-10-advanced-java-concepts) |
+| **Advanced Concepts** | equals/hashCode, Enum, Annotations, Reflection, Immutable Design, Object methods | ✅ Complete | [Section 10](#section-10-advanced-java-concepts) |
 | **Performance Best Practices** | Auto-boxing overhead, String concat, Stream vs Loop performance | ✅ Complete | [Section 11](#section-11-performance-best-practices) |
 | **Top 50 Q&A** | 50 essential interview questions with interactive self-testing cards | ✅ Complete | [Section 12](#section-12-top-50-interview-questions--quick-reference) |
+| **File I/O & Serialization** | InputStream/Reader hierarchies, NIO.2, ObjectOutputStream, transient, Externalizable | ✅ Complete | [File I/O](#section-10-file-io--serialization) |
 
 ---
+
+
 
 
 ## SECTION 1: JVM ARCHITECTURE & MEMORY MODEL
@@ -76,7 +80,7 @@ graph TD
 > **Production Tip**: Your production server only needs JRE to run the Spring Boot JAR. Your developer laptop needs JDK to compile and run the code.
 
 ```mermaid
-graph TD
+flowchart TD
     A["Java Source (.java)"] -->|javac| B["Bytecode (.class)"]
     B --> JVM
 
@@ -110,10 +114,10 @@ graph TD
     class MA,HP,ST,PC,NMS rdaClass;
     class INT,JIT,GC eeClass;
 
-    style JVM fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
-    style CL fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:1px
-    style RDA fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
-    style EE fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
+    style JVM fill:#1E293B0A,stroke:#475569,stroke-width:2px
+    style CL fill:#1E3A8A0F,stroke:#3B82F6,stroke-width:1px
+    style RDA fill:#064E3B0F,stroke:#10B981,stroke-width:1px
+    style EE fill:#78350F0F,stroke:#F59E0B,stroke-width:1px
 ```
 
 ---
@@ -154,7 +158,7 @@ JVM divides its runtime data areas into thread-shared and per-thread regions:
 > **PermGen vs Metaspace**: Before Java 8, class metadata lived in PermGen (fixed-size, frequent `OutOfMemoryError`). Java 8+ replaced it with **Metaspace** which uses native memory and auto-grows, eliminating `OutOfMemoryError: PermGen`.
 
 ```mermaid
-graph LR
+flowchart LR
     subgraph HEAP ["Java Heap Memory"]
         subgraph YG ["Young Generation"]
             direction LR
@@ -165,9 +169,9 @@ graph LR
         end
     end
 
-    style HEAP fill:#111827,stroke:#374151,color:#F9FAFB,stroke-width:2px
-    style YG fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px
-    style OG fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px
+    style HEAP fill:#1E293B0A,stroke:#475569,stroke-width:2px
+    style YG fill:#064E3B0F,stroke:#10B981,stroke-width:1px
+    style OG fill:#78350F0F,stroke:#F59E0B,stroke-width:1px
 
     classDef ygNode fill:#0F766E,stroke:#2DD4BF,color:#F0FDFA,stroke-width:1px;
     classDef ogNode fill:#9A3412,stroke:#F97316,color:#FFF7ED,stroke-width:1px;
@@ -182,20 +186,19 @@ graph LR
 An object is eligible for GC when it is no longer reachable through any active references (e.g., reference set to `null`, reference out of scope, or only circular references remain in an isolated island).
 
 ```mermaid
-graph TD
-    A["Object created (new keyword)"] --> B["Eden Space (Young Gen)"]
-    B -->|"Minor GC triggered"| C["Survivors (S0 ↔ S1 alternating)"]
+flowchart TD
+    A["Object created - new keyword"] --> B["Eden Space - Young Gen"]
+    B -->|"Minor GC triggered"| C["Survivors - S0 and S1 alternating"]
     C --> D["Age counter incremented each GC"]
-    D -->|"Age > 15 (default)"| E["Old Generation"]
-    E -->|"Major GC triggered"| F["Objects with no references → Collected"]
+    D -->|"Age greater than 15 (default)"| E["Old Generation"]
+    E -->|"Major GC triggered"| F["Objects with no references - Collected"]
     F --> G["Memory released"]
 
-    classDef default fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
     classDef startNode fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF,stroke-width:2px;
     classDef ygNode fill:#064E3B,stroke:#10B981,color:#ECFDF5,stroke-width:1px;
     classDef ogNode fill:#78350F,stroke:#F59E0B,color:#FEF3C7,stroke-width:1px;
     classDef gcNode fill:#7F1D1D,stroke:#EF4444,color:#FEF2F2,stroke-width:1px;
-    classDef endNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
+    classDef endNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
 
     class A startNode;
     class B,C,D ygNode;
@@ -294,10 +297,10 @@ public ObjectMapper objectMapper() {
 
 ```mermaid
 flowchart LR
-    A["Client Request"] --> B["Abstraction<br>(What to do)"]
-    B --> C["Polymorphism<br>(Which impl)"]
-    C --> D["Encapsulation<br>(Data protection)"]
-    D --> E["Inheritance<br>(Code reuse)"]
+    A["Client Request"] --> B["Abstraction - What to do"]
+    B --> C["Polymorphism - Which impl"]
+    C --> D["Encapsulation - Data protection"]
+    D --> E["Inheritance - Code reuse"]
     E --> F["Result"]
 
     classDef concept fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
@@ -416,6 +419,468 @@ class Car {
 
 ---
 
+### 2.4 `static` Keyword — Deep Dive
+
+> **JVM Perspective**: `static` members belong to the **Class** (stored in the Method Area / Metaspace), NOT to any object instance. They are loaded into memory exactly once when the class is first loaded by the ClassLoader.
+
+#### static Variable
+
+```java
+class Counter {
+    static int count = 0;    // shared across ALL instances — Method Area
+    String name;             // per-instance — Heap
+
+    Counter(String name) {
+        this.name = name;
+        count++;             // incremented by every constructor call
+    }
+}
+
+Counter c1 = new Counter("A");
+Counter c2 = new Counter("B");
+System.out.println(Counter.count); // 2 — accessed via class name (best practice)
+System.out.println(c1.count);      // 2 — same value (discouraged style)
+```
+
+#### static Method
+
+```java
+class MathUtils {
+    // ✅ static — no instance state needed, utility method
+    public static int square(int n) { return n * n; }
+
+    // ❌ Cannot access instance fields from static method
+    int value;
+    public static void wrongMethod() {
+        // System.out.println(value); // Compile error: non-static field 'value'
+    }
+}
+
+// Called via class name — no object required
+int result = MathUtils.square(5); // 25
+```
+
+**Rules for static methods**:
+- Can access only static fields and call only static methods directly.
+- Cannot use `this` or `super`.
+- Cannot be overridden (hidden instead — compile-time resolution).
+- Can be called before any object is created.
+
+#### static Block (Static Initializer)
+
+Runs **once** when the class is loaded into JVM. Used for complex static initialization.
+
+```java
+class DatabaseConfig {
+    static final String DRIVER;
+    static final int MAX_CONNECTIONS;
+
+    static {
+        // Runs once at class loading time
+        DRIVER = System.getenv("DB_DRIVER");
+        MAX_CONNECTIONS = Integer.parseInt(System.getenv().getOrDefault("DB_POOL", "10"));
+        System.out.println("DatabaseConfig loaded: driver=" + DRIVER);
+    }
+}
+```
+
+**Multiple static blocks** — execute in **top-to-bottom** declaration order:
+
+```java
+class Order {
+    static int id;
+    static { id = 100; System.out.println("Block 1: id=" + id); }
+    static { id = 200; System.out.println("Block 2: id=" + id); }
+    // Output: Block 1: id=100 → Block 2: id=200
+}
+```
+
+#### static Nested Class
+
+```java
+class Outer {
+    private static int outerStaticVal = 10;  // accessible
+    private int outerInstanceVal = 20;       // NOT accessible
+
+    static class StaticNested {
+        void display() {
+            System.out.println(outerStaticVal);    // ✅ OK
+            // System.out.println(outerInstanceVal); // ❌ Compile error
+        }
+    }
+}
+// No Outer instance needed to create StaticNested
+Outer.StaticNested sn = new Outer.StaticNested();
+```
+
+#### static import
+
+```java
+import static java.lang.Math.PI;
+import static java.lang.Math.sqrt;
+
+double area = PI * sqrt(radius); // no Math. prefix needed
+```
+
+**Class Loading Order** (JVM sequence):
+
+```mermaid
+flowchart LR
+    A(["Class Referenced"]) --> B["ClassLoader loads .class"]
+    B --> C["static fields allocated and zeroed"]
+    C --> D["static blocks execute (top to bottom)"]
+    D --> E["Class ready for use"]
+    E --> F["new() calls constructor, instance fields set"]
+
+    classDef normal fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    classDef highlight fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    class A,B,C,E,F normal;
+    class D highlight;
+```
+
+**Interview Q&A — `static`**:
+- **Q: Can we override a static method?** No — static methods are bound at compile time (static binding). Subclasses can only *hide* them, not override. Dynamic dispatch does NOT apply.
+- **Q: Why is `main()` static?** JVM calls `main()` before creating any object. If it were instance, JVM wouldn't know which object to use.
+- **Q: Can a static method call a non-static method?** Only by first creating an object: `new MyClass().instanceMethod()`.
+- **Q: What is a static factory method?** A static method returning a new/cached instance, e.g., `Integer.valueOf(5)`. Preferred over constructors for caching and naming.
+
+---
+
+### 2.5 `final` Keyword — Deep Dive
+
+`final` restricts modification — applied to variables, methods, and classes.
+
+#### final Variable
+
+```java
+// Primitive final — value cannot change
+final int MAX_SIZE = 100;
+// MAX_SIZE = 200; // Compile error
+
+// Reference final — reference cannot change, but object state CAN
+final List<String> list = new ArrayList<>();
+list.add("A");   // ✅ OK — modifying object
+list.add("B");   // ✅ OK
+// list = new ArrayList<>(); // ❌ Compile error — re-assigning reference
+
+// Blank final — must be initialized before constructor ends
+class Circle {
+    final double radius; // blank final
+    Circle(double r) { this.radius = r; } // ✅ initialized in constructor
+}
+```
+
+**JVM Optimization**: The JIT compiler aggressively inlines `static final` constants — they become compile-time constants embedded directly in bytecode, eliminating field lookups.
+
+#### final Method
+
+```java
+class Base {
+    public final void display() { System.out.println("Base display"); }
+}
+
+class Derived extends Base {
+    // @Override void display() { } // ❌ Compile error — cannot override final
+}
+```
+
+> **Use Case**: `final` methods in security-sensitive classes prevent subclasses from altering critical behavior (e.g., `String.equals()`).
+
+#### final Class
+
+```java
+public final class SSN {  // Cannot be subclassed
+    private final String value;
+    public SSN(String value) { this.value = value; }
+    public String getValue() { return value; }
+}
+
+// class ExtendedSSN extends SSN { } // ❌ Compile error
+```
+
+Famous `final` classes in JDK: `String`, `Integer`, `Long`, `Double`, all wrapper types.
+
+**`final` vs `immutable`**:
+| Concept | Means | Example |
+|:---|:---|:---|
+| `final` reference | Cannot **reassign** the reference | `final List<T> list` |
+| Immutable object | Object **state** cannot change | `String`, `Integer` |
+| Fully immutable | Both final reference AND immutable object | `final String s = "abc"` |
+
+**Interview Q&A — `final`**:
+- **Q: Can a final variable be initialized later?** Yes — blank finals must be assigned in every constructor before use.
+- **Q: Is String final?** Yes — `String` is `final class` for immutability, security (class loading), and SCP optimization.
+- **Q: Can we serialize a final field?** Yes — `final` fields are serialized normally.
+- **Q: Difference between final method and private method?** Private methods aren't inherited, so they can't be overridden anyway. Final methods ARE inherited but cannot be overridden.
+
+---
+
+### 2.6 `this` Keyword
+
+`this` is a reference to the **current object instance** within instance methods and constructors.
+
+#### 1. Resolve Variable Shadowing
+
+```java
+class Student {
+    String name;
+    int age;
+
+    Student(String name, int age) {
+        this.name = name;  // 'this.name' = instance field; 'name' = parameter
+        this.age  = age;
+    }
+}
+```
+
+#### 2. Constructor Chaining (`this()`)
+
+Call another constructor in the same class. Must be the **first statement**.
+
+```java
+class Rectangle {
+    int width, height;
+
+    Rectangle() { this(1, 1); }                    // calls Rectangle(int, int)
+    Rectangle(int side) { this(side, side); }       // calls Rectangle(int, int)
+    Rectangle(int width, int height) {
+        this.width  = width;
+        this.height = height;
+    }
+}
+
+// All three constructors ultimately set width and height:
+new Rectangle();       // 1×1
+new Rectangle(5);      // 5×5
+new Rectangle(3, 7);   // 3×7
+```
+
+#### 3. Pass Current Object as Argument
+
+```java
+class Chain {
+    Chain doFirst()  { System.out.println("first"); return this; }
+    Chain doSecond() { System.out.println("second"); return this; }
+}
+
+// Method chaining — builder-like pattern
+new Chain().doFirst().doSecond();
+```
+
+#### 4. Return Current Object
+
+Enables **fluent/builder API** style (used by StringBuilder, Spring's BeanDefinitionBuilder, etc.).
+
+```java
+class Builder {
+    String name; int age;
+    Builder name(String name)  { this.name = name; return this; }
+    Builder age(int age)       { this.age = age;   return this; }
+    void build() { System.out.println(name + " (" + age + ")"); }
+}
+
+new Builder().name("Teja").age(30).build(); // Fluent API
+```
+
+**Interview Q&A — `this`**:
+- **Q: Can `this` be used in static methods?** No — `this` refers to the current instance; static context has no instance.
+- **Q: Can we pass `this` from a constructor?** Yes, but dangerous — the object may not be fully initialized yet (partially constructed object reference).
+- **Q: What is `this()` used for?** Constructor delegation — reduces duplicate initialization logic.
+
+---
+
+### 2.7 `super` Keyword
+
+`super` refers to the **parent class** — used to access parent fields, methods, and constructor.
+
+#### 1. Access Parent Constructor (`super()`)
+
+```java
+class Animal {
+    String name;
+    Animal(String name) {
+        this.name = name;
+        System.out.println("Animal constructor: " + name);
+    }
+}
+
+class Dog extends Animal {
+    String breed;
+    Dog(String name, String breed) {
+        super(name);         // ✅ Must be FIRST statement — calls Animal(String)
+        this.breed = breed;
+        System.out.println("Dog constructor: " + breed);
+    }
+}
+
+new Dog("Rex", "Labrador");
+// Output:
+// Animal constructor: Rex
+// Dog constructor: Labrador
+```
+
+> **Rule**: If you don't call `super()` explicitly, Java inserts `super()` (no-arg) automatically. If the parent has NO no-arg constructor, you MUST call a specific `super(...)` or you get a compile error.
+
+#### 2. Access Parent Fields and Methods
+
+```java
+class Vehicle {
+    String type = "Vehicle";
+    void describe() { System.out.println("I am a " + type); }
+}
+
+class Car extends Vehicle {
+    String type = "Car";       // hides parent field
+
+    void showTypes() {
+        System.out.println(type);        // Car (local field)
+        System.out.println(super.type);  // Vehicle (parent field)
+    }
+
+    @Override
+    void describe() {
+        super.describe();                // calls parent's describe()
+        System.out.println("Specifically, I am a " + type);
+    }
+}
+```
+
+**Interview Q&A — `super`**:
+- **Q: Can `super()` and `this()` both appear in the same constructor?** No — both must be the first statement, so only one is allowed.
+- **Q: Can we access grandparent methods via `super.super`?** No — Java doesn't support chained super. You'd need to restructure the class hierarchy.
+- **Q: When is `super()` automatically inserted?** When the subclass constructor doesn't explicitly call `this()` or `super()`.
+
+---
+
+### 2.8 Access Modifiers
+
+Control the visibility of classes, fields, methods, and constructors across packages and inheritance.
+
+| Modifier | Same Class | Same Package | Subclass (diff pkg) | Everywhere |
+|:---|:---:|:---:|:---:|:---:|
+| `private` | ✅ | ❌ | ❌ | ❌ |
+| *(default/package-private)* | ✅ | ✅ | ❌ | ❌ |
+| `protected` | ✅ | ✅ | ✅ | ❌ |
+| `public` | ✅ | ✅ | ✅ | ✅ |
+
+```java
+public class BankAccount {
+    private double balance;              // only this class
+    double interestRate;                 // package-private (default)
+    protected String accountType;       // subclasses + same package
+    public String accountHolder;        // everyone
+
+    // private getter — full encapsulation
+    private double getBalance() { return balance; }
+
+    // public API — controlled access
+    public void deposit(double amount) {
+        if (amount > 0) this.balance += amount;
+    }
+}
+```
+
+**Key Rules**:
+- Class can only be `public` or package-private (default). Never `private`/`protected` at top level.
+- `private` methods cannot be overridden (not inherited).
+- `protected` members are accessible in subclass via inheritance (not via object reference of parent type).
+- Overriding cannot **reduce** visibility: `protected` → `public` OK; `public` → `protected` ❌.
+
+```mermaid
+flowchart LR
+    P(["private"]) --> D(["default"]) --> Prot(["protected"]) --> Pub(["public"])
+
+    classDef priv fill:#7F1D1D,stroke:#DC2626,color:#FEE2E2;
+    classDef def fill:#78350F,stroke:#D97706,color:#FEF3C7;
+    classDef prot fill:#064E3B,stroke:#059669,color:#ECFDF5;
+    classDef pub fill:#1E3A8A,stroke:#3B82F6,color:#EFF6FF;
+
+    class P priv;
+    class D def;
+    class Prot prot;
+    class Pub pub;
+```
+
+**Interview Q&A — Access Modifiers**:
+- **Q: What is package-private?** No modifier — visible only within the same package. Useful for internal implementation classes.
+- **Q: Can a private method be overridden?** No — private methods are not inherited, so no overriding. A subclass can define a method with the same name, but it's a new method (not an override).
+- **Q: What modifier should I use for production code fields?** Always `private` with getters/setters for full encapsulation.
+
+---
+
+### 2.9 Constructors — Complete Guide
+
+#### Default Constructor
+
+If you define **no constructor**, Java provides a **default no-arg constructor** automatically. If you define **any** constructor, Java removes the default — you must define no-arg explicitly if needed.
+
+```java
+class Blank { }                    // compiler adds Blank() { super(); }
+class HasParam { HasParam(int x) { } }  // NO default constructor!
+
+// HasParam hp = new HasParam(); // ❌ Compile error
+```
+
+#### Constructor Overloading
+
+```java
+class Product {
+    String name;
+    double price;
+    String category;
+
+    Product(String name) {
+        this(name, 0.0);                  // delegates to Product(String, double)
+    }
+
+    Product(String name, double price) {
+        this(name, price, "General");     // delegates to Product(String, double, String)
+    }
+
+    Product(String name, double price, String category) {
+        this.name     = name;             // canonical constructor
+        this.price    = price;
+        this.category = category;
+    }
+}
+```
+
+#### Constructor vs Method
+
+| Feature | Constructor | Method |
+|:---|:---|:---|
+| Name | Same as class | Any valid identifier |
+| Return type | None (not even void) | Must declare (void or type) |
+| Called by | `new` keyword / `this()` / `super()` | Explicit call / JVM |
+| Inherited | Not inherited | Inherited (unless private/static) |
+| Purpose | Initialize object state | Define behavior |
+
+#### Constructor Chaining Flow
+
+```mermaid
+flowchart TD
+    A(["new Product(name)"]) --> B["Product(String name)"]
+    B --> |"this(name, 0.0)"| C["Product(String, double)"]
+    C --> |"this(name, price, General)"| D["Product(String, double, String) - canonical"]
+    D --> E["Object fully initialized"]
+
+    classDef callNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef canonicalNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:2px;
+    classDef normal fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    class A,B,C callNode;
+    class D canonicalNode;
+    class E normal;
+```
+
+**Interview Q&A — Constructors**:
+- **Q: Can a constructor be private?** Yes — used in Singleton pattern and static factory methods to prevent direct instantiation.
+- **Q: Can a constructor return a value?** No — constructors have no return type. The `new` keyword returns the reference.
+- **Q: What is a copy constructor?** A constructor taking another object of the same type as argument: `Point(Point other) { this.x = other.x; }`.
+- **Q: What happens if a constructor throws an exception?** The object is not created. The JVM partially allocated it, but GC will reclaim it. The `finally` block (if any) still runs.
+- **Q: When does Java call `super()` automatically?** When the first line of a subclass constructor is neither `this(...)` nor `super(...)`.
+
+---
+
 ## SECTION 3: SOLID PRINCIPLES
 
 > SOLID is an acronym coined by Robert C. Martin ("Uncle Bob"). These 5 principles build software that is **Maintainable**, **Scalable**, **Testable**, and **Decoupled**.
@@ -465,12 +930,12 @@ class EmployeeService {
 **Real-World Analogy**: A USB port is "open for extension" (plug any USB device) but "closed for modification" (you don't rewire your laptop for each new device).
 
 ```mermaid
-graph TD
-    DiscountService["DiscountService<br>(Closed for modification)"] -->|Applies| DiscountStrategy["DiscountStrategy<br>interface"]
+flowchart TD
+    DiscountService["DiscountService - Closed for modification"] -->|Applies| DiscountStrategy["DiscountStrategy interface"]
     SeasonalDiscount["SeasonalDiscount"] -->|Implements| DiscountStrategy
     EmployeeDiscount["EmployeeDiscount"] -->|Implements| DiscountStrategy
     VIPDiscount["VIPDiscount"] -->|Implements| DiscountStrategy
-    LoyaltyDiscount["LoyaltyDiscount<br>(New Extension)"] -->|Implements| DiscountStrategy
+    LoyaltyDiscount["LoyaltyDiscount - New Extension"] -->|Implements| DiscountStrategy
 
     classDef closed fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px;
     classDef strategy fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
@@ -593,13 +1058,13 @@ class Robot implements Workable, MeetingGoer { ... } // No eat()/sleep() → cle
 **Real-World Analogy**: Your TV remote (high-level) communicates via IR protocol (abstraction) — you can swap the TV (low-level) without changing the remote.
 
 ```mermaid
-graph TD
-    subgraph TightCoupling ["Tightly Coupled (Violates DIP)"]
+flowchart TD
+    subgraph TightCoupling ["Tightly Coupled - Violates DIP"]
         OrderServiceBad["OrderService"] -->|Depends Directly| MySQLBad["MySQLDatabase"]
     end
 
-    subgraph Decoupled ["Decoupled via Abstraction (DIP)"]
-        OrderServiceGood["OrderService"] -->|Depends On| DbInterface["Database<br>interface"]
+    subgraph Decoupled ["Decoupled via Abstraction - DIP"]
+        OrderServiceGood["OrderService"] -->|Depends On| DbInterface["Database interface"]
         MySQLGood["MySQLDatabase"] -->|Implements| DbInterface
         MongoGood["MongoDatabase"] -->|Implements| DbInterface
     end
@@ -659,7 +1124,7 @@ class OrderService {
 
 ## SECTION 4: DATA TYPES, ARRAYS, AND STRINGS
 
-### 4.1 Static vs Instance Members & Autoboxing
+### 4.1 Static vs Instance Members, Wrapper Classes & Autoboxing
 
 - **Static members**: Shared across all instances. Stored in the Method Area.
 - **Instance members**: Unique to each instantiated object. Stored in the Heap.
@@ -673,6 +1138,60 @@ class Config {
 }
 ```
 
+#### Wrapper Classes — Full Reference
+
+Every Java primitive has a corresponding Wrapper class in `java.lang`:
+
+| Primitive | Wrapper | Cache Range |
+|:---|:---|:---|
+| `byte` | `Byte` | -128 to 127 |
+| `short` | `Short` | -128 to 127 |
+| `int` | `Integer` | **-128 to 127** |
+| `long` | `Long` | -128 to 127 |
+| `float` | `Float` | None |
+| `double` | `Double` | None |
+| `char` | `Character` | 0 to 127 |
+| `boolean` | `Boolean` | true, false |
+
+```java
+// Utility methods on wrapper classes
+Integer.parseInt("42");          // String → int
+Integer.toBinaryString(255);     // "11111111"
+Integer.MAX_VALUE;               // 2147483647
+Integer.MIN_VALUE;               // -2147483648
+Integer.compare(5, 10);          // -1 (negative = first is smaller)
+Integer.bitCount(255);           // 8 (number of 1-bits)
+```
+
+#### 🔥 Integer Cache — Most Tricky Interview Topic
+
+`Integer.valueOf(n)` caches Integer objects for values **-128 to 127** (JVM internal optimization).
+
+```java
+// ✅ Using Integer.valueOf() — cached range
+Integer a = Integer.valueOf(100);
+Integer b = Integer.valueOf(100);
+System.out.println(a == b);      // true  — same cached object!
+System.out.println(a.equals(b)); // true
+
+// ❌ Outside cache range — new objects created
+Integer c = Integer.valueOf(200);
+Integer d = Integer.valueOf(200);
+System.out.println(c == d);      // false — different objects!
+System.out.println(c.equals(d)); // true  — always use .equals()
+
+// Autoboxing uses Integer.valueOf() internally:
+Integer x = 127;  // same as Integer.valueOf(127) — cached
+Integer y = 127;
+System.out.println(x == y); // true  (within cache)
+
+Integer p = 128;  // same as Integer.valueOf(128) — NOT cached
+Integer q = 128;
+System.out.println(p == q); // false (outside cache)
+```
+
+> **Interview Key Point**: This is one of the most common trick questions. **Always use `.equals()` to compare wrapper objects**, never `==`. The cache exists because values -128 to 127 are extremely common in code and caching them saves memory.
+
 > ⚠️ **Avoid autoboxing inside loops** — creates massive wrapper object overhead:
 ```java
 // BAD: Creates 1M wrapper objects → GC pressure
@@ -684,7 +1203,14 @@ int sum = 0;
 for (int i = 0; i < 1000000; i++) sum += i;  // No boxing
 ```
 
+**Interview Q&A — Wrapper Classes**:
+- **Q: `Integer i = null; int x = i;` — what happens?** `NullPointerException` — unboxing a null wrapper throws NPE.
+- **Q: Why use wrapper classes?** Required for Collections (e.g., `List<Integer>`), generics, null representation, utility methods.
+- **Q: What's the difference between `new Integer(5)` and `Integer.valueOf(5)`?** `new Integer(5)` always creates a new heap object (deprecated since Java 9). `Integer.valueOf(5)` uses the cache pool.
+
 ---
+
+
 
 ### 4.2 Arrays
 
@@ -890,59 +1416,348 @@ class ConfigProperty<T> {
 
 ---
 
-### 5.2 Exception Handling
+### 5.2 Exception Handling in Java — Deep Dive
 
-**Exception Hierarchy**:
-```text
-Throwable
-├── Error           (JVM issues: OutOfMemoryError, StackOverflowError)
-└── Exception
-    ├── Checked     (IOException, SQLException) — Must handle/declare
-    └── Unchecked   (RuntimeException: NPE, ArrayIndexOutOfBounds) — Optional handling
+> **Real-World Analogy**: Think of a method call stack as an airline check-in queue. An exception is like a passenger's passport issue — the agent (method) can't fix it alone, so it escalates (throws) up the chain until a supervisor (catch block) handles it. The `finally` block is the cleanup crew that always tidies the desk regardless of outcome.
+
+---
+
+#### Exception Hierarchy (Visual)
+
+```mermaid
+flowchart TD
+    T["Throwable"] --> E["Exception"]
+    T --> ERR["Error"]
+
+    ERR --> OOM["OutOfMemoryError"]
+    ERR --> SOF["StackOverflowError"]
+    ERR --> VEE["VirtualMachineError"]
+
+    E --> CE["Checked Exceptions"]
+    E --> RE["RuntimeException - Unchecked"]
+
+    CE --> IOE["IOException"]
+    CE --> SQL["SQLException"]
+    CE --> CNF["ClassNotFoundException"]
+    CE --> CEx["CloneNotSupportedException"]
+
+    IOE --> FNFE["FileNotFoundException"]
+    IOE --> SOCE["SocketException"]
+
+    RE --> NPE["NullPointerException"]
+    RE --> AIOOB["ArrayIndexOutOfBoundsException"]
+    RE --> CCE["ClassCastException"]
+    RE --> ISE["IllegalStateException"]
+    RE --> NSE["NumberFormatException"]
+    RE --> AIOBE["ArithmeticException"]
+
+    classDef rootNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:2px;
+    classDef errorNode fill:#7F1D1D,stroke:#DC2626,color:#FEE2E2,stroke-width:1px;
+    classDef checkedNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef uncheckedNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+    classDef leafNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+
+    class T,E,ERR rootNode;
+    class OOM,SOF,VEE errorNode;
+    class CE,IOE,SQL,CNF,CEx checkedNode;
+    class RE,NPE,AIOOB,CCE,ISE,NSE,AIOBE uncheckedNode;
+    class FNFE,SOCE leafNode;
 ```
+
+---
+
+#### Checked vs Unchecked Exceptions
+
+| Aspect | Checked Exception | Unchecked Exception |
+|:---|:---|:---|
+| **Superclass** | `Exception` (not RuntimeException) | `RuntimeException` |
+| **Compile-time enforcement** | Yes — must catch or declare with `throws` | No — optional handling |
+| **Common examples** | `IOException`, `SQLException`, `FileNotFoundException` | `NullPointerException`, `ArrayIndexOutOfBoundsException`, `ClassCastException` |
+| **When to use** | Recoverable errors (file missing, network timeout) | Programming bugs (null access, bad cast) |
+| **Spring Framework** | Converts JDBC checked → `DataAccessException` (unchecked) | — |
+
+> **Interview Insight**: Spring chose unchecked exceptions for its data access layer to avoid forcing callers to handle or declare exceptions they can't meaningfully handle.
+
+---
+
+#### Exception Keywords: `try`, `catch`, `finally`, `throw`, `throws`
 
 ```java
-// try-catch-finally-throw-throws
+// ✅ Full try-catch-finally demonstration
 public int divide(int a, int b) throws ArithmeticException {
     try {
-        return a / b;
+        return a / b;                          // may throw ArithmeticException
     } catch (ArithmeticException e) {
-        System.out.println("Caught: " + e.getMessage());
-        throw e; // Re-throw
+        log.error("Division error", e);        // log with full stack trace
+        throw new RuntimeException("Division failed", e); // wrap and re-throw
     } finally {
-        System.out.println("Finally always runs"); // Even with return/throw
+        System.out.println("Finally ALWAYS runs"); // even with return or throw
     }
 }
 
-// try-with-resources (AutoCloseable auto-closes resources)
-try (BufferedReader br = new BufferedReader(new FileReader("data.txt"))) {
-    String line = br.readLine();
-} // br.close() called automatically, even if exception occurs
+// ⚠️ Tricky: return in finally OVERRIDES return in try!
+public int tricky() {
+    try {
+        return 1;   // Will NOT be returned!
+    } finally {
+        return 2;   // This return wins — ALWAYS avoid return in finally
+    }
+}  // returns 2
+```
 
-// Multi-Catch & Exception Chaining
+**`throw` vs `throws`**:
+- `throw` — creates and throws an exception instance at runtime inside a method body.
+- `throws` — declares in the method signature that this method MAY throw a specific exception.
+
+```java
+// throw — action (creates instance)
+throw new IllegalArgumentException("ID must be positive");
+
+// throws — declaration (signals callers)
+public void processOrder(int id) throws OrderNotFoundException { ... }
+```
+
+---
+
+#### try-with-resources (Java 7+)
+
+Automatically closes resources implementing `AutoCloseable`. Eliminates the need for `finally` blocks just for closing.
+
+```java
+// ✅ try-with-resources — resources closed even if exception occurs
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE id=?")) {
+    ps.setInt(1, userId);
+    ResultSet rs = ps.executeQuery();
+    while (rs.next()) {
+        System.out.println(rs.getString("name"));
+    }
+} catch (SQLException e) {
+    throw new DataAccessException("Failed to fetch user", e);
+}
+// conn, ps are closed in reverse order automatically
+
+// ✅ Custom AutoCloseable resource
+class ManagedConnection implements AutoCloseable {
+    public ManagedConnection() { System.out.println("Opened connection"); }
+
+    @Override
+    public void close() {
+        System.out.println("Connection closed automatically"); // called by JVM
+    }
+}
+
+try (ManagedConnection mc = new ManagedConnection()) {
+    // use mc
+} // mc.close() called automatically here
+```
+
+> **Key Rule**: Resources are closed in **reverse declaration order**. If multiple resources declared, the last declared is closed first.
+
+---
+
+#### Multi-Catch (Java 7+)
+
+Capture multiple unrelated exception types in a single catch block.
+
+```java
 try {
-    // potentially throws multiple exception types
-} catch (IOException | SQLException e) { // Multi-catch (Java 7+)
-    throw new RuntimeException("DB/IO Error", e); // Exception chaining: wraps cause
-}
-
-// Custom Exception
-public class InsufficientFundsException extends RuntimeException {
-    private final double amount;
-    public InsufficientFundsException(double amount) {
-        super("Insufficient funds: needed " + amount);
-        this.amount = amount;
-    }
-    public double getAmount() { return amount; }
+    Class.forName("com.Foo");
+    new FileReader("config.txt");
+} catch (ClassNotFoundException | IOException e) { // multi-catch — pipe-separated
+    log.error("Startup failed", e);               // 'e' is effectively final here
+    throw new ApplicationException("Init failed", e);
 }
 ```
 
-#### Key Takeaways
-* Generics enforce type safety at compile time via Type Erasure — no runtime overhead.
-* The PECS rule: use `extends` when retrieving, `super` when adding.
-* Try-with-resources automatically closes `AutoCloseable` resources.
-* Exception chaining preserves root cause by passing it to the wrapper constructor.
-* Always override both `throw` and `throws`: `throw` creates instance, `throws` declares in signature.
+> **Restriction**: Cannot catch exceptions with an inheritance relationship in one multi-catch (compiler error). E.g., `catch (Exception | IOException e)` is invalid since `IOException extends Exception`.
+
+---
+
+#### Exception Chaining (Wrapping)
+
+Preserve the original cause when translating/wrapping exceptions across layers.
+
+```java
+// ✅ Good: root cause preserved
+public User findUser(int id) {
+    try {
+        return userRepo.findById(id);
+    } catch (SQLException e) {
+        // Wrap SQLException as domain exception — root cause preserved
+        throw new UserNotFoundException("User " + id + " not found", e); // passes cause
+    }
+}
+
+// Retrieving the original cause
+try {
+    findUser(-1);
+} catch (UserNotFoundException e) {
+    Throwable rootCause = e.getCause(); // returns the original SQLException
+    log.error("Root cause: " + rootCause.getMessage());
+}
+
+// ❌ Bad: root cause swallowed — impossible to debug
+catch (SQLException e) {
+    throw new RuntimeException("Error"); // e is lost!
+}
+```
+
+---
+
+#### Custom Exception — Best Practices
+
+```java
+// ✅ Best-practice custom exception
+public class InsufficientFundsException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+    private final double requestedAmount;
+    private final double availableBalance;
+
+    // 4 constructors — mirror RuntimeException pattern
+    public InsufficientFundsException(String message) {
+        super(message);
+        this.requestedAmount = 0;
+        this.availableBalance = 0;
+    }
+
+    public InsufficientFundsException(String message, Throwable cause) {
+        super(message, cause); // ✅ preserves root cause
+        this.requestedAmount = 0;
+        this.availableBalance = 0;
+    }
+
+    public InsufficientFundsException(double requestedAmount, double availableBalance) {
+        super(String.format("Requested: %.2f, Available: %.2f", requestedAmount, availableBalance));
+        this.requestedAmount = requestedAmount;
+        this.availableBalance = availableBalance;
+    }
+
+    public double getRequestedAmount() { return requestedAmount; }
+    public double getAvailableBalance() { return availableBalance; }
+}
+
+// Usage in service layer
+public void withdraw(Account account, double amount) {
+    if (account.getBalance() < amount) {
+        throw new InsufficientFundsException(amount, account.getBalance());
+    }
+    account.debit(amount);
+}
+```
+
+**Custom Exception Naming Conventions**:
+| Scenario | Exception Type | Example Name |
+|:---|:---|:---|
+| Business rule violation | `RuntimeException` (unchecked) | `InsufficientFundsException` |
+| Resource not found | `RuntimeException` | `UserNotFoundException` |
+| Invalid input | `RuntimeException` | `InvalidOrderStateException` |
+| External system failure | `RuntimeException` | `PaymentGatewayException` |
+| Recoverable I/O issue | `Exception` (checked) | `ConfigurationLoadException` |
+
+---
+
+#### StackTrace API
+
+```java
+try {
+    riskyOperation();
+} catch (Exception e) {
+    // Print full stack trace (for development / debug)
+    e.printStackTrace();
+
+    // Programmatic stack trace access
+    StackTraceElement[] elements = e.getStackTrace();
+    for (StackTraceElement ste : elements) {
+        System.out.printf("Class: %s, Method: %s, Line: %d%n",
+            ste.getClassName(), ste.getMethodName(), ste.getLineNumber());
+    }
+
+    // Get just the top frame
+    StackTraceElement top = e.getStackTrace()[0];
+    log.error("Exception at: " + top.getMethodName() + ":" + top.getLineNumber());
+}
+```
+
+---
+
+#### Suppressed Exceptions (Java 7+)
+
+When an exception occurs inside a `try-with-resources` **and** the `close()` method also throws, the close-exception is _suppressed_ (attached) rather than lost.
+
+```java
+class BrokenResource implements AutoCloseable {
+    public void use()  { throw new RuntimeException("Primary exception"); }
+    public void close() { throw new RuntimeException("Close exception"); }
+}
+
+try (BrokenResource br = new BrokenResource()) {
+    br.use(); // throws primary
+} catch (RuntimeException e) {
+    System.out.println("Primary: " + e.getMessage());  // Primary exception
+    for (Throwable suppressed : e.getSuppressed()) {
+        System.out.println("Suppressed: " + suppressed.getMessage()); // Close exception
+    }
+}
+```
+
+---
+
+#### Exception Flow Control Diagram
+
+```mermaid
+flowchart TD
+    A(["Method called"]) --> B["Code executes in try block"]
+    B --> C{"Exception thrown?"}
+    C --> |No| F["try block completes normally"]
+    C --> |Yes| D{"Matching catch block?"}
+    D --> |Yes| E["Execute catch block"]
+    D --> |No| G["Exception propagates up call stack"]
+    E --> H["Execute finally block"]
+    F --> H
+    H --> I{"Return / Throw in finally?"}
+    I --> |"No"| J["Method returns normally"]
+    I --> |"Yes"| K["finally action overrides prior result!"]
+    G --> L["Caller's catch or JVM terminates"]
+
+    classDef normalNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef decisionNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef errorNode fill:#7F1D1D,stroke:#DC2626,color:#FEE2E2,stroke-width:1px;
+    classDef warnNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
+    classDef defaultNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+
+    class A,B,F,H,J normalNode;
+    class C,D,I decisionNode;
+    class G,L errorNode;
+    class K warnNode;
+    class E defaultNode;
+```
+
+---
+
+#### Exception Handling Anti-Patterns
+
+| ❌ Anti-Pattern | Why It's Bad | ✅ Fix |
+|:---|:---|:---|
+| `catch (Exception e) {}` | Silently swallows all exceptions | At least log the exception |
+| `e.printStackTrace()` in prod | Unstructured output, security risk | Use SLF4J `log.error("msg", e)` |
+| Catching `Throwable` | Catches JVM `Error`s like OOM | Only catch `Exception` |
+| Returning `null` on exception | Callers not forced to handle absence | Return `Optional<T>` or throw |
+| Using exceptions for flow control | Extremely expensive (stack generation) | Use conditional checks instead |
+| Swallowing cause on rethrow | `throw new Ex("msg")` — cause lost | Always `throw new Ex("msg", originalCause)` |
+| Generic custom exceptions | `AppException` for everything | Specific names, e.g., `UserNotFoundException` |
+
+---
+
+#### Key Takeaways — Exception Handling
+* **Checked** = must handle/declare; **Unchecked** = optional; **Error** = never catch.
+* `try-with-resources` automatically closes `AutoCloseable` resources in reverse order.
+* `finally` **always** runs — avoid `return`/`throw` inside it.
+* **Exception chaining**: always pass `cause` to preserve root cause for debugging.
+* Multi-catch `(A | B e)` requires A and B are not in the same inheritance chain.
+* **Suppressed exceptions**: extra exceptions from `close()` are attached to the primary via `getSuppressed()`.
+* **Production logging**: always use `log.error("message", exception)` — never swallow silently.
 
 ---
 
@@ -951,7 +1766,7 @@ public class InsufficientFundsException extends RuntimeException {
 ### 6.1 Collections Hierarchy
 
 ```mermaid
-graph TD
+flowchart TD
     Iterable["Iterable"] --> Collection["Collection"]
     Collection --> List["List"]
     Collection --> Set["Set"]
@@ -1011,7 +1826,7 @@ System.out.println(al.get(0));      // Random access O(1)
 - **Untreeification**: Tree → LinkedList when bucket drops below 6 during resize.
 
 ```mermaid
-graph TD
+flowchart TD
     Start(["put('name', 'Teja')"]) --> HC["hashCode('name') = 3373752"]
     HC --> HS["Hash Spreading: XOR with upper 16 bits"]
     HS --> Idx["Index = hash & 15 = 8"]
@@ -1260,13 +2075,13 @@ producer.start(); consumer.start();
 ### 7.1 Layered Caching Architecture
 
 ```mermaid
-graph TD
-    Client(["Client Request"]) --> L1{"L1 Cache: In-Process<br>(ConcurrentHashMap / Caffeine)"}
+flowchart TD
+    Client(["Client Request"]) --> L1{"L1 Cache - In-Process - ConcurrentHashMap / Caffeine"}
     L1 -->|Hit| ReturnClient["Return Data to Client"]
-    L1 -->|Miss| L2{"L2 Cache: Distributed<br>(Redis)"}
+    L1 -->|Miss| L2{"L2 Cache - Distributed - Redis"}
 
     L2 -->|Hit| UpdateL1["Update L1 Cache"] --> ReturnClient
-    L2 -->|Miss| DB[("Database<br>(MySQL / SQL Server)")]
+    L2 -->|Miss| DB[("Database - MySQL / SQL Server")]
 
     DB --> UpdateL2["Update L2 Cache"] --> UpdateL1
 
@@ -1274,7 +2089,7 @@ graph TD
     classDef cacheNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
     classDef dbNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
     classDef updateNode fill:#78350F,stroke:#D97706,color:#FEF3C7,stroke-width:1px;
-    classDef returnNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-dasharray: 5 5;
+    classDef returnNode fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
 
     class Client clientNode;
     class L1,L2 cacheNode;
@@ -1424,7 +2239,7 @@ Map<Boolean, List<Integer>> parts = List.of(1,2,3,4,5,6).stream()
 A type-safe container representing the presence or absence of a value, replacing risky `null` returns.
 
 ```mermaid
-graph TD
+flowchart TD
     Start(["Optional Container"]) --> Check{"Check Presence?"}
     Start --> Extract{"Extract Value?"}
     Start --> Trans{"Transform / Filter?"}
@@ -1681,23 +2496,480 @@ public <T extends Serializable> T deepCopy(T object) throws Exception {
 
 ---
 
-### 10.3 Additional Concepts
+### 10.3 Frequently Missed Concepts — Deep Dives
 
-- **`var` (Java 10+)**: Local Variable Type Inference. Compiler infers type: `var list = new ArrayList<String>();`. Cannot be used for fields, method params, or return types.
-- **Static Initializer Block**: Runs once when class is loaded: `class Config { static { props.load(...); } }`
-- **`instanceof` Pattern Matching (Java 16+)**: `if (obj instanceof String s) { s.length(); }`
-- **Marker Interface**: An interface with NO methods (e.g., `Serializable`, `Cloneable`). Signals capability to JVM/frameworks.
-- **Static Nested Class vs Inner Class**: Static nested class has no access to outer instance. Inner class holds implicit reference to outer and can access outer members.
-- **Diamond Problem**: Two interfaces define same default method → Java forces you to override: `class C implements A, B { @Override public void m() { A.super.m(); } }`
-- **Daemon Thread**: Background thread that does NOT prevent JVM from exiting. `thread.setDaemon(true);` (must call before `start()`). GC thread is a daemon thread.
-- **WeakHashMap**: Keys are `WeakReferences` — if a key is no longer strongly referenced, GC removes the entry. Use for caches/metadata.
+---
 
-#### Key Takeaways
+#### `var` Keyword (Java 10+ — Local Variable Type Inference)
+
+```java
+// ✅ var — compiler infers type from right-hand side
+var list    = new ArrayList<String>();   // inferred as ArrayList<String>
+var map     = new HashMap<String, Integer>();
+var stream  = list.stream();
+
+// ✅ Works in enhanced for-loops (Java 10+)
+for (var entry : map.entrySet()) {
+    System.out.println(entry.getKey() + "=" + entry.getValue());
+}
+
+// ✅ Works in try-with-resources
+try (var conn = dataSource.getConnection()) { /* ... */ }
+
+// ❌ Cannot use in:
+// var field;                   // instance/class fields
+// public var myMethod() { }    // method return type
+// void method(var param) { }   // method parameters
+// var x = null;                // cannot infer from null
+```
+
+> **Interview Key**: `var` is a **reserved type name** (not a keyword like `int`). The variable is still statically typed — just inferred by the compiler. It does NOT make Java dynamically typed.
+
+---
+
+#### Marker Interface
+
+An interface with **no methods** — signals a capability/intent to the JVM or framework.
+
+```java
+// Built-in marker interfaces
+public class Employee implements Serializable, Cloneable { ... }
+
+// Custom marker interface
+interface Auditable { }
+interface Archivable { }
+
+class Order implements Auditable, Archivable { ... }
+
+// Framework checks it at runtime via instanceof
+if (entity instanceof Auditable) {
+    auditLog.record(entity);
+}
+```
+
+| Marker Interface | Purpose |
+|:---|:---|
+| `Serializable` | Allows object to be serialized by `ObjectOutputStream` |
+| `Cloneable` | Allows `Object.clone()` to perform shallow copy |
+| `RandomAccess` | Signals `List` supports O(1) index access (ArrayList) |
+| `Remote` | Marks objects for Java RMI remote method invocation |
+
+---
+
+#### Enums — Complete Guide
+
+Enums are **type-safe named constants** — more powerful than `static final int` constants.
+
+```java
+// Basic enum
+enum Day { MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY }
+
+// Enum with fields and methods
+enum Planet {
+    MERCURY(3.303e+23, 2.4397e6),
+    VENUS  (4.869e+24, 6.0518e6),
+    EARTH  (5.976e+24, 6.37814e6);
+
+    private final double mass;    // in kilograms
+    private final double radius;  // in meters
+
+    Planet(double mass, double radius) {
+        this.mass   = mass;
+        this.radius = radius;
+    }
+
+    static final double G = 6.67300E-11;
+
+    double surfaceGravity() { return G * mass / (radius * radius); }
+    double surfaceWeight(double otherMass) { return otherMass * surfaceGravity(); }
+}
+
+// Usage
+System.out.println(Planet.EARTH.surfaceWeight(75)); // weight on Earth
+```
+
+**Enum with Abstract Method** (each constant provides its own implementation):
+
+```java
+enum Operation {
+    ADD    { @Override public int apply(int a, int b) { return a + b; } },
+    SUBTRACT { @Override public int apply(int a, int b) { return a - b; } },
+    MULTIPLY { @Override public int apply(int a, int b) { return a * b; } };
+
+    public abstract int apply(int a, int b);
+}
+
+System.out.println(Operation.ADD.apply(5, 3)); // 8
+```
+
+**EnumSet and EnumMap** (specialized, highly efficient collections):
+
+```java
+// EnumSet — bit-vector backed, O(1) operations
+EnumSet<Day> weekdays = EnumSet.range(Day.MONDAY, Day.FRIDAY);
+EnumSet<Day> weekend  = EnumSet.complementOf(weekdays);
+
+// EnumMap — array-backed map, faster than HashMap for enum keys
+EnumMap<Day, String> schedule = new EnumMap<>(Day.class);
+schedule.put(Day.MONDAY, "Team standup");
+schedule.put(Day.FRIDAY, "Sprint review");
+```
+
+**Built-in Enum Methods**:
+
+```java
+Day d = Day.valueOf("MONDAY");   // String → Enum (throws IllegalArgumentException if invalid)
+Day[] days = Day.values();       // All constants as array
+int ordinal = Day.MONDAY.ordinal(); // 0 (zero-based position)
+String name = Day.MONDAY.name(); // "MONDAY"
+```
+
+**Interview Q&A — Enum**:
+- **Q: Can enum extend a class?** No — all enums implicitly extend `java.lang.Enum`. Java has single inheritance.
+- **Q: Can enum implement an interface?** Yes — commonly used for strategy pattern.
+- **Q: Are enum instances singleton?** Yes — each enum constant is a single guaranteed instance. Enum-based Singleton is the safest thread-safe Singleton.
+- **Q: Can enum have a constructor?** Yes — but it must be `private` or package-private (not public/protected).
+- **Q: How is enum thread-safe?** Enum constants are loaded once at class-loading time, before any thread uses them. Thread-safe by design.
+
+---
+
+#### Annotations — Built-in & Custom
+
+Annotations provide metadata about code — readable at compile-time, class-load time, or runtime.
+
+**Built-in Annotations**:
+
+```java
+// @Override — compiler checks overriding contract
+@Override
+public String toString() { return "My class"; }
+
+// @Deprecated — marks API as outdated
+@Deprecated(since = "3.0", forRemoval = true)
+public void oldMethod() { }
+
+// @SuppressWarnings — silences compiler warnings
+@SuppressWarnings("unchecked")
+List list = new ArrayList();
+
+// @FunctionalInterface — ensures exactly one abstract method
+@FunctionalInterface
+interface Transformer { String transform(String input); }
+
+// @SafeVarargs — suppresses heap pollution warning on varargs
+@SafeVarargs
+public static <T> List<T> asList(T... elements) { return Arrays.asList(elements); }
+```
+
+**Custom Annotation**:
+
+```java
+import java.lang.annotation.*;
+
+// Define annotation
+@Retention(RetentionPolicy.RUNTIME) // available at runtime
+@Target(ElementType.METHOD)          // only on methods
+public @interface AuditLog {
+    String action() default "UNKNOWN";
+    String entity() default "";
+    boolean logResponse() default false;
+}
+
+// Use annotation
+@AuditLog(action = "CREATE", entity = "Order", logResponse = true)
+public Order createOrder(OrderRequest request) { ... }
+
+// Read annotation via Reflection
+Method method = OrderService.class.getMethod("createOrder", OrderRequest.class);
+AuditLog audit = method.getAnnotation(AuditLog.class);
+System.out.println(audit.action()); // "CREATE"
+```
+
+**Retention Policies**:
+
+| RetentionPolicy | When Available | Use Case |
+|:---|:---|:---|
+| `SOURCE` | Compile-time only | `@Override`, `@SuppressWarnings` |
+| `CLASS` | In bytecode, NOT at runtime (default) | Bytecode tools, build tools |
+| `RUNTIME` | At runtime via Reflection | Spring, JUnit, Hibernate annotations |
+
+---
+
+#### Reflection API
+
+Reflection allows **inspecting and manipulating** classes, methods, and fields at **runtime** — even private ones.
+
+```java
+import java.lang.reflect.*;
+
+class Person {
+    private String name;
+    private int age;
+
+    private Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+
+    private String greet() { return "Hello, I'm " + name; }
+}
+
+// ---- Reflection Usage ----
+
+// 1. Get Class object
+Class<?> clazz = Class.forName("com.example.Person");
+// Or:  Person.class  or  person.getClass()
+
+// 2. Access private constructor and create object
+Constructor<?> ctor = clazz.getDeclaredConstructor(String.class, int.class);
+ctor.setAccessible(true);  // bypass private access
+Object person = ctor.newInstance("Teja", 30);
+
+// 3. Access private field
+Field nameField = clazz.getDeclaredField("name");
+nameField.setAccessible(true);
+String name = (String) nameField.get(person);  // "Teja"
+nameField.set(person, "Sai");                  // modify private field
+
+// 4. Invoke private method
+Method greetMethod = clazz.getDeclaredMethod("greet");
+greetMethod.setAccessible(true);
+String result = (String) greetMethod.invoke(person); // "Hello, I'm Sai"
+
+// 5. Get all methods and fields
+for (Method m : clazz.getDeclaredMethods()) {
+    System.out.println(m.getName() + " returns " + m.getReturnType().getSimpleName());
+}
+```
+
+**Reflection Use Cases**:
+| Use Case | Example |
+|:---|:---|
+| Dependency Injection | Spring creates beans, injects fields via `@Autowired` |
+| ORM | Hibernate reads fields to map to DB columns |
+| Serialization | Jackson reads/writes JSON by inspecting fields |
+| Testing | JUnit invokes `@Test` methods |
+| Plugin Systems | Load and invoke unknown classes at runtime |
+
+**Performance Warning**: Reflection bypasses JVM optimizations. Avoid in hot code paths. Spring caches reflected metadata to mitigate this.
+
+---
+
+#### Immutable Class Design
+
+An **immutable object** cannot be modified after creation. Thread-safe by nature — no synchronization needed.
+
+**Rules for designing an immutable class**:
+
+```java
+// ✅ Production-grade immutable class
+public final class Money {                          // 1. Declare class final (no subclassing)
+
+    private final String currency;                  // 2. All fields final
+    private final double amount;
+    private final List<String> tags;                // 3. Mutable fields need defensive copying
+
+    public Money(String currency, double amount, List<String> tags) {
+        this.currency = currency;
+        this.amount   = amount;
+        this.tags     = List.copyOf(tags);          // 4. Deep copy on construction
+    }
+
+    public String getCurrency() { return currency; }
+    public double  getAmount()  { return amount; }
+
+    public List<String> getTags() {
+        return Collections.unmodifiableList(tags);  // 5. Return defensive copy from getters
+    }
+
+    // No setters — no mutation allowed
+
+    // Provide "wither" methods returning new instances
+    public Money add(double extra) {
+        return new Money(this.currency, this.amount + extra, this.tags); // returns NEW object
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Money)) return false;
+        Money m = (Money) o;
+        return Double.compare(amount, m.amount) == 0 && currency.equals(m.currency);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(currency, amount); }
+
+    @Override
+    public String toString() { return amount + " " + currency; }
+}
+```
+
+**Immutable Class Checklist**:
+1. ✅ Class is `final`
+2. ✅ All fields are `private final`
+3. ✅ No setters
+4. ✅ Defensive copy of mutable inputs (Collections, arrays, Date)
+5. ✅ Return unmodifiable/copied views from getters
+6. ✅ `equals()`, `hashCode()`, `toString()` implemented
+
+**Why Immutability?**
+- **Thread-safe**: No shared mutable state — no locks needed.
+- **Cache-friendly**: `hashCode` computed once, reused.
+- **Safe HashMap keys**: Immutable objects' hash stays constant.
+- Famous immutable classes: `String`, `Integer`, `LocalDate`, `BigDecimal`, `Path`.
+
+---
+
+#### Object Class Methods — Deep Dive
+
+Every Java class implicitly extends `java.lang.Object`. Key methods to know:
+
+```java
+// 1. toString() — default: "ClassName@hexHashCode"
+@Override
+public String toString() {
+    return String.format("User{id=%d, name='%s'}", id, name);
+}
+
+// 2. equals() — default: reference equality (==)
+@Override
+public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof User)) return false;
+    User user = (User) o;
+    return id == user.id && Objects.equals(name, user.name);
+}
+
+// 3. hashCode() — default: based on memory address
+@Override
+public int hashCode() { return Objects.hash(id, name); }
+
+// 4. clone() — creates shallow copy (requires implementing Cloneable)
+@Override
+protected Object clone() throws CloneNotSupportedException {
+    return super.clone(); // shallow copy
+}
+
+// 5. finalize() — DEPRECATED in Java 9+, removed in Java 18
+// Called by GC before collecting — unreliable timing, avoid!
+// Use Cleaner API or try-with-resources instead.
+
+// 6. getClass() — returns runtime Class object
+System.out.println(obj.getClass().getName()); // "com.example.User"
+System.out.println(obj.getClass().getSimpleName()); // "User"
+
+// 7. wait() / notify() / notifyAll() — inter-thread communication
+// Must be called inside synchronized block
+synchronized (lock) {
+    while (!condition) lock.wait();  // releases lock, waits
+}
+synchronized (lock) {
+    condition = true;
+    lock.notifyAll(); // wakes all waiting threads
+}
+```
+
+| Method | Default Behavior | When to Override |
+|:---|:---|:---|
+| `toString()` | `ClassName@hexHash` | Always — for logging, debugging |
+| `equals()` | Reference equality (`==`) | When value equality is needed |
+| `hashCode()` | Memory-address based | Always when overriding equals() |
+| `clone()` | Shallow copy | When deep copy needed (use copy constructor instead) |
+| `finalize()` | Nothing (deprecated) | Never — use AutoCloseable instead |
+| `getClass()` | Returns runtime Class | Non-overridable (final method) |
+
+---
+
+#### Comparable vs Comparator — Summary
+
+```java
+// Comparable — natural ordering (built-in, one per class)
+class Employee implements Comparable<Employee> {
+    String name; int salary;
+    @Override
+    public int compareTo(Employee o) { return Integer.compare(this.salary, o.salary); }
+}
+Collections.sort(employees); // uses compareTo
+
+// Comparator — external, multiple orderings
+Comparator<Employee> byName   = Comparator.comparing(e -> e.name);
+Comparator<Employee> bySalary = Comparator.comparingInt(e -> e.salary);
+Comparator<Employee> byNameThenSalary = byName.thenComparingInt(e -> e.salary);
+
+employees.sort(byNameThenSalary);
+employees.sort(Comparator.reverseOrder());
+```
+
+---
+
+#### Instanceof Pattern Matching (Java 16+) & `var`
+
+```java
+// Old way
+if (obj instanceof String) {
+    String s = (String) obj; // manual cast
+    System.out.println(s.length());
+}
+
+// New way (Java 16+) — pattern variable
+if (obj instanceof String s) { // auto-cast + binding
+    System.out.println(s.length());
+}
+
+// In switch (Java 21+ — Pattern Matching for Switch)
+String result = switch (obj) {
+    case Integer i -> "int: " + i;
+    case String  s -> "str: " + s.length();
+    case null      -> "null";
+    default        -> "other";
+};
+```
+
+---
+
+#### Static Nested Class vs Inner Class vs Anonymous Class
+
+```java
+// Static Nested — no outer instance needed
+class Outer {
+    static class StaticNested {
+        void go() { System.out.println("static nested"); }
+    }
+}
+Outer.StaticNested sn = new Outer.StaticNested(); // no Outer needed
+
+// Inner Class — tied to outer instance
+class Outer {
+    int x = 10;
+    class Inner {
+        void go() { System.out.println(x); } // accesses outer's x
+    }
+}
+Outer.Inner inner = new Outer().new Inner(); // needs Outer instance
+
+// Anonymous Class — inline subclass/interface implementation
+Runnable r = new Runnable() {
+    @Override
+    public void run() { System.out.println("anonymous class"); }
+};
+```
+
+---
+
+#### Key Takeaways — Advanced Concepts
 * Always override both `equals()` and `hashCode()` to maintain hash-based collection integrity.
 * Deep cloning via serialization creates fully independent copies of object graphs.
 * Java Records (14+) and Sealed Classes (17) are modern additions that reduce boilerplate and enable exhaustive pattern matching.
+* Enums provide type-safe constants with built-in methods; use EnumSet/EnumMap for high-performance enum collections.
+* Annotations with `@Retention(RUNTIME)` are processed via Reflection — the foundation of Spring and Hibernate.
+* Reflection is powerful but slow — use only for framework code, not business logic hot paths.
+* Immutable classes require: `final` class, `final` fields, defensive copies, no setters.
+* `var` is type-inferred but statically typed — use for readability in local variables with obvious types.
+* Integer cache covers -128 to 127 — always use `.equals()` to compare Integer objects.
 
 ---
+
+
 
 ## SECTION 11: PERFORMANCE BEST PRACTICES
 
@@ -2162,10 +3434,342 @@ Shorthand notation for lambdas that call existing methods.
 
 ---
 
-## END OF JAVA CORE COMPREHENSIVE GUIDErent class constructor. Must be the first statement in child constructor.
+## SECTION 10: FILE I/O & SERIALIZATION
 
-#### Q50. What are the default values in Java?
-`int` = 0, `boolean` = false, `double` = 0.0, Object references = `null`. Local variables have NO default — must be initialized before use.
+> **Real-World Analogy**: File I/O in Java is like a postal system. Streams are the conveyor belts moving parcels (bytes/chars). Readers/Writers handle letters (text). Buffered wrappers add a sorting room to batch items for efficiency. Serialization is packing your object into a box to ship (persist) it.
+
+---
+
+### 10.1 Java I/O Class Hierarchy
+
+```mermaid
+flowchart TD
+    subgraph ByteStreams ["Byte Streams (Binary Data)"]
+        IS["InputStream"] --> FIS["FileInputStream"]
+        IS --> BIS["BufferedInputStream"]
+        IS --> DAIS["DataInputStream"]
+        IS --> OIS["ObjectInputStream"]
+
+        OS["OutputStream"] --> FOS["FileOutputStream"]
+        OS --> BOS["BufferedOutputStream"]
+        OS --> DAOS["DataOutputStream"]
+        OS --> OOS["ObjectOutputStream"]
+    end
+
+    subgraph CharStreams ["Character Streams (Text Data)"]
+        R["Reader"] --> FR["FileReader"]
+        R --> BR["BufferedReader"]
+        R --> SR["StringReader"]
+        R --> ISR["InputStreamReader"]
+
+        W["Writer"] --> FW["FileWriter"]
+        W --> BW["BufferedWriter"]
+        W --> SW["StringWriter"]
+        W --> OSW["OutputStreamWriter"]
+        W --> PW["PrintWriter"]
+    end
+
+    classDef absClass fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    classDef implClass fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:1px;
+    class IS,OS,R,W absClass;
+    class FIS,BIS,DAIS,OIS,FOS,BOS,DAOS,OOS,FR,BR,SR,ISR,FW,BW,SW,OSW,PW implClass;
+```
+
+| Class | Purpose | Encoding-aware? |
+|:---|:---|:---|
+| `FileInputStream` / `FileOutputStream` | Raw byte read/write (images, binaries) | No |
+| `BufferedInputStream` / `BufferedOutputStream` | Buffered byte I/O (reduces syscalls) | No |
+| `DataInputStream` / `DataOutputStream` | Reads/writes Java primitives (`readInt`, `writeDouble`) | No |
+| `ObjectInputStream` / `ObjectOutputStream` | Object serialization / deserialization | No |
+| `FileReader` / `FileWriter` | Text file read/write (default charset) | Yes |
+| `BufferedReader` / `BufferedWriter` | Buffered text I/O — line-by-line reading | Yes |
+| `InputStreamReader` / `OutputStreamWriter` | Byte ↔ char bridge with explicit charset | Yes |
+| `PrintWriter` | Convenient formatted text writing (`println`, `printf`) | Yes |
+
+---
+
+### 10.2 Common File I/O Patterns
+
+#### Reading a Text File (Line by Line)
+
+```java
+// ✅ Modern way — try-with-resources ensures BufferedReader is always closed
+try (BufferedReader br = new BufferedReader(
+        new InputStreamReader(new FileInputStream("data.txt"), StandardCharsets.UTF_8))) {
+    String line;
+    while ((line = br.readLine()) != null) {
+        System.out.println(line);
+    }
+} catch (IOException e) {
+    throw new RuntimeException("Failed to read file", e);
+}
+
+// ✅ Java 8 Streams API approach — elegant & concise
+try (Stream<String> lines = Files.lines(Path.of("data.txt"), StandardCharsets.UTF_8)) {
+    lines.filter(l -> l.startsWith("ERROR"))
+         .forEach(System.out::println);
+} catch (IOException e) {
+    log.error("Error reading file", e);
+}
+
+// ✅ Read all lines into a List (small files only)
+List<String> allLines = Files.readAllLines(Path.of("config.txt"), StandardCharsets.UTF_8);
+```
+
+#### Writing to a Text File
+
+```java
+// ✅ BufferedWriter — efficient text writing
+try (BufferedWriter bw = new BufferedWriter(
+        new OutputStreamWriter(new FileOutputStream("output.txt"), StandardCharsets.UTF_8))) {
+    bw.write("Hello, World!");
+    bw.newLine();
+    bw.write("Line 2");
+} catch (IOException e) {
+    throw new RuntimeException("Failed to write file", e);
+}
+
+// ✅ NIO Files utility (simplest for small outputs)
+Files.writeString(Path.of("output.txt"), "Hello!", StandardCharsets.UTF_8);
+
+// ✅ Appending to existing file
+try (PrintWriter pw = new PrintWriter(new FileWriter("log.txt", true))) { // true = append
+    pw.printf("%s: %s%n", LocalDateTime.now(), "Application started");
+}
+```
+
+#### Binary File I/O
+
+```java
+// Copy a binary file (image, PDF) using buffered streams
+try (BufferedInputStream  bis = new BufferedInputStream(new FileInputStream("in.jpg"));
+     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream("out.jpg"))) {
+    byte[] buffer = new byte[8192];  // 8 KB buffer
+    int bytesRead;
+    while ((bytesRead = bis.read(buffer)) != -1) {
+        bos.write(buffer, 0, bytesRead);
+    }
+} catch (IOException e) {
+    throw new RuntimeException("File copy failed", e);
+}
+
+// ✅ Simplest: Java NIO (Java 7+)
+Files.copy(Path.of("source.jpg"), Path.of("target.jpg"), StandardCopyOption.REPLACE_EXISTING);
+```
+
+---
+
+### 10.3 Java NIO.2 — Modern File API (java.nio.file)
+
+```java
+Path path = Path.of("data", "config.properties");  // platform-independent
+
+// File operations
+Files.exists(path);                              // check existence
+Files.createDirectories(path.getParent());        // create all missing directories
+Files.delete(path);                              // delete (throws if missing)
+Files.deleteIfExists(path);                      // safe delete
+Files.move(src, dest, StandardCopyOption.REPLACE_EXISTING);
+Files.copy(src, dest, StandardCopyOption.COPY_ATTRIBUTES);
+
+// Directory listing
+try (DirectoryStream<Path> entries = Files.newDirectoryStream(Path.of("./"), "*.java")) {
+    entries.forEach(System.out::println);
+}
+
+// Walk directory tree
+try (Stream<Path> walk = Files.walk(Path.of("./src"))) {
+    walk.filter(Files::isRegularFile)
+        .filter(p -> p.toString().endsWith(".java"))
+        .forEach(System.out::println);
+}
+
+// File metadata
+BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class);
+System.out.println("Size: " + attrs.size());
+System.out.println("Last Modified: " + attrs.lastModifiedTime());
+```
+
+---
+
+### 10.4 Serialization & Deserialization
+
+Serialization converts a Java object into a byte stream for storage or network transmission. Deserialization reconstructs the object from bytes.
+
+```mermaid
+flowchart LR
+    OBJ["Java Object"] -->|"ObjectOutputStream.writeObject()"| BYTES["Byte Stream (file/network)"]
+    BYTES -->|"ObjectInputStream.readObject()"| OBJ2["Reconstructed Object"]
+
+    classDef objNode fill:#064E3B,stroke:#059669,color:#ECFDF5,stroke-width:1px;
+    classDef byteNode fill:#312E81,stroke:#4338CA,color:#F5F3FF,stroke-width:1px;
+    class OBJ,OBJ2 objNode;
+    class BYTES byteNode;
+```
+
+#### Making a Class Serializable
+
+```java
+import java.io.Serializable;
+
+public class Employee implements Serializable {
+
+    // ✅ ALWAYS declare serialVersionUID to control version compatibility
+    private static final long serialVersionUID = 1L;
+
+    private String name;
+    private int    employeeId;
+    private String department;
+    private transient String password;    // ✅ transient — excluded from serialization
+    private static  String  company = "Acme Corp"; // static — never serialized
+
+    // Constructors, getters, setters...
+    public Employee(String name, int id, String dept, String password) {
+        this.name = name; this.employeeId = id;
+        this.department = dept; this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Employee{name='%s', id=%d, dept='%s', password='%s'}",
+            name, employeeId, department, password);
+    }
+}
+```
+
+#### Serialize & Deserialize
+
+```java
+// ✅ Serialization — write to file
+try (ObjectOutputStream oos = new ObjectOutputStream(
+        new BufferedOutputStream(new FileOutputStream("employee.ser")))) {
+    Employee emp = new Employee("Teja", 101, "Engineering", "secret123");
+    oos.writeObject(emp);
+    System.out.println("Serialized: " + emp);
+} catch (IOException e) {
+    throw new RuntimeException("Serialization failed", e);
+}
+
+// ✅ Deserialization — read from file
+try (ObjectInputStream ois = new ObjectInputStream(
+        new BufferedInputStream(new FileInputStream("employee.ser")))) {
+    Employee emp = (Employee) ois.readObject(); // cast required
+    System.out.println("Deserialized: " + emp);
+    // Output: Employee{name='Teja', id=101, dept='Engineering', password='null'}
+    //         ↑ password=null because it was transient!
+} catch (IOException | ClassNotFoundException e) {
+    throw new RuntimeException("Deserialization failed", e);
+}
+```
+
+---
+
+### 10.5 `transient`, `serialVersionUID`, and `Externalizable`
+
+#### `transient` Keyword
+
+```java
+private transient String password;       // excluded from serialization
+private transient Connection dbConn;     // DB connections can't be serialized
+private transient Logger logger;         // loggers not serializable
+```
+
+> **Rule**: Mark fields as `transient` when they contain sensitive data, non-serializable types, or data that should be recomputed on deserialization.
+
+#### `serialVersionUID`
+
+```java
+private static final long serialVersionUID = 1L;
+```
+
+- Acts as a **version fingerprint** for the class.
+- If you add/remove fields without updating `serialVersionUID`, Java throws `InvalidClassException` during deserialization.
+- If not declared, JVM auto-computes one based on class structure — **any field change breaks deserialization**.
+
+| Action | `serialVersionUID` Declared | `serialVersionUID` NOT Declared |
+|:---|:---|:---|
+| Add non-critical field | Compatible (old data works) | **Breaks deserialization** |
+| Remove field | Compatible | **Breaks deserialization** |
+| Rename field | Incompatible — data lost | **Breaks deserialization** |
+
+#### `Externalizable` — Fine-Grained Control
+
+```java
+import java.io.Externalizable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+
+public class OptimizedEmployee implements Externalizable {
+
+    private String name;
+    private int    employeeId;
+    private String department;  // we'll skip this in externalization
+
+    // ✅ REQUIRED: no-arg constructor for deserialization
+    public OptimizedEmployee() {}
+
+    public OptimizedEmployee(String name, int id, String department) {
+        this.name = name; this.employeeId = id; this.department = department;
+    }
+
+    @Override
+    public void writeExternal(ObjectOutput out) throws IOException {
+        out.writeUTF(name);          // only serialize what we choose
+        out.writeInt(employeeId);
+        // deliberately skipping 'department'
+    }
+
+    @Override
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        name       = in.readUTF();
+        employeeId = in.readInt();
+        department = "Unknown";      // default for skipped field
+    }
+}
+```
+
+**`Serializable` vs `Externalizable`**:
+
+| Feature | `Serializable` | `Externalizable` |
+|:---|:---|:---|
+| **Control** | JVM handles everything automatically | Developer controls what/how to serialize |
+| **Performance** | Slower (reflects all fields) | Faster (only writes chosen data) |
+| **No-arg constructor** | Not required | **Required** |
+| **Custom logic** | Via `readObject` / `writeObject` callbacks | Via `readExternal` / `writeExternal` |
+| **Use Case** | Simple POJOs, configuration objects | High-performance, protocol-sensitive objects |
+
+---
+
+### 10.6 Serialization Security Warning
+
+> [!CAUTION]
+> **Never deserialize untrusted byte streams!** Attackers can craft malicious byte streams that execute arbitrary code during `readObject()`. This is the root cause of many critical Java vulnerabilities (e.g., Apache Commons Collections exploit).
+
+```java
+// ❌ Dangerous — never do this with untrusted input
+ObjectInputStream ois = new ObjectInputStream(untrustedInputStream);
+Object obj = ois.readObject(); // Can execute attacker's code!
+
+// ✅ Safe alternatives:
+// 1. Use JSON (Jackson, Gson) instead of Java serialization
+// 2. Whitelist allowed classes with ObjectInputFilter (Java 9+)
+ObjectInputFilter filter = ObjectInputFilter.Config.createFilter(
+    "com.myapp.model.*;java.base/*;!*");
+ois.setObjectInputFilter(filter); // reject anything outside whitelist
+```
+
+---
+
+### 10.7 Key Takeaways — File I/O & Serialization
+
+* Use **byte streams** (`InputStream`/`OutputStream`) for binary data; **char streams** (`Reader`/`Writer`) for text.
+* Always **wrap with `Buffered*`** variants to reduce system calls and improve performance.
+* Prefer **`java.nio.file.Files`** utility methods for modern, concise file operations.
+* Implement `Serializable` on POJOs; always declare `serialVersionUID` explicitly.
+* Use `transient` for sensitive (passwords), non-serializable (connections, loggers) fields.
+* Prefer `Externalizable` over `Serializable` for performance-critical, versioned protocols.
+* **Never deserialize untrusted data** — use `ObjectInputFilter` or switch to JSON.
+* `try-with-resources` is mandatory for all I/O — prevents resource leaks.
 
 ---
 
