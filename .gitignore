@@ -1,0 +1,102 @@
+# =============================================================
+# .gitignore — Root Repository Security & Build Ignores
+# =============================================================
+
+# ---- Secrets & Credentials (CRITICAL — NEVER commit these) --
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+# Allow the example template — it contains NO real secrets
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+*.pfx
+credentials
+credentials.json
+secrets.json
+secrets.yml
+secrets.yaml
+replacements.txt        # git-filter-repo replacements — contains real secret values
+
+# ---- AWS Credentials ----------------------------------------
+.aws/credentials
+.aws/config
+
+# ---- Spring Boot Environment-Specific Configs ---------------
+# These may contain real credentials for local development
+application-local.yml
+application-local.yaml
+application-local.properties
+# Uncomment below if dev/prod configs also contain real secrets:
+# application-dev.yml
+# application-prod.yml
+
+# ---- Java / Maven Build Outputs ----------------------------
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+!**/src/main/**/*.jar
+!**/src/test/**/*.jar
+
+# ---- Maven Wrapper -----------------------------------------
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# ---- Node.js (bedrock-js-client) ---------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn
+dist/
+build/
+
+# ---- IDE & Editor Files ------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.eclipse/
+.settings/
+.project
+.classpath
+.vscode/
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# ---- Logs --------------------------------------------------
+*.log
+logs/
+log/
+
+# ---- Temp Files --------------------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# ---- OS Files ----------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# ---- Test Reports ------------------------------------------
+surefire-reports/
+test-output/
+coverage/
+
+# ---- Docker ------------------------------------------------
+docker-compose.override.yml

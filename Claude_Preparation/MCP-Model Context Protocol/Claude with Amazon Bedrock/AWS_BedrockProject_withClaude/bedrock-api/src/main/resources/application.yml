@@ -58,9 +58,9 @@ spring:
   #   SPRING_DATASOURCE_USERNAME=your_user
   #   SPRING_DATASOURCE_PASSWORD=your_password
   datasource:
-    url: jdbc:mysql://localhost:3306/linkedin_naukr_jobs
-    username: root
-    password: 2580          # CHANGE THIS! Use environment variables in production
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/linkedin_naukr_jobs}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD}          # Set via environment variable — NEVER hardcode!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
     # HikariCP connection pool settings (Spring Boot default pool)
@@ -102,9 +102,13 @@ aws:
     # AWS Region where Bedrock is available
     # Common: us-east-1, us-west-2, eu-west-1, ap-northeast-1
     # IMPORTANT: Not all models are available in all regions!
-    region: ap-south-1
-    access-key-id: ******
-    secret-access-key: *******
+    region: ${AWS_BEDROCK_REGION:ap-south-1}
+    # SECURITY: Do NOT hardcode credentials here.
+    # Preferred: Use IAM Roles (EC2/ECS/Lambda) or AWS CLI profiles.
+    # Fallback: Set environment variables AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY.
+    # If explicitly needed, set these env vars and they will be picked up here:
+    access-key-id: ${AWS_ACCESS_KEY_ID:}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
 
 
     # Default model used when client doesn't specify one
