@@ -11,14 +11,19 @@
 server:
   port: 8080
 
-# Development-specific Bedrock settings
 aws:
   bedrock:
-    region: ap-south-1
-    # OPTIONAL: Define credentials here for local development.
-    # Note: Do NOT commit active keys to source control!
-    access-key-id: "*****"
-    secret-access-key: "*******"
+    region: ${AWS_BEDROCK_REGION:ap-south-1}
+    # SECURITY: NEVER commit real credentials to source control!
+    # For local development, use ONE of these methods (in priority order):
+    #   1. AWS CLI profile:  aws configure --profile dev
+    #      Then set: AWS_PROFILE=dev
+    #   2. Environment variables in your shell or .env file (git-ignored):
+    #      AWS_ACCESS_KEY_ID=AKIAxxxxx
+    #      AWS_SECRET_ACCESS_KEY=xxxxxxxxx
+    #   3. As a last resort, set below — but ONLY if this file stays git-ignored:
+    access-key-id: ${AWS_ACCESS_KEY_ID:}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
 
     # Use a cheaper model for development/testing
     default-model: apac.anthropic.claude-3-sonnet-20240229-v1:0
