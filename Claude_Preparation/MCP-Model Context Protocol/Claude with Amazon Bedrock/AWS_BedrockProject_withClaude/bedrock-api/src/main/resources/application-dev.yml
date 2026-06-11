@@ -17,8 +17,8 @@ aws:
     region: ap-south-1
     # OPTIONAL: Define credentials here for local development.
     # Note: Do NOT commit active keys to source control!
-    access-key-id: "AKIAUY4V3WX24H6AHAO3"
-    secret-access-key: "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"
+    access-key-id: "*****"
+    secret-access-key: "*******"
 
     # Use a cheaper model for development/testing
     default-model: apac.anthropic.claude-3-sonnet-20240229-v1:0

@@ -103,8 +103,8 @@ aws:
     # Common: us-east-1, us-west-2, eu-west-1, ap-northeast-1
     # IMPORTANT: Not all models are available in all regions!
     region: ap-south-1
-    access-key-id: AKIAUY4V3WX24H6AHAO3
-    secret-access-key: 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
+    access-key-id: ******
+    secret-access-key: *******
 
 
     # Default model used when client doesn't specify one
