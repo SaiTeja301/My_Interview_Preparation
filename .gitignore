@@ -4,8 +4,12 @@
 
 # ---- Secrets & Credentials (CRITICAL — NEVER commit these) --
 .env
-.env.*
-!.env.example          # Allow the safe template to be committed
+.env.local
+.env.development
+.env.production
+.env.test
+# Allow the example template — it contains NO real secrets
+!.env.example
 *.pem
 *.key
 *.p12
@@ -16,6 +20,7 @@ credentials.json
 secrets.json
 secrets.yml
 secrets.yaml
+replacements.txt        # git-filter-repo replacements — contains real secret values
 
 # ---- AWS Credentials ----------------------------------------
 .aws/credentials
