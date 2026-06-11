@@ -242,14 +242,59 @@ Key Terminology:
 | **p3** | GPU/Accelerated Compute | `p3.2xlarge` | Machine Learning training, GPU rendering |
 
 ##### IP Types in AWS
-* **Private IP:** Internal IP address assigned within the Virtual Private Cloud (VPC). Remains constant for the lifetime of the instance.
-* **Public IP:** External IP address allocated dynamically. It changes every time the instance is stopped and started.
-* **Elastic IP:** A static, persistent public IPv4 address. It remains attached to the instance through stops and starts.
+
+AWS instances utilize three primary types of IP addresses:
+
+1. **Private IP (Fixed IP):**
+   * **Purpose:** Used for internal communication within the VPC (Virtual Private Cloud).
+   * **Lifecycle:** Stays fixed for the lifetime of the instance. It does not change upon stop/start.
+   * **Example:** `172.31.7.164`
+
+2. **Public IP (Dynamic IP):**
+   * **Purpose:** Used to connect to the EC2 instance from outside the network (the Internet).
+   * **Lifecycle:** Dynamic. If you stop and restart the instance, the public IP address is released and a new one is assigned.
+   * **Example:** `3.109.213.248` changes to `13.235.79.233` upon restart.
+
+3. **Elastic IP (Static/Persistent Public IP):**
+   * **Purpose:** Used when a persistent, fixed public IP address is required (e.g., DNS mapping).
+   * **Billing Warning:** Elastic IPs are paid resources. Charges accumulate if they are allocated but not associated, or if the associated instance is stopped/terminated.
+   * **Example:** `65.0.78.209` remains unchanged irrespective of how many times you restart or stop the VM.
+
+###### Elastic IP Hands-On Practical Steps:
+* **Step 1: Allocate Elastic IP:** Navigate to the EC2 Console -> Under **Network & Security**, select **Elastic IPs** -> Click **Allocate Elastic IP** to request a static public IP from the AWS pool (e.g., `65.0.78.209`).
+* **Step 2: Associate Elastic IP:** Select the allocated IP -> Go to **Actions** -> **Associate Elastic IP address** -> Select your target EC2 instance.
+* **Step 3: Verification:** Restart the EC2 instance and verify that the public IP remains exactly the same.
+* **Step 4: Disassociate Elastic IP:** Select the IP -> Go to **Actions** -> **Disassociate Elastic IP address** to detach it from the instance.
+* **Step 5: Release Elastic IP:** Select the IP -> Go to **Actions** -> **Release Elastic IP address** to return the IP to the AWS pool (this stops active billing charges).
 
 ##### Billing Models
-* **On-Demand:** Pay per hour/second with no upfront commitment. Best for developmental, unpredictable, or short-term tasks.
+* **On-Demand (Hourly):** Pay per hour/second with no upfront commitment. Best for developmental, unpredictable, or short-term tasks.
+  * **Minimum Billing Period is 1 hour** regardless of actual usage:
+    * `11:15 AM → 11:30 AM` = 15 mins → billed for 1 hour
+    * `09:15 AM → 09:20 AM` = 5 mins → billed for 1 hour
+    * `09:15 AM → 10:10 AM` = 55 mins → billed for 1 hour
+* **Free Tier:** AWS provides `t2.micro` / `t3.micro` for **6 months free** to encourage new learners.
 * **Reserved Instances (RI) / Savings Plans:** Commit to 1 or 3 years of usage for a discount up to 72%. Best for stable, baseline production workloads.
 * **Spot Instances:** Bid on spare AWS capacity at up to a 90% discount. AWS can reclaim these instances with a 2-minute warning. Best for fault-tolerant workloads like CI/CD runners or batch processing.
+
+##### EC2 VM Creation — Step-by-Step Checklist
+1. **Create a Key Pair (.pem file):**
+   * AWS retains the public key; you download the private key (`.pem` file).
+   * One Key Pair can be reused across multiple EC2 instances.
+2. **Create / Configure a Security Group:**
+   * Add inbound rules for required ports (e.g., SSH: 22, HTTP: 80, HTTPS: 443, App: 8080).
+   * One Security Group can be applied to multiple instances.
+3. **Launch EC2 Instance:**
+   * Provide a name for the VM.
+   * Select an **AMI** (Windows AMI, Ubuntu AMI, RedHat AMI, Amazon Linux AMI).
+   * Choose an **Instance Type** (e.g., `t3.micro` for dev).
+   * Attach your Key Pair (existing or create new).
+   * Attach your Security Group (existing or create new).
+   * Configure **EBS Storage** — Linux default: 8 GB, Windows default: 30 GB, max: 16 TB.
+   * Click **Launch Instance**.
+
+> [!NOTE]
+> You can create a new Key Pair and Security Group directly at the time of instance creation without pre-creating them separately.
 
 ##### EC2 Bootstrapping
 You can configure **User Data** scripts to execute automatically once during the first launch of the instance:
@@ -387,13 +432,19 @@ Key Characteristics:
 | **sc1** (Cold HDD) | HDD | Up to 250 MB/s | Large archives, infrequently accessed backup files |
 
 * **Snapshots:** Point-in-time backups of your EBS volumes, stored in Amazon S3. Snapshots are incremental, storing only changed blocks, and are region-wide (not zone-locked).
+* **EBS is AZ-Locked:** A volume must be in the same AZ as its EC2 instance.
+  * Example: If your EC2 instance is in `ap-south-1a` (Mumbai), your EBS volume must also be in `ap-south-1a`.
+  * Available Mumbai AZs: `ap-south-1a`, `ap-south-1b`, `ap-south-1c`.
 
 #### Advanced
 * **EBS Encryption:** Uses AES-256 to encrypt data at rest, snapshots, and data in transit between the EC2 host and the EBS volume. Encryption uses KMS keys and has negligible latency impact.
-* **Cross-AZ Migration:** Because EBS volumes are zone-locked, to move data from `us-east-1a` to `us-east-1b`, you must:
-  1. Take a snapshot of the EBS volume in `us-east-1a`.
-  2. Create a new EBS volume from that snapshot, specifying the target availability zone (`us-east-1b`).
-  3. Mount the new volume to an EC2 instance in `us-east-1b`.
+* **Cross-AZ Migration using Snapshots:** Because EBS volumes are zone-locked, to move data between AZs:
+  1. Take a **Snapshot** from the volume in AZ `ap-south-1a` (snapshots are region-wide, not AZ-locked).
+  2. Create a new **EBS Volume** from that snapshot in the target AZ (`ap-south-1b`).
+  3. Attach the new volume to an EC2 instance in `ap-south-1b`.
+
+> [!TIP]
+> Use this same pattern (`Volume → Snapshot → Volume`) whenever you need to migrate data between Availability Zones or create a backup copy of your application data.
 
 ### 2. Interview Questions & Answers
 
@@ -664,14 +715,25 @@ aws s3api put-bucket-versioning --bucket my-app-bucket --versioning-configuratio
 ### 1. Concept Explanation
 
 #### Beginner
-Identity & Access Management (IAM) controls authentication and authorization for users and services accessing AWS resources.
+Identity & Access Management (IAM) controls authentication and authorization for users and services accessing AWS resources. IAM is a **free service** with no additional charges.
+
+##### Two Ways to Access AWS Cloud
+| Access Method | Description |
+| :--- | :--- |
+| **Root Account** | The most powerful AWS account (created with your email). Has unrestricted access to all AWS resources and services. **Enable MFA immediately and avoid using it for daily tasks.** |
+| **IAM Account** | A user/service account created by the root user with specific, scoped permissions. Used by developers, CI/CD tools, and applications in team environments. |
+
+> [!CAUTION]
+> It is **highly recommended** to enable Multi-Factor Authentication (MFA) on the Root account and never create access keys for it. Use IAM accounts for all day-to-day operations.
 
 Core Components:
-* **Root Account:** The initial, all-powerful account created with an email address. Best practice is to enable Multi-Factor Authentication (MFA) and lock this account away, using it only for billing.
-* **IAM Users:** Identities created within the account for physical developers or external applications, using permanent API Access Keys.
-* **IAM Groups:** Collections of IAM Users. You attach authorization policies directly to groups (e.g. `DeveloperGroup`, `SecurityGroup`) rather than individual users.
-* **IAM Roles:** Temporary identities that can be assumed by users, applications, or AWS services (like EC2 and Lambda). Roles use temporary security credentials that rotate automatically.
-* **Policies:** JSON documents defining allowed actions, resources, and conditions.
+* **Root Account:** The initial, all-powerful account created with an email address. Only use it for account-level billing tasks. Enable MFA immediately.
+* **IAM Users:** Identities created within the account for developers or applications. Can access the AWS Console with username/password, and the CLI/API with Access Keys.
+* **IAM Groups:** Collections of IAM Users. Assign policies to groups (e.g., `DevelopersGroup`, `DevOpsGroup`) rather than individual users for easier management.
+  * *Example:* Group `Developers` with policy `AmazonEC2FullAccess` → every member of that group automatically gets EC2 access.
+* **IAM Roles:** Temporary identities with no username or password. AWS services or users assume roles to gain temporary access credentials.
+  * *Example:* An EC2 instance assumes a role that allows it to read data from an S3 bucket — no hardcoded keys needed.
+* **Policies:** JSON documents defining what actions are allowed or denied on which AWS resources and under what conditions.
 
 #### Intermediate
 ##### JSON Policy Structure Example
@@ -842,9 +904,30 @@ flowchart TD
 * **Auto Scaling Group (ASG):** Monitors your EC2 instances and automatically adjusts the instance count to maintain target capacities based on traffic demand.
 
 #### Intermediate
-AWS Elastic Load Balancing (ELB) supports multiple load balancer types:
-* **Application Load Balancer (ALB):** Operates at Layer 7 (HTTP/HTTPS). Supports features like host-based routing, path-based routing, SSL termination, and sticky sessions.
-* **Network Load Balancer (NLB):** Operates at Layer 4 (TCP/UDP). Optimized for ultra-high performance, low latency, and static IP allocations.
+AWS Elastic Load Balancing (ELB) supports four types of load balancers:
+
+| Load Balancer Type | OSI Layer | Protocol Support | Primary Use Case |
+| :--- | :---: | :--- | :--- |
+| **Application LB (ALB)** | Layer 7 | HTTP, HTTPS | Path/host-based routing, Spring Boot APIs, microservices |
+| **Network LB (NLB)** | Layer 4 | TCP, UDP, TLS | High-performance real-time apps, gaming, low-latency systems |
+| **Gateway LB (GWLB)** | Layer 3 + 4 | All IP traffic | Routes traffic through security appliances (firewalls, IDS/IPS) |
+| **Classic LB** | Layer 4 & 7 | HTTP, HTTPS, TCP | Legacy applications (deprecated, avoid for new deployments) |
+
+* **Application Load Balancer (ALB):** Operates at Layer 7 (HTTP/HTTPS). Supports host-based routing, path-based routing, SSL termination, and sticky sessions. Most commonly used for Java/Spring Boot backends.
+* **Network Load Balancer (NLB):** Operates at Layer 4 (TCP/UDP). Optimized for ultra-high performance, low latency, and static IP allocations. Ideal for real-time applications and gaming.
+* **Gateway Load Balancer (GWLB):** Routes all IP traffic to security appliances (e.g., firewalls) for packet inspection before forwarding to the application:
+  1. Traffic arrives from the Internet.
+  2. GWLB sends traffic to firewall appliances.
+  3. Firewall inspects packets — if safe, traffic is forwarded to the application; if malicious, it is blocked.
+
+##### Auto Scaling — Why It Matters
+During unpredictable traffic events (e.g., Big Billion Day, flash sales), manual scaling is too slow. **Auto Scaling** automatically adjusts your EC2 fleet:
+
+| ASG Benefit | Description |
+| :--- | :--- |
+| **Fault Tolerance** | Automatically replaces failed instances. A new instance launches if any instance in the group crashes. |
+| **Cost Management** | Scales down during low-traffic periods, running only the minimum needed servers, saving compute costs. |
+| **High Availability** | Maintains application performance and uptime under variable and heavy load conditions. |
 
 ##### Path-Based Routing Example
 An ALB can inspect the HTTP request path and route the request to different target groups:
@@ -933,6 +1016,43 @@ spring:
 #### Advanced
 * **Amazon Aurora:** A cloud-native database engine. It replicates data 6 ways across 3 availability zones and auto-scales storage up to 128 TB.
 * **RDS Proxy:** An intermediate database proxy that pools database connections. This is useful for serverless applications (like Lambda) that open and close connections frequently, preventing connection exhaustion.
+
+##### RDS Hands-On Lab Task
+Step-by-step to create and validate a MySQL RDS instance:
+
+1. **Create MySQL database using RDS:**
+   * Creation method: `Standard create`
+   * Engine type: `MySQL`
+   * Template: `Free tier`
+   * DB instance identifier: `teluskodb`
+   * Public access: `Yes` *(for learning purposes only — not for production)*
+   * Initial database name: `teluskodatabase`
+
+2. **Connect via MySQL Workbench:**
+   * Endpoint: `<RDS Endpoint from Console>`
+   * Username, Password, Port: `3306`
+   * Enable port `3306` in the RDS Security Group inbound rules.
+
+3. **Validate with Sample SQL:**
+```sql
+USE teluskodatabase;
+
+CREATE TABLE employee (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    salary DECIMAL(10,2)
+);
+
+INSERT INTO employee (id, name, salary)
+VALUES (1, 'Alice', 55000.00),
+       (2, 'Bob', 60000.50),
+       (3, 'Carol', 48000.25);
+
+SELECT * FROM employee;
+```
+
+> [!WARNING]
+> Always disable **Public Access** for production RDS instances. Use private subnets and VPC peering or a bastion host for secure database connectivity.
 
 ### 2. Interview Questions & Answers
 
