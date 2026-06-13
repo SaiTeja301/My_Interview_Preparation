@@ -1,574 +1,658 @@
-# SPRING BOOT - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-> *For: 7+ Years Experience Level | Java Developer*
+# SPRING BOOT - COMPREHENSIVE INTERVIEW & CERTIFICATION GUIDE
+> *For: 7+ Years Experience Level | Senior Java Developer | Certification Candidate*
 
-## SECTION 1: SOURCE ANALYSIS
+---
 
-Source: Spring_and_Spring_boot.txt (Spring Boot section ~5000 lines)
-Coverage: Auto Configuration, Starter dependencies, REST API, Profiles, Actuator,
-Exception handling, Spring MVC, Packaging
-Missing: Spring Boot 3.x changes, GraalVM native images, Observability (Micrometer),
-Custom Auto-configuration, ConfigurationProperties validation
+## SECTION 1: ARCHITECTURAL FOUNDATIONS & INTRODUCTION
 
-## SECTION 2: 5 INTERVIEW ROUNDS
+### Spring Framework vs Spring Boot
+Spring Boot is an opinionated, convention-over-configuration framework built on top of the Core Spring Framework. While Spring provides maximum flexibility and requires manual configuration (XML, Java Config, or hybrid), Spring Boot aims to minimize boilerplate setup and accelerate production-readiness through automated defaults.
 
-## ROUND 1 - BASIC
+| Feature / Metric | Spring Framework | Spring Boot |
+| :--- | :--- | :--- |
+| **Core Paradigm** | Flexible, modular application framework requiring explicit configurations. | Opinionated, convention-over-configuration framework for rapid setup. |
+| **Configuration Style** | Declarative via XML schemas, `@Configuration` classes, or hybrids. | Dynamic Auto-Configuration based on dependencies found on the classpath. |
+| **Server Setup** | Requires manual packaging into WAR and deployment on an external server. | Ships with embedded servers (Tomcat, Jetty, Undertow) for direct JAR execution. |
+| **Dependency Management**| Manual definition of individual dependencies and versions in `pom.xml`. | Pre-packaged "Starters" that bundle compatible dependencies and manage versions. |
+| **Production Readiness** | Requires manual integration of metrics, health checks, and monitoring. | Out-of-the-box support for health checks, metrics, and environment configurations via Actuator. |
+| **Bootstrapping** | Programmatic initialization (e.g., `AnnotationConfigApplicationContext`). | Automatic bootstrapping via the static `SpringApplication.run()` interface. |
 
-#### Q1. What is Spring Boot? How is it different from Spring?
+### Build Automation & Lifecycle Management
+The build process compiles, tests, packages, and prepares applications for deployment.
+- **Manual Build Limitations**: Time-consuming, error-prone, hard to manage transitive dependencies, and lacks dynamic library downloading.
+- **Automation tools**:
+  - **Batch Files (`.bat`)**: Automated scripts, but lack conditional dependency handling or dynamic artifact download.
+  - **Apache Ant**: XML-based build tool, but requires writing verbose procedural steps.
+  - **Apache Maven**: Declarative project management tool using a Project Object Model (`pom.xml`). It handles dependency resolution, directory conventions (Archetypes), and lifecycle phases automatically.
 
-Spring: Full-featured framework, requires manual configuration
-Spring Boot: Opinionated, convention-over-configuration, auto-configures
+#### Common Maven Commands:
+- `mvn clean`: Deletes the target output directory containing previous builds.
+- `mvn compile`: Compiles all source code (`src/main/java`).
+- `mvn test`: Runs unit tests (`src/test/java`).
+- `mvn package`: Bundles compiled code into a deployable format (JAR/WAR).
+- `mvn install`: Installs the packaged artifact into the local repository (`~/.m2`).
+- `mvn dependency:tree`: Displays the project dependency hierarchy to diagnose conflicts.
 
-Spring Boot Advantages:
-1. Auto Configuration: Configures beans based on classpath
-2. Starter Dependencies: Curated dependency sets (spring-boot-starter-web)
-3. Embedded Server: Tomcat/Jetty/Undertow built in
-4. Production Ready: Actuator, health checks, metrics
-5. No XML: Java-based or YAML/properties configuration
+---
 
-#### Q2. @SpringBootApplication annotation - what does it include?
+### Project 1: FirstSpringBootProject
+A baseline project demonstrating components, zero-parameter constructors, initialization order, main method startup, and basic lifecycle hooks.
 
-@SpringBootApplication = @Configuration + @EnableAutoConfiguration + @ComponentScan
+#### 1. MessageGenerator.java (Service Component)
+```java
+package com.SpringBoot.MessageGenerator;
 
-@Configuration: Marks class as bean definition source
-@EnableAutoConfiguration: Enables auto-configuration based on classpath
-@ComponentScan: Scans current package and sub-packages for components
+import java.time.LocalDateTime;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-## ROUND 2 - CORE TECHNICAL
+@Component(value = "Wmg")
+public class MessageGenerator {
+    @Autowired
+    private LocalDateTime date;
 
-#### Q3. Spring Boot Auto-Configuration internal working.
+    static {
+        System.out.println("MessageGenerator.class file is loading...");
+    }
 
-Flow:
-1. @EnableAutoConfiguration triggers AutoConfigurationImportSelector
-2. Reads META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-3. Each auto-config class has @Conditional annotations:
-@ConditionalOnClass: Only if class on classpath
-@ConditionalOnMissingBean: Only if user hasn't defined bean
-@ConditionalOnProperty: Only if property set
+    public MessageGenerator() {
+        System.out.println("MessageGenerator Object is Created: Zero Param Constructor...");
+    }
 
-Example (DataSource auto-config):
-@ConditionalOnClass(DataSource.class) // HikariCP on classpath?
-@ConditionalOnMissingBean(DataSource.class) // User hasn't defined one?
-@AutoConfiguration
-public class DataSourceAutoConfiguration {
-    @Bean
-    public HikariDataSource dataSource(DataSourceProperties props) {
-        return props.initializeDataSourceBuilder()
-            .type(HikariDataSource.class).build();
+    public String getMessage(String user) {
+        int hour = date.getHour();
+        if (hour >= 6 && hour <= 12) {
+            return "Hello :: " + user + " Good Morning ";
+        } else if (hour >= 12 && hour <= 16) {
+            return "Hello :: " + user + " Good Afternoon ";
+        } else if (hour >= 16 && hour <= 20) {
+            return "Hello :: " + user + " Good Evening ";
+        } else {
+            return "Hello :: " + user + " Good Night ";
+        }
     }
 }
-
-Debug auto-config: --debug flag or spring.autoconfigure.exclude
-
-#### Q4. Profiles in Spring Boot.
-
-application.properties (default)
-application-dev.properties
-application-prod.properties
-
-Activation: spring.profiles.active=dev (or --spring.profiles.active=prod)
-
-@Profile("prod")
-@Configuration
-public class ProdSecurityConfig { ... }
-
-Multi-profile YAML:
-```yaml
-spring:
-profiles:
-active: dev
-spring:
-config:
-activate:
-on-profile: dev
-server:
-port: 8080
-spring:
-config:
-activate:
-on-profile: prod
-server:
-port: 443
 ```
-#### Q5. Spring Boot Actuator.
 
-Endpoint             | Purpose
-/actuator/health     | Application health status
-/actuator/info       | App information
-/actuator/metrics    | JVM/app metrics
-/actuator/env        | Environment properties
-/actuator/beans      | All registered beans
-/actuator/mappings   | URL mappings
-/actuator/loggers    | View/change log levels at runtime
-/actuator/heapdump   | Heap dump download
-/actuator/threaddump | Thread dump
+#### 2. FirstSpringBootProjectApplication.java (Main Bootstrapper)
+```java
+package com.SpringBoot;
 
-Config:
-management.endpoints.web.exposure.include=health,info,metrics
-management.endpoint.health.show-details=always
+import java.time.LocalDateTime;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import com.SpringBoot.MessageGenerator.MessageGenerator;
 
-Custom Health:
-@Component
-public class DatabaseHealthIndicator implements HealthIndicator {
-    @Override
-    public Health health() {
-        if (isDatabaseUp()) return Health.up().withDetail("db", "Running").build();
-        return Health.down().withDetail("db", "Not reachable").build();
+@SpringBootApplication
+public class FirstSpringBootProjectApplication {
+
+    static {
+        System.out.println("FirstSpringBootProjectApplication.class file is loading...");
+    }
+
+    public FirstSpringBootProjectApplication() {
+        System.out.println("FirstSpringBootProjectApplication Object is Created: Zero Param Constructor...");
+    }
+
+    @Bean(name = "dt")
+    public LocalDateTime getSystemDateTime() {
+        System.out.println("FirstSpringBootProjectApplication.getSystemDateTime()");
+        return LocalDateTime.now();
+    }
+
+    public static void main(String[] args) {
+        ConfigurableApplicationContext context = 
+            SpringApplication.run(FirstSpringBootProjectApplication.class, args);
+        System.out.println("*****Container started*******\n");
+        
+        MessageGenerator message = context.getBean(MessageGenerator.class);
+        String msg = message.getMessage("Teja");
+        System.out.println(msg);
+        
+        System.out.println("\n*****Container closed*******");
+        context.close();
     }
 }
+```
 
-## ROUND 3 - ADVANCED
-
-#### Q6. Exception Handling in Spring Boot.
-
-@RestControllerAdvice (Global Exception Handler):
-@RestControllerAdvice
-public class GlobalExceptionHandler {
-    @ExceptionHandler(ResourceNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse handleNotFound(ResourceNotFoundException ex) {
-        return new ErrorResponse(404, ex.getMessage(), LocalDateTime.now());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = ex.getBindingResult()
-            .getFieldErrors().stream()
-            .collect(Collectors.toMap(
-                FieldError::getField, FieldError::getDefaultMessage));
-        return new ErrorResponse(400, "Validation failed", errors);
-    }
-}
-
-Flow:
-Client Request -> Controller -> throws Exception
-|
-@RestControllerAdvice catches
-|
-Maps to HTTP status + Error body
-|
-JSON response to client
-
-#### Q7. Spring Boot Logging.
-
-Default: Logback (via spring-boot-starter-logging)
-Can switch to: Log4j2
-
-Levels: TRACE < DEBUG < INFO < WARN < ERROR
-logging.level.root=INFO
-logging.level.com.myapp=DEBUG
-logging.file.name=/var/log/app.log
-logging.pattern.console=%d{HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
-
-Structured logging for ELK/Splunk:
-logging.pattern.console={"time":"%d","level":"%p","logger":"%logger","msg":"%m"}%n
-
-## ROUND 4 - SCENARIO-BASED
-
-#### Q8. REST API best practices in Spring Boot.
-
-@RestController
-@RequestMapping("/api/v1/policies")
-public class PolicyController {
-    @GetMapping
-    public ResponseEntity<Page<PolicyDTO>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(policyService.findAll(pageable));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<PolicyDTO> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(policyService.findById(id));
-    }
-
-    @PostMapping
-    public ResponseEntity<PolicyDTO> create(@Valid @RequestBody PolicyRequest req) {
-        PolicyDTO created = policyService.create(req);
-        URI location = URI.create("/api/v1/policies/" + created.getId());
-        return ResponseEntity.created(location).body(created);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<PolicyDTO> update(@PathVariable Long id,
-                                            @Valid @RequestBody PolicyRequest req) {
-        return ResponseEntity.ok(policyService.update(id, req));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        policyService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
-}
-
-## Best Practices:
-
-1. Use DTOs (never expose Entity directly)
-2. Proper HTTP status codes (201 Created, 204 No Content)
-3. API versioning (/api/v1/)
-4. Pagination for list endpoints
-5. Validation with @Valid + DTO annotations
-6. Global exception handling
-
-## ROUND 5 - ARCHITECTURE
-
-#### Q9. Spring Boot application structure.
-
-com.company.project/
+#### Expected Application Startup Log Output:
 ```text
-    ├── config/           (Configuration classes)
-    ├── controller/       (REST controllers)
-    ├── service/          (Business logic)
-    ├── repository/       (Data access - JPA)
-    ├── entity/           (JPA entities / DB models)
-    ├── dto/              (Request/Response DTOs)
-    ├── exception/        (Custom exceptions + handler)
-    ├── security/         (Security config, JWT)
-    ├── util/             (Utility classes)
-    └── Application.java  (Main class)
+FirstSpringBootProjectApplication.class file is loading...
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.5.4)
 
+2026-08-16T23:44:15.351+05:30 INFO 28844 --- [FirstSpringBootProject] [main] c.S.FirstSpringBootProjectApplication : Starting FirstSpringBootProjectApplication using Java 19...
+2026-08-16T23:44:15.355+05:30 INFO 28844 --- [FirstSpringBootProject] [main] c.S.FirstSpringBootProjectApplication : No active profile set, falling back to 1 default profile: "default"
+FirstSpringBootProjectApplication Object is Created: Zero Param Constructor...
+MessageGenerator.class file is loading...
+MessageGenerator Object is Created: Zero Param Constructor...
+FirstSpringBootProjectApplication.getSystemDateTime()
+2026-08-16T23:44:15.779+05:30 INFO 28844 --- [FirstSpringBootProject] [main] c.S.FirstSpringBootProjectApplication : Started FirstSpringBootProjectApplication in 0.893 seconds
+*****Container started*******
+
+Hello :: Teja Good Night 
+
+*****Container closed*******
 ```
-KEY QUESTIONS:
-1. Spring vs Spring Boot
-2. @SpringBootApplication breakdown
-3. Auto-Configuration internal working
-4. Profiles usage
-5. Actuator endpoints
-6. Global exception handling
-7. REST API best practices
-8. Embedded server configuration
 
-## END OF SPRING BOOT ANALYSIS
+#### Key Takeaways
+- Spring Boot uses convention-over-configuration to reduce XML and Java configuration.
+- Maven manages the project lifecycle, dependency tree, and builds deployable JARs.
+- Classloading occurs before instantiation: Application class loads, then static blocks execute, followed by constructor calls.
 
-# SPRING BOOT - ADDITIONAL QUESTIONS (Q10-Q35) - ENHANCED EXPANSION
+---
 
-#### Q10. Spring Boot Auto-Configuration debugging.
+## SECTION 2: SPRING BOOT BOOTSTRAP & CORE MECHANICS
 
-Run with --debug flag to see auto-configuration report:
-Positive matches: Auto-configurations that WERE applied
-Negative matches: Auto-configurations that were NOT applied (and why)
-Exclusions: Manually excluded auto-configurations
+### The `@SpringBootApplication` Annotation
+Annotating the main class with `@SpringBootApplication` activates three major features under a single meta-annotation:
+1. **`@SpringBootConfiguration`**: Marks the class as a configuration source containing `@Bean` methods. It is a specialization of Spring's standard `@Configuration` annotation.
+2. **`@EnableAutoConfiguration`**: Tells Spring Boot to dynamically configure beans based on library JARs found on the classpath.
+3. **`@ComponentScan`**: Configures component scanning to automatically register classes annotated with `@Component`, `@Service`, `@Repository`, or `@RestController` in the class package and its sub-packages.
 
-Exclude: @SpringBootApplication(exclude = {DataSourceAutoConfiguration.class})
+### The `SpringApplication.run()` Bootstrap Cycle
+When `SpringApplication.run(App.class, args)` is invoked, it kicks off the following bootstrap pipeline:
 
-#### Q11. @ConfigurationProperties - type-safe config.
+```mermaid
+flowchart TD
+    A["main(String[] args)"] --> B["SpringApplication.run(App.class, args)"]
+    B --> C["Initialize SpringApplication Instance"]
+    C --> D["Determine Web Application Type (servlet, reactive, none)"]
+    D --> E["Load ApplicationContextInitializers & Listeners (spring.factories)"]
+    E --> F["Create ApplicationEnvironment (properties, yaml, env)"]
+    F --> G["Print Banner & Instantiate ApplicationContext"]
+    G --> H["AnnotationConfigApplicationContext Created"]
+    H --> I["Register Main Configuration Class (App.class)"]
+    I --> J["Invoke BeanFactoryPostProcessors"]
+    J --> K["ConfigurationClassPostProcessor processes @SpringBootApplication"]
+    K --> L["@ComponentScan finds Stereotype Beans"]
+    K --> M["AutoConfigurationImportSelector imports configurations"]
+    L & M --> N["Instantiate Singleton Beans (Dependency Injection)"]
+    N --> O["Start Embedded Web Server (Tomcat/Jetty/Undertow)"]
+    O --> P["Invoke ApplicationRunner / CommandLineRunner"]
+    P --> Q["Application Ready (running)"]
 
-@ConfigurationProperties(prefix = "app.policy")
-public class PolicyConfig {
-    private String defaultType;
-    private int maxRetries;
-    private Duration timeout; // Spring parses "5s", "2m", "1h"
-    private List<String> allowedStatuses;
-    // getters + setters
-}
-// app.policy.default-type=LIFE
-// app.policy.max-retries=3
-// app.policy.timeout=30s
+    classDef init fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef config fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef run fill:#B45309,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
 
-#### Q12. Spring Boot Starter - how to create custom starter.
+    class A,B,C,D,E,G,H,N,O,P init;
+    class F,I,J,K,L,M config;
+    class Q run;
+```
 
-1. Create auto-configuration module
-2. @Configuration + @ConditionalOnClass + @ConditionalOnProperty
-3. Register in META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
-4. Package as spring-boot-starter-yourlib
+#### Key Takeaways
+- `@SpringBootApplication` is a meta-annotation composed of `@SpringBootConfiguration`, `@EnableAutoConfiguration`, and `@ComponentScan`.
+- `SpringApplication.run()` dynamically detects whether the application is a Servlet-based web app, a Reactive Webflux app, or a standalone non-web app, creating the corresponding ApplicationContext.
+- By default, all registered beans are instanced as **Singletons** at startup unless marked with another scope (e.g., `@Scope("prototype")`).
 
-#### Q13. Embedded server comparison.
+---
 
-Tomcat (default): Servlet-based, blocking I/O, most mature
-Jetty: Lightweight, HTTP/2 support, good for microservices
-Undertow: Non-blocking, good performance, Wildfly team
-Netty: Non-blocking, used with WebFlux (reactive)
+## SECTION 3: AUTO-CONFIGURATION & CONNECTION POOLING
 
-Switch: spring-boot-starter-web (exclude tomcat) + spring-boot-starter-undertow
+### Internal Mechanics of Auto-Configuration
+1. `@EnableAutoConfiguration` registers the `AutoConfigurationImportSelector` class.
+2. The selector reads configuration classes registered in `META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports` (or `spring.factories` in older versions).
+3. Every auto-configuration class is evaluated against conditional annotations:
+   - `@ConditionalOnClass`: Activates only if specified classes are present on the classpath.
+   - `@ConditionalOnMissingBean`: Declares a bean only if the user hasn't defined a custom one.
+   - `@ConditionalOnProperty`: Activates configuration based on application properties.
 
-#### Q14. Spring Boot DevTools.
+### Connection Pool Auto-Configuration Priority
+When `spring-boot-starter-jdbc` is included in the project dependencies, Spring Boot evaluates the classpath to determine which connection pool implementation to initialize. The priority order is:
 
-LiveReload, automatic restart, H2 console, property defaults for dev.
-spring-boot-devtools dependency (auto-disabled in production JAR).
+```mermaid
+flowchart TD
+    Start["Classpath Checked for JDBC Starter"] --> CheckHikari{"HikariCP JAR on classpath?"}
+    CheckHikari -- Yes --> CreateHikari["Instantiate HikariDataSource (Default)"]
+    CheckHikari -- No --> CheckTomcat{"Tomcat JDBC JAR on classpath?"}
+    CheckTomcat -- Yes --> CreateTomcat["Instantiate Tomcat DataSource"]
+    CheckTomcat -- No --> CheckDbcp{"DBCP2 JAR on classpath?"}
+    CheckDbcp -- Yes --> CreateDbcp["Instantiate Commons DBCP2 DataSource"]
+    CheckDbcp -- No --> Error["Exception: Cannot configure DataSource!"]
+    
+    subgraph Exclusion Flow
+        Excl["spring-boot-starter-jdbc exclusion (HikariCP)"] --> CheckHikari
+        ExcludeConfig["@SpringBootApplication(exclude = DataSourceAutoConfiguration.class)"] --> DisableAuto["Auto-Configuration Bypassed"]
+        DisableAuto --> ManualBean["Manual @Bean ComboPooledDataSource (C3P0) in PersistConfig"]
+    end
 
-#### Q15. Scenario: How to handle 10K requests/second?
+    classDef step fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef pool fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef fail fill:#991B1B,stroke:#FCA5A5,color:#FFFFFF,stroke-width:2px;
 
-1. Connection pool tuning: HikariCP maximumPoolSize
-2. Response caching: @Cacheable with Redis
-3. Async processing: @Async + CompletableFuture
-4. Database optimization: Indexes, query tuning, read replicas
-5. Horizontal scaling: Multiple instances + load balancer
-6. Rate limiting: Resilience4j RateLimiter
-7. Response compression: server.compression.enabled=true
+    class Start,CheckHikari,CheckTomcat,CheckDbcp,DisableAuto step;
+    class CreateHikari,CreateTomcat,CreateDbcp,Excl,ExcludeConfig,ManualBean pool;
+    class Error fail;
+```
 
-#### Q16. Spring WebFlux vs Spring MVC.
+---
 
-MVC: Servlet-based, blocking, thread-per-request (Tomcat)
-WebFlux: Reactive, non-blocking, event-loop (Netty)
+### Project 2: BootProj08 - RealTimeDIUsingYML - Excluding HikariCP
+This project demonstrates how to exclude the default connection pool (HikariCP) and configure an alternative one (Tomcat JDBC) using maven dependency exclusions and properties.
 
-MVC: Good for CRUD apps, simple, most developers know it
-WebFlux: Good for streaming, high-concurrency, reactive DBs
-
-Use MVC unless you have specific non-blocking requirements.
-
-Q17-Q20 Quick SpringBoot:
-
-#### Q17. Graceful shutdown: server.shutdown=graceful (waits for active requests)
-
-#### Q18. Spring Boot testing slices: @WebMvcTest, @DataJpaTest, @JsonTest
-
-#### Q19. Health check groups: management.endpoint.health.group.readiness.include=db,diskSpace
-
-#### Q20. Externalized config priority: CLI args > env vars > application.yml > defaults
-
-## SPRING BOOT - DEEP DIVE ANALYSIS (FROM SOURCE FILE)
-
-Extracted from Spring_and_Spring_boot.txt (Lines 5800-10694)
-Topics: DataSource, REST APIs, SpEL, JSR-330, YAML Config
-
-## SECTION A: DATASOURCE AUTO-CONFIGURATION - DECISION TREE
-
-Spring Boot DataSource Auto-Configuration Priority:
-
-Spring Boot starts
-|
-v
-spring-boot-starter-jdbc on classpath?
-| YES                    | NO
-|                        --> No DataSource created
-v
-HikariCP jar present?
-| YES              | NO
-v                  v
-CREATE HikariDS     Tomcat JDBC jar present?
-(DEFAULT)                | YES          | NO
-v              v
-CREATE Tomcat    DBCP2 present?
-DataSource       | YES    | NO
-v        v
-CREATE DBCP2   ERROR!
-DataSource     No pool found
-
-Manual DataSource Configuration (Overriding Auto-Config):
-1. Exclude auto-config:
-   @SpringBootApplication(exclude = DataSourceAutoConfiguration.class)
-
-2. Create @Bean method in @Configuration class:
-   @Configuration
-   public class PersistConfig {
-       @Autowired
-       private Environment env;
-
-       @Bean
-       public DataSource createDataSource() throws Exception {
-           ComboPooledDataSource ds = new ComboPooledDataSource();
-           ds.setDriverClass(env.getProperty("jdbc.driver"));
-           ds.setJdbcUrl(env.getProperty("jdbc.url"));
-           ds.setUser(env.getProperty("jdbc.user"));
-           ds.setPassword(env.getProperty("jdbc.password"));
-           return ds;
-       }
-   }
-
-Switching Connection Pools (HikariCP to Tomcat JDBC):
-  <dependency>
+#### 1. pom.xml Exclusion Setup
+```xml
+<dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-jdbc</artifactId>
     <exclusions>
-      <exclusion>
-        <groupId>com.zaxxer</groupId>
-        <artifactId>HikariCP</artifactId>
-      </exclusion>
+        <!-- Exclude HikariCP to force fallback -->
+        <exclusion>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </exclusion>
     </exclusions>
-  </dependency>
-  <dependency>
+</dependency>
+<!-- Add Tomcat JDBC and MySQL connector -->
+<dependency>
     <groupId>org.apache.tomcat</groupId>
     <artifactId>tomcat-jdbc</artifactId>
-  </dependency>
+</dependency>
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+```
 
-## SECTION B: CONFIGURATION - PROPERTIES vs YAML DETAILED
-
-application.properties (Flat Key-Value):
-```properties
-server.port=8080
-spring.application.name=MyApp
-spring.datasource.url=jdbc:mysql:///testschema
-spring.datasource.username=root
-spring.datasource.password=root123
-spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
-application.yml (YAML - Hierarchical):
+#### 2. application.yml configuration
+```yaml
 spring:
-application:
-name: MyApp
-datasource:
-url: jdbc:mysql:///testschema
-username: root
-password: root123
-driver-class-name: com.mysql.cj.jdbc.Driver
-server:
-port: 8080
-
-Comparison:
-Feature                 .properties             .yml
-----------------------  ----------------------  --------------------------
-Format                  Flat key=value          Hierarchical YAML
-Readability             Simple for few props    Better for nested config
-Multi-document          Not supported           Supported (--- separator)
-Profile-specific        application-dev.props   Can embed in same file
-Collection support      Comma-separated         Native list/map syntax
-Spring Boot Priority    Loaded AFTER yml        Loaded first
+  datasource:
+    url: jdbc:mysql:///enterprisejavabatch
+    username: root
+    password: root123
+    driver-class-name: com.mysql.cj.jdbc.Driver
 ```
-## SECTION C: SPRING EXPRESSION LANGUAGE (SpEL) - DEEP DIVE
 
-SpEL enables runtime expression evaluation within Spring beans.
+#### 3. EmployeeDaoImpl.java (Repository checking connection pool type)
+```java
+package in.ineuron.comp;
 
-Syntax:
-dollar{key}    = Property file value injection.
-                  @Value("dollar{server.port}") -> reads from application.properties
-  #{expression} = SpEL runtime expression.
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import in.ineuron.dto.Employee;
+
+@Repository("empDao")
+public class EmployeeDaoImpl implements IEmployeeDAO {
+    @Autowired
+    private DataSource dataSource;
+
+    @Override
+    public List<Employee> findAllEmployees() throws Exception {
+        // Output the class name to verify which pool is loaded
+        System.out.println("DataSource class implementation in use :: " + dataSource.getClass().getName());
+        
+        List<Employee> empList = new ArrayList<>();
+        try (Connection con = dataSource.getConnection();
+             PreparedStatement ps = con.prepareStatement("SELECT eid, ename, eage, eaddress FROM employee");
+             ResultSet rs = ps.executeQuery()) {
+            
+            while (rs.next()) {
+                Employee emp = new Employee();
+                emp.setEid(rs.getInt(1));
+                emp.setEname(rs.getString(2));
+                emp.setEage(rs.getInt(3));
+                emp.setEaddress(rs.getString(4));
+                empList.add(emp);
+            }
+        }
+        return empList;
+    }
+}
+```
+
+#### Console Verification Output:
 ```text
-                  @Value("#{beanName.field}") -> reads from another bean.
-                  @Value("#{10 + 20}") -> computed result = 30.
-
+DataSource class implementation in use :: org.apache.tomcat.jdbc.pool.DataSource
 ```
-Cross-Bean Computation Example:
-  // Bean 1: ItemsInfo (reads from properties)
-  @Component("item")
-  public class ItemsInfo {
-      @Value("dollar{items.info.idlyPrice}")  private double idlyPrice;   // 10
-      @Value("dollar{items.info.dosaPrice}")  private double dosaPrice;   // 20
-      @Value("dollar{items.info.vadaPrice}")  private double vadaPrice;   // 30
-  }
 
-  // Bean 2: BillGenerator (reads from Bean 1 via SpEL)
-  @Component("bill")
-  public class BillGenerator {
-      @Value("#{item.idlyPrice + item.dosaPrice + item.vadaPrice}")
-      private double billAmount;  // Computed at DI time = 60.0
+#### Key Takeaways
+- Spring Boot Auto-Configuration is modular and dynamically evaluated at startup using `@Conditional` rules.
+- Exclusion of default packages allows developers to swap components without changing Java source code.
+- Default connection pool priority places HikariCP first, followed by Tomcat JDBC, and Commons DBCP2 third.
 
-      @Value("Accord")
-      private String hotelName;   // Literal string injection
+---
 
-      @Autowired
-      private ItemsInfo info;     // Full bean injection
-  }
+## SECTION 4: MANUAL DATASOURCE CONFIGURATION
 
-SpEL Evaluation Flow:
-  1. Spring creates "item" bean and injects property values (10, 20, 30).
-  2. Spring creates "bill" bean.
-  3. SpEL engine locates "item" bean in ApplicationContext.
-  4. Reads idlyPrice, dosaPrice, vadaPrice fields.
-  5. Evaluates expression: 10 + 20 + 30 = 60.0.
-  6. Injects result into billAmount field.
-  7. This happens during BeanPostProcessor phase.
+In enterprise systems, automatic data sources might not fit specific security parameters, credential vaults, or pool configurations (e.g., using C3P0). To override Auto-Configuration entirely:
+1. Exclude the default `DataSourceAutoConfiguration` and `JdbcTemplateAutoConfiguration` classes.
+2. Manually define the `@Bean` method inside a custom `@Configuration` class, utilizing Spring's `Environment` to map database properties.
 
-## SECTION D: JSR-330 - NON-INVASIVE PROGRAMMING
+---
 
-JSR-330 annotations allow DI without Spring-specific imports.
-Requires javax.inject dependency.
+### Project 3: BootProj09 - RealTimeDIUsingYML - Manual DataSource Injection
+This project demonstrates manual creation of a C3P0 connection pool, overriding the autoconfigured pool completely.
 
-JSR-330 Annotation   Spring Equivalent         Notes
-------------------   ----------------------    ----------------------------------
-@Inject              @Autowired                Field/constructor/setter. No
-                                               "required" attribute.
-@Named("name")       @Component + @Qualifier   Names bean AND resolves ambiguity
-@Resource            @Autowired+@Qualifier     JSR-250. Field/setter only (NOT
-                                               constructor). byName first.
+#### 1. pom.xml Setup
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+<dependency>
+    <groupId>com.mchange</groupId>
+    <artifactId>c3p0</artifactId>
+    <version>0.9.5.5</version>
+</dependency>
+```
 
-Annotation Priority Order (recommended):
-  1. Java Config Annotations (JSR-330: @Inject, @Named) - First choice
-  2. Spring Annotations (@Autowired, @Component)
-  3. Third-party Annotations
-  4. Custom Annotations
+#### 2. BootProj09RealTimeDIManualDataSourceApplication.java (Auto-Config Bypassed)
+```java
+package in.ineuron;
 
-Example:
-  @Named("std")
-  public class Student {
-      @Inject
-      @Named("courseId")
-      private ICourseMaterial material;
-  }
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
+import org.springframework.context.ApplicationContext;
+import in.ineuron.comp.IEmployeeDAO;
 
-  @Named("java")
-  public class JavaCourseMaterial implements ICourseMaterial { ... }
+@SpringBootApplication(exclude = {
+    DataSourceAutoConfiguration.class,
+    JdbcTemplateAutoConfiguration.class
+})
+public class BootProj09RealTimeDIManualDataSourceApplication {
+    public static void main(String[] args) throws Exception {
+        ApplicationContext context = 
+            SpringApplication.run(BootProj09RealTimeDIManualDataSourceApplication.class, args);
+        IEmployeeDAO dao = context.getBean("empDao", IEmployeeDAO.class);
+        System.out.println("Employees Count: " + dao.findAllEmployees().size());
+    }
+}
+```
 
-Configuration:
-  application.properties: course.choose=java
-  applicationContext.xml:  <alias name="dollar{course.choose}" alias="courseId"/>
-  -> "courseId" resolves to "java" bean dynamically.
+#### 3. PersistConfig.java (Custom Configuration Class)
+```java
+package in.ineuron.persist;
 
-## SECTION E: REST API DEVELOPMENT - CODE EXAMPLES
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import javax.sql.DataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
-REST Controller with Full CRUD:
-  @RestController
-  @RequestMapping("/api/customers")
-  public class CustomerRestController {
+@Configuration
+public class PersistConfig {
+    @Autowired
+    private Environment env;
 
-      @Autowired
-      private CustomerService service;
+    @Bean
+    public DataSource createDS() throws Exception {
+        System.out.println("PersistConfig.createDS() called manually...");
+        ComboPooledDataSource dataSource = new ComboPooledDataSource();
+        dataSource.setDriverClass(env.getProperty("spring.datasource.driver-class-name"));
+        dataSource.setJdbcUrl(env.getProperty("spring.datasource.url"));
+        dataSource.setUser(env.getProperty("spring.datasource.username"));
+        dataSource.setPassword(env.getProperty("spring.datasource.password"));
+        return dataSource;
+    }
+}
+```
 
-      @GetMapping("/getById")
-      public ResponseEntity<CustomerVo> getById(@RequestParam int id) {
-          CustomerVo customer = service.findById(id);
-          if (customer != null) return ResponseEntity.ok(customer);
-          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-      }
+#### Console Verification Output:
+```text
+PersistConfig.createDS() called manually...
+DataSource class implementation in use :: com.mchange.v2.c3p0.ComboPooledDataSource
+```
 
-      @GetMapping("/all")
-      public ResponseEntity<List<CustomerVo>> getAll() {
-          return ResponseEntity.ok(service.getAllCustomers());
-      }
+#### Key Takeaways
+- The `exclude` attribute of `@SpringBootApplication` bypasses auto-configuration engines.
+- The `Environment` bean exposes unified access to properties configured in `application.yml`, OS env, and command-line inputs.
+- Manual beans override auto-configured candidates, allowing custom class injection (e.g., C3P0 `ComboPooledDataSource`).
 
-      @PostMapping("/insert")
-      public ResponseEntity<String> insert(@RequestBody CustomerVo vo) {
-          try {
-              String result = service.processResult(vo);
-              return ResponseEntity.status(HttpStatus.CREATED).body(result);
-          } catch (Exception e) {
-              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                     .body("Error: " + e.getMessage());
-          }
-      }
+---
 
-      @DeleteMapping("/deleteById")
-      public ResponseEntity<String> delete(@RequestParam int id) {
-          int status = service.deleteById(id);
-          return ResponseEntity.ok("Deleted customer with ID: " + status);
-      }
+## SECTION 5: JSR-330 & NON-INVASIVE PROGRAMMING
 
-      @PutMapping("/updateById")
-      public ResponseEntity<CustomerVo> update(@RequestParam int id) {
-          CustomerVo updated = service.updateById(id);
-          return ResponseEntity.ok(updated);
-      }
-  }
+### Invasive vs Non-Invasive Paradigms
+- **Invasive Programming**: Tightly couples application source code to framework-specific dependencies (e.g., importing `org.springframework.stereotype.Component` or `org.springframework.beans.factory.annotation.Autowired`).
+- **Non-Invasive Programming**: Keeps code loosely coupled by utilizing standard annotations that remain portable across various dependency injection containers (e.g., Java Standards JSR-330 and JSR-250).
 
-API Endpoints (from source file project):
-  GET  http://localhost:8080/Spr/customers/getCustomerById?id=1
-  GET  http://localhost:8080/Spr/customers/all
-  POST http://localhost:8080/Spr/customers/insert
-  PUT  http://localhost:8080/Spr/customers/updateCustomerById?id=4
-  DELETE http://localhost:8080/Spr/customers/deleteCustomerById?id=6
+### Annotation Mappings
 
-## SECTION F: SPRING BOOT COLLECTION INJECTION (YAML)
+| JSR Standard (javax.inject / jakarta.annotation) | Spring Equivalent | Scope / Support |
+| :--- | :--- | :--- |
+| `@Inject` | `@Autowired` | Injection at field, constructor, or setter level. Lacks "required" attribute. |
+| `@Named("name")` | `@Component` / `@Qualifier` | Stereotype naming and dependency resolution mapping. |
+| `@Resource(name="...")` | `@Autowired` + `@Qualifier` | Field or setter level injection only (no constructor support). |
+| `@PostConstruct` | Custom init-method | Lifecycle callback method called after bean initialization. |
+| `@PreDestroy` | Custom destroy-method | Lifecycle callback method called before container shutdown. |
 
-Spring Boot supports injecting complex data from application.yml
-into beans using @ConfigurationProperties.
+---
 
-application.yml Example:
+### Project 4: BootProj07 - DependencyInjection - JSR-330 & Legacy XML Hybrid Setup
+This project demonstrates dynamic strategy resolution using standard JSR-330 annotations integrated with an XML alias resolver configuration.
+
+```mermaid
+flowchart TD
+    subgraph Container Initialization
+        Properties["application.properties: course.choose=java"] --> XML["applicationContext.xml: <alias name='${course.choose}' alias='courseId' />"]
+        XML --> Alias["Alias 'courseId' references bean 'java'"]
+    end
+
+    subgraph Beans Setup
+        JavaBean["@Named('java') JavaCourseMaterial"]
+        DotNetBean["@Named('dotNet') DotNetCourseMaterial"]
+        Student["@Named('std') Student"]
+    end
+
+    Alias --> Bind["Resolve @Inject @Named('courseId') in Student"]
+    Bind --> JavaBean
+
+    classDef xmlStyle fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef beanStyle fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef bindStyle fill:#B45309,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+
+    class Properties,XML,Alias xmlStyle;
+    class JavaBean,DotNetBean,Student beanStyle;
+    class Bind bindStyle;
+```
+
+#### 1. pom.xml Dependencies
+```xml
+<dependency>
+    <groupId>javax.inject</groupId>
+    <artifactId>javax.inject</artifactId>
+    <version>1</version>
+</dependency>
+```
+
+#### 2. application.properties
+```properties
+course.choose=java
+```
+
+#### 3. applicationContext.xml (XML Bridge Configuration)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+    <!-- Read application properties to dynamically map bean alias -->
+    <alias name="${course.choose}" alias="courseId" />
+</beans>
+```
+
+#### 4. ICourseMaterial.java & JavaCourseMaterial.java (Strategy & Implementation)
+```java
+package in.ineuron.dependent;
+
+public interface ICourseMaterial {
+    String courseContent();
+    double price();
+}
+```
+```java
+package in.ineuron.dependent;
+
+import javax.inject.Named;
+
+@Named("java")
+public final class JavaCourseMaterial implements ICourseMaterial {
+    static {
+        System.out.println("JavaCourseMaterial.class file is loading...");
+    }
+    public JavaCourseMaterial() {
+        System.out.println("JavaCourseMaterial Object is Created...");
+    }
+    @Override
+    public String courseContent() {
+        return "1. oops 2. ExceptionHandling 3.Collection";
+    }
+    @Override
+    public double price() {
+        return 500.0;
+    }
+}
+```
+
+#### 5. Student.java (Target Bean Using JSR-330 Standard Injection)
+```java
+package in.ineuron.comp;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import in.ineuron.dependent.ICourseMaterial;
+
+@Named("std")
+public class Student {
+    static {
+        System.out.println("Student.class file is loading...");
+    }
+    public Student() {
+        System.out.println("Student Object is instantiated...");
+    }
+
+    @Inject
+    @Named(value = "courseId")
+    private ICourseMaterial material;
+
+    public void preparation(String examName) {
+        System.out.println("Preparation started for :: " + examName);
+        String courseContent = material.courseContent();
+        double price = material.price();
+        System.out.println("Preparation in progress using :: " + courseContent + " | Price: " + price);
+        System.out.println("Preparation completed for :: " + examName);
+    }
+    
+    public ICourseMaterial getMaterial() { return material; }
+}
+```
+
+#### 6. Main Bootstrapper
+```java
+package in.ineuron;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ImportResource;
+import in.ineuron.comp.Student;
+
+@SpringBootApplication
+@ImportResource(locations = "in/ineuron/cfg/applicationContext.xml")
+public class BootProj07DependencyInjectionJavaConfigurationApplication {
+    public static void main(String[] args) throws Exception {
+        ApplicationContext context = 
+            SpringApplication.run(BootProj07DependencyInjectionJavaConfigurationApplication.class, args);
+        
+        Student student = context.getBean(Student.class);
+        System.out.println(student);
+        student.preparation(student.getMaterial().getClass().getName());
+        
+        ((ConfigurableApplicationContext) context).close();
+    }
+}
+```
+
+#### Key Takeaways
+- JSR-330 annotations (`@Inject`, `@Named`) make application code portable across DI engines (Spring, Guice, CDI).
+- `@ImportResource` bridges Spring Boot with legacy XML setups, enabling dynamic features like XML-based aliasing.
+- The standard annotation priority list goes: Java Config Standards (`@Inject`, `@Named`) -> Spring custom annotations -> third party configurations.
+
+---
+
+## SECTION 6: PROPERTIES, YAML & COLLECTION INJECTION
+
+### application.properties vs application.yml
+
+| Configuration Aspect | application.properties | application.yml |
+| :--- | :--- | :--- |
+| **Structure Style** | Flat, repetitive dot-notated key-value mappings. | Hierarchical indentation style representing nested nodes. |
+| **Readability** | High for simple maps; low for complex, nested configurations. | Clean and organized for large, multi-level parameters. |
+| **Document Splitting** | Requires profile-specific files (e.g., `application-dev.properties`). | Supported within a single file using the `---` separator. |
+| **Collections / Maps** | Expressed using index notation (e.g., `list[0]=value`). | Native, readable list and map structures. |
+| **Loading Order** | Loaded **after** YAML files, overriding any matching properties. | Loaded **before** properties files. |
+
+---
+
+### `@Value` vs `@ConfigurationProperties`
+
+| Feature | `@Value` | `@ConfigurationProperties` |
+| :--- | :--- | :--- |
+| **Binding Style** | Annotation-driven mapping on individual fields. | Bulk-mapping of prefixes directly to Java class structures. |
+| **SpEL Support** | Fully supported (`#Value("#{item.idlyPrice}")`). | Unsupported. |
+| **Relaxed Binding** | Not supported (keys must match variable names exactly). | Supported (e.g., maps `emp-name`, `empName`, `emp_name` variables). |
+| **Validation** | Manual or limited. | Supports standard JSR-380 validation (e.g., `@NotNull`). |
+| **Collection Mapping** | Complex comma-separated list parser required. | Maps lists, maps, sets, and nested classes directly. |
+
+---
+
+### YAML Collection & Nested Object Injection Example
+Using `@ConfigurationProperties` to bind hierarchical YAML objects directly to structured Java collections.
+
+#### 1. application.yml definition
 ```yaml
 employee:
-empName: Aravind
-empId: 21
-empSkills:
-- Core Java
-- Spring Boot
-- J2EE
-- SQL
-empProjects:
-- Banking Finance System
-- Retail Merchandise System
-idDetails:
-aadhar: AD1234XYZ
-pan: PAN1234XYZ
-passport: PAS1234XYZ
+  empName: Aravind
+  empId: 21
+  empSkills:
+    - Core Java
+    - Spring Boot
+    - SQL
+  empProjects:
+    - Banking Finance System
+    - Retail Merchandise System
+  idDetails:
+    aadhar: AD1234XYZ
+    pan: PAN1234XYZ
+    passport: PAS1234XYZ
+```
 
-Java Bean:
+#### 2. Employee.java Bean
+```java
+package com.SpringBoot.Vo;
+
+import java.util.List;
+import java.util.Map;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
 @Component
 @ConfigurationProperties(prefix = "employee")
 public class Employee {
@@ -577,88 +661,335 @@ public class Employee {
     private List<String> empSkills;
     private List<String> empProjects;
     private Map<String, String> idDetails;
-    // getters and setters
+
+    // Getters, Setters, and toString() methods
+    public String getEmpName() { return empName; }
+    public void setEmpName(String empName) { this.empName = empName; }
+    public int getEmpId() { return empId; }
+    public void setEmpId(int empId) { this.empId = empId; }
+    public List<String> getEmpSkills() { return empSkills; }
+    public void setEmpSkills(List<String> empSkills) { this.empSkills = empSkills; }
+    public List<String> getEmpProjects() { return empProjects; }
+    public void setEmpProjects(List<String> empProjects) { this.empProjects = empProjects; }
+    public Map<String, String> getIdDetails() { return idDetails; }
+    public void setIdDetails(Map<String, String> idDetails) { this.idDetails = idDetails; }
+
+    @Override
+    public String toString() {
+        return "Employee [empName=" + empName + ", empId=" + empId + 
+               ", empSkills=" + empSkills + ", empProjects=" + empProjects + 
+               ", idDetails=" + idDetails + "]";
+    }
 }
 ```
-## SECTION G: SPRING BOOT JDBC PROJECT - COMPLETE LAYERED ARCHITECTURE
 
-Project Architecture Flow:
+#### Key Takeaways
+- YAML supports hierarchical structures, reducing property duplication.
+- `@ConfigurationProperties` is ideal for binding groups of related configuration properties to type-safe beans.
+- Relaxed binding maps variations (kebab-case, camelCase, snake_case) to standard Java variables.
 
-REST CLIENT (Postman / Browser)
-| HTTP GET/POST/PUT/DELETE
-v
-@RestController Layer (REST API)
-- @GetMapping, @PostMapping, @PutMapping, @DeleteMapping
-- @RequestParam, @PathVariable, @RequestBody
-- ResponseEntity returns
-     | (DTO)
-     v
-@Service Layer (Business Logic)
-- DTO <-> BO conversion
-- Calculations (e.g., Simple Interest formula)
-- Transaction boundaries
-     | (BO)
-     v
-@Repository Layer (Data Access)
-- JDBC queries
-- DataSource.getConnection()
-- PreparedStatement + ResultSet
-- CRUD operations
-     | (SQL)
-     v
-MySQL Database (via HikariCP DataSource auto-configured from yml/props)
+---
 
-application.yml (Spring Boot DataSource):
-```yaml
+## SECTION 7: SPRING EXPRESSION LANGUAGE (SpEL)
+
+SpEL allows developers to write expressions that evaluate dynamically at runtime within the bean container.
+- **`${key}` (Property Placeholder)**: Resolves static values declared in external resources (e.g. `application.properties`). Evaluated at compile/startup time.
+- **`#{expression}` (SpEL Syntax)**: Dynamically evaluates logical, mathematical, or bean reference expressions within the ApplicationContext during the bean initialization phase.
+
+---
+
+### Project 5: BootProj10 - SpEL Cross-Bean Dependency Evaluation
+Shows how `BillGenerator` evaluates fields from another bean `ItemsInfo` at runtime during the Dependency Injection lifecycle.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Context as ApplicationContext
+    participant Item as ItemsInfo Bean ("item")
+    participant Bill as BillGenerator Bean ("bill")
+    participant Post as AutowiredAnnotationBeanPostProcessor
+
+    Context->>Item: Instantiate and load fields from properties
+    Item->>Item: @Value("${items.info.idlyPrice}") -> 10.0
+    Item->>Item: @Value("${items.info.dosaPrice}") -> 20.0
+    Item->>Item: @Value("${items.info.vadaPrice}") -> 30.0
+    Context->>Bill: Instantiate BillGenerator
+    Context->>Post: Process @Value annotations on "bill"
+    Post->>Context: Request evaluation of SpEL expression: "#{item.idlyPrice + item.dosaPrice + item.vadaPrice}"
+    Context->>Item: Read idlyPrice (10), dosaPrice (20), vadaPrice (30)
+    Context->>Post: Compute expression result (60.0)
+    Post->>Bill: Inject computed result (60.0) into billAmount field
+```
+
+#### 1. ItemsInfo.java (Source Bean)
+```java
+package in.ineuron.dependent;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component("item")
+public class ItemsInfo {
+    @Value("${items.info.idlyPrice}")
+    public float idlyPrice;
+
+    @Value("${items.info.dosaPrice}")
+    public float dosaPrice;
+
+    @Value("${items.info.vadaPrice}")
+    public float vadaPrice;
+
+    @Override
+    public String toString() {
+        return "ItemsInfo [idlyPrice=" + idlyPrice + ", dosaPrice=" + dosaPrice + 
+               ", vadaPrice=" + vadaPrice + "]";
+    }
+}
+```
+
+#### 2. BillGenerator.java (Target Evaluation Bean)
+```java
+package in.ineuron.comp;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import in.ineuron.dependent.ItemsInfo;
+
+@Component("bill")
+public class BillGenerator {
+    // Dynamically query properties from the 'item' bean and add them
+    @Value("#{item.idlyPrice + item.dosaPrice + item.vadaPrice}")
+    private Float billAmount;
+
+    @Value("Accord")
+    private String hotelName;
+
+    @Autowired
+    private ItemsInfo info;
+
+    @Override
+    public String toString() {
+        return "BillGenerator [billAmount=" + billAmount + 
+               ", hotelName=" + hotelName + ", info=" + info + "]";
+    }
+}
+```
+
+#### Key Takeaways
+- `${key}` retrieves properties; `#{expression}` evaluates runtime SpEL statements.
+- SpEL can invoke methods, evaluate mathematical formulas, perform logical checks, and access other beans' fields dynamically.
+- SpEL evaluation occurs during the bean post-processing phase of the container initialization cycle.
+
+---
+
+## SECTION 8: REST APIs & LAYERED ARCHITECTURE
+
+Enterprise Spring Boot applications implement separation of concerns across multiple layers:
+1. **Presentation (Controller) Layer**: Exposes endpoints via `@RestController`, maps inputs (`@PathVariable`, `@RequestParam`, `@RequestBody`), and structures responses using `ResponseEntity`.
+2. **Business (Service) Layer**: Implements business rules, defines transaction boundaries (`@Transactional`), and maps data structures (VO $\leftrightarrow$ DTO $\leftrightarrow$ BO).
+3. **Data Access (Repository) Layer**: Interfaces with databases (via JDBC, Hibernate, or Spring Data).
+4. **Database**: The physical persistence storage.
+
+### Data Patterns: VO vs DTO vs BO
+
+| Pattern | Scope | Purpose | Type Constraints |
+| :--- | :--- | :--- | :--- |
+| **VO (Value Object)** | Presentation / API Layer. | Captures raw user input from requests. | Values are typically mapped as flat Strings to prevent conversion errors during deserialization. |
+| **DTO (Data Transfer Object)**| Presentation $\leftrightarrow$ Service. | Transfers structured, typed data between layers. | Formatted using strongly typed variables. Contains validation annotations. |
+| **BO (Business Object / Entity)**| Service $\leftrightarrow$ DAO. | Maps directly to business rules and database schemas. | Formatted to match domain entities and database tables. |
+
+---
+
+### Complete CRUD RestController Example
+
+```mermaid
+flowchart TD
+    Client["Client Request"] --> Dispatcher["DispatcherServlet (Front Controller)"]
+    Dispatcher --> Controller["@RestController Method"]
+    Controller --> Service["Service Layer Business Logic"]
+    Service --> Exception{"Exception Thrown?"}
+    Exception -- No --> Success["Response Entity (200 OK / 201 Created)"]
+    Exception -- Yes --> Advice["@RestControllerAdvice (Global Handler)"]
+    Advice --> Match{"@ExceptionHandler(Type.class) Matches?"}
+    Match -- Yes --> Handler["Format JSON ErrorResponse & Status"]
+    Match -- No --> Default["Default Error Controller (500 Server Error)"]
+    Handler & Default & Success --> ClientResponse["JSON Response returned to Client"]
+
+    classDef client fill:#B45309,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+    classDef controller fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef handler fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef err fill:#991B1B,stroke:#FCA5A5,color:#FFFFFF,stroke-width:2px;
+
+    class Client,ClientResponse client;
+    class Dispatcher,Controller,Service,Success controller;
+    class Exception,Advice,Match,Handler handler;
+    class Default err;
+```
+
+```java
+package com.SpringBoot.Controller;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import com.SpringBoot.Vo.CustomerVo;
+import com.SpringBoot.Service.CustomerService;
+
+@RestController
+@RequestMapping("/api/v1/customers")
+public class CustomerRestController {
+
+    @Autowired
+    private CustomerService service;
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerVo> getCustomerById(@PathVariable int id) {
+        CustomerVo customer = service.findById(id);
+        if (customer != null) {
+            return ResponseEntity.ok(customer);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping
+    public ResponseEntity<List<CustomerVo>> getAllCustomers() {
+        return ResponseEntity.ok(service.getAllCustomers());
+    }
+
+    @PostMapping
+    public ResponseEntity<String> insertCustomer(@RequestBody CustomerVo vo) {
+        try {
+            String result = service.processResult(vo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                 .body("Error inserting customer: " + e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteCustomer(@PathVariable int id) {
+        int status = service.deleteById(id);
+        return ResponseEntity.ok("Deleted customer with ID: " + status);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CustomerVo> updateCustomer(@PathVariable int id) {
+        CustomerVo updated = service.updateById(id);
+        return ResponseEntity.ok(updated);
+    }
+}
+```
+
+#### Key Takeaways
+- The presentation layer maps client payloads directly into Value Objects (VO) using String variables.
+- Using `ResponseEntity` allows controllers to specify HTTP status codes (200 OK, 201 Created, 404 Not Found) alongside response bodies.
+- Separation of concerns ensures each layer has a single responsibility, simplifying testing and maintenance.
+
+---
+
+## SECTION 9: ADVANCED FEATURES & PRODUCTION READINESS
+
+### Profiles: Multi-Environment Configurations
+Profiles allow developers to isolate configuration parameters for different environments (e.g., dev, test, prod).
+- **Setup**: Define properties using the naming convention `application-{profile}.properties` or `application-{profile}.yml`.
+- **Activation**: Set `spring.profiles.active=dev` in `application.properties` or execute the application with JVM flags:
+  ```bash
+  java -jar app.jar --spring.profiles.active=prod
+  ```
+- **YML Multi-profile Blocks**:
+  ```yaml
   spring:
-    datasource:
-      url: jdbc:mysql:///testschema
-      username: root
-      password: 2580
-      driver-class-name: com.mysql.cj.jdbc.Driver
-```
-## SECTION H: EXECUTION FLOW DIAGRAMS
+    profiles:
+      active: dev
+  ---
+  spring:
+    config:
+      activate:
+        on-profile: dev
+  server:
+    port: 8080
+  ---
+  spring:
+    config:
+      activate:
+        on-profile: prod
+  server:
+    port: 443
+  ```
 
-Spring Boot DI Flow:
-APP START -> @SpringBootApplication triggers ComponentScan
-|
-```text
-|-> Finds @Named/@Component beans in packages
-|-> @ImportResource loads applicationContext.xml (if present)
-|      --> <alias name="dollar{course.choose}" alias="courseId"/>
-|-> IoC Container: Instantiate all beans + inject dependencies
-|-> Start Embedded Tomcat (if web starter present)
---> APPLICATION READY
+### Spring Boot Actuator
+Actuator exposes production-ready HTTP endpoints to monitor and interact with your application.
+- **Core Endpoints**:
+  - `/actuator/health`: Provides basic application health information (can show detailed subsystem status like DB, disk, or rabbitmq connections).
+  - `/actuator/metrics`: Exposes metric category names (e.g., JVM memory heap usage, HTTP request count).
+  - `/actuator/env`: Exposes environment configuration properties.
+  - `/actuator/loggers`: View and modify application log levels at runtime.
+- **Configuration**:
+  ```properties
+  management.endpoints.web.exposure.include=health,info,metrics,loggers
+  management.endpoint.health.show-details=always
+  ```
+- **Custom Health Indicator**:
+  ```java
+  @Component
+  public class CustomDbHealthIndicator implements HealthIndicator {
+      @Override
+      public Health health() {
+          boolean databaseStatus = checkDatabaseConnection();
+          if (databaseStatus) {
+              return Health.up().withDetail("Database Status", "Active and Reusable").build();
+          }
+          return Health.down().withDetail("Database Status", "Unavailable/Timeout").build();
+      }
+      private boolean checkDatabaseConnection() {
+          // implementation logic
+          return true;
+      }
+  }
+  ```
 
-```
-REST API Request Flow:
-Client HTTP Request
-- DispatcherServlet (Front Controller)
-- HandlerMapping: finds matching @RequestMapping
-- @RestController method invoked
-- @RequestParam/@PathVariable extracted
-```text
-- @RequestBody deserialized (Jackson JSON -> Java)
-- Service Layer called -> DAO Layer called -> DB query
+### Spring Boot Logging & Configuration
+Spring Boot uses SLF4J (Simple Logging Facade for Java) with Logback as the default engine.
+- **Log Levels**: `TRACE` < `DEBUG` < `INFO` < `WARN` < `ERROR`.
+- **Properties configuration**:
+  ```properties
+  logging.level.root=INFO
+  logging.level.org.springframework.web=DEBUG
+  logging.file.name=logs/app-execution.log
+  ```
+- **Structured JSON Logging (ELK Stack integration)**:
+  ```properties
+  logging.pattern.console={"timestamp":"%d{yyyy-MM-dd HH:mm:ss.SSS}","level":"%p","thread":"%t","logger":"%logger","message":"%m"}%n
+  ```
 
-```
-- ResponseEntity returned
-- HTTP Response (JSON body + status code)
+### Developer Tools (DevTools)
+Spring Boot DevTools speeds up development through:
+1. **Automatic Restart**: Triggers a context restart when files on the classpath change.
+2. **LiveReload**: Auto-refreshes supported client browsers on resource changes.
+3. **Property Defaults**: Sets development properties (like disabling templates cache) to standard debug modes.
+4. **H2 Console**: Enables H2 database web interface.
 
-## SECTION I: ADDITIONAL BEST PRACTICES (FROM SOURCE FILE)
+### Reactive WebFlux vs Spring MVC
+- **Spring MVC**: Servlet-based, blocking model using a thread-per-request architecture. Built on traditional Tomcat servers. Ideal for standard relational databases and synchronous operations.
+- **Spring WebFlux**: Reactive, non-blocking framework built on Netty. Uses event-loop execution models, supporting backpressure. Perfect for high-concurrency systems, streaming services, and non-blocking databases (e.g. MongoDB, R2DBC).
 
-1. Use application.yml for nested configs, .properties for simple ones.
-2. Always use ResponseEntity with proper HTTP status codes.
-3. Use @ConfigurationProperties over multiple @Value annotations.
-4. Use spring.profiles.active for environment-specific configs.
-5. Enable Actuator: management.endpoints.web.exposure.include=health,info
-6. Handle exceptions globally with @RestControllerAdvice.
-7. Use HikariCP (default) unless a specific pool is needed.
-8. Keep controller layer thin - move logic to service layer.
-9. Use constructor injection in Spring Boot beans.
-10. Use Lombok to reduce boilerplate in VO/DTO/BO classes.
+### Testing Slices
+Spring Boot provides testing annotations that load only specific layers of the ApplicationContext to keep tests fast and isolated:
+- `@SpringBootTest`: Loads the complete ApplicationContext for full integration testing.
+- `@WebMvcTest`: Focuses only on the controller layer, auto-configuring MVC infrastructure and mocking dependencies (uses `@MockBean`).
+- `@DataJpaTest`: Loads only database layers (repositories), auto-configuring an in-memory database and running transactions that roll back by default.
+- `@JsonTest`: Focuses only on JSON serialization and deserialization, auto-configuring Jackson/Gson objects.
 
-## END OF SPRING BOOT DEEP DIVE ANALYSIS - Appended March 2026
+#### Key Takeaways
+- Profiles isolate configuration properties for dev, test, and production environments.
+- Actuator exposes monitoring endpoints, and custom indicators can be registered to track system dependencies.
+- Testing slices (`@WebMvcTest`, `@DataJpaTest`) keep test execution fast by loading only required layers of the context.
+
+---
 
 ## ASPECT-ORIENTED PROGRAMMING (AOP) - COMPREHENSIVE INTERVIEW GUIDE
 
@@ -952,7 +1283,7 @@ SYNTAX OF execution() POINTCUT:
 execution([access-modifier] return-type [declaring-type].method-name(params) [throws])
 
 Wildcards:
-= matches any single element (any class, any method, any return type)
+*   = matches any single element (any class, any method, any return type)
 ..  = matches any number of anything (any params, any sub-packages)
 
 EXAMPLES:
@@ -967,7 +1298,7 @@ execution(* com.app.service.*.*(..))
 
 3. ALL methods in package AND sub-packages:
 execution(* com.app..*.*(..))
-^^--- matches any sub-package
+            ^^--- matches any sub-package
 
 4. Specific method name pattern (starts with "get"):
 execution(* com.app.service.*.get*(..))
@@ -1075,7 +1406,7 @@ WHICH ONE DOES SPRING CHOOSE?
 
 ```text
 Target implements interface? -> YES -> JDK Dynamic Proxy (DEFAULT)
-- NO  -> CGLIB Proxy
+                             - NO  -> CGLIB Proxy
 
 ```
 Force CGLIB always:
@@ -1153,19 +1484,19 @@ ANSWER:
 | FEATURE | SPRING AOP | ASPECTJ |
 | --- | --- | --- |
 | Weaving Type | Runtime (Proxy-based) | Compile-time or |
-| Load-time |  |  |
+|              |                       | Load-time |
 | JoinPoint Types | Method execution ONLY | Method, field access, |
-| constructor, static |  |  |
-| initializer, etc. |  |  |
+|                 |                       | constructor, static |
+|                 |                       | initializer, etc. |
 | Private methods | CANNOT intercept | CAN intercept |
 | Final classes/methods | CANNOT proxy | CAN advise |
 | Performance | Slight overhead (proxy) | Better (bytecode) |
 | Setup complexity | Simple (just Spring Beans) | Requires AspectJ |
-| compiler or agent |  |  |
+|                  |                            | compiler or agent |
 | Dependency | spring-boot-starter-aop | aspectjweaver + |
-| special build setup |  |  |
+|            |                         | special build setup |
 | Use case | 90% of enterprise needs | Complex requirements |
-| (private, final) |  |  |
+|          |                         | (private, final) |
 
 SPRING AOP WEAVING FLOW (Runtime):
 1. Spring Context starts
@@ -1911,7 +2242,7 @@ When you need both "before" and "after" logic (like timing),
 use @Around instead of @Before + @After to keep context (start time).
 
 5. USE CUSTOM ANNOTATIONS FOR TARGETED INTERCEPTION:
-   @annotation(com.app.annotation.Auditable) is cleaner than broad
+   @annotation(com.app.annotation.Loggable) is cleaner than broad
    execution() patterns. Makes it explicit what gets intercepted.
 
 6. LOG ENOUGH CONTEXT:
@@ -1952,20 +2283,21 @@ DON'T'S (Anti-Patterns):
 1. Proxy creation overhead: One-time at startup, not at runtime
 2. Method invocation overhead: ~microscecond level, negligible
 3. Reflection in JoinPoint: Avoid calling joinPoint.getArgs()
-unless actually needed (array creation cost)
+   unless actually needed (array creation cost)
 4. Broad pointcuts: Every method call goes through advice check.
-Be specific with pointcut expressions.
+   Be specific with pointcut expressions.
 5. @Around is most expensive: Has proceed() invocation overhead.
-Use @Before/@After when @Around not needed.
+   Use @Before/@After when @Around not needed.
 
 WHEN NOT TO USE AOP:
 1. Simple helper methods that rarely change
 2. Internal utility classes
 3. Performance-critical hot paths (tight loops, HFT)
 4. When the cross-cutting logic needs access to method-local variables
-(AOP cannot access local variables inside methods)
+   (AOP cannot access local variables inside methods)
 5. When team is not familiar with AOP (maintenance problem)
 6. When compile-time analysis is needed (AOP is runtime spring proxy)
+7. When database triggers or queries are highly dynamic and vendor specific
 
 CLEAN ARCHITECTURE WITH AOP:
 
@@ -2194,7 +2526,6 @@ Values:
 "prototype"             : new instance per request
 "request"               : one per HTTP request  (web)
 "session"               : one per HTTP session   (web)
-"application"           : one per ServletContext  (web)
 
 15. @Lazy
 Package : org.springframework.context.annotation
@@ -2591,7 +2922,7 @@ Example : @BatchSize(size=25) on a @OneToMany collection.
 
 82. @NamedQuery
 Package : javax.persistence
-Definition : Defines a static JPQL query at the entity class level.
+Definition : Declares static JPQL query at the entity class level.
 Parsed and validated at startup (fail-fast).
 
 ## SECTION F: SPRING DATA JPA ANNOTATIONS  [JPA]
@@ -2642,7 +2973,7 @@ Optional<Customer> findWithOrdersById(@Param("id") Long id);
 88. @Lock
 Package : org.springframework.data.jpa.repository
 Definition : Applies a JPA lock mode to a repository query method.
-Modes:
+Values :
 LockModeType.PESSIMISTIC_WRITE  : SELECT ... FOR UPDATE (row-level DB lock)
 LockModeType.OPTIMISTIC         : version-based optimistic locking
 
@@ -2654,11 +2985,11 @@ Definition : Wraps the annotated method in a DB transaction using AOP proxy.
 On success -> COMMIT. On RuntimeException -> ROLLBACK.
 Key attributes:
 propagation  : REQUIRED(default), REQUIRES_NEW, NESTED, SUPPORTS,
-NOT_SUPPORTED, MANDATORY, NEVER
+               NOT_SUPPORTED, MANDATORY, NEVER
 isolation    : DEFAULT, READ_UNCOMMITTED, READ_COMMITTED,
-REPEATABLE_READ, SERIALIZABLE
+               REPEATABLE_READ, SERIALIZABLE
 rollbackFor  : Exception classes that trigger rollback
-(default: RuntimeException and its subclasses)
+               (default: RuntimeException and its subclasses)
 noRollbackFor: Exceptions that must NOT trigger rollback
 readOnly     : true for read queries (optimization hint)
 timeout      : seconds before auto-rollback
@@ -2820,34 +3151,33 @@ callSuper=true : includes superclass fields.
 | CATEGORY | KEY ANNOTATIONS |
 | --- | --- |
 | Spring Core / DI | @Component, @Service, @Repository, @Controller, @Autowired, |
-| @Qualifier, @Primary, @Bean, @Configuration, @Value, @Scope, |  |
-| @PostConstruct, @PreDestroy, @Profile, @Lazy, @DependsOn |  |
+|                  | @Qualifier, @Primary, @Bean, @Configuration, @Value, @Scope, |
+|                  | @PostConstruct, @PreDestroy, @Profile, @Lazy, @DependsOn |
 | Spring Boot | @SpringBootApplication, @ConfigurationProperties, |
-| @ConditionalOnClass, @ConditionalOnMissingBean, |  |
-| @ConditionalOnProperty, @SpringBootTest |  |
+|             | @ConditionalOnClass, @ConditionalOnMissingBean, |
+|             | @ConditionalOnProperty, @SpringBootTest |
 | Spring MVC / REST | @RestController, @RequestMapping, @GetMapping, @PostMapping, |
-| @PutMapping, @PatchMapping, @DeleteMapping, @PathVariable, |  |
-| @RequestParam, @RequestBody, @ResponseBody, @ResponseStatus, |  |
-| @RequestHeader, @CrossOrigin, @ExceptionHandler, |  |
-| @ControllerAdvice, @RestControllerAdvice, @Valid, @Validated |  |
+|                   | @PutMapping, @PatchMapping, @DeleteMapping, @PathVariable, |
+|                   | @RequestParam, @RequestBody, @ResponseBody, @ResponseStatus, |
+|                   | @RequestHeader, @CrossOrigin, @ExceptionHandler, |
+|                   | @ControllerAdvice, @RestControllerAdvice, @Valid, @Validated |
 | AOP | @Aspect, @Before, @After, @AfterReturning, @AfterThrowing, |
-| @Around, @Pointcut, @EnableAspectJAutoProxy, @Order |  |
+|     | @Around, @Pointcut, @EnableAspectJAutoProxy, @Order |
 | Hibernate / JPA | @Entity, @Table, @Id, @GeneratedValue, @Column, @Transient, |
-| @OneToOne, @OneToMany, @ManyToOne, @ManyToMany, |  |
-| @JoinColumn, @JoinTable, @Embeddable, @Embedded, |  |
-| @Lob, @Enumerated, @Version, @CreationTimestamp, |  |
-| @UpdateTimestamp, @NaturalId, @Cache, @BatchSize, @NamedQuery |  |
+|                 | @OneToOne, @OneToMany, @ManyToOne, @ManyToMany, |
+|                 | @JoinColumn, @JoinTable, @Embeddable, @Embedded, |
+|                 | @Lob, @Enumerated, @Version, @CreationTimestamp, |
+|                 | @UpdateTimestamp, @NaturalId, @Cache, @BatchSize, @NamedQuery |
 | Spring Data JPA | @Query, @Param, @Modifying, @EntityGraph, @Lock, |
-| @EnableJpaRepositories |  |
+|                 | @EnableJpaRepositories |
 | Transactions | @Transactional, @EnableTransactionManagement |
 | Spring Security | @EnableWebSecurity, @PreAuthorize, @PostAuthorize, |
-| @Secured, @RolesAllowed, @EnableMethodSecurity, |  |
-| @AuthenticationPrincipal, @WithMockUser |  |
+|                 | @Secured, @RolesAllowed, @EnableMethodSecurity, |
+|                 | @AuthenticationPrincipal, @WithMockUser |
 | Bean Validation | @NotNull, @NotBlank, @NotEmpty, @Size, @Email, @Pattern, |
-| @Min, @Max, @Positive, @PositiveOrZero, @Future, @Past |  |
+|                 | @Min, @Max, @Positive, @PositiveOrZero, @Future, @Past |
 | Lombok | @Data, @Builder, @Slf4j, @NoArgsConstructor, |
-| @AllArgsConstructor, @RequiredArgsConstructor, |  |
-| @Getter, @Setter, @ToString, @EqualsAndHashCode |  |
+|        | @AllArgsConstructor, @RequiredArgsConstructor, |
+|        | @Getter, @Setter, @ToString, @EqualsAndHashCode |
 
 ## END OF ANNOTATIONS REFERENCE GUIDE -- 2026-04-22
-
