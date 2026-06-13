@@ -1,706 +1,998 @@
-# SPRING FRAMEWORK - COMPREHENSIVE INTERVIEW PREPARATION GUIDE
-> *For: 7+ Years Experience Level | Java Developer*
+# Spring Framework & Spring Boot - Comprehensive Interview Preparation Guide
+> **For: 7+ Years Experience Level | Lead Java & Microservices Developer**
 
-## SECTION 1: SOURCE ANALYSIS
+---
 
-Source: Spring_and_Spring_boot.txt (10,694 lines / 474 KB - Spring Core section)
-Coverage: IOC Container, DI (Setter/Constructor), Bean Lifecycle, XML config,
-Annotation config, Spring JDBC, ApplicationContext, BeanFactory,
-Circular dependency, VO/DTO/BO pattern
-Missing: AOP deep dive, Spring Security internals, SpEL, Event handling,
-Profile-based config, @Conditional
+## Section 1: Core Spring Framework Architecture
 
-## SECTION 2: SPRING ARCHITECTURE
+### 1.1 Inversion of Control (IoC) and Dependency Injection (DI)
+**Inversion of Control (IoC)** is a design principle in which the control of object creation, configuration, and lifecycle management is transferred from the application developer to the framework container. 
 
-Spring Modules: Core | AOP | Data Access | Web | Test | Security
+**Dependency Injection (DI)** is a concrete design pattern implementing IoC. Instead of components instantiating their dependencies manually, dependencies are "injected" by the Spring container at runtime.
 
-IOC Container Types:
-BeanFactory: Basic, lazy loading, lightweight
-ApplicationContext: BeanFactory + AOP + Events + i18n + Environment (PREFERRED)
+#### The Dependency Injection Paradigm
+```mermaid
+graph TD
+    subgraph Tight_Coupling ["Without DI: Tight Coupling"]
+        OS1[OrderService] -->|"new PaymentService()"| PS1[PaymentService]
+    end
 
-## SECTION 3: 5 INTERVIEW ROUNDS
+    subgraph Loose_Coupling ["With DI: Loose Coupling via IoC"]
+        OS2[OrderService]
+        PS2[PaymentService]
+        Container[Spring IoC Container]
+        
+        Container -->|"Instantiates & Injects"| PS2
+        Container -->|"Injects Dependency into"| OS2
+        OS2 -.->|"Depends on"| PS2
+    end
 
-## ROUND 1 - BASIC
+    classDef tight fill:#EF4444,stroke:#B91C1C,stroke-width:2px,color:#FFFFFF;
+    classDef loose fill:#10B981,stroke:#047857,stroke-width:2px,color:#FFFFFF;
+    classDef container fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
 
-#### Q1. What is IOC and Dependency Injection?
-
-IOC (Inversion of Control): Framework controls object creation, not developer.
-DI (Dependency Injection): IOC pattern where dependencies injected by container.
-
-Without DI:
-class OrderService {
-    private PaymentService ps = new PaymentService(); // tight coupling!
-}
-
-With DI:
-@Service
-class OrderService {
-    private final PaymentService ps;
-    @Autowired // Spring injects PaymentService
-    public OrderService(PaymentService ps) { this.ps = ps; }
-}
-
-Types of DI:
-1. Constructor Injection (RECOMMENDED): Mandatory dependencies, immutable
-2. Setter Injection: Optional dependencies
-3. Field Injection (@Autowired on field): Avoid! Hard to test
-
-#### Q2. @Component vs @Service vs @Repository vs @Controller.
-
-All are @Component stereotypes (Spring scans and creates beans):
-@Component: Generic bean
-@Service: Business logic layer (semantic only, no extra functionality)
-@Repository: DAO layer (adds automatic exception translation - SQLException -> DataAccessException)
-@Controller: Web MVC controller (adds @RequestMapping processing)
-@RestController = @Controller + @ResponseBody
-
-#### Q3. Bean Scopes.
-
-singleton (default): One instance per Spring container
-prototype: New instance every time requested
-request: One per HTTP request (web)
-session: One per HTTP session (web)
-application: One per ServletContext
-websocket: One per WebSocket session
-
-@Scope("prototype")
-@Component
-public class TaskProcessor { }
-
-## ROUND 2 - CORE TECHNICAL
-
-#### Q4. Bean Lifecycle in Spring.
-
-1. Instantiation (constructor call)
-2. Populate Properties (DI - setter/field injection)
-3. BeanNameAware.setBeanName()
-4. BeanFactoryAware.setBeanFactory()
-5. ApplicationContextAware.setApplicationContext()
-6. BeanPostProcessor.postProcessBeforeInitialization()
-7. @PostConstruct
-8. InitializingBean.afterPropertiesSet()
-9. Custom init-method
-10. BeanPostProcessor.postProcessAfterInitialization()
---- Bean is READY to use ---
-11. @PreDestroy
-12. DisposableBean.destroy()
-13. Custom destroy-method
-
-Most used: @PostConstruct and @PreDestroy
-
-@Service
-public class CacheService {
-    @PostConstruct
-    public void init() { loadCache(); } // Runs after DI
-
-    @PreDestroy
-    public void cleanup() { clearCache(); } // Runs before shutdown
-}
-
-#### Q5. Spring AOP (Aspect-Oriented Programming).
-
-Cross-cutting concerns: Logging, Security, Transaction, Performance monitoring.
-
-Terminology:
-- Aspect: Class containing cross-cutting logic (@Aspect)
-- Advice: Action taken (Before, After, Around, AfterReturning, AfterThrowing)
-- JoinPoint: Point in execution (method call)
-- Pointcut: Expression matching JoinPoints
-- Weaving: Linking aspects to target objects (runtime in Spring)
-
-Code:
-@Aspect
-@Component
-public class PerformanceAspect {
-    @Around("execution(* com.service.*.*(..))")
-    public Object measureTime(ProceedingJoinPoint pjp) throws Throwable {
-        long start = System.currentTimeMillis();
-        Object result = pjp.proceed();
-        long duration = System.currentTimeMillis() - start;
-        log.info("{}.{} took {}ms", pjp.getTarget().getClass().getSimpleName(),
-            pjp.getSignature().getName(), duration);
-        return result;
-    }
-}
-
-Internal: Spring AOP uses JDK Dynamic Proxy (interfaces) or CGLIB Proxy (classes).
-
-#### Q6. Spring Transaction Management.
-
-@Transactional: Declarative transaction management
-
-Attributes:
-- propagation: REQUIRED (default), REQUIRES_NEW, SUPPORTS, NOT_SUPPORTED, MANDATORY, NEVER, NESTED
-- isolation: DEFAULT, READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE
-- readOnly: true/false (optimizer hint)
-- rollbackFor: Exception classes that trigger rollback
-- timeout: Transaction timeout in seconds
-
-@Transactional(propagation = Propagation.REQUIRED,
-isolation = Isolation.READ_COMMITTED,
-rollbackFor = Exception.class)
-public void transferMoney(Account from, Account to, double amount) {
-from.debit(amount);
-to.credit(amount);
-}
-
-Propagation Flow:
-REQUIRED: Join existing txn, or create new if none exists
-REQUIRES_NEW: Always create new txn, suspend existing
-NESTED: Nested txn within existing (savepoint), or new if none
-
-Common Pitfall:
-@Transactional doesn't work on:
-- private methods (proxy can't intercept)
-- Self-invocation (this.method() bypasses proxy)
-- Non-Spring managed beans
-
-## ROUND 3 - ADVANCED
-
-#### Q7. @Qualifier vs @Primary.
-
-When multiple beans of same type exist:
-@Primary: Default bean to inject (used when no qualifier specified)
-@Qualifier: Explicitly name which bean to inject
-
-@Component("mysqlDS")
-public class MySQLDataSource implements DataSource { }
-
-@Component("postgresDS")
-@Primary // Default choice
-public class PostgresDataSource implements DataSource { }
-
-@Service
-public class ReportService {
-    @Autowired
-    @Qualifier("mysqlDS") // Overrides @Primary
-    private DataSource dataSource;
-}
-
-#### Q8. Spring Profiles.
-
-// application-dev.properties, application-prod.properties
-spring.profiles.active=dev
-
-@Configuration
-@Profile("prod")
-public class ProdConfig {
-    @Bean
-    public DataSource dataSource() { return productionDS(); }
-}
-
-## ROUND 4 - SCENARIO-BASED
-
-#### Q9. How does @Transactional work internally?
-
-1. Spring creates a PROXY around the bean
-2. When @Transactional method called:
-a. Proxy intercepts the call
-b. TransactionManager.getTransaction() - starts txn
-c. Target method executes
-```text
-d. No exception -> TransactionManager.commit()
-e. RuntimeException -> TransactionManager.rollback()
-
+    class OS1,PS1 tight;
+    class OS2,PS2 loose;
+    class Container container;
 ```
-Flow:
-Caller -> Proxy (AOP) -> Transaction Begin -> Target Method -> Commit/Rollback
 
-This is why self-invocation fails:
-this.transferMoney() -> calls directly, bypasses proxy!
-Fix: Inject self, or restructure to call from different bean.
+---
 
-## ROUND 5 - ARCHITECTURE
+### 1.2 Setter Injection vs. Constructor Injection
+Spring supports injecting dependencies through setter methods, constructor arguments, and direct field injection.
 
-#### Q10. Spring Application layered architecture.
+| Feature | Setter Injection | Constructor Injection |
+| :--- | :--- | :--- |
+| **Execution Order** | Executed *after* constructor instantiation. | Executed *during* bean construction. |
+| **XML Configuration** | Configured using the `<property>` tag. | Configured using the `<constructor-arg>` tag. |
+| **Mandatory Dependencies** | Not guaranteed. Fields can remain unitialized or null. | Guaranteed. All constructor parameters must be supplied. |
+| **Partial Injection** | Supported. You can inject only some properties. | Not supported. All constructor parameters must be injected. |
+| **Overrides** | Setter values will override constructor values if both target the same field. | Cannot be overridden unless setters are explicitly defined. |
+| **Circular Dependencies** | Handled automatically via Spring's three-level cache. | Throws `BeanCurrentlyInCreationException`. |
+| **Immutability** | Beans are mutable. Fields cannot be declared `final`. | Supports immutability. Dependencies can be declared `final`. |
+| **Spring Recommendation** | Recommended for optional or mutable dependencies. | **Recommended for mandatory and immutable dependencies**. |
 
-Client (REST) -> Controller -> Service -> Repository -> Database
+#### Code Comparison
 
-@RestController: HTTP handling, request/response mapping
-@Service: Business logic, transaction boundaries
-@Repository: Data access, exception translation
-@Entity: JPA entity mapping to DB table
-
-KEY QUESTIONS:
-1. IOC and Dependency Injection types
-2. Bean Lifecycle (PostConstruct, PreDestroy)
-3. AOP concepts and @Around advice
-4. @Transactional internal working
-5. Transaction propagation types
-6. @Qualifier vs @Primary
-7. Bean Scopes
-8. Circular dependency handling
-
-## END OF SPRING ANALYSIS
-
-# SPRING FRAMEWORK - ADDITIONAL QUESTIONS (Q11-Q35) - ENHANCED EXPANSION
-
-#### Q11. Circular Dependency - detection and resolution.
-
-When Bean A depends on Bean B, and Bean B depends on Bean A.
-
-Spring's solution (constructor injection): FAILS! Throws BeanCurrentlyInCreationException
-Spring's solution (setter injection): Works using 3-level cache (singletonFactories)
-
-3-Level Cache:
-Level 1: singletonObjects (fully initialized beans)
-Level 2: earlySingletonObjects (partially initialized, exposed early)
-Level 3: singletonFactories (ObjectFactory to create early reference)
-
-Flow:
-```text
-Creating A -> needs B -> Creating B -> needs A -> Level 3 returns early A ref
-- B completes -> A completes -> both in Level 1
-
-```
-Best Fix: Refactor to remove circular dependency (extract common logic)
-Alternative: @Lazy on one dependency
-
-#### Q12. @Autowired - byType vs byName vs @Qualifier.
-
-@Autowired: Injects byType first.
-If multiple beans of same type: Ambiguity!
-Resolution order:
-```text
-1. @Qualifier("beanName") → explicit name match
-2. @Primary → marked as default
-3. Variable name matching → if variable name matches bean name
-
-```
-#### Q13. Spring AOP - JDK Proxy vs CGLIB Proxy.
-
-JDK Dynamic Proxy: For interfaces (default in Spring)
-Creates proxy implementing same interface
-Uses InvocationHandler.invoke()
-
-CGLIB Proxy: For concrete classes (no interface)
-Creates subclass at runtime
-Cannot proxy final methods/classes
-
-Spring Boot default: CGLIB (spring.aop.proxy-target-class=true)
-
-#### Q14. ApplicationContext vs BeanFactory.
-
-BeanFactory: Lazy loading, basic DI, lightweight
-ApplicationContext: Eager loading, all BeanFactory features + AOP + Events + i18n + Environment
-
-In production: Always use ApplicationContext (via @SpringBootApplication)
-
-#### Q15. @Transactional propagation - scenario questions.
-
-Scenario: Service A (@Transactional REQUIRED) calls Service B (@Transactional REQUIRES_NEW)
-
-```text
-A begins txn-1 -> calls B -> B suspends txn-1, starts txn-2
-- B completes, commits txn-2 -> A resumes txn-1
-
-```
-- If A fails, txn-1 rolls back but txn-2 stays committed!
-
-Use case: Audit logging in REQUIRES_NEW should persist even if main txn rolls back.
-
-#### Q16. @Async - async method execution.
-
-@EnableAsync on config class
-@Async on method -> runs in separate thread pool
-
-@Async
-public CompletableFuture<Report> generateReport(Long id) {
-Report r = reportService.buildReport(id);
-    return CompletableFuture.completedFuture(r);
-}
-
-Default pool: SimpleAsyncTaskExecutor (no pooling - BAD!)
-Custom pool: Define ThreadPoolTaskExecutor bean
-
-#### Q17. @Cacheable - Spring Cache abstraction.
-
-@Cacheable("policies") -> First call: executes method, caches result
-- Subsequent calls: returns cached value
-```text
-@CacheEvict("policies") -> Removes from cache
-@CachePut("policies") -> Always executes, updates cache
-
-```
-Providers: ConcurrentHashMap (default), Redis, EhCache, Caffeine
-
-@Cacheable(value = "policies", key = "#id", unless = "#result == null")
-public PolicyDTO findById(Long id) { return repo.findById(id).map(mapper::toDTO).orElse(null); }
-
-#### Q18. Spring Events - ApplicationEvent pattern.
-
-Publisher: applicationEventPublisher.publishEvent(new OrderCreatedEvent(order))
-Listener: @EventListener or @TransactionalEventListener
-
-@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-public void onOrderCreated(OrderCreatedEvent event) {
-emailService.sendConfirmation(event.getOrder()); // Only after txn commits
-}
-
-Q19-Q20 Quick Spring:
-
-#### Q19. @Value vs @ConfigurationProperties - property injection
-
-#### Q20. Spring Expression Language (SpEL): @Value("#{systemProperties['user.home']}")
-
-## SPRING FRAMEWORK - DEEP DIVE ANALYSIS (FROM SOURCE FILE)
-
-Extracted from Spring_and_Spring_boot.txt (Lines 1-5000)
-Topics: DI Types, Collections, Beans, Configuration, Architecture
-
-## SECTION A: DEPENDENCY INJECTION - DETAILED COMPARISON
-
-A.1  SETTER INJECTION vs CONSTRUCTOR INJECTION - FULL COMPARISON
-
-Feature                     Setter Injection       Constructor Injection
---------------------------  ---------------------  -----------------------
-Execution Order             After constructor      During construction
-XML Tag                     <property>             <constructor-arg>
-Mandatory Dependencies      No (optional)          Yes (all params req.)
-Partial Injection           Supported              Not supported
-Overrides                   Setter overrides       Cannot be overridden
-constructor values     by setter
-Circular Dependency         Handled (partial)      Throws exception
-Readability                 Clear property names   Order-dependent
-Immutability                Mutable objects        Immutable objects
-Spring Recommendation       Optional deps          Mandatory deps *
-
-Setter Injection - XML Example:
+##### Setter Injection (XML Config)
+```xml
 <bean id="msg" class="com.demo.MessageGenerator">
-  <property name="name" value="Teja"/>
-  <property name="id" value="10"/>
+    <property name="name" value="Teja"/>
+    <property name="id" value="10"/>
 </bean>
-
+```
+```java
 public class MessageGenerator {
     private String name;
     private int id;
+
     public void setName(String name) { this.name = name; }
     public void setId(int id) { this.id = id; }
 }
+```
 
-Constructor Injection - XML Example:
+##### Constructor Injection (XML Config)
+```xml
 <bean id="msg" class="com.demo.MessageGenerator">
-  <constructor-arg name="name" value="Teja"/>
-  <constructor-arg name="id" value="10"/>
+    <constructor-arg name="name" value="Teja"/>
+    <constructor-arg name="id" value="10"/>
 </bean>
-
+```
+```java
 public class MessageGenerator {
-    private String name; private int id;
+    private final String name;
+    private final int id;
+
     public MessageGenerator(String name, int id) {
-        this.name = name; this.id = id;
+        this.name = name;
+        this.id = id;
     }
 }
+```
 
-Interview Q: What happens when BOTH Setter and Constructor inject the same field?
-**A:** Setter Injection OVERRIDES Constructor Injection. Setter runs AFTER
-constructor, so the last-set value wins.
+---
 
-A.2  COLLECTION INJECTION (XML-Based)
+### 1.3 XML-Based Collection & Null Injections
+Spring supports injecting arrays, lists, sets, maps, and property files directly via XML configuration.
 
-Spring supports injecting Java collections via XML:
-
+```xml
 <bean id="emp" class="com.demo.Employee">
-  <!-- Array / List (maintains order, allows duplicates) -->
-  <property name="skills">
-    <list>
-      <value>Java</value> <value>Spring</value> <value>Hibernate</value>
-    </list>
-  </property>
+    <!-- Array / List: Allows duplicates, maintains insertion order -->
+    <property name="skills">
+        <list>
+            <value>Java</value>
+            <value>Spring</value>
+            <value>Hibernate</value>
+        </list>
+    </property>
 
-  <!-- Set (no duplicates) -->
-  <property name="certifications">
-    <set>
-      <value>AWS</value> <value>Azure</value>
-    </set>
-  </property>
+    <!-- Set: Excludes duplicate elements -->
+    <property name="certifications">
+        <set>
+            <value>AWS</value>
+            <value>Azure</value>
+        </set>
+    </property>
 
-  <!-- Map (key-value pairs, any Object type) -->
-  <property name="idDetails">
-    <map>
-      <entry key="aadhar" value="AD1234XYZ"/>
-      <entry key="pan" value="PAN5678ABC"/>
-    </map>
-  </property>
+    <!-- Map: Key-Value pairs of arbitrary object types -->
+    <property name="idDetails">
+        <map>
+            <entry key="aadhar" value="AD1234XYZ"/>
+            <entry key="pan" value="PAN5678ABC"/>
+            <entry key="passport-ref" value-ref="passportBean"/>
+        </map>
+    </property>
 
-  <!-- Properties (String-only key-value) -->
-  <property name="dbConfig">
-    <props>
-      <prop key="driver">com.mysql.cj.jdbc.Driver</prop>
-      <prop key="url">jdbc:mysql:///mydb</prop>
-    </props>
-  </property>
+    <!-- Properties: String-only Key-Value pairs -->
+    <property name="dbConfig">
+        <props>
+            <prop key="driver">com.mysql.cj.jdbc.Driver</prop>
+            <prop key="url">jdbc:mysql:///mydb</prop>
+        </props>
+    </property>
+
+    <!-- Explicit Null Injection -->
+    <property name="address">
+        <null/>
+    </property>
+</bean>
+```
+
+---
+
+### 1.4 IoC Container Implementations: BeanFactory vs. ApplicationContext
+The Spring container is represented by the `BeanFactory` interface and its sub-interface `ApplicationContext`.
+
+| Feature | BeanFactory | ApplicationContext |
+| :--- | :--- | :--- |
+| **Bean Loading** | Lazy loading. Beans are initialized on demand via `getBean()`. | Eager loading. All singleton beans are pre-instantiated at startup. |
+| **Memory Footprint** | Lightweight; suitable for resource-constrained systems. | Moderately heavier due to pre-instantiation. |
+| **AOP Integration** | Basic, manual configurations. | Seamless integration with Aspect-Oriented Programming. |
+| **Enterprise Services** | basic Dependency Injection only. | Supports i18n, Event handling, Application Listeners, and Profiles. |
+
+#### Core ApplicationContext Implementations
+*   `ClassPathXmlApplicationContext`: Loads bean definitions from XML configuration files located on the application classpath.
+*   `FileSystemXmlApplicationContext`: Loads bean definitions from XML configuration files located at specified file system paths.
+*   `XmlWebApplicationContext`: Used for Spring Web MVC architectures to load XML bean configs within a servlet context.
+*   `AnnotationConfigApplicationContext`: Used in standalone Java applications to load configurations directly from `@Configuration` annotated classes.
+*   `AnnotationConfigWebApplicationContext`: The web-aware counterpart of `AnnotationConfigApplicationContext` for modern Spring MVC applications.
+
+#### Deferring Pre-Instantiation
+By default, the `ApplicationContext` initializes singleton beans at startup. To override this behavior and initialize a bean only when first requested, use the `lazy-init` property:
+```xml
+<bean id="emp" class="com.demo.Employee" lazy-init="true"/>
+```
+In Java configuration, use the `@Lazy` annotation:
+```java
+@Bean
+@Lazy
+public Employee employee() { return new Employee(); }
+```
+
+---
+
+### 1.5 XML Bean Configuration Inheritance
+Spring bean configurations support property inheritance, enabling child beans to inherit properties, bindings, and configurations from parent beans. This is defined at the XML configuration level and does not require Java class inheritance.
+
+```xml
+<!-- Abstract Parent bean declaration -->
+<bean id="baseEmp" class="com.demo.Employee" abstract="true">
+    <property name="company" value="Tenjosaka Solutions"/>
+    <property name="location" value="Hyderabad"/>
 </bean>
 
-For injecting bean references in collections: use <ref bean="beanId"/>
-
-A.3  NULL INJECTION
-
-To explicitly inject null:
-  <property name="address"><null/></property>
-
-Without <null/>, omitting a property leaves it at its Java default
-(null for objects, 0 for int, false for boolean).
-
-## SECTION B: IoC CONTAINER TYPES - DETAILED
-
-ApplicationContext Implementations:
-Implementation                         When to Use
-------------------------------------   ----------------------------------------
-ClassPathXmlApplicationContext         Standalone app, XML on classpath
-FileSystemXmlApplicationContext        Standalone app, XML at filesystem path
-XmlWebApplicationContext               Spring MVC web app, XML config
-AnnotationConfigApplicationContext     Standalone app, Java Config
-AnnotationConfigWebApplicationContext  Spring MVC web app, Java Config
-
-lazy-init Attribute:
-- ApplicationContext pre-instantiates all singleton beans at startup.
-- Use lazy-init="true" to defer creation until first requested.
-- <bean id="emp" class="..." lazy-init="true"/>
-
-## SECTION C: AUTOWIRING MODES - DETAILED
-
-Mode             Description
----------------  ----------------------------------------------------------------
-no (default)     No autowiring. Manual wiring via <property>/<constructor-arg>
-byName           Matches bean ID with property name.
-byType           Matches by data type. Fails if multiple beans of same type.
-Use autowire-candidate="false" to exclude beans.
-constructor      Like byType but applied to constructor parameters.
-@Autowired       Annotation-based. Default is byType. Use @Qualifier
-                 to resolve ambiguity. Works on field, setter, constructor.
-
-Ambiguity Resolution Priority:
-  1. @Qualifier("beanName") - explicit bean selection
-  2. @Primary - marks default bean
-  3. autowire-candidate="false" - excludes a bean (XML)
-  4. Variable name matches bean name - implicit byName fallback
-
-## SECTION D: ANNOTATION REFERENCE TABLE
-
-D.1  STEREOTYPE ANNOTATIONS
-
-Annotation        Purpose                       Extra Capability
-----------------  ----------------------------  ----------------------------
-@Component        Generic Spring bean           Basic bean registration
-@Service          Business / Service layer      + Transaction mgmt (AOP)
-@Repository       DAO / Persistence layer       + Exception translation
-                                                (SQLException -> Spring DAE)
-@Controller       Web / Presentation layer      + HTTP request handling
-@RestController   REST API controller           = @Controller + @ResponseBody
-
-D.2  DI ANNOTATIONS
-
-Annotation          Description
-------------------  ---------------------------------------------------------
-@Autowired          Injects dependency by type. Field/setter/constructor.
-@Qualifier("id")    Resolves ambiguity with @Autowired.
-@Primary            Marks bean as default for autowiring.
-@Value("dollar{key}")  Injects values from properties files.
-@Value("#{expr}")   Injects SpEL expression results.
-@Required           DEPRECATED (Spring 5.1). Use constructor injection.
-@Inject             JSR-330 equivalent of @Autowired.
-@Named("name")      JSR-330 equivalent of @Component + @Qualifier.
-@Resource           JSR-250. Field/setter only. Resolves byName first.
-
-D.3  CONFIGURATION ANNOTATIONS
-
-Annotation              Description
-----------------------  -------------------------------------------------
-@Configuration          Class as source of bean definitions (=XML file).
-@Bean                   Method return value is a Spring bean.
-@ComponentScan          Tells Spring which packages to scan.
-@PropertySource         Loads .properties file into environment.
-@ImportResource         Imports XML config into Java config.
-@Import                 Imports another @Configuration class.
-
-D.4  LIFECYCLE ANNOTATIONS
-
-Annotation          Description
-------------------  ---------------------------------------------------------
-@PostConstruct      Runs AFTER constructor + DI. Custom init logic.
-@PreDestroy         Runs BEFORE bean destruction / container shutdown.
-@Scope              Defines bean scope (singleton, prototype, etc.)
-@Lazy               Delays bean creation until first access.
-@DependsOn          Ensures specified beans are initialized first.
-@Order              Controls component execution/injection order.
-
-<context:annotation-config/> activates processing for:
-@Required, @Autowired, @PostConstruct, @PreDestroy, @Resource
-
-## SECTION E: BEAN LIFECYCLE - COMPLETE INTERNAL FLOW
-
-Java Class Lifecycle          Spring Bean Lifecycle
-----------------------        ------------------------------------------
-1. Class Loading              1. Class Loading (static block)
-2. Instance Block             2. Handled internally by Spring
-3. Constructor                3. Object Instantiation (constructor)
-4. Manual Setters             4. Dependency Injection (@Autowired/setter)
-5. Method Calls               5. @PostConstruct (custom init)
-6. Business Logic             6. Bean Ready - Business Logic Execution
-7. Garbage Collection         7. @PreDestroy (custom cleanup)
-8. Bean Destroyed by Container
-
-Detailed Flow:
-```text
-Bean Definition Read -> Bean Instantiation (Constructor)
-- DI (Setter/Field/Constructor) -> BeanNameAware.setBeanName()
-
+<!-- Child bean inherits company and location properties from baseEmp -->
+<bean id="empChild" class="com.demo.Employee" parent="baseEmp">
+    <property name="ename" value="Teja"/>
+    <property name="eno" value="101"/>
+</bean>
 ```
-- BeanPostProcessor.postProcessBeforeInitialization()
-- @PostConstruct / afterPropertiesSet() / init-method
-- BeanPostProcessor.postProcessAfterInitialization()
-- BEAN READY -> (on shutdown) -> @PreDestroy / destroy()
-- Bean Destroyed
 
-Real-Time Example (VoterVerification):
-@Component("voterVerification")
-@PropertySource("classpath:Voter.Properties")
+#### Inheritance Rules
+1.  **Abstract Attribute**: If a bean configuration has `abstract="true"`, it is treated strictly as a template. The container **will not instantiate** this bean. It can only be used as a parent definition.
+2.  **No Multiple Inheritance**: A child bean can inherit configurations from only one parent bean (`parent` attribute accepts a single bean name).
+3.  **Property Overriding**: Properties defined in the child bean override the matching properties inherited from the parent.
+
+---
+
+### 1.6 Autowiring Modes and Resolution Priority
+Autowiring enables the Spring container to resolve and inject cooperating beans automatically.
+
+| Mode | Description |
+| :--- | :--- |
+| **no** (Default) | No autowiring. Dependencies must be configured manually via `<property>` or `<constructor-arg>`. |
+| **byName** | Spring searches for a bean whose ID matches the property name of the target bean. |
+| **byType** | Spring searches for a bean whose class matches the property type of the target bean. Throws exceptions if multiple matching beans exist. |
+| **constructor** | Similar to `byType`, but matches against constructor arguments. |
+
+#### Autowired Bean Resolution Pipeline
+When resolving a bean annotated with `@Autowired`, the container resolves dependencies in this order:
+```mermaid
+flowchart TD
+    Start["@Autowired Injection Point"] --> TypeCheck["1. Search by Type"]
+    TypeCheck --> MultiCheck{"Multiple Beans Found?"}
+    
+    MultiCheck -- No --> Inject["Inject Matching Bean"]
+    MultiCheck -- Yes --> QualifierCheck{"Has @Qualifier Annotation?"}
+    
+    QualifierCheck -- Yes --> InjectQualifier["Inject Bean Matching Qualifier ID"]
+    QualifierCheck -- No --> PrimaryCheck{"Is One Bean Marked @Primary?"}
+    
+    PrimaryCheck -- Yes --> InjectPrimary["Inject Primary Bean"]
+    PrimaryCheck -- No --> NameMatch{"Does Variable Name Match Bean ID?"}
+    
+    NameMatch -- Yes --> InjectByName["Inject Bean via Implicit Name Match"]
+    NameMatch -- No --> CandidateFilter{"Are some beans marked autowire-candidate='false'?"}
+    
+    CandidateFilter -- Yes --> InjectCandidate["Inject Remaining Valid Candidate"]
+    CandidateFilter -- No --> Error["Throw NoUniqueBeanDefinitionException"]
+    
+    classDef step fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
+    classDef decision fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#FFFFFF;
+    classDef err fill:#EF4444,stroke:#B91C1C,stroke-width:2px,color:#FFFFFF;
+    
+    class Start,Inject,InjectQualifier,InjectPrimary,InjectByName,InjectCandidate step;
+    class MultiCheck,QualifierCheck,PrimaryCheck,NameMatch,CandidateFilter decision;
+    class Error err;
+```
+
+#### Key Takeaways
+- **IoC** separates application logic from object instantiation. **DI** is the pattern used to supply dependencies.
+- **Constructor Injection** guarantees fields are final and mandatory properties are set, making it the preferred injection style in production.
+- **Circular Dependencies** are automatically resolved for setter injection using a three-level cache, but fail with constructor injection.
+- **`ApplicationContext`** is the standard IoC container implementation because it builds upon `BeanFactory` and integrates enterprise services.
+
+---
+
+## Section 2: Bean Lifecycles & Circular Dependencies
+
+### 2.1 The Complete Bean Lifecycle
+A Spring bean undergoes a series of creation, initialization, and cleanup phases managed by the IoC container.
+
+```mermaid
+flowchart TD
+    Start[1. Bean Definition Read] --> Instantiate[2. Instantiation <br> Constructor Called]
+    Instantiate --> PopulateProps[3. Populate Properties <br> Dependency Injection]
+    PopulateProps --> AwareInterfaces[4. Aware Interfaces <br> BeanNameAware, BeanFactoryAware, etc.]
+    AwareInterfaces --> BPPBefore[5. BeanPostProcessor <br> postProcessBeforeInitialization]
+    BPPBefore --> InitAnnotate[6. @PostConstruct <br> JSR-250 Init]
+    InitAnnotate --> InitializingBean[7. InitializingBean <br> afterPropertiesSet]
+    InitializingBean --> CustomInit[8. Custom init-method <br> XML / Bean annotation]
+    CustomInit --> BPPAfter[9. BeanPostProcessor <br> postProcessAfterInitialization]
+    BPPAfter --> Active[10. Bean is READY <br> Business Logic Executed]
+    Active --> ContainerShutdown[11. Container Shutdown Initiated]
+    ContainerShutdown --> PreDestroy[12. @PreDestroy <br> JSR-250 Cleanup]
+    PreDestroy --> DisposableBean[13. DisposableBean <br> destroy]
+    DisposableBean --> CustomDestroy[14. Custom destroy-method]
+    CustomDestroy --> End[15. Bean Destroyed]
+
+    classDef step fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
+    classDef active fill:#10B981,stroke:#047857,stroke-width:2px,color:#FFFFFF;
+    classDef destroy fill:#EF4444,stroke:#B91C1C,stroke-width:2px,color:#FFFFFF;
+    
+    class Start,Instantiate,PopulateProps,AwareInterfaces,BPPBefore,InitAnnotate,InitializingBean,CustomInit,BPPAfter step;
+    class Active active;
+    class ContainerShutdown,PreDestroy,DisposableBean,CustomDestroy,End destroy;
+```
+
+#### VoterVerification Real-Time Example
+This class demonstrates property injections, `@PostConstruct` checks, and `@PreDestroy` cleanups:
+```java
+package com.Voter.verification;
+
+import java.util.Date;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.stereotype.Component;
+
+@Component(value = "voterVerification")
+@PropertySource(value="classpath:com/Voters/Config/Voter.properties")
 public class VoterVerification {
-    @Value("dollar{voterVerifier.name}") private String name;
-    @Value("dollar{voterVerifier.age}")  private float age;
+    
+    @Value("${voterVerifier.name}")
+    private String name;
+    
+    @Value("${voterVerifier.age}")
+    private float age;
+    
     private Date dateVerification;
+
+    static {
+        System.out.println("VoterVerifier.class file loaded.");
+    }
+
+    public VoterVerification() {
+        System.out.println("VoterVerifier object instantiated.");
+    }
 
     @PostConstruct
     public void ourInit() {
+        System.out.println("Executing custom @PostConstruct init method...");
         dateVerification = new Date();
-        if (name == null || age < 0) throw new IllegalArgumentException();
+        // Validation check inside initialization phase
+        if (name == null || age < 0) {
+            throw new IllegalArgumentException("Invalid values provided for name or age.");
+        }
+    }
+
+    public String checkEligibility() {
+        if (age < 18) {
+            return "Mr/Miss/Mrs " + name + ", you are not eligible to vote. Wait " + (18 - age) 
+                    + " years to vote. Verification Date: " + dateVerification;
+        } else {
+            return "Mr/Miss/Mrs " + name + ", you are eligible to vote. Verification Date: " + dateVerification;
+        }
     }
 
     @PreDestroy
     public void ourDestroy() {
-        name = null; age = 0.0f; dateVerification = null;
+        System.out.println("Executing custom @PreDestroy cleanup method...");
+        // Releasing memory/resources
+        name = null;
+        age = 0.0f;
+        dateVerification = null;
     }
 }
-
-## SECTION F: CONFIGURATION APPROACHES - DETAILED
-
-F.1  XML-BASED CONFIGURATION
-
-applicationContext.xml:
-  <beans xmlns="http://www.springframework.org/schema/beans" ...>
-    <bean id="emp" class="com.demo.Employee">
-      <property name="name" value="Teja"/>
-      <constructor-arg ref="dept"/>
-    </bean>
-    <bean id="dept" class="com.demo.Department"/>
-  </beans>
-
-Layered XML (Production Pattern):
-  applicationContext.xml (master)
-    - <import resource="controller-beans.xml"/>
-    - <import resource="service-beans.xml"/>
-    - <import resource="persistence-beans.xml"/>
-
-F.2  ANNOTATION-DRIVEN CONFIGURATION
-
-Minimal XML for scanning:
-  <context:component-scan base-package="com.demo"/>
-  <context:property-placeholder location="classpath:app.properties"/>
-
-Java classes use @Service, @Repository, @Autowired etc.
-
-F.3  PURE JAVA CONFIGURATION (100% Code - Foundation of Spring Boot)
-
-Rules:
-```text
-1. User classes -> @Component/@Service/@Repository + @ComponentScan
-2. Third-party classes -> @Bean methods inside @Configuration class
-
 ```
-3. Bootstrap with AnnotationConfigApplicationContext
 
-Example:
-@Configuration
-@ComponentScan(basePackages = "com.demo")
-public class AppConfig {
-    @Bean(name = "dt")
-    public LocalDateTime getSystemDateTime() { return LocalDateTime.now(); }
+---
+
+### 2.2 Circular Dependencies & the Three-Level Singleton Cache
+A **circular dependency** occurs when Bean A depends on Bean B, and Bean B depends on Bean A.
+*   **Constructor Injection**: If constructor injection is used on both beans, Spring cannot instantiate either bean, throwing a `BeanCurrentlyInCreationException`.
+*   **Setter Injection**: Resolved automatically using Spring's **Three-Level Cache**.
+
+#### The 3-Level Cache Architecture
+```mermaid
+sequenceDiagram
+    autonumber
+    participant AppContext as Spring Container
+    participant Cache1 as Level 1: singletonObjects
+    participant Cache2 as Level 2: earlySingletonObjects
+    participant Cache3 as Level 3: singletonFactories
+
+    Note over AppContext: Instantiate Bean A
+    AppContext->>Cache3: Register ObjectFactory for A
+    Note over AppContext: Populate Properties of A (Needs B)
+    AppContext->>AppContext: Request Bean B
+    Note over AppContext: Instantiate Bean B
+    AppContext->>Cache3: Register ObjectFactory for B
+    Note over AppContext: Populate Properties of B (Needs A)
+    
+    AppContext->>Cache1: Check A (Miss)
+    AppContext->>Cache2: Check A (Miss)
+    AppContext->>Cache3: Get ObjectFactory for A (Hit!)
+    Cache3->>Cache2: Return early reference to A & promote to Level 2
+    Cache3->>AppContext: Inject early A into B
+    
+    Note over AppContext: B completes construction & DI
+    AppContext->>Cache1: Register B in Level 1
+    AppContext->>Cache1: Inject fully initialized B into A
+    Note over AppContext: A completes construction & DI
+    AppContext->>Cache1: Register A in Level 1
+```
+
+*   **singletonObjects (Level 1)**: Contains fully initialized, populated, and processed singleton bean instances.
+*   **earlySingletonObjects (Level 2)**: Contains partially created beans (instantiated, but properties are not yet injected). These are exposed early to resolve circular references.
+*   **singletonFactories (Level 3)**: Stores `ObjectFactory` delegates that lazily generate early references to instantiated beans.
+
+#### Circular Dependency Resolution Workaround
+If constructor injection cannot be avoided, use the `@Lazy` annotation on one of the injection points to break the initialization loop:
+```java
+@Component
+public class BeanA {
+    private final BeanB beanB;
+
+    @Autowired
+    public BeanA(@Lazy BeanB beanB) {
+        this.beanB = beanB;
+    }
+}
+```
+
+#### Key Takeaways
+- Bean lifecycles consist of distinct **Instantiation**, **Initialization**, and **Destruction** phases managed by Spring.
+- Use `@PostConstruct` for runtime dependency validation after injection, and `@PreDestroy` for cleanups like closing connections.
+- The **three-level cache** resolves circular dependencies for setter-injected singleton beans by exposing early references via factory lookups.
+
+---
+
+## Section 3: Configuration Approaches & Non-Invasive JSR Standards
+
+Spring applications can be configured using XML, Annotations, pure Java Config, or Hybrid configurations.
+
+### 3.1 JSR-330 Standard Annotations vs. Spring Stereotypes
+To decouple applications from framework-specific APIs, Spring supports standard Java configurations (JSR-330 & JSR-250) alongside Spring-specific annotations. This approach is known as **Non-Invasive Programming**.
+
+| Feature | JSR-330 Annotation | Spring Equivalent |
+| :--- | :--- | :--- |
+| **Component stereotyping** | `@Named("beanName")` | `@Component("beanName")` |
+| **Dependency Injection** | `@Inject` | `@Autowired` |
+| **Ambiguity Resolution** | `@Named("id")` | `@Qualifier("id")` |
+| **Alternative DI** | `@Resource(name="id")` (JSR-250) | `@Autowired` + `@Qualifier("id")` |
+| **Bean Scoping** | `@Singleton` | `@Scope("singleton")` |
+
+#### JSR-330 Dependency Injection Strategy Pattern Flow
+In the following flow, a property configuration decides which bean implementation to load. The JSR-330 client remains completely decoupled from Spring-specific classes.
+
+```mermaid
+graph TD
+    subgraph Configurations [Configuration Resources]
+        Prop[application.properties <br> course.choose=java]
+        XML[applicationContext.xml <br> alias course.choose to courseId]
+    end
+
+    subgraph Strategy_Impls [JSR-330 Bean Strategies]
+        JavaBean["@Named('java') <br> JavaCourseMaterial"]
+        DotNetBean["@Named('dotNet') <br> DotNetCourseMaterial"]
+    end
+
+    subgraph Client [Target Component]
+        StudentBean["@Named('std') <br> Student"]
+    end
+
+    Prop -->|Reads Property| XML
+    XML -->|Creates Alias| courseId[Alias: courseId]
+    courseId -->|Resolves to| JavaBean
+    
+    JavaBean -.->|Injected Into| StudentBean
+    StudentBean -->|Preparation using JSR-330 @Inject| JavaBean
+
+    classDef config fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#FFFFFF;
+    classDef strategy fill:#10B981,stroke:#047857,stroke-width:2px,color:#FFFFFF;
+    classDef client fill:#8B5CF6,stroke:#6D28D9,stroke-width:2px,color:#FFFFFF;
+
+    class Prop,XML,courseId config;
+    class JavaBean,DotNetBean strategy;
+    class StudentBean client;
+```
+
+#### Strategy Design Implementation
+
+##### Maven Dependency (pom.xml)
+```xml
+<dependency>
+    <groupId>javax.inject</groupId>
+    <artifactId>javax.inject</artifactId>
+    <version>1</version>
+</dependency>
+```
+
+##### Dynamic Alias Config (applicationContext.xml)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans 
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+                           
+    <!-- Dynamically aliases the bean matching properties config to courseId -->
+    <alias name="${course.choose}" alias="courseId" />
+</beans>
+```
+
+##### Beans Code (JSR-330)
+```java
+package in.ineuron.dependent;
+
+import javax.inject.Named;
+
+public interface ICourseMaterial {
+    String courseContent();
+    double price();
 }
 
-ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
-MyService service = ctx.getBean(MyService.class);
+@Named("java")
+public class JavaCourseMaterial implements ICourseMaterial {
+    @Override
+    public String courseContent() { return "1. OOPs 2. Exception Handling 3. Collections"; }
+    @Override
+    public double price() { return 500.0; }
+}
 
-F.4  HYBRID CONFIGURATION (XML + Annotations)
-
-XML for infrastructure (DataSource, PropertyPlaceholder).
-Annotations for business beans (@Service, @Repository).
-
-persistence-beans.xml:
-  <bean id="hikariDS" class="com.zaxxer.hikari.HikariDataSource">
-    <property name="jdbcUrl" value="dollar{jdbc.url}"/>
-    <property name="username" value="dollar{jdbc.user}"/>
-  </bean>
-
-applicationContext.xml:
-  <import resource="persistence-beans.xml"/>
-  <context:component-scan base-package="com"/>
-
-F.5  P-NAMESPACE and C-NAMESPACE (XML Shortcuts - Rarely Used)
-
-p-namespace (setter shortcut):
-  <bean id="emp" class="Employee" p:eno="10" p:ename="sachin" p:dept-ref="dept"/>
-
-c-namespace (constructor shortcut):
-  <bean id="dept" class="Department" c:dno="10" c:dname="CS"/>
-
-Limitations:
-- No collection injection support (List, Set, Map)
-- Cannot resolve constructor overloading ambiguity
-
-## SECTION G: LAYERED ARCHITECTURE - VO / DTO / BO / DAO PATTERN
-
-Real-Time Spring Project Architecture:
-
-CLIENT -> CONTROLLER (@Component) -> SERVICE (@Service) -> DAO (@Repository) -> DB
-
-Data Object Types:
-Type   Full Name              Purpose
------  ---------------------  -----------------------------------------------
-VO     Value Object           Client-facing. ALL String properties.
-Carries raw form data from UI.
-DTO    Data Transfer Object   Typed properties (Float, Integer, etc.).
-Transfers data between layers.
-BO     Business Object        Same as DTO + business-specific fields.
-Used for business logic and DB operations.
-
-Flow:
-```text
-UI sends String data -> VO
-Controller converts VO -> DTO (parses types)
-Service converts DTO -> BO (adds business fields)
-
+@Named("dotNet")
+public class DotNetCourseMaterial implements ICourseMaterial {
+    @Override
+    public String courseContent() { return "1. C# 2. ASP.NET 3. ADO.NET"; }
+    @Override
+    public double price() { return 450.0; }
+}
 ```
-DAO persists BO to database
-Reverse flow for read operations
 
-## SECTION H: I18N (INTERNATIONALIZATION) SUPPORT
+```java
+package in.ineuron.comp;
 
-Spring provides ResourceBundleMessageSource for multi-language support.
+import javax.inject.Inject;
+import javax.inject.Named;
+import in.ineuron.dependent.ICourseMaterial;
 
-Property files follow the pattern:
-baseName_language_country.properties
-e.g., App_en_US.properties, App_hi_IN.properties, App_te_IN.properties
+@Named("std")
+public class Student {
+    
+    // Inject dependency dynamically using JSR-330 annotations
+    @Inject
+    @Named(value="courseId")
+    private ICourseMaterial material;
 
-Configuration:
-  <bean id="messageSource" class="...ResourceBundleMessageSource">
-    <property name="basenames"><list><value>App</value></list></property>
-  </bean>
+    public void preparation(String examName) {
+        System.out.println("Preparation started for: " + examName);
+        System.out.println("Using: " + material.courseContent() + " | Price: " + material.price());
+    }
+}
+```
 
-Access:
-  context.getMessage("greet.msg", new Object[]{"Teja"}, Locale.US);
+---
 
-## SECTION I: BEST PRACTICES (FROM SOURCE FILE PATTERNS)
+### 3.2 Stereotype Annotations Overview
+To configure components via annotations, declare component scanning in Java configurations:
+```java
+@Configuration
+@ComponentScan(basePackages = "com.demo")
+public class AppConfig { }
+```
 
-1. Constructor Injection > Setter Injection > Field Injection
-2. Use @Service/@Repository/@Controller - not just @Component
-3. Externalize config via .properties/.yml + @Value
-4. Avoid circular dependencies (redesign or use @Lazy)
-5. Use Java Config over XML (type-safe, refactorable)
-6. Split config into layered files (controller, service, persistence)
-7. Use meaningful bean names: @Component("customerService")
-8. Close ApplicationContext properly (try-with-resources / context.close())
-9. Use profiles for environment-specific configs (@Profile)
-10. Avoid field injection in production (hard to mock in tests)
+*   `@Component`: The generic stereotype annotation for any Spring-managed bean.
+*   `@Service`: Specializes `@Component`. Indicates a class containing business logic.
+*   `@Repository`: Specializes `@Component`. Indicates a persistence layer DAO class. It enables **automatic exception translation** (translating database-specific exceptions into Spring's `DataAccessException` hierarchy).
+*   `@Controller`: Specializes `@Component`. Marks a class as a Spring Web MVC controller.
+*   `@RestController`: Replaces `@Controller` + `@ResponseBody` for REST APIs.
 
-## END OF SPRING FRAMEWORK DEEP DIVE ANALYSIS - Appended March 2026
+---
 
+### 3.3 Layered Architecture Design Patterns: VO vs. DTO vs. BO
+Spring applications use layered architectures to isolate concerns. Each layer should use its own dedicated data structure to prevent leakage of layer-specific models.
+
+| Data Object | Layer | Property Types | Purpose |
+| :--- | :--- | :--- | :--- |
+| **VO** (Value Object) | Controller (Web UI) | Primarily `String` types. | Encapsulates raw form data submitted from client interfaces. |
+| **DTO** (Data Transfer Object) | Service (Cross-layer) | Strongly typed fields (`Integer`, `Float`, etc.). | Transports data across network or service boundaries. |
+| **BO** (Business Object) | Service & Repository | Strongly typed + business properties. | Holds domain state and encapsulates business logic. |
+| **DAO** (Data Access Object) | Repository | Entity/DB structures. | Manages data operations on the persistence store. |
+
+```text
+Client Request (String Data) 
+    ──> Controller: Binds to VO 
+    ──> Controller: Parses types to DTO 
+    ──> Service: Integrates business logic to BO 
+    ──> Repository: Persists BO/Entity to Database
+```
+
+---
+
+### 3.4 Internationalization (i18n) Support
+Spring supports internationalization (i18n) via the `MessageSource` interface. Set up properties files using standard Locale formats:
+- `App_en_US.properties`: `greet.msg=Hello, {0}!`
+- `App_hi_IN.properties`: `greet.msg=नमस्ते, {0}!`
+- `App_te_IN.properties`: `greet.msg=నమస్కారం, {0}!`
+
+#### XML Configuration
+```xml
+<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+    <property name="basenames">
+        <list>
+            <value>App</value>
+        </list>
+    </property>
+</bean>
+```
+
+#### Accessing Messages at Runtime
+```java
+ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+String message = context.getMessage("greet.msg", new Object[]{"Teja"}, Locale.US);
+System.out.println(message); // Prints: Hello, Teja!
+```
+
+#### Key Takeaways
+- **Non-Invasive JSR-330** standard annotations (`@Inject`, `@Named`) make code portable by decoupling it from Spring-specific imports.
+- Use `@Repository` to automatically translate low-level SQL exceptions into Spring's managed `DataAccessException` hierarchy.
+- **DTOs** decouple database entity schemas from public API models, preventing security exposures and class leakage.
+
+---
+
+## Section 4: Spring Boot Auto-Configuration & Override Mechanics
+
+### 4.1 Spring Boot Definition and Comparison
+Spring Boot is a tool built on top of the Spring Framework designed to simplify development by providing auto-configuration, embedded application servers, and starter dependencies.
+
+| Feature | Spring Framework | Spring Boot |
+| :--- | :--- | :--- |
+| **Goal** | Provides a comprehensive configuration model for Java enterprise applications. | Simplifies Spring development to get applications production-ready quickly. |
+| **Configuration** | Requires manual XML configurations or explicit Java config classes. | Uses **Auto-Configuration** based on classpath dependency checks. |
+| **Web Server** | Needs an external application server (Tomcat, JBoss, WebLogic) to run. | Contains **Embedded Servers** (Tomcat, Jetty, Undertow) to run as a standalone JAR. |
+| **Starter POMs** | Dependencies must be added and managed manually in pom.xml. | Provides pre-packaged **Starter Dependencies** (e.g., `spring-boot-starter-web`). |
+| **XML Support** | Natively designed around XML and Annotation configurations. | Does not support XML config directly; properties/YML configurations are preferred. |
+| **AOP & Security** | Configured manually. | Auto-configured out-of-the-box. |
+
+---
+
+### 4.2 Auto-Configuration Mechanics: DataSource Selection Priority
+When the `spring-boot-starter-jdbc` dependency is added to the classpath, Spring Boot automatically configures a database connection pool. It determines which pool to instantiate by checking the classpath in this order:
+
+```mermaid
+flowchart TD
+    Start[App Starts with spring-boot-starter-jdbc] --> ExcludeCheck{Is Auto-Configuration Excluded?}
+    ExcludeCheck -- Yes --> ManualDS[Load User's Manual @Bean DataSource]
+    ExcludeCheck -- No --> CheckHikari{Is HikariCP on Classpath?}
+    
+    CheckHikari -- Yes --> AutoHikari[1. Auto-Configure HikariCP]
+    CheckHikari -- No --> CheckTomcat{Is Tomcat JDBC on Classpath?}
+    
+    CheckTomcat -- Yes --> AutoTomcat[2. Auto-Configure Tomcat JDBC]
+    CheckTomcat -- No --> CheckDBCP{Is DBCP2 on Classpath?}
+    
+    CheckDBCP -- Yes --> AutoDBCP[3. Auto-Configure Apache DBCP2]
+    CheckDBCP -- No --> Fail[Fail to configure DataSource]
+
+    classDef step fill:#3B82F6,stroke:#1D4ED8,stroke-width:2px,color:#FFFFFF;
+    classDef decision fill:#F59E0B,stroke:#D97706,stroke-width:2px,color:#FFFFFF;
+    classDef err fill:#EF4444,stroke:#B91C1C,stroke-width:2px,color:#FFFFFF;
+    
+    class Start,AutoHikari,AutoTomcat,AutoDBCP,ManualDS step;
+    class ExcludeCheck,CheckHikari,CheckTomcat,CheckDBCP decision;
+    class Fail err;
+```
+
+---
+
+### 4.3 Swapping Default Connection Pools
+To replace default HikariCP with an alternative pool (e.g. Tomcat JDBC or Commons DBCP2), exclude HikariCP from `spring-boot-starter-jdbc` in your `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-jdbc</artifactId>
+    <exclusions>
+        <exclusion>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+        </exclusion>
+    </exclusions>
+</dependency>
+
+<!-- Add Tomcat Connection Pool dependency -->
+<dependency>
+    <groupId>org.apache.tomcat</groupId>
+    <artifactId>tomcat-jdbc</artifactId>
+</dependency>
+```
+
+---
+
+### 4.4 Disabling and Manually Overriding Auto-Configuration
+To completely override Spring Boot's automatic configuration and define a custom connection pool (like C3P0), exclude `DataSourceAutoConfiguration` and `JdbcTemplateAutoConfiguration` and declare your own `@Bean`:
+
+#### Main Class Configuration
+```java
+package in.ineuron;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
+
+@SpringBootApplication(exclude = {
+    DataSourceAutoConfiguration.class,
+    JdbcTemplateAutoConfiguration.class
+})
+public class ManualDataSourceApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(ManualDataSourceApplication.class, args);
+    }
+}
+```
+
+#### Manual DataSource Bean Definition
+```java
+package in.ineuron.persist;
+
+import com.mchange.v2.c3p0.ComboPooledDataSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
+
+@Configuration
+public class PersistConfig {
+
+    @Autowired
+    private Environment env;
+
+    @Bean
+    public ComboPooledDataSource createDS() throws Exception {
+        ComboPooledDataSource ds = new ComboPooledDataSource();
+        // Read configuration values from Environment abstraction
+        ds.setJdbcUrl(env.getProperty("spring.datasource.url"));
+        ds.setUser(env.getProperty("spring.datasource.username"));
+        ds.setPassword(env.getProperty("spring.datasource.password"));
+        return ds;
+    }
+}
+```
+
+#### Key Takeaways
+- **Spring Boot** builds upon Spring's features, using Auto-Configuration to remove boilerplate setup code.
+- By default, **HikariCP** is the preferred database connection pool configured automatically by Spring Boot.
+- Auto-configuration can be bypassed by excluding configuration classes in `@SpringBootApplication(exclude=...)`.
+
+---
+
+## Section 5: Properties Injection & Spring Expression Language (SpEL)
+
+Spring Boot supports properties configuration in both `.properties` and `.yml` (YAML) formats (via the `snakeyaml` parser).
+
+### 5.1 Properties Mapping: @Value vs. @ConfigurationProperties
+Spring provides two main ways to inject external configuration properties into beans.
+
+| Feature | @Value | @ConfigurationProperties |
+| :--- | :--- | :--- |
+| **Binding Type** | Injects individual property values. | Injects a group of related properties (bulk binding). |
+| **Configuration Setup** | Simple annotations on fields. | Requires declaring getters, setters, and prefix configurations. |
+| **Relaxed Binding** | Not supported (keys must match exactly). | Supported (e.g., `camelCase` in Java maps to `kebab-case` in properties). |
+| **SpEL Support** | Fully supported (`#{expression}`). | Not supported. |
+| **Nested Collections** | ❌ Does not support nested maps, lists, or object structures. | ✅ Fully binds arrays, lists, maps, sets, and child objects. |
+
+---
+
+### 5.2 Bulk Collection Binding with @ConfigurationProperties
+This example demonstrates mapping structured lists, sets, arrays, maps, and nested objects using `@ConfigurationProperties`.
+
+#### application.properties
+```properties
+emp.info.emp-id=21
+emp.info.emp-name=Aravind
+
+# Has-A Nested Object Injection
+emp.info.emp-company.company-name=FirmTech Solutions
+emp.info.emp-company.company-address=Hyderabad
+emp.info.emp-company.size=27
+
+# Array Object Injection
+emp.info.emp-skills[0]=Core Java
+emp.info.emp-skills[1]=Spring Boot
+emp.info.emp-skills[2]=J2EE
+
+# List Object Injection
+emp.info.emp-projects[0]=Banking Finance System
+emp.info.emp-projects[1]=Retail System
+
+# Set Object Injection
+emp.info.emp-mobile-numbers[0]=9652545272
+emp.info.emp-mobile-numbers[1]=9652545273
+
+# Map Object Injection
+emp.info.id-details.aadhar=AD1234XYZ
+emp.info.id-details.pan=PAN1234XYZ
+```
+
+#### Bean Configurations
+```java
+package com.AppConfig.Company_and_Employee;
+
+import org.springframework.stereotype.Component;
+
+@Component("company")
+public class Company {
+    private String companyName;
+    private String companyAddress;
+    private String size;
+
+    // Getters, Setters, and toString() methods
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
+    public String getCompanyAddress() { return companyAddress; }
+    public void setCompanyAddress(String companyAddress) { this.companyAddress = companyAddress; }
+    public String getSize() { return size; }
+    public void setSize(String size) { this.size = size; }
+}
+```
+
+```java
+package com.AppConfig.Company_and_Employee;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Component("emp")
+@ConfigurationProperties(prefix = "emp.info")
+public class Employee {
+    private String empName;
+    private long empId;
+    private Company empCompany; // Has-A Relationship
+    private String[] empSkills;
+    private List<String> empProjects;
+    private Set<Long> empMobileNumbers;
+    private Map<String, Object> idDetails;
+
+    // Getters and Setters for all fields
+    public String getEmpName() { return empName; }
+    public void setEmpName(String empName) { this.empName = empName; }
+    public long getEmpId() { return empId; }
+    public void setEmpId(long empId) { this.empId = empId; }
+    public Company getEmpCompany() { return empCompany; }
+    public void setEmpCompany(Company empCompany) { this.empCompany = empCompany; }
+    public String[] getEmpSkills() { return empSkills; }
+    public void setEmpSkills(String[] empSkills) { this.empSkills = empSkills; }
+    public List<String> getEmpProjects() { return empProjects; }
+    public void setEmpProjects(List<String> empProjects) { this.empProjects = empProjects; }
+    public Set<Long> getEmpMobileNumbers() { return empMobileNumbers; }
+    public void setEmpMobileNumbers(Set<Long> empMobileNumbers) { this.empMobileNumbers = empMobileNumbers; }
+    public Map<String, Object> getIdDetails() { return idDetails; }
+    public void setIdDetails(Map<String, Object> idDetails) { this.idDetails = idDetails; }
+}
+```
+
+---
+
+### 5.3 Spring Expression Language (SpEL)
+**SpEL** is an expression language that supports querying and manipulating an object graph at runtime. It is evaluated during bean configuration processing using the `#{expression}` syntax.
+
+#### SpEL Syntax Comparison
+*   `@Value("literal")`: Injects a constant value (e.g., `@Value("Accord")`).
+*   `@Value("${property.key}")`: Reads value from properties files.
+*   `@Value("#{expression}")`: Evaluates a mathematical, conditional, or logic statement.
+*   `@Value("#{beanName.field}")`: Evaluates cross-bean field values.
+
+#### SpEL Cross-Bean Startup Evaluation
+During application startup, SpEL expressions are evaluated in the container.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Context as ApplicationContext
+    participant Item as ItemsInfo Bean
+    participant SpEL as SpEL Engine
+    participant Bill as BillGenerator Bean
+
+    Note over Context: 1. Instantiate ItemsInfo Bean ("item")
+    Context->>Item: Inject Properties (${items.info.idlyPrice} = 10, etc.)
+    Note over Context: 2. Instantiate BillGenerator Bean ("bill")
+    Context->>SpEL: Request evaluation of expression: #{item.idlyPrice + item.dosaPrice + item.vadaPrice}
+    SpEL->>Item: Read idlyPrice (10), dosaPrice (20), vadaPrice (30)
+    Item-->>SpEL: Return values
+    Note over SpEL: Compute: 10 + 20 + 30 = 60.0
+    SpEL-->>Context: Return result (60.0)
+    Context->>Bill: Inject computed result (60.0) into billAmount field
+```
+
+#### SpEL Implementation Code
+```java
+package in.ineuron.dependent;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+@Component("item")
+public class ItemsInfo {
+    @Value("${items.info.idlyPrice}")
+    public float idlyPrice;   // 10
+    
+    @Value("${items.info.dosaPrice}")
+    public float dosaPrice;   // 20
+    
+    @Value("${items.info.vadaPrice}")
+    public float vadaPrice;   // 30
+}
+```
+
+```java
+package in.ineuron.comp;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+import in.ineuron.dependent.ItemsInfo;
+
+@Component("bill")
+public class BillGenerator {
+    
+    // Evaluate cross-bean fields at startup
+    @Value("#{item.idlyPrice + item.dosaPrice + item.vadaPrice}")
+    private Float billAmount; // Evaluates to 60.0
+
+    @Value("Accord")
+    private String hotelName;
+
+    @Autowired
+    private ItemsInfo info;
+
+    @Override
+    public String toString() {
+        return "BillGenerator [billAmount=" + billAmount + ", hotelName=" + hotelName + ", info=" + info + "]";
+    }
+}
+```
+
+#### Key Takeaways
+- Use `@Value` for simple values and configuration parameters. Use `@ConfigurationProperties` for structured prefix configurations.
+- SpEL expressions (`#{...}`) perform runtime evaluations on bean properties, whereas property placeholders (`${...}`) read configuration values directly.
+- SpEL evaluation runs during the `BeanPostProcessor` initialization phase, after dependencies are instantiated.
+
+---
+
+## Section 6: Advanced Topics & System Design Scenarios
+
+### 6.1 Transaction Management & Self-Invocation Pitfalls
+Spring's transaction management relies on AOP proxies. When a bean is annotated with `@Transactional`, Spring creates a dynamic proxy around it (JDK Dynamic Proxy or CGLIB) to manage connection rollbacks.
+
+#### Self-Invocation Failure
+If a method within Bean A calls another `@Transactional` method in the same class directly (`this.method()`), the call bypasses the proxy container, causing the transactional logic to fail.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client
+    participant Proxy as AOP Proxy Wrapper
+    participant Target as Target Bean A
+
+    Client->>Proxy: 1. Call proxyMethod()
+    Note over Proxy: Start Transaction
+    Proxy->>Target: 2. Delegate to targetMethod()
+    Note over Target: Executing Business Logic
+    
+    rect rgb(240, 240, 240)
+        Note over Target: Self-Invocation: Call anotherTransactionalMethod()
+        Target->>Target: Bypasses AOP Proxy!
+        Note over Target: No transaction wrapper is created
+    end
+    
+    Target-->>Proxy: Return Result
+    Note over Proxy: Commit / Rollback Transaction
+    Proxy-->>Client: Return Result
+```
+
+#### Resolution Strategies
+1.  **Extract Method**: Move the `@Transactional` method to a separate Spring-managed bean.
+2.  **Self-Injection**: Inject the proxy instance of the bean into itself (supported in Spring Boot 2.x+):
+    ```java
+    @Service
+    public class OrderService {
+        @Autowired
+        private OrderService self;
+
+        public void process() {
+            self.executeTransaction(); // Invoked via proxy
+        }
+
+        @Transactional
+        public void executeTransaction() { ... }
+    }
+    ```
+
+---
+
+### 6.2 Aspect-Oriented Programming (AOP) Internals
+Spring AOP decouples cross-cutting concerns (logging, security, transactions) from core business logic.
+*   **JDK Dynamic Proxy**: Standard mechanism used when the target bean implements at least one interface. It creates a proxy implementing the interface at runtime.
+*   **CGLIB Proxy**: Used when the target class does not implement any interfaces. It generates a subclass of the target bean at runtime. It cannot intercept `final` classes or methods.
+*   **Spring Boot Default**: Spring Boot defaults to using CGLIB proxies (`spring.aop.proxy-target-class=true`) to prevent interface casting exceptions.
+
+---
+
+### 6.3 Diagnostic FAQs and Troubleshooting Guide
+
+#### Q1. When does `@Autowired` fail with `NoUniqueBeanDefinitionException`?
+This occurs when multiple beans of the same type are declared in the IoC container and no `@Qualifier` or `@Primary` configuration is provided to resolve the ambiguity. To fix this:
+1. Define a `@Primary` implementation.
+2. Specify the target bean name using `@Qualifier("targetBean")`.
+
+#### Q2. What is the difference between `@PostConstruct` and a Java Class constructor?
+A class constructor runs when the class is first instantiated, at which point dependencies (fields annotated with `@Autowired` or `@Value`) are not yet injected. `@PostConstruct` methods run after instantiation and dependency injection are complete, making it the correct phase to validate properties or initialize resources that depend on injected values.
+
+#### Q3. How do you disable a specific Auto-Configuration in Spring Boot?
+Use the `exclude` attribute on the `@SpringBootApplication` annotation:
+```java
+@SpringBootApplication(exclude = { DataSourceAutoConfiguration.class })
+```
+
+#### Q4. Why is field injection discouraged in production environments?
+Field injection makes classes tightly coupled to the Spring container, preventing manual instantiation in unit tests. It is difficult to mock dependencies without using reflection or initializing a Spring Context. Use **Constructor Injection** instead.
+
+---
+
+## END OF SPRING ANALYSIS
