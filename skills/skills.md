@@ -17,7 +17,7 @@ To explore detailed mappings, implementation evidence, and file references for s
 *   **[Security & Compliance](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/security.md)**: JWT Authentication, Spring Security, Role-Based Access Control (RBAC), and security vulnerability remediation.
 *   **[System Integrations](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/integrations.md)**: Apache Kafka, RabbitMQ, OpenAI & RAG Pipelines, AWS Bedrock Runtime, and Stripe/Razorpay.
 *   **[Design Patterns](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/design-patterns.md)**: SOLID, Singleton, Factory, Builder, Strategy, Observer, Template Method, State, and Proxy.
-*   **[Engineering Practices](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/engineering-practices.md)**: Agile Scrum, Git Version Control, SonarQube static code analysis, Kibana/Splunk logging, and **Technical Content & Documentation Engineering**.
+*   **[Engineering Practices](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/engineering-practices.md)**: Agile Scrum, Git Version Control, SonarQube static code analysis, Kibana/Splunk logging, and **Technical Content & Documentation Engineering** (featuring custom prompts: **[Documentation Sync Skill](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/documentation-sync-skill.md)** and **[Mermaid Diagram Skill](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/mermaid-diagram-skill.md)**).
 *   **[Project Analysis & Recommendations](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/project-analysis.md)**: Review of analyzed projects (ICA, National Mutual Insurance, OdaAdmin UI, bedrock-api) and learning roadmaps for missing enterprise skills.
 
 ---
@@ -92,6 +92,8 @@ Here is a summary of the primary skills with their corresponding **Confidence Sc
     *   [ICA_Analysis.txt](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Resume/Company_Projects/ICA_Analysis.txt)
     *   [National_Analysis.txt](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Resume/Company_Projects/National_Analysis.txt)
     *   [AWS_DevOps_Analysis.md](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Java_jdbc_hibernate_SpringBoot/analysis/AWS_DevOps_Analysis.md)
+    *   [documentation-sync-skill.md](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/documentation-sync-skill.md)
+    *   [mermaid-diagram-skill.md](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/mermaid-diagram-skill.md)
 
 ### 5. Docker, Kubernetes, & Rancher
 *   **Proficiency**: Advanced
