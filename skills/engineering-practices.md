@@ -87,6 +87,7 @@ This document details the software development methodologies, version control pr
 *   **File References**:
     *   [Devops with AI SVG Diagram](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Java_jdbc_hibernate_SpringBoot/Devops%20with%20AI/Aws/AWS_Class_3_board_work_lyst1773059494137.svg)
     *   [National_Analysis.txt (Section 1 - Microservices Flow Diagram)](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Resume/Company_Projects/National_Analysis.txt#L22-L42)
+    *   [mermaid-diagram-skill.md](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/mermaid-diagram-skill.md)
 
 ### 2. Documentation Engineer
 *   **Proficiency Level**: Expert
@@ -97,6 +98,7 @@ This document details the software development methodologies, version control pr
 *   **File References**:
     *   [AgularProject methods.csv](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Java_jdbc_hibernate_SpringBoot/analysis/CWP_CTS/AgularProject/methods.csv)
     *   [Spring Boot Service methods.csv](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/Java_jdbc_hibernate_SpringBoot/analysis/CWP_CTS/Spring_boot_project_analysis/methods.csv)
+    *   [documentation-sync-skill.md](file:///E:/Teja_Interview_preparation/My_Interview_Preparation/skills/documentation-sync-skill.md)
 
 ### 3. Technical Writer
 *   **Proficiency Level**: Expert
