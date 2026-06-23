@@ -310,6 +310,142 @@ List<List<String>> list = List.of(List.of("A", "B"), List.of("C", "D"));
 List<String> flat = list.stream().flatMap(Collection::stream).toList(); // [A, B, C, D]
 ```
 
+##### Additional Practical flatMap Examples:
+
+###### 1. Basic Squaring Numbers from Nested Lists
+A straightforward usage of `flatMap` that merges two nested integer lists into a single continuous stream of squared numbers.
+```java
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+
+public class Main
+{
+    public static void main(String[] args) {
+      List<Integer> lanums = List.of(1,2,3,4,5);
+      List<Integer> lbnums = List.of(6,7,8,9,10);
+      
+      List<List<Integer>> lcnums = List.of(lanums, lbnums);
+      
+      List<Integer> sqnums =  lcnums.stream()
+                              .flatMap(nums -> nums.stream()
+                               .map(num -> num*num))
+                              .collect(Collectors.toList());
+       System.out.println(sqnums); // Output: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+    }
+}
+```
+
+###### 2. Advanced Squaring with Null Handling, Logging, and Limits
+A production-grade improvement of the previous example that prevents pipeline failures from `null` elements, logs internal stream iterations via `peek()`, and demonstrates short-circuit optimization with `limit()`.
+```java
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+
+public class Main
+{
+    public static void main(String[] args) {
+      List<Integer> lanums = List.of(1,2,3,4,5);
+      List<Integer> lbnums = List.of(6,7,8,9,10);
+      List<Integer> ldnums = null;
+      
+      // Arrays.asList is used because List.of throws NPE if any element is null
+      List<List<Integer>> lcnums = Arrays.asList(lanums, lbnums, ldnums);
+      
+      List<Integer> sqnums =  lcnums.stream()
+                              .flatMap(nums -> nums == null ? Stream.empty() : 
+                               nums.stream()
+                               .map(num -> num*num))
+                               .peek(n -> System.out.println("Processing : " + n))
+                               .limit(5)
+                              .collect(Collectors.toList());
+       System.out.println(sqnums); // Output: [1, 4, 9, 16, 25]
+    }
+}
+```
+
+##### GFM Comparison: Basic vs. Advanced flatMap Snippet Differences
+| Feature / Concept | Basic Example | Advanced Example |
+| :--- | :--- | :--- |
+| **Collection Factory** | `List.of(...)` (throws NPE if any parameter/element is null). | `Arrays.asList(...)` (allows null elements, returns a mutable list wrapper). |
+| **Null Safety** | No null safety inside lambda; if `lcnums` contained null, calling `nums.stream()` throws `NullPointerException`. | Ternary validation check `nums == null ? Stream.empty() : nums.stream()` intercepts nulls safely. |
+| **Flow Observability** | None. Runs quietly in-memory. | Logs processing actions for elements as they traverse downstream using `peek()`. |
+| **Execution Bounds** | Eagerly consumes all elements. | Short-circuits using `limit(5)`, halting element evaluation once the threshold is satisfied. |
+
+###### 3. Extracting Nested Collections (1-to-Many Relationships)
+A common real-world scenario is extracting nested lists from objects (e.g., retrieving all email addresses from a list of users).
+```java
+public class User {
+    private String name;
+    private List<String> emails;
+
+    public User(String name, List<String> emails) {
+        this.name = name;
+        this.emails = emails;
+    }
+    public List<String> getEmails() { return emails; }
+}
+
+// Extracting a distinct list of all email addresses from a list of users:
+List<User> users = List.of(
+    new User("Alice", List.of("alice@gmail.com", "alice@work.com")),
+    new User("Bob", List.of("bob@yahoo.com")),
+    new User("Charlie", List.of("charlie@gmail.com", "alice@gmail.com")) // Duplicate email
+);
+
+List<String> distinctEmails = users.stream()
+    .flatMap(user -> user.getEmails().stream())
+    .distinct()
+    .collect(Collectors.toList());
+// Output: [alice@gmail.com, alice@work.com, bob@yahoo.com, charlie@gmail.com]
+```
+
+###### 4. safe Parsing / Exception Handling (1-to-0 or 1 Mapping)
+Using `flatMap` to transform input elements while discarding those that fail operations (like parsing) by returning `Stream.empty()` instead of throwing exceptions or returning null.
+```java
+List<String> inputStrings = List.of("10", "abc", "20", "xyz", "30");
+
+List<Integer> validIntegers = inputStrings.stream()
+    .flatMap(s -> {
+        try {
+            return Stream.of(Integer.parseInt(s));
+        } catch (NumberFormatException e) {
+            return Stream.empty(); // Discard invalid element safely
+        }
+    })
+    .collect(Collectors.toList());
+// Output: [10, 20, 30]
+```
+
+###### 5. Generating Cartesian Products (Pairwise Combinations)
+Combining two independent lists into all possible pairs (1-to-N generation).
+```java
+List<String> suits = List.of("Spades", "Hearts", "Diamonds", "Clubs");
+List<String> ranks = List.of("Ace", "King", "Queen");
+
+List<String> deck = suits.stream()
+    .flatMap(suit -> ranks.stream().map(rank -> rank + " of " + suit))
+    .collect(Collectors.toList());
+// Output: [Ace of Spades, King of Spades, Queen of Spades, Ace of Hearts, ...]
+```
+
+###### 6. Flattening Streams of Optionals (Java 9+)
+Using `flatMap(Optional::stream)` to filter empty values and unwrap present values from a stream of `Optional` wrappers cleanly.
+```java
+List<Optional<String>> optionals = List.of(
+    Optional.of("Java"),
+    Optional.empty(),
+    Optional.of("SpringBoot"),
+    Optional.empty()
+);
+
+List<String> presentValues = optionals.stream()
+    .flatMap(Optional::stream)
+    .collect(Collectors.toList());
+// Output: [Java, SpringBoot]
+```
+
 #### Q14. sorted() — stateful operation.
 `sorted()` accumulates all elements of the stream in memory before sorting them (TimSort algorithm). Because it blocks element progression until all elements are collected, it is a stateful operation.
 
@@ -373,10 +509,76 @@ numbers.stream()
 ```
 
 #### Q22. Stream.concat() and reducing multiple streams.
-`Stream.concat(s1, s2)` creates a lazily concatenated stream. Chaining multiple concatenations sequentially can create deeply nested pipeline stages, causing stack overflow errors. If concatenating three or more streams, use flatMap:
+`Stream.concat(s1, s2)` creates a lazily concatenated stream. However, combining multiple streams can be approached in different ways depending on scale and performance requirements.
+
+##### Snippet A: Combining Arrays using `Stream.concat`
+This approach uses the static helper `Stream.concat` to combine two boxed streams derived from primitive arrays.
 ```java
-Stream<String> combined = Stream.of(s1, s2, s3).flatMap(Function.identity());
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+
+public class Main
+{
+    public static void main(String[] args) {
+      int arr1[] = {1,2,3,4,5};
+      int arr2[] = {6,7,8,9,10};
+      
+      List<Integer> lcnums = Stream.concat(Arrays.stream(arr1).boxed(),
+                             Arrays.stream(arr2).boxed())
+                             .map(num -> num*num)
+                            .collect(Collectors.toList());
+       System.out.println("Clsit :" + lcnums); // Output: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+    }
+}
 ```
+
+##### Snippet B: Combining Streams using `Stream.of` + `flatMap`
+This approach nests the individual streams inside `Stream.of(...)` and then flattens them using `flatMap(Sms -> Sms)` (which is equivalent to `flatMap(Function.identity())`).
+```java
+import java.util.*;
+import java.util.stream.*;
+import java.util.function.*;
+
+public class Main
+{
+    public static void main(String[] args) {
+      int arr1[] = {1,2,3,4,5};
+      int arr2[] = {6,7,8,9,10};
+      
+      Stream<Integer> s1 =  Arrays.stream(arr1).boxed();
+      Stream<Integer> s2 =  Arrays.stream(arr2).boxed();
+      List<Integer> lcnums = Stream.of(s1,s2)
+                             .flatMap(Sms ->Sms)
+                             .map(num -> num*num)
+                            .collect(Collectors.toList());
+       System.out.println("Clsit :" + lcnums); // Output: [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+    }
+}
+```
+
+##### Deep Architectural Comparison: `Stream.concat` vs. `Stream.of().flatMap()`
+
+| Metric / Dimension | `Stream.concat(s1, s2)` (Snippet A) | `Stream.of(s1, s2).flatMap(s -> s)` (Snippet B) |
+| :--- | :--- | :--- |
+| **Primary Use Case** | Concatenating exactly two streams. | Flattening nested streams or combining $N \ge 3$ streams. |
+| **Spliterator Characteristics** | Preserves **`SIZED`** & **`SUBSIZED`** flags if both input streams have them. | Discards **`SIZED`** & **`SUBSIZED`** flags because `flatMap` represents a general 1:N mapping stage. |
+| **Collection Allocation Optimization** | **High**: Collector (`toList()`) can pre-allocate the exact backing array size (e.g. $5 + 5 = 10$) without dynamic array resize copies. | **Low**: The collector must resize its internal container dynamically as elements are pulled through the pipeline. |
+| **Stack Depth / Recursion Safety** | **Unsafe for nesting**: Chaining concatenations sequentially (e.g., `Stream.concat(s1, Stream.concat(s2, s3...))`) constructs a nested binary tree of spliterators, risking a `StackOverflowError` during execution if $N$ is large. | **Safe**: Evaluates streams at a single level of flattening without recursive depth, preventing stack overflow risks. |
+| **Evaluation Overhead** | Extremely lightweight; delegates directly to a `ConcatSpliterator`. | Slightly higher overhead due to creating intermediary streams and invoking mapper functions for flattening. |
+
+###### Stack Depth Issue Visualized
+When you chain `Stream.concat` recursively:
+```text
+ConcatSpliterator
+ ├── s1
+ └── ConcatSpliterator
+       ├── s2
+       └── ConcatSpliterator
+             ├── s3
+             └── s4  <-- Deep lookup call stack
+```
+Every traversal step requires traversing down this nested left-leaning tree, which scales linearly with the number of streams ($O(N)$ stack frames). With `Stream.of(s1, s2, s3, s4).flatMap(...)`, the stream framework handles all elements within a single flattening loop.
 
 #### Key Takeaways: Intermediate Operations
 - Intermediate operations create new pipeline nodes. Stateless operations run in a single pass; stateful operations buffer elements.
