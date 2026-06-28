@@ -183,7 +183,7 @@ flowchart TB
     ALB --> EC2
     ALB --> EC3
     EC1 & EC2 & EC3 --> DB1
-    DB1 <== "Synchronous Replication" ==> DB2
+    DB1 ==>|Synchronous Replication| DB2
 
     classDef layer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
     classDef db fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
@@ -417,9 +417,10 @@ sudo systemctl start policy-service
 Elastic Block Store (EBS) is a network-attached hard drive (block storage) for EC2 instances. It is used to store the operating system, databases, and application files.
 
 Key Characteristics:
-* **Zone-Locked:** An EBS volume must reside in the same Availability Zone as the EC2 instance it attaches to.
+* **Zone-Locked:** An EBS volume must reside in the same Availability Zone (AZ) as the EC2 instance it attaches to.
 * **Detachable:** An EBS volume can be detached from an instance and attached to another in the same AZ, acting as a portable hard drive.
-* **One-to-One:** By default, an EBS volume attaches to one EC2 instance at a time.
+* **One-to-One:** By default, an EBS volume attaches to one EC2 instance at a time (though io1/io2 volumes support Multi-Attach).
+* **Network-Attached:** Unlike local instance store disks, EBS volumes communicate with EC2 instances over a dedicated storage network fabric.
 
 #### Intermediate
 ##### EBS Volume Types
@@ -442,11 +443,196 @@ Key Characteristics:
   1. Take a **Snapshot** from the volume in AZ `ap-south-1a` (snapshots are region-wide, not AZ-locked).
   2. Create a new **EBS Volume** from that snapshot in the target AZ (`ap-south-1b`).
   3. Attach the new volume to an EC2 instance in `ap-south-1b`.
+* **Nitro System Block Device Mapping:** On modern AWS Nitro-based instances, EBS volumes attached as `/dev/sdb` through the AWS Console are automatically mapped by the Linux kernel to virtual NVMe device names (e.g., `/dev/nvme1n1`).
 
 > [!TIP]
 > Use this same pattern (`Volume → Snapshot → Volume`) whenever you need to migrate data between Availability Zones or create a backup copy of your application data.
 
-### 2. Interview Questions & Answers
+### 2. Architecture & Data Flow Diagrams
+
+#### System Architecture
+Shows the physical and virtual boundary between local compute host storage (Instance Store) and network-attached persistent storage (EBS), showing Availability Zone isolation.
+
+```mermaid
+flowchart TB
+    subgraph Region ["AWS Mumbai Region (ap-south-1)"]
+        subgraph AZ_A ["Availability Zone A (ap-south-1a)"]
+            subgraph EC2_Host ["Physical Host Server"]
+                subgraph VM ["EC2 Instance (Virtual Machine)"]
+                    OS["Operating System Layer<br/>(Filesystem: ext4/xfs)"]
+                    IS_Mount["/mnt/instance-store<br/>(Ephemeral Mount)"]
+                end
+                Hypervisor["Nitro Hypervisor / Host Card"]
+                Local_SSD[("Instance Store<br/>(Local NVMe SSD)<br/>Ephemeral & Ultra-fast")]
+            end
+            
+            EBS_Vol[("EBS Volume<br/>(Persistent Block Storage)<br/>AZ-Locked")]
+            KMS["AWS KMS<br/>(AES-256 Keys)"]
+        end
+        
+        AZ_B["Availability Zone B (ap-south-1b)"]
+        S3_Bucket[("Amazon S3 Bucket<br/>(Regional Snapshot Store)<br/>11 Nines Durability")]
+    end
+
+    %% Connections
+    OS -->|Local IO| IS_Mount
+    IS_Mount -->|Direct Path| Local_SSD
+    OS -->|Mount Point: /dataofVolume| Hypervisor
+    Hypervisor -->|AWS NVMe Protocol / Network fabric| EBS_Vol
+    EBS_Vol -.->|KMS Keys| KMS
+    EBS_Vol -->|Incremental Backups| S3_Bucket
+    S3_Bucket -.->|Restore Volume across AZ| AZ_B
+
+    %% Styling
+    classDef ec2 fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef ebs fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef host fill:#334155,stroke:#475569,color:#F1F5F9,stroke-width:2px;
+    classDef local fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef regional fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef key fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    
+    class VM,OS,IS_Mount ec2;
+    class EBS_Vol ebs;
+    class EC2_Host,Hypervisor host;
+    class Local_SSD local;
+    class S3_Bucket,AZ_B regional;
+    class KMS key;
+```
+
+#### Service Relationships
+Visualizes how EBS orchestrates and communicates with key AWS services.
+
+```mermaid
+graph TD
+    IAM["AWS IAM<br/>(Control Access Policies)"]
+    EC2["Amazon EC2 Instance<br/>(Compute Host)"]
+    EBS["EBS Volume<br/>(Block Storage)"]
+    KMS["AWS KMS Key<br/>(Envelope Encryption)"]
+    S3["Amazon S3<br/>(Snapshot Storage)"]
+    CW["Amazon CloudWatch<br/>(Performance Metrics)"]
+
+    IAM -->|Authorizes: Attach/Detach| EC2
+    IAM -->|Authorizes: Create/Delete| EBS
+    EC2 <-->|Attaches block device| EBS
+    EBS -->|Secured by AES-256| KMS
+    EBS -->|Creates point-in-time Snapshot| S3
+    S3 -->|Restores new volume| EBS
+    EBS -->|Pushes IOPS/Throughput metrics| CW
+
+    classDef service fill:#0F172A,stroke:#64748B,color:#F1F5F9,stroke-width:2px;
+    classDef iam fill:#581C87,stroke:#D8B4FE,color:#FFFFFF,stroke-width:2px;
+    classDef compute fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef storage fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef security fill:#991B1B,stroke:#F87171,color:#FFFFFF,stroke-width:2px;
+    classDef monitor fill:#075985,stroke:#38BDF8,color:#FFFFFF,stroke-width:2px;
+
+    class IAM iam;
+    class EC2 compute;
+    class EBS storage;
+    class KMS security;
+    class S3 storage;
+    class CW monitor;
+```
+
+#### Data Flow
+Shows the vertical data flow from a Java application down to the physical EBS volume SAN, as well as the backup and recovery flow.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor App as Java App (JVM)
+    participant OS as EC2 OS (Kernel VFS)
+    participant Driver as NVMe / Xen Driver
+    participant Hypervisor as AWS Nitro Hypervisor
+    participant KMS as AWS KMS
+    participant EBS as EBS Block Storage (SAN)
+    participant S3 as Amazon S3 (Snapshots)
+
+    %% Flow 1: I/O Write Path
+    Note over App, EBS: I/O Write Path Flow
+    App->>OS: Write file chunk to /dataofVolume/file.txt
+    OS->>OS: Page Cache check & Journal write (ext4)
+    OS->>Driver: Translate to block-level write command (/dev/nvme1n1)
+    Driver->>Hypervisor: Send blocks via virtual PCIe bus
+    Hypervisor->>KMS: Decrypt Data Key (if encrypted volume)
+    KMS-->>Hypervisor: Plaintext Data Key
+    Hypervisor->>Hypervisor: Encrypt block payload (AES-256)
+    Hypervisor->>EBS: Stream encrypted blocks over network fabric
+    EBS-->>OS: Write Acknowledged (Durable in AZ)
+
+    %% Flow 2: Backup and Copy Flow
+    Note over EBS, S3: Snapshot Backup & Cross-AZ Restore Flow
+    EBS->>S3: Backup: Create Snapshot (Copies changed blocks to S3)
+    Note over S3: Snapshot stored regionally in S3 (11 Nines Durability)
+    S3->>EBS: Restore: Create Volume from Snapshot in target AZ (ap-south-1b)
+```
+
+#### Cross-AZ Volume Migration Flow (Volume → Snapshot → Volume)
+Illustrates how to migrate data across Availability Zones using a Point-in-time Snapshot, bypassing the AZ-lock limitation of EBS volumes.
+
+```mermaid
+flowchart TD
+    subgraph Region ["AWS Mumbai Region (ap-south-1)"]
+        subgraph AZ_A ["Availability Zone: ap-south-1a"]
+            EC2_A["EC2 Instance A<br/>(Source VM)"]
+            Vol_A[("EBS Volume A<br/>(AZ-Locked Disk)")]
+            EC2_A <-->|Attached| Vol_A
+        end
+
+        subgraph S3_Reg ["Regional Backup Store (Amazon S3)"]
+            Snap_A[("EBS Snapshot A<br/>(Point-in-time Backup)<br/>Region-Wide Access")]
+        end
+
+        subgraph AZ_B ["Availability Zone: ap-south-1b"]
+            EC2_B["EC2 Instance B<br/>(Target VM)"]
+            Vol_B[("EBS Volume B<br/>(AZ-Locked Disk)")]
+            EC2_B <-->|Attached| Vol_B
+        end
+    end
+
+    %% Migration Actions
+    Vol_A -->|1. Create Snapshot| Snap_A
+    Snap_A -->|2. Create Volume in Target AZ| Vol_B
+
+    %% Styling
+    classDef ec2 fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef ebs fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef s3 fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    
+    class EC2_A,EC2_B ec2;
+    class Vol_A,Vol_B ebs;
+    class Snap_A s3;
+```
+
+#### Deployment & Mounting Flow
+Visualizes the sequence of commands needed to provision, format, and safely mount a block storage device.
+
+```mermaid
+flowchart TD
+    Start(["1. Provision EBS Volume"]) --> Attach["2. Attach to EC2 Instance in same AZ"]
+    Attach --> Login["3. SSH into EC2 Instance"]
+    Login --> Lsblk["4. Run 'lsblk' <br/>Identify device name (e.g. /dev/sdb, /dev/nvme1n1)"]
+    Lsblk --> CheckFS{"5. Run 'sudo file -s /dev/xxx'<br/>Does it have a File System?"}
+    
+    CheckFS -->|No - Raw Device| Format["6. Format Volume<br/>'sudo mkfs -t ext4 /dev/nvme1n1'"]
+    CheckFS -->|Yes - Existing Data| Mkdir["7. Create Mount Directory<br/>'sudo mkdir /dataofVolume'"]
+    
+    Format --> Mkdir
+    Mkdir --> Mount["8. Mount Volume<br/>'sudo mount /dev/nvme1n1 /dataofVolume'"]
+    Mount --> Verify["9. Verify Mount<br/>'df -h' or write a test file"]
+    Verify --> Persist["10. Add to '/etc/fstab' for Persistent Reboot Mount<br/>Use UUID to prevent device name drift"]
+    Persist --> End(["Volume Ready for Production Use"])
+
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef decision fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef finish fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class Start,Attach,Login,Lsblk,Format,Mkdir,Mount,Verify,Persist step;
+    class CheckFS decision;
+    class End finish;
+```
+
+### 3. Interview Questions & Answers
 
 #### Q: What is the difference between EBS and Instance Store?
 **A:** 
@@ -456,30 +642,96 @@ Key Characteristics:
 #### Q: What happens to the EBS root volume when an EC2 instance is terminated?
 **A:** By default, the root EBS volume is deleted upon instance termination (`DeleteOnTermination` attribute is set to `true`). Additional volumes attached to the instance are preserved by default (`DeleteOnTermination` is set to `false`). You can change this behavior via CLI, CloudFormation, or Console configurations to preserve root volumes.
 
-### 3. Commands
+#### Q: If your application requires 50,000 IOPS and low-latency database access, which EBS type and instance combination would you choose?
+**A:** Use **io2 (Provisioned IOPS SSD)** volumes attached to **EBS-Optimized EC2 instances**. General Purpose SSDs (gp3) scale up to 16,000 IOPS, while io2 volumes can scale up to 256,000 IOPS. EBS-Optimized instances ensure dedicated network bandwidth between the EC2 compute instance and the EBS storage backend, preventing bandwidth contention with regular network traffic.
 
+### 4. Linux Commands & Hands-on Guide
+
+#### Raw Commands Walkthrough
 ```bash
-# List block storage devices
+# 1. List block storage devices to find the device name
 lsblk
 
-# Format a newly attached raw EBS volume with ext4
+# 2. Check if a device has an existing filesystem (returns 'data' if empty/raw)
+sudo file -s /dev/nvme1n1
+
+# 3. Format the newly attached raw EBS volume with ext4
 sudo mkfs -t ext4 /dev/nvme1n1
 
-# Mount the volume to a local folder
-sudo mkdir /data
-sudo mount /dev/nvme1n1 /data
+# 4. Create the target mount directory (mount point)
+sudo mkdir /dataofVolume
 
-# Configure /etc/fstab to persist the mount across system reboots
-echo '/dev/nvme1n1 /data ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+# 5. Mount the formatted block device to the directory
+sudo mount /dev/nvme1n1 /dataofVolume
 
-# Create an EBS snapshot via AWS CLI
+# 6. Verify filesystem disk space usage and mount point status
+df -h
+lsblk
+
+# 7. Configure /etc/fstab to persist the mount across system reboots.
+# Step A: Find the UUID of the partition
+sudo blkid /dev/nvme1n1
+
+# Step B: Add UUID entry to /etc/fstab (Prevents mount failures if device names shift)
+# Format: UUID=xxxx-xxxx /dataofVolume ext4 defaults,nofail 0 2
+# Note: 'nofail' ensures instance boots successfully even if the EBS volume is missing or detached.
+echo 'UUID=8be76228-4444-486d-bc11-a8e5781a7b45 /dataofVolume ext4 defaults,nofail 0 2' | sudo tee -a /etc/fstab
+
+# 8. Create an EBS snapshot via AWS CLI
 aws ec2 create-snapshot --volume-id vol-0abc123456789def0 --description "Backup before application patch"
 ```
 
-### 4. Key Takeaways
-* EBS provides network-attached block storage.
-* EBS volumes are tied to a single Availability Zone.
-* Instance store is ephemeral and fast; EBS is persistent and durable.
+### 5. Troubleshooting & Linux Storage Fundamentals (Teachable Moments)
+
+Analyzing the command history of an engineer formatting and mounting an EBS volume highlights key misconceptions about Linux filesystems and AWS instance block storage mapping.
+
+#### Pitfall 1: Trying to `cd` into a block device (`cd /dev/sdb` or `cd /sdb`)
+* **Error:** `bash: cd: /dev/sdb: Not a directory`
+* **Root Cause:** In Linux, block devices (like `/dev/sdb` or `/dev/nvme1n1`) are represented as **device special files**, not directories. They represent raw hardware access streams. You cannot navigate (`cd`), read (`cat`), or write (`touch`) directly inside them.
+* **Correction:** You must create an empty directory (called a **mount point**, e.g., `/dataofVolume`) and **mount** the device to that directory. The mount operation links the device's formatted filesystem structure to the directory tree.
+
+```bash
+# WRONG (Will error):
+cd /dev/sdb
+
+# CORRECT:
+sudo mkdir -p /dataofVolume
+sudo mount /dev/nvme1n1 /dataofVolume
+cd /dataofVolume
+```
+
+#### Pitfall 2: Syntax Errors during Mount Point Creation (`sudo mkdir/dataofVolume`)
+* **Error:** `sudo: mkdir/dataofVolume: command not found`
+* **Root Cause:** In bash/powershell, command names and arguments must be separated by a space. The shell treats `mkdir/dataofVolume` as a single program name, which does not exist.
+* **Correction:** Ensure a space is present: `sudo mkdir /dataofVolume`.
+
+#### Pitfall 3: Device Mapping Drift on AWS Nitro Instances
+* **Observation:** An engineer attaches a volume as `/dev/sdb` in the AWS Console, but fails to mount it: `sudo mount /dev/sdb /dataofVolume` fails because the device does not exist under that name.
+* **Root Cause:** Modern AWS EC2 instances built on the **Nitro System** (such as `t3`, `c5`, `m5`, `r5` instances) expose all block storage devices as **NVMe devices**. The Linux kernel names them using the `/dev/nvmeXn1` naming convention instead of legacy `/dev/sdX` or `/dev/xvdX`.
+  * AWS Console `/dev/sdb` maps to `/dev/nvme1n1`.
+  * AWS Console `/dev/sdf` maps to `/dev/nvme2n1`.
+* **Correction:** Run `lsblk` to identify the correct device block file name (e.g., `nvme1n1`), format it as `/dev/nvme1n1`, and mount it.
+
+```bash
+# Check names:
+lsblk
+
+# Expected Output:
+# NAME          MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+# nvme0n1       259:0    0    8G  0 disk 
+# └─nvme0n1p1   259:1    0    8G  0 part /
+# nvme1n1       259:2    0   10G  0 disk   <-- This is your attached EBS volume!
+
+# Format and mount using the ACTUAL NVMe device path:
+sudo mkfs -t ext4 /dev/nvme1n1
+sudo mount /dev/nvme1n1 /dataofVolume
+```
+
+### 6. Key Takeaways
+* **EBS is network-attached** persistent storage, while **Instance Store is local, physical host storage** (ephemeral/non-persistent).
+* **Availability Zone Locked:** Volumes must be in the same AZ as the EC2 instances they attach to. To migrate data between AZs, perform the snapshot lifecycle flow (`Volume → Snapshot → Volume`).
+* **Nitro NVMe Mapping:** Modern EC2 instances rename console-attached device designations (e.g., `/dev/sdb`) to NVMe devices (`/dev/nvme1n1`).
+* **Mounting Protocol:** Block devices are files, not directories. You must format them with a filesystem (`ext4`/`xfs`) and mount them to a directory to interact with their storage.
 
 ---
 
@@ -854,7 +1106,7 @@ flowchart TD
 
     ALB --> App1 & App2
     App1 & App2 --> DB1
-    DB1 <.->|Sync Replication| DB2
+    DB1 ==>|Sync Replication| DB2
     App1 & App2 -.->|Outbound updates| NAT
     NAT --> IGW
 
