@@ -397,6 +397,500 @@ sudo systemctl enable policy-service
 sudo systemctl start policy-service
 ```
 
+---
+
+### 4a. EC2 Apache Web Server — Deep Dive Command Reference
+
+This section provides an in-depth analysis of every command used in a real-world EC2 Apache (`httpd`) setup, as seen in the terminal session below:
+
+```
+[ec2-user@ip-172-31-45-101 html]$ sudo service httpd stop
+Redirecting to /bin/systemctl stop httpd.service
+
+[ec2-user@ip-172-31-45-101 html]$ sudo service httpd start
+Redirecting to /bin/systemctl start httpd.service
+
+[ec2-user@ip-172-31-45-101 html]$ pwd
+/var/www/html
+
+[ec2-user@ip-172-31-45-101 html]$ ls -l
+total 8
+-rw-r--r--. 1 root root 4202 Jul  1 11:35 index.html
+```
+
+---
+
+#### 4a.1 Understanding the Shell Prompt
+
+Before diving into commands, understand what the prompt tells you:
+
+```
+[ec2-user@ip-172-31-45-101 html]$
+```
+
+| Prompt Part | Meaning |
+| :--- | :--- |
+| `ec2-user` | The currently logged-in Linux username (default user on Amazon Linux) |
+| `ip-172-31-45-101` | The hostname of the EC2 instance (derived from its private IP `172.31.45.101`) |
+| `html` | The current working directory name (`/var/www/html`) |
+| `$` | Indicates a regular (non-root) user. A `#` symbol would indicate root user |
+
+> [!NOTE]
+> On Amazon Linux 2 and Amazon Linux 2023, the default SSH user is `ec2-user`. On Ubuntu it is `ubuntu`, on Red Hat it is `ec2-user`, on Debian it is `admin`, and on SUSE it is `ec2-user` or `root`.
+
+---
+
+#### 4a.2 `sudo service httpd stop` — Stopping Apache
+
+**What it does:**
+Stops the running Apache HTTP Server (httpd) service gracefully. Apache will stop accepting new connections and complete any in-flight requests before shutting down.
+
+**Why it is used:**
+- Before deploying a new version of a website to avoid serving partial/inconsistent content
+- When performing OS or Apache configuration changes that require a service restart
+- During maintenance windows to take the server offline intentionally
+- To free up port 80/443 for troubleshooting
+
+**Syntax:**
+```bash
+sudo service httpd stop
+```
+
+**Breaking down the command:**
+
+| Part | Meaning |
+| :--- | :--- |
+| `sudo` | Execute with superuser (root) privileges. Apache runs as root to bind to privileged ports (80, 443) |
+| `service` | The SysV init compatibility wrapper (legacy command that redirects to systemctl) |
+| `httpd` | The service name. `httpd` stands for **HTTP Daemon** — the Apache web server background process |
+| `stop` | The action — gracefully terminates the service |
+
+**Expected Output:**
+```
+Redirecting to /bin/systemctl stop httpd.service
+```
+
+> [!NOTE]
+> The message `Redirecting to /bin/systemctl stop httpd.service` is **not an error**. It is informational. On Amazon Linux 2, the legacy `service` command is a compatibility wrapper that automatically delegates to `systemctl` — the modern systemd init system. The actual work is done by `systemctl`.
+
+**Real-world DevOps use cases:**
+- **Blue-Green Deployments:** Stop httpd on the "blue" instance before switching traffic to the "green" instance via the Load Balancer
+- **Maintenance Mode:** Take Apache offline before running database migrations that would cause the app to be unavailable
+- **Certificate Renewal:** Stop Apache to free port 80 when using Certbot (Let's Encrypt) in standalone mode
+- **Deployment Scripts:** Part of a CI/CD shell script that stops the server, replaces files, and restarts
+
+**Common Interview Questions:**
+- *Q: What does the `Redirecting to /bin/systemctl` message mean?* — A: It means `service` is a wrapper script that delegates to `systemctl` on systemd-based systems.
+- *Q: Is `sudo service httpd stop` the same as `sudo systemctl stop httpd`?* — A: Yes, functionally identical on Amazon Linux 2.
+- *Q: How do you verify Apache stopped successfully?* — A: Run `sudo systemctl status httpd`.
+
+**Best Practices:**
+- Always verify the service stopped: `sudo systemctl status httpd`
+- If in production, update the Load Balancer to route traffic away from this instance **before** stopping Apache
+- Prefer `systemctl` over `service` in modern scripts for clarity and predictability
+
+**Troubleshooting:**
+```bash
+# If stop hangs, check for zombie processes:
+ps aux | grep httpd
+
+# Force kill all httpd processes (last resort):
+sudo pkill -9 httpd
+
+# Check why Apache failed to stop cleanly:
+sudo journalctl -u httpd -n 50 --no-pager
+```
+
+---
+
+#### 4a.3 `sudo service httpd start` — Starting Apache
+
+**What it does:**
+Starts the Apache HTTP Server daemon. Apache begins listening on port 80 (HTTP) and/or 443 (HTTPS) and starts serving web content from `/var/www/html`.
+
+**Why it is used:**
+- After deploying new website files to make them live
+- After stopping Apache for maintenance or configuration changes
+- As part of deployment automation scripts
+- To verify that Apache starts cleanly after configuration changes
+
+**Syntax:**
+```bash
+sudo service httpd start
+```
+
+**Expected Output:**
+```
+Redirecting to /bin/systemctl start httpd.service
+```
+
+**The full startup sequence (what happens internally):**
+
+```mermaid
+flowchart TD
+    A["sudo service httpd start"] --> B["Redirects to systemctl start httpd.service"]
+    B --> C["systemd reads /usr/lib/systemd/system/httpd.service"]
+    C --> D["Forks httpd master process as root"]
+    D --> E["httpd reads /etc/httpd/conf/httpd.conf"]
+    E --> F["Binds to port 80 and/or 443"]
+    F --> G["Spawns worker child processes as apache user"]
+    G --> H["Starts serving requests from /var/www/html"]
+
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef finish fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class A,B,C,D,E,F,G step;
+    class H finish;
+```
+
+**Real-world DevOps use cases:**
+- **Post-Deployment Start:** After `scp` or `aws s3 cp` of new HTML/JS files, start httpd to serve them
+- **Auto-Recovery:** In monitoring scripts, automatically restart httpd if it crashes
+- **Bootstrap Scripts:** In EC2 User Data scripts, `sudo service httpd start` is run after `yum install httpd -y`
+
+**Important Notes:**
+- If Apache fails to start, it usually means a configuration syntax error or port conflict
+- Check logs at `/var/log/httpd/error_log` for startup failures
+- `start` does NOT enable auto-start on reboot — use `sudo systemctl enable httpd` separately
+
+**Best Practices:**
+```bash
+# After deployment, always verify Apache is running:
+sudo systemctl status httpd
+
+# Check which ports httpd is listening on:
+sudo ss -tlnp | grep httpd
+
+# Validate Apache config before starting (catches syntax errors):
+sudo apachectl configtest
+```
+
+**Troubleshooting:**
+```bash
+# If Apache fails to start, check the error log:
+sudo tail -100 /var/log/httpd/error_log
+
+# Check if port 80 is already in use by another process:
+sudo lsof -i :80
+
+# Check systemd for startup failure reason:
+sudo journalctl -u httpd --since "5 minutes ago" --no-pager
+```
+
+---
+
+#### 4a.4 `service` vs `systemctl` — Complete Comparison
+
+This is one of the **most frequently asked Linux interview questions** for DevOps roles.
+
+| Feature | `service` (Legacy SysV) | `systemctl` (Modern systemd) |
+| :--- | :--- | :--- |
+| **Origin** | SysV init system (Unix legacy, ~1980s) | systemd (modern Linux, 2010+) |
+| **Availability** | Works on all Linux distros for backwards compatibility | Default on Amazon Linux 2, RHEL 7+, Ubuntu 16+, CentOS 7+ |
+| **Behavior on Amazon Linux 2** | Wrapper script — redirects all calls to `systemctl` | Native systemd command |
+| **Start service** | `sudo service httpd start` | `sudo systemctl start httpd` |
+| **Stop service** | `sudo service httpd stop` | `sudo systemctl stop httpd` |
+| **Restart service** | `sudo service httpd restart` | `sudo systemctl restart httpd` |
+| **Check status** | `sudo service httpd status` | `sudo systemctl status httpd` |
+| **Enable on boot** | `sudo chkconfig httpd on` | `sudo systemctl enable httpd` |
+| **Disable on boot** | `sudo chkconfig httpd off` | `sudo systemctl disable httpd` |
+| **Reload config** | `sudo service httpd reload` | `sudo systemctl reload httpd` |
+| **View logs** | `cat /var/log/httpd/error_log` | `sudo journalctl -u httpd -f` |
+
+> [!TIP]
+> **Interview Tip:** When asked "What is the difference between `service` and `systemctl`?", explain that on modern Amazon Linux 2, `service` is just a compatibility wrapper that calls `systemctl`. The real engine is `systemd`. In new scripts, always prefer `systemctl` as it provides better output, journald integration, and dependency management.
+
+**Why Amazon Linux uses `httpd` (not `apache2`):**
+
+| Distribution | Package Name | Service Name | Reason |
+| :--- | :--- | :--- | :--- |
+| **Amazon Linux 2 / RHEL / CentOS** | `httpd` | `httpd` | Follows Red Hat naming conventions. `httpd` = HTTP Daemon |
+| **Ubuntu / Debian** | `apache2` | `apache2` | Follows Debian naming — named after the software product |
+
+Amazon Linux 2 is derived from **Red Hat Enterprise Linux (RHEL)**, so it follows Red Hat/Fedora naming conventions.
+
+```bash
+# Install Apache on Amazon Linux (RHEL-family):
+sudo yum install httpd -y
+
+# Install Apache on Ubuntu (Debian-family):
+sudo apt install apache2 -y
+```
+
+---
+
+#### 4a.5 `pwd` — Print Working Directory
+
+**What it does:**
+Prints the absolute path of the current working directory to the terminal.
+
+**Syntax:**
+```bash
+pwd
+```
+
+**Expected Output:**
+```
+/var/www/html
+```
+
+**Why `/var/www/html` is the default Apache web root:**
+
+| Directory Component | Meaning |
+| :--- | :--- |
+| `/var` | Variable data — files that change during normal system operation (logs, caches, web content) |
+| `/var/www` | The web server's root directory — Apache's home |
+| `/var/www/html` | The **DocumentRoot** — the directory Apache serves files from by default |
+
+This path is configured in Apache's main configuration file:
+```bash
+cat /etc/httpd/conf/httpd.conf | grep DocumentRoot
+# Output: DocumentRoot "/var/www/html"
+```
+
+> [!IMPORTANT]
+> `DocumentRoot` tells Apache which directory maps to the URL `/`. So if you put `index.html` in `/var/www/html/`, it is accessible at `http://<EC2-Public-IP>/`.
+
+**Directory Structure:**
+```
+/var/
++-- www/
+    +-- html/          <- DocumentRoot (web content served from here)
+    |   +-- index.html <- Accessible at http://<IP>/
+    +-- cgi-bin/       <- CGI scripts
+    +-- icons/         <- Apache default icons
+```
+
+---
+
+#### 4a.6 `ls -l` — List Files with Details
+
+**What it does:**
+Lists all files and directories in the current directory in **long format**, showing detailed metadata for each file.
+
+**Syntax:**
+```bash
+ls -l
+ls -la    # Include hidden files (starting with .)
+ls -lh    # Human-readable file sizes (e.g., 4.2K instead of 4202)
+ls -ltr   # Sort by modification time, oldest first
+```
+
+**Output from the terminal session:**
+```
+total 8
+-rw-r--r--. 1 root root 4202 Jul  1 11:35 index.html
+```
+
+**Breaking down every field of the output:**
+
+```
+-rw-r--r--. 1 root root 4202 Jul  1 11:35 index.html
+|__________|   |    |    |    |__________  |
+Permissions  HardLink  Owner  Group  Size  Timestamp  Filename
+```
+
+**Total line:**
+`total 8` means 8 x 512 bytes = 4096 bytes of actual disk space allocated.
+
+**Deep Dive: Permission String `-rw-r--r--.`**
+
+```
+- rw- r-- r-- .
+| |-- |-- |-- |
+| |   |   |   +-- ACL indicator (. = no ACL, + = has ACL)
+| |   |   +------- Other permissions: r-- = read-only for all other users
+| |   +----------- Group permissions: r-- = read-only for the root group
+| +--------------- Owner permissions: rw- = read + write for the owner (root)
++----------------- File type: - = regular file
+```
+
+**Permission Values:**
+
+| Symbol | Octal Value | Meaning |
+| :---: | :---: | :--- |
+| `r` | 4 | **Read** — view file content or list directory contents |
+| `w` | 2 | **Write** — modify file content or create/delete files |
+| `x` | 1 | **Execute** — run as a program (files) or traverse (directories) |
+| `-` | 0 | **No permission** |
+
+**Octal representation of `-rw-r--r--`:**
+
+| Who | Permissions | Calculation | Octal |
+| :--- | :--- | :--- | :--- |
+| **Owner** (root) | `rw-` | r(4) + w(2) + -(0) | **6** |
+| **Group** (root) | `r--` | r(4) + -(0) + -(0) | **4** |
+| **Others** | `r--` | r(4) + -(0) + -(0) | **4** |
+| **Full octal** | | | **644** |
+
+```bash
+# -rw-r--r-- is equivalent to chmod 644
+sudo chmod 644 /var/www/html/index.html
+```
+
+**Why can Apache (httpd) still read a root-owned file?**
+
+Apache's worker processes run as the `apache` user (not root). The file permissions `-rw-r--r--` give **read access to everyone** (the `r--` for "others"). So the `apache` user can read and serve the file even though it is owned by root.
+
+```bash
+# Verify Apache's running user:
+ps aux | grep httpd
+# Output shows: apache  12345  ... httpd -DFOREGROUND
+
+# Check Apache user config:
+grep "^User\|^Group" /etc/httpd/conf/httpd.conf
+# Output:
+# User apache
+# Group apache
+```
+
+**Full field-by-field explanation:**
+
+| Field | Value | Explanation |
+| :--- | :--- | :--- |
+| File type | `-` | Regular file. Other types: `d` = directory, `l` = symlink, `b` = block device |
+| Owner permissions | `rw-` | Owner (root) can read and write. Cannot execute |
+| Group permissions | `r--` | Group members can only read |
+| Other permissions | `r--` | All other users (including `apache`) can only read |
+| ACL indicator | `.` | No extended ACL |
+| Hard links | `1` | Only one directory entry points to this file's inode |
+| Owner username | `root` | The Linux user who owns this file |
+| Group name | `root` | The Linux group that owns this file |
+| Size | `4202` | File size in **bytes** |
+| Timestamp | `Jul 1 11:35` | Last modification time |
+| Filename | `index.html` | The file name |
+
+**Apache Web Server Architecture Diagram:**
+
+```mermaid
+flowchart TD
+    subgraph Internet["Internet Traffic"]
+        Browser["User's Browser\nGET http://3.109.x.x/"]
+    end
+
+    subgraph EC2["EC2 Instance (Amazon Linux 2)"]
+        SG["Security Group\nInbound: Port 80 Allow"]
+        subgraph Apache["Apache httpd Process"]
+            Master["httpd Master Process\n(runs as root)"]
+            Worker1["Worker Process 1\n(runs as apache user)"]
+            Worker2["Worker Process 2\n(runs as apache user)"]
+        end
+        subgraph DocRoot["/var/www/html (DocumentRoot)"]
+            Index["index.html\n-rw-r--r-- root root 4202"]
+        end
+    end
+
+    Browser -->|HTTP GET :80| SG
+    SG --> Master
+    Master --> Worker1 & Worker2
+    Worker1 -->|Read file - r-- others| Index
+    Index -->|200 OK + HTML content| Browser
+
+    classDef internet fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef sg fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef apache fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef file fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class Browser internet;
+    class SG sg;
+    class Master,Worker1,Worker2 apache;
+    class Index file;
+```
+
+---
+
+#### 4a.7 Deployment & Troubleshooting Workflow
+
+**Standard Deployment Flow:**
+
+```mermaid
+flowchart TD
+    A["1. Upload new HTML/assets to EC2\nscp -i key.pem ./dist/* ec2-user@IP:/tmp/"] --> B["2. Stop Apache\nsudo service httpd stop"]
+    B --> C["3. Copy new files to DocumentRoot\nsudo cp -r /tmp/dist/* /var/www/html/"]
+    C --> D["4. Set correct permissions\nsudo chmod -R 644 /var/www/html/*"]
+    D --> E["5. Start Apache\nsudo service httpd start"]
+    E --> F{"6. Verify\nsudo systemctl status httpd"}
+    F -->|Active running| G["7. Test in browser\nhttp://EC2-Public-IP"]
+    F -->|Failed| H["8. Check error log\nsudo tail -50 /var/log/httpd/error_log"]
+    H --> I["9. Fix config/file issue"]
+    I --> E
+
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef decision fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef success fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class A,B,C,D,E,H,I step;
+    class F decision;
+    class G success;
+```
+
+**Key Troubleshooting Commands:**
+
+```bash
+# Check if httpd is running:
+sudo systemctl status httpd
+
+# Follow Apache access log in real-time:
+sudo tail -f /var/log/httpd/access_log
+
+# Follow Apache error log in real-time:
+sudo tail -f /var/log/httpd/error_log
+
+# Verify Apache is listening on port 80:
+sudo ss -tlnp | grep :80
+
+# Test locally from within the EC2 instance:
+curl -v http://localhost/
+
+# Check current directory and list files:
+pwd && ls -la /var/www/html/
+
+# Fix permissions:
+sudo chmod -R 755 /var/www/html/         # directories need execute (traverse)
+sudo chmod -R 644 /var/www/html/*.html   # files need read
+
+# Validate Apache config syntax before restarting:
+sudo apachectl configtest
+# Expected output: Syntax OK
+
+# Graceful restart (reloads config without dropping active connections):
+sudo apachectl graceful
+```
+
+**Common Issues & Fixes:**
+
+| Problem | Symptom | Root Cause | Fix |
+| :--- | :--- | :--- | :--- |
+| Browser shows connection refused | `ERR_CONNECTION_REFUSED` | httpd not running | `sudo service httpd start` |
+| Browser shows connection timeout | Page spins forever | Security Group port 80 blocked | Add inbound rule: TCP 80 from `0.0.0.0/0` |
+| HTTP 403 Forbidden | `403 Forbidden` in browser | File permissions wrong | `sudo chmod 644 /var/www/html/index.html` |
+| Apache fails to start | `Active: failed` in status | Port 80 in use, or config syntax error | `sudo apachectl configtest` to find error |
+| Changes not reflected | Old content still showing | Browser cache | Hard refresh (`Ctrl+Shift+R`) |
+
+---
+
+#### 4a.8 Important Interview Questions — EC2 Apache & Linux
+
+**Q1: What is the difference between `service httpd stop` and `systemctl stop httpd`?**
+> **A:** On Amazon Linux 2, they are functionally identical. `service` is a legacy SysV compatibility wrapper that automatically redirects commands to `systemctl`. When you run `sudo service httpd stop`, you see `Redirecting to /bin/systemctl stop httpd.service` — confirming the delegation. In modern scripts, `systemctl` is preferred.
+
+**Q2: Why is Apache called `httpd` on Amazon Linux, but `apache2` on Ubuntu?**
+> **A:** Amazon Linux 2 is based on Red Hat Enterprise Linux (RHEL), which names the Apache web server package `httpd` (HTTP Daemon). Ubuntu/Debian distributions name it `apache2`. The underlying Apache HTTP Server software is identical — only the package and service naming differs.
+
+**Q3: Why is `/var/www/html` the default web root for Apache?**
+> **A:** The Filesystem Hierarchy Standard (FHS) designates `/var` for variable/runtime data. Apache's `DocumentRoot` configuration in `/etc/httpd/conf/httpd.conf` points to `/var/www/html` by default. Any file placed in this directory is served by Apache at the corresponding URL path.
+
+**Q4: Explain the output of `ls -l`: `-rw-r--r--. 1 root root 4202 Jul 1 11:35 index.html`**
+> **A:** The `-` means it is a regular file. `rw-` means the owner (root) has read+write. `r--` means the group (root) has read-only. `r--` means all others (including the apache process user) have read-only. The `.` means no extended ACLs. `1` is the hard link count. `root root` are the owner and group. `4202` is the size in bytes. `Jul 1 11:35` is the last modification time. `index.html` is the filename.
+
+**Q5: If Apache is running but the browser shows 403 Forbidden, what is wrong?**
+> **A:** Most likely a file permission issue. Apache's `apache` user must be able to read the HTML files. The file needs at least `r--` permission for "others" (octal 644). Also check directory permissions — Apache needs execute (`x`) permission on all directories in the path (e.g., `/var/www/html` needs `755`).
+
+**Q6: How do you make Apache start automatically when the EC2 instance reboots?**
+> **A:** `sudo systemctl enable httpd` — this creates a symlink in the systemd run-level directories so that httpd starts automatically on every boot. Without this, `service httpd start` only starts Apache for the current session.
+
+---
+
 ### 5. Best Practices
 * **Principle of Least Privilege:** Do not write AWS credential keys inside your application files; always attach an IAM Role to the EC2 instance profile.
 * **Network Isolation:** Run EC2 backend apps in private subnets and expose them using an ALB.
@@ -1065,6 +1559,998 @@ flowchart TD
 * Use IAM Roles with temporary credentials for applications and AWS services instead of permanent access keys.
 * Deny statements always take precedence over Allow statements in policy evaluation.
 
+
+
+---
+
+## IAM COMPREHENSIVE DEEP DIVE
+
+### IAM-1: Root Account
+
+#### What is the Root Account?
+The Root Account is the initial AWS account created when you first sign up using an email address and password. It has **complete, unrestricted access** to every AWS service and resource in the account — including billing, account closure, and IAM management.
+
+#### Why the Root Account Should Rarely Be Used
+
+> [!CAUTION]
+> If the Root account is compromised, an attacker has **full control** over your entire AWS account — including the ability to delete all resources, run up massive bills, lock out all IAM users, and transfer billing to a different account.
+
+**Root Account Exclusive Tasks (Only Root Can Do These):**
+
+| Task | Why Only Root? |
+| :--- | :--- |
+| Change the AWS account email address | Account identity management |
+| Change the AWS support plan | Billing-level operation |
+| Close (delete) the AWS account | Irreversible destructive action |
+| Enable IAM access to billing console | Security boundary |
+| Restore a suspended account | Account administration |
+| Register as a seller in AWS Marketplace | Financial commitment |
+| Configure GovCloud linkage | Compliance requirement |
+
+**Best Practices for Root Account:**
+- Enable **MFA immediately** after account creation
+- Use a **strong, unique password** stored in a password manager
+- **Never create Access Keys** for the root account
+- Store root credentials in a secure physical safe
+- Set up **billing alerts** and a budget threshold alarm
+- Enable **CloudTrail** to log all root account activity
+- Never use root for daily administration, development, or CI/CD
+
+**Real-world Example:**
+> A startup founder creates an AWS account, enables MFA on root, then immediately creates an IAM user named `admin` with `AdministratorAccess` policy for daily use. Root credentials are stored in a physical safe and the root account is only accessed once per year to review billing settings.
+
+---
+
+### IAM-2: IAM Users
+
+#### What Are IAM Users?
+IAM Users are identities created **within an AWS account** for individual people, applications, or services that need AWS access. Each IAM user has its own set of credentials independent of other users.
+
+#### Authentication Methods
+
+| Authentication Type | Method | Used For |
+| :--- | :--- | :--- |
+| **Console Login** | Username + Password (+ optional MFA) | AWS Management Console access |
+| **Programmatic Access** | Access Key ID + Secret Access Key | AWS CLI, SDK, API calls |
+| **SSH Public Key** | Uploaded SSH public key | AWS CodeCommit Git operations |
+
+#### IAM User Characteristics
+
+| Property | Details |
+| :--- | :--- |
+| **Max Users per Account** | 5,000 IAM users per AWS account |
+| **Max Groups per User** | A user can belong to up to 10 groups |
+| **Credentials** | Long-term (do not expire unless rotated manually) |
+| **MFA** | Optional per-user (can be enforced via IAM policy conditions) |
+
+#### Console Access Setup
+```bash
+# Create IAM user
+aws iam create-user --user-name john-dev
+
+# Create login profile (console password)
+aws iam create-login-profile \
+  --user-name john-dev \
+  --password "Str0ng!Pass#2024" \
+  --password-reset-required
+```
+
+#### Access Keys for CLI/API Access
+```bash
+# Create access keys (save SecretAccessKey immediately - shown only once!)
+aws iam create-access-key --user-name john-dev
+
+# Deactivate a compromised access key
+aws iam update-access-key --user-name john-dev \
+  --access-key-id AKIAIOSFODNN7EXAMPLE \
+  --status Inactive
+
+# Delete an old access key
+aws iam delete-access-key --user-name john-dev \
+  --access-key-id AKIAIOSFODNN7EXAMPLE
+```
+
+> [!WARNING]
+> The **Secret Access Key** is shown **only once** at creation time. If you lose it, you must delete the access key and create a new one. There is no way to retrieve it from AWS.
+
+#### Password Policies
+```bash
+aws iam update-account-password-policy \
+  --minimum-password-length 12 \
+  --require-symbols \
+  --require-numbers \
+  --require-uppercase-characters \
+  --require-lowercase-characters \
+  --allow-users-to-change-password \
+  --max-password-age 90 \
+  --password-reuse-prevention 5
+```
+
+| Password Policy Option | Recommended Setting |
+| :--- | :--- |
+| Minimum length | 12+ characters |
+| Require uppercase + lowercase + numbers + symbols | Yes |
+| Password expiry | 90 days |
+| Prevent password reuse | Last 5 passwords |
+
+**Best Practices for IAM Users:**
+- Create individual users per person (no shared accounts)
+- Enforce MFA for all human users with console access
+- Rotate access keys every 90 days
+- Use IAM Roles instead of access keys wherever possible (Lambda, EC2, ECS)
+- Regularly audit unused users with **IAM Credential Reports**
+
+---
+
+### IAM-3: IAM Groups
+
+#### What Are IAM Groups?
+IAM Groups are **collections of IAM users** that allow you to manage permissions for multiple users at once.
+
+> [!NOTE]
+> IAM Groups are **NOT** identities that can assume roles or be referenced in resource policies as principals. They are purely a management convenience for organizing users.
+
+#### Advantages of Using Groups
+
+| Benefit | Explanation |
+| :--- | :--- |
+| **Scalability** | Add a new developer to `DevGroup` — they instantly inherit all developer permissions |
+| **Consistency** | All developers get identical permissions without manual per-user policy management |
+| **Easy Revocation** | Remove a user from a group — their permissions are instantly revoked |
+| **Separation of Duties** | `ReadOnlyGroup`, `DeveloperGroup`, `DevOpsGroup`, `AdminGroup` clearly separate access levels |
+
+#### Real-world Group Structure Example
+
+```
+AWS Account
++-- AdminGroup               --> AdministratorAccess
++-- DevOpsGroup              --> AmazonEC2FullAccess + AmazonECRFullAccess + CloudWatchFullAccess
++-- DeveloperGroup           --> AmazonEC2ReadOnlyAccess + AWSLambdaFullAccess
++-- SecurityGroup            --> SecurityAudit + IAMReadOnlyAccess
++-- DataEngineerGroup        --> AmazonAthenaFullAccess + AmazonS3FullAccess
++-- ReadOnlyGroup            --> ReadOnlyAccess
+```
+
+```bash
+# Create a group
+aws iam create-group --group-name DevOpsGroup
+
+# Attach a managed policy to the group
+aws iam attach-group-policy \
+  --group-name DevOpsGroup \
+  --policy-arn arn:aws:iam::aws:policy/AmazonEC2FullAccess
+
+# Add a user to the group
+aws iam add-user-to-group --group-name DevOpsGroup --user-name john-dev
+```
+
+---
+
+### IAM-4: IAM Roles — Complete Guide
+
+#### What Are IAM Roles?
+
+IAM Roles are **temporary identity credentials** that can be assumed by:
+- AWS services (EC2, Lambda, ECS, etc.)
+- IAM users in the same or different accounts
+- Federated users (SAML, OIDC, corporate IdP)
+- Web identity users (Google, Facebook, Amazon Cognito)
+
+Roles have **no permanent username or password**. They issue **temporary security credentials** via **AWS Security Token Service (STS)**.
+
+#### Why Roles Are Preferred Over Access Keys
+
+| Criterion | Access Keys (IAM User) | IAM Role |
+| :--- | :--- | :--- |
+| **Credential type** | Long-term (never expire by default) | Short-term (expire in 15 min to 36 hours) |
+| **Storage risk** | Must be stored somewhere | Never stored — injected dynamically by AWS |
+| **Rotation** | Manual rotation required | Rotated automatically |
+| **Breach impact** | Attacker has permanent access until deleted | Credentials expire automatically |
+| **Suitable for** | Human users (sparingly), CI/CD bots | EC2, Lambda, ECS, EKS, cross-account |
+
+#### How IAM Roles Work — Trust Policy + Permission Policy
+
+Every IAM Role has two essential policy components:
+
+**1. Trust Policy (Who Can Assume This Role?)**
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": {"Service": "ec2.amazonaws.com"},
+    "Action": "sts:AssumeRole"
+  }]
+}
+```
+
+**2. Permission Policy (What Can the Role Do?)**
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["s3:GetObject", "s3:PutObject", "s3:ListBucket"],
+    "Resource": [
+      "arn:aws:s3:::my-app-bucket",
+      "arn:aws:s3:::my-app-bucket/*"
+    ]
+  }]
+}
+```
+
+#### IAM Role AssumeRole Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Service as AWS Service (EC2/Lambda)
+    participant STS as AWS STS (Security Token Service)
+    participant IAM as AWS IAM (Trust Policy Check)
+    participant Resource as Target Resource (S3/DynamoDB)
+
+    Service->>STS: AssumeRole request (RoleArn)
+    STS->>IAM: Validate Trust Policy
+    IAM-->>STS: Trust Policy Evaluation Result
+    alt Trust Policy Allows
+        STS-->>Service: Temporary Credentials (TTL: 1hr default)
+        Service->>Resource: API Call with Temporary Credentials
+        Resource->>IAM: Evaluate Permission Policy for Role
+        IAM-->>Resource: Allow or Deny
+        Resource-->>Service: API Response (200 OK or 403 Forbidden)
+    else Trust Policy Denies
+        STS-->>Service: AccessDenied (403)
+    end
+```
+
+#### AWS STS — Security Token Service
+
+| STS API | Description | Max Duration |
+| :--- | :--- | :--- |
+| `AssumeRole` | Assume an IAM role (cross or same account) | 15 min to 12 hours |
+| `AssumeRoleWithWebIdentity` | Assume role via OIDC (GitHub Actions, Cognito) | 15 min to 12 hours |
+| `AssumeRoleWithSAML` | Assume role via SAML federation (AD, Okta) | 15 min to 12 hours |
+| `GetSessionToken` | Get temporary credentials for MFA-protected IAM user | 15 min to 36 hours |
+| `GetFederationToken` | Get credentials for federated users | 15 min to 36 hours |
+
+**AWS STS Temporary Credential Flow:**
+
+```mermaid
+flowchart TD
+    subgraph Caller["Caller (EC2 Instance / Lambda / CI-CD)"]
+        App["Application Code"]
+    end
+
+    subgraph STS_Flow["AWS STS Credential Lifecycle"]
+        Request["1. AssumeRole API Call\nRoleArn + optional ExternalId"]
+        Validate["2. STS validates Trust Policy\nIs caller a trusted principal?"]
+        Issue["3. STS Issues Temporary Credentials\nAccessKeyId + SecretKey + SessionToken\nExpires: 1 hour by default"]
+        Cache["4. SDK caches credentials\nAuto-refreshes before expiry"]
+    end
+
+    subgraph IMDS["EC2 Metadata Service"]
+        Meta["http://169.254.169.254/latest/meta-data/\niam/security-credentials/RoleName"]
+    end
+
+    App -->|AssumeRole| Request
+    Request --> Validate
+    Validate -->|Trust Policy OK| Issue
+    Issue -->|Injected via| IMDS
+    IMDS -->|SDK auto-fetches| Cache
+    Cache -->|Signed API calls| AWS["AWS Services (S3, DynamoDB, etc.)"]
+
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef sts fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef meta fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class App,Request step;
+    class Validate,Issue,Cache sts;
+    class Meta meta;
+    class AWS step;
+```
+
+---
+
+#### EC2 Instance Roles
+
+The most common use of IAM Roles in DevOps. Instead of hardcoding AWS credentials into your application or EC2 instance, you attach an IAM Role to the instance.
+
+**EC2 Instance Role Architecture:**
+
+```mermaid
+flowchart LR
+    subgraph EC2["EC2 Instance"]
+        App["Java/Spring Boot Application"]
+        SDK["AWS SDK v2"]
+        IMDS["IMDS\nhttp://169.254.169.254\n(Link-local, non-routable)"]
+    end
+
+    subgraph Role["IAM Instance Role"]
+        TP["Trust Policy:\nPrincipal: ec2.amazonaws.com"]
+        PP["Permission Policy:\ns3:GetObject, s3:PutObject\nsecretsmanager:GetSecretValue"]
+    end
+
+    STS["AWS STS"]
+    S3["Amazon S3"]
+    SM["Secrets Manager"]
+
+    App -->|1. S3 API call| SDK
+    SDK -->|2. No credentials locally| IMDS
+    IMDS -->|3. Fetch temp creds via AssumeRole| STS
+    STS -->|4. Temp creds - 1hr TTL| IMDS
+    IMDS -->|5. Return creds to SDK| SDK
+    SDK -->|6. Signed API call| S3
+    SDK -->|6. Signed API call| SM
+
+    classDef ec2 fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef role fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef aws fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class App,SDK,IMDS ec2;
+    class TP,PP role;
+    class STS,S3,SM aws;
+```
+
+**Setting Up EC2 Instance Role:**
+```bash
+# Create the IAM role with EC2 trust policy
+aws iam create-role \
+  --role-name EC2-S3-ReadRole \
+  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+
+# Attach the permission policy
+aws iam attach-role-policy \
+  --role-name EC2-S3-ReadRole \
+  --policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+# Create instance profile and add role
+aws iam create-instance-profile --instance-profile-name EC2-S3-ReadProfile
+aws iam add-role-to-instance-profile \
+  --instance-profile-name EC2-S3-ReadProfile \
+  --role-name EC2-S3-ReadRole
+
+# Verify credentials on the EC2 instance:
+curl http://169.254.169.254/latest/meta-data/iam/security-credentials/EC2-S3-ReadRole
+```
+
+---
+
+#### Lambda Execution Roles
+
+Every Lambda function **must** have an IAM Role for:
+1. Writing execution logs to CloudWatch Logs
+2. Accessing any AWS resources the function needs (S3, DynamoDB, SQS, etc.)
+
+**Lambda Execution Role Architecture:**
+
+```mermaid
+flowchart TD
+    subgraph Trigger["Event Source"]
+        SQS["SQS Queue"]
+        API["API Gateway"]
+        S3E["S3 Event"]
+    end
+
+    subgraph Lambda["AWS Lambda"]
+        Func["Function Code\n(Java/Python/Node.js)"]
+        Role["Execution Role\n(IAM Role)"]
+    end
+
+    subgraph Perms["Role Permissions"]
+        CW["CloudWatch Logs\nCreateLogGroup, CreateLogStream, PutLogEvents"]
+        S3P["Amazon S3\ns3:GetObject, s3:PutObject"]
+        DDB["DynamoDB\ndynamodb:PutItem, dynamodb:GetItem"]
+        VPC["VPC Access\nec2:CreateNetworkInterface"]
+    end
+
+    Trigger -->|Invokes| Func
+    Func -->|Assumes| Role
+    Role -->|Grants| CW & S3P & DDB & VPC
+
+    classDef trigger fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef lambda fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef perm fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class SQS,API,S3E trigger;
+    class Func,Role lambda;
+    class CW,S3P,DDB,VPC perm;
+```
+
+> [!NOTE]
+> AWS provides the `AWSLambdaBasicExecutionRole` managed policy which covers CloudWatch Logs access. For Lambda functions inside a VPC, also attach `AWSLambdaVPCAccessExecutionRole`.
+
+---
+
+#### ECS Task Roles & EKS Roles
+
+**ECS (Elastic Container Service):**
+- **ECS Task Execution Role** — Used by ECS agent to pull Docker images from ECR and push logs to CloudWatch
+- **ECS Task Role** — Used by the application code running inside the container
+
+**EKS (Elastic Kubernetes Service):**
+EKS uses **IRSA (IAM Roles for Service Accounts)** — each Kubernetes service account maps to an IAM role via OIDC federation.
+
+```bash
+# Create OIDC provider for EKS cluster
+eksctl utils associate-iam-oidc-provider --cluster my-cluster --approve
+
+# Create IAM role for service account
+eksctl create iamserviceaccount \
+  --name my-service-account \
+  --namespace default \
+  --cluster my-cluster \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+  --approve
+```
+
+---
+
+#### Cross-Account Roles
+
+Cross-account roles allow IAM users/services in **Account A** to access resources in **Account B** without sharing credentials.
+
+**Cross-Account Role Flow:**
+
+```mermaid
+flowchart LR
+    subgraph AccountA["Account A (Dev) - 123456789012"]
+        DevUser["Developer IAM User\ndev-user"]
+        AssumeAction["aws sts assume-role\n--role-arn arn:aws:iam::999::role/ProdReadOnly"]
+    end
+
+    subgraph STS_Node["AWS STS"]
+        STSCheck["Validates:\n1. Dev user has sts:AssumeRole permission\n2. Role Trust Policy allows Account A"]
+        TempCreds["Issues Temp Credentials\n(1 hour TTL)"]
+    end
+
+    subgraph AccountB["Account B (Prod) - 999999999999"]
+        CrossRole["IAM Role: ProdReadOnly\nTrust Policy: Allows Account A\nPermission: AmazonS3ReadOnlyAccess"]
+        ProdS3["Production S3 Bucket"]
+    end
+
+    DevUser -->|1. AssumeRole request| STSCheck
+    STSCheck -->|2. Both validations pass| TempCreds
+    TempCreds -->|3. Temp creds returned| AssumeAction
+    AssumeAction -->|4. Access prod resources| ProdS3
+
+    classDef accountA fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef sts fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef accountB fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class DevUser,AssumeAction accountA;
+    class STSCheck,TempCreds sts;
+    class CrossRole,ProdS3 accountB;
+```
+
+```bash
+# In Account B: Create role with trust policy allowing Account A
+aws iam create-role \
+  --role-name ProdReadOnly \
+  --assume-role-policy-document '{
+    "Version": "2012-10-17",
+    "Statement": [{
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::123456789012:root"},
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {"sts:ExternalId": "my-unique-external-id-12345"}
+      }
+    }]
+  }'
+
+# In Account A: Assume the role
+aws sts assume-role \
+  --role-arn arn:aws:iam::999999999999:role/ProdReadOnly \
+  --role-session-name DevCrossAccountSession \
+  --external-id my-unique-external-id-12345
+```
+
+> [!TIP]
+> Always use an **ExternalId** condition in cross-account trust policies to prevent the **Confused Deputy Problem** — where a malicious third party tricks a service into using its elevated permissions on your behalf.
+
+---
+
+#### Service-Linked Roles
+
+Service-Linked Roles (SLRs) are IAM roles **pre-defined by AWS services** for their own use. You cannot modify their trust policies.
+
+| Service | Service-Linked Role | Purpose |
+| :--- | :--- | :--- |
+| Elastic Load Balancing | `AWSServiceRoleForElasticLoadBalancing` | Manage EC2 target registrations |
+| Auto Scaling | `AWSServiceRoleForAutoScaling` | Launch/terminate EC2 instances |
+| Amazon RDS | `AWSServiceRoleForRDS` | Manage RDS maintenance |
+| Amazon EKS | `AWSServiceRoleForAmazonEKS` | Manage EKS cluster resources |
+
+---
+
+#### Role Chaining
+
+Role Chaining is when **Assumed Role credentials are used to assume another role**:
+```
+User --> assumes Role A --> Role A assumes Role B --> Role B assumes Role C
+```
+
+> [!WARNING]
+> Role chaining has a maximum session duration of **1 hour** regardless of individual role max duration settings.
+
+---
+
+#### Federation
+
+Federation allows external identity providers to authenticate users and map them to IAM Roles.
+
+| Federation Type | Use Case | Protocol |
+| :--- | :--- | :--- |
+| **SAML 2.0** | Corporate AD/Okta/ADFS login to AWS Console | SAML assertions |
+| **OIDC** | GitHub Actions, Bitbucket, GitLab CI to AWS | JWT tokens |
+| **Amazon Cognito** | Mobile/web app user pools to AWS resources | Cognito tokens |
+
+**GitHub Actions OIDC Federation Example:**
+```yaml
+jobs:
+  deploy:
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::123456789012:role/GitHubActionsRole
+          aws-region: ap-south-1
+      - name: Deploy to S3
+        run: aws s3 sync ./dist s3://my-deploy-bucket
+```
+
+---
+
+### IAM-5: IAM Policies — Complete Guide
+
+#### Policy Types
+
+| Policy Type | Managed By | Scope | Best For |
+| :--- | :--- | :--- | :--- |
+| **AWS Managed Policies** | AWS | Account-wide reusable | Common permissions (ReadOnly, FullAccess) |
+| **Customer Managed Policies** | You | Account-wide reusable | Custom permission sets for your org |
+| **Inline Policies** | You | Embedded in single entity | Strict 1:1 permission to entity relationship |
+
+**AWS Managed Policy Examples:**
+
+| Policy Name | Grants Access To |
+| :--- | :--- |
+| `AdministratorAccess` | Full access to all AWS services |
+| `ReadOnlyAccess` | Read-only access to all AWS services |
+| `AmazonEC2FullAccess` | Full EC2 management |
+| `AmazonS3ReadOnlyAccess` | Read-only S3 access |
+| `AWSLambdaFullAccess` | Full Lambda management |
+| `SecurityAudit` | Read-only access to security configurations |
+
+#### JSON Policy Structure — Full Reference
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AllowS3ReadOnSpecificBucket",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": [
+        "arn:aws:s3:::my-app-bucket",
+        "arn:aws:s3:::my-app-bucket/*"
+      ],
+      "Condition": {
+        "IpAddress": {
+          "aws:SourceIp": ["203.0.113.0/24"]
+        },
+        "Bool": {
+          "aws:MultiFactorAuthPresent": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DenyDeleteOperations",
+      "Effect": "Deny",
+      "Action": "s3:DeleteObject",
+      "Resource": "arn:aws:s3:::my-app-bucket/*"
+    }
+  ]
+}
+```
+
+**Policy Field Explanations:**
+
+| Field | Required | Description |
+| :--- | :---: | :--- |
+| `Version` | Yes | Always use `"2012-10-17"` |
+| `Statement` | Yes | Array of one or more permission statements |
+| `Sid` | No | Statement ID — descriptive label |
+| `Effect` | Yes | `"Allow"` or `"Deny"` |
+| `Action` | Yes | AWS API action(s). Format: `"service:Action"` |
+| `Resource` | Yes | ARN(s) of the resource(s) |
+| `Principal` | Yes* | Required in resource-based policies |
+| `Condition` | No | Optional conditions (IP range, MFA, time, tags) |
+
+**Common Condition Operators:**
+
+| Condition | Example | Use Case |
+| :--- | :--- | :--- |
+| `IpAddress` | `aws:SourceIp: "10.0.0.0/8"` | Allow only from corporate network |
+| `Bool` | `aws:MultiFactorAuthPresent: "true"` | Require MFA for sensitive actions |
+| `StringEquals` | `aws:RequestedRegion: "ap-south-1"` | Restrict to specific region |
+| `DateLessThan` | `aws:CurrentTime: "2024-12-31T23:59:59Z"` | Time-limited access |
+| `StringLike` | `s3:prefix: "home/${aws:username}/*"` | Dynamic per-user path restrictions |
+
+#### Explicit Deny vs Implicit Deny
+
+| Type | Definition | Example |
+| :--- | :--- | :--- |
+| **Explicit Deny** | A `Deny` statement exists that matches the request | `"Effect": "Deny", "Action": "s3:DeleteObject"` |
+| **Implicit Deny** | No `Allow` statement matches the request — denied by default | No statement covers `s3:DeleteBucket` |
+
+> [!IMPORTANT]
+> **Explicit Deny always wins.** Even if another policy has an `Allow` for the same action and resource, an `Explicit Deny` overrides it completely.
+
+#### IAM Policy Evaluation Flow
+
+```mermaid
+flowchart TD
+    Start(["API Request Received"]) --> OrgSCP{"SCP from\nAWS Organizations Applied?"}
+    OrgSCP -->|SCP Denies| DENY1(["DENY - Organization Policy"])
+    OrgSCP -->|SCP Allows or No SCP| PermBound{"Permissions Boundary\nSet on Entity?"}
+    PermBound -->|Boundary Denies Action| DENY2(["DENY - Permissions Boundary"])
+    PermBound -->|No Boundary or Allows| SessionPol{"Session Policy Present?"}
+    SessionPol -->|Session Policy Denies| DENY3(["DENY - Session Policy"])
+    SessionPol -->|No Session Policy or Allows| ExplicitDeny{"Any Attached Policy\nhas Explicit DENY?"}
+    ExplicitDeny -->|YES - Explicit Deny Found| DENY4(["DENY - Explicit Policy Deny"])
+    ExplicitDeny -->|NO - No Explicit Deny| ExplicitAllow{"Any Attached Policy\nhas Explicit ALLOW?"}
+    ExplicitAllow -->|YES - Allow Found| ALLOW(["ALLOW - Request Permitted"])
+    ExplicitAllow -->|NO - No Allow Found| DENY5(["DENY - Implicit Deny\n(Default: Everything Denied)"])
+
+    classDef start fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef decision fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef deny fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef allow fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class Start start;
+    class OrgSCP,PermBound,SessionPol,ExplicitDeny,ExplicitAllow decision;
+    class DENY1,DENY2,DENY3,DENY4,DENY5 deny;
+    class ALLOW allow;
+```
+
+---
+
+### IAM-6: Authentication vs Authorization
+
+```mermaid
+flowchart LR
+    subgraph AuthN["AUTHENTICATION - Who Are You?"]
+        UserID["Identity Claims\n(Username + Password + MFA\nOR Access Key + Secret Key\nOR Temp Credentials from STS)"]
+        Verified["Identity Verified by AWS IAM"]
+    end
+
+    subgraph AuthZ["AUTHORIZATION - What Can You Do?"]
+        Request["API Request\n(e.g. s3:GetObject on bucket-A)"]
+        PolicyEval["IAM Policy Engine\nEvaluates all attached policies\n(SCPs, Boundaries, Identity Policies,\nResource Policies)"]
+        Result{"Decision"}
+    end
+
+    UserID -->|Credentials sent| Verified
+    Verified -->|Authenticated Principal| Request
+    Request --> PolicyEval
+    PolicyEval --> Result
+    Result -->|Explicit Allow| Allow["API Call Succeeds - 200 OK"]
+    Result -->|Explicit or Implicit Deny| Deny["403 AccessDenied"]
+
+    classDef authn fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef authz fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef allow fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef deny fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class UserID,Verified authn;
+    class Request,PolicyEval,Result authz;
+    class Allow allow;
+    class Deny deny;
+```
+
+| Concept | Authentication (AuthN) | Authorization (AuthZ) |
+| :--- | :--- | :--- |
+| **Question** | Who are you? | What are you allowed to do? |
+| **Mechanism** | Username + Password, Access Keys, MFA, Temp Credentials | IAM Policies, Resource Policies, SCPs |
+| **Validates** | Identity of the caller | Permissions of the caller |
+| **Failure Result** | 401 Unauthorized | 403 AccessDenied / Forbidden |
+
+---
+
+### IAM-7: Principle of Least Privilege
+
+**Definition:** Grant only the **minimum permissions** required for a user or service to complete its specific task.
+
+**Implementation Checklist:**
+
+| Practice | Bad Example | Good Example |
+| :--- | :--- | :--- |
+| Scope actions | `"Action": "*"` | `"Action": ["s3:GetObject", "s3:PutObject"]` |
+| Scope resources | `"Resource": "*"` | `"Resource": "arn:aws:s3:::my-bucket/*"` |
+| Service permissions | Lambda with `AdministratorAccess` | Lambda with only needed permissions |
+
+---
+
+### IAM-8: Multi-Factor Authentication (MFA)
+
+MFA adds a second verification factor beyond username and password.
+
+**MFA Device Types:**
+
+| Type | Device | Best For |
+| :--- | :--- | :--- |
+| **Virtual MFA** | Google Authenticator, Authy | Individual users (most common) |
+| **Hardware TOTP Token** | Gemalto, SafeNet physical token | High-security environments |
+| **FIDO Security Key** | YubiKey, Titan Security Key | Phishing-resistant, enterprise-grade |
+
+**Enforce MFA via IAM Policy:**
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyAllIfNoMFA",
+    "Effect": "Deny",
+    "NotAction": [
+      "iam:CreateVirtualMFADevice",
+      "iam:EnableMFADevice",
+      "iam:GetUser",
+      "iam:ListMFADevices",
+      "sts:GetSessionToken"
+    ],
+    "Resource": "*",
+    "Condition": {
+      "BoolIfExists": {"aws:MultiFactorAuthPresent": "false"}
+    }
+  }]
+}
+```
+
+---
+
+### IAM-9: Access Keys — Complete Guide
+
+#### Rotating Access Keys (Zero-Downtime Rotation)
+```bash
+# Step 1: Create new access key (max 2 per user)
+aws iam create-access-key --user-name john-dev
+
+# Step 2: Update all applications/CI to use new key
+# Step 3: Verify new key works
+aws sts get-caller-identity
+
+# Step 4: Deactivate old key
+aws iam update-access-key \
+  --user-name john-dev \
+  --access-key-id AKIAIOSFODNN7OLDEXMPL \
+  --status Inactive
+
+# Step 5: Wait 24 hours, then delete old key
+aws iam delete-access-key \
+  --user-name john-dev \
+  --access-key-id AKIAIOSFODNN7OLDEXMPL
+```
+
+**Security Risks & Best Practices:**
+
+| Risk | Mitigation |
+| :--- | :--- |
+| Keys committed to Git | Use `git-secrets` or GitHub secret scanning. Rotate immediately |
+| Keys in Docker images | Use IAM Roles (ECS task roles / EKS IRSA) instead |
+| Keys in environment variables | Use AWS Secrets Manager + rotation Lambda |
+| Long-lived keys (>90 days) | Automated rotation via Lambda + EventBridge |
+| Root account access keys | **Never create root access keys** |
+
+> [!CAUTION]
+> If you accidentally push AWS Access Keys to a public repository, immediately rotate the key and audit CloudTrail for unauthorized usage in the past 24-48 hours.
+
+---
+
+### IAM-10: IAM Identity Center (AWS SSO)
+
+AWS IAM Identity Center provides **centralized access management** across multiple AWS accounts and cloud applications.
+
+| Feature | Benefit |
+| :--- | :--- |
+| **Single sign-on** | One login grants access to multiple AWS accounts |
+| **Integration with IdPs** | Connect with Okta, Azure AD, Google Workspace, Active Directory |
+| **Permission Sets** | Define permission templates applied across accounts |
+| **SCIM provisioning** | Auto-provision users from your corporate IdP |
+
+| Scenario | Recommendation |
+| :--- | :--- |
+| Team of 5+ engineers, multiple AWS accounts | IAM Identity Center (SSO) |
+| Single AWS account, small team | IAM Users + Groups |
+| Application/service accessing AWS | IAM Roles |
+
+---
+
+### IAM-11: IAM Credential Reports
+
+Credential Reports provide a CSV download of all IAM users with their credential status.
+
+```bash
+# Generate and download credential report
+aws iam generate-credential-report
+aws iam get-credential-report --query 'Content' --output text | base64 --decode > iam-report.csv
+```
+
+| Column | Description |
+| :--- | :--- |
+| `password_last_used` | When user last logged into the console |
+| `mfa_active` | Whether MFA is enabled (true/false) |
+| `access_key_1_active` | Whether first access key is active |
+| `access_key_1_last_rotated` | When first key was last rotated |
+
+---
+
+### IAM-12: IAM Access Analyzer
+
+IAM Access Analyzer identifies resources shared with **external entities** outside your account.
+
+**What It Analyzes:**
+- S3 Buckets accessible externally
+- IAM Roles with cross-account trust
+- KMS Keys shared externally
+- Lambda functions with resource policies granting external access
+- SQS queues and Secrets Manager secrets with cross-account access
+
+```bash
+aws accessanalyzer create-analyzer \
+  --analyzer-name my-account-analyzer \
+  --type ACCOUNT
+```
+
+---
+
+### IAM-13: Permissions Boundaries
+
+Permissions Boundaries set the **maximum permissions** an IAM entity can have.
+
+**Effective Permissions = Identity Policy INTERSECT Permissions Boundary**
+
+```bash
+# Create role with permissions boundary
+aws iam create-role \
+  --role-name app-service-role \
+  --assume-role-policy-document file://trust-policy.json \
+  --permissions-boundary arn:aws:iam::123456789012:policy/MaxDeveloperPermissions
+```
+
+Use when delegating IAM role creation to developers to prevent privilege escalation.
+
+---
+
+### IAM-14: AWS Organizations SCP Overview
+
+Service Control Policies (SCPs) restrict what AWS services and actions are available to member accounts.
+
+| Aspect | IAM Policy | SCP |
+| :--- | :--- | :--- |
+| **Scope** | Single account | Organization level (account-wide ceiling) |
+| **Overrides** | Can be overridden by explicit deny | Cannot be overridden by any account-level policy |
+| **Root account affected** | No | Yes |
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Sid": "DenyDisableCloudTrail",
+    "Effect": "Deny",
+    "Action": ["cloudtrail:DeleteTrail", "cloudtrail:StopLogging"],
+    "Resource": "*"
+  }]
+}
+```
+
+---
+
+### IAM-15: Common IAM Interview Questions
+
+**Q1: What is the difference between an IAM Role and an IAM User?**
+> IAM User has **long-term credentials** tied to a permanent identity. IAM Role has **no permanent credentials** — it issues temporary credentials via STS that expire. Roles are preferred for applications because credentials rotate automatically.
+
+**Q2: A developer accidentally committed AWS Access Keys to GitHub. Response plan?**
+> (1) Immediately **deactivate** the compromised access key. (2) Review **CloudTrail** logs for unauthorized API calls. (3) **Terminate** unauthorized resources. (4) **Purge** from Git history. (5) Create new access key for legitimate use. (6) Implement git-secrets. (7) Migrate to IAM Roles.
+
+**Q3: Explicit Deny vs Implicit Deny?**
+> **Explicit Deny**: A `"Effect": "Deny"` statement that overrides any Allow. **Implicit Deny**: No `Allow` statement exists for the requested action — denied by default. Explicit Deny > Explicit Allow > Implicit Deny.
+
+**Q4: How does an EC2 instance access S3 without hardcoded credentials?**
+> Attach IAM Role to the EC2 Instance Profile. AWS SDK automatically queries IMDS at `http://169.254.169.254/latest/meta-data/iam/security-credentials/<RoleName>` for temporary credentials that auto-refresh.
+
+**Q5: What is a Permissions Boundary?**
+> A managed policy set on an IAM entity that defines the **maximum permissions** (ceiling). Effective permissions = Identity Policy INTERSECT Boundary. Used to prevent privilege escalation when delegating IAM management.
+
+**Q6: What is the Confused Deputy Problem?**
+> A security vulnerability where a malicious third party tricks a legitimate service into performing actions using elevated privileges. Mitigation: always include `ExternalId` condition in cross-account trust policies.
+
+**Q7: What is IRSA?**
+> IRSA (IAM Roles for Service Accounts) allows EKS pods to assume IAM Roles via OIDC federation without access keys. Service accounts are annotated with IAM Role ARN; pods get OIDC tokens injected automatically.
+
+**Q8: Can SCPs restrict the root user?**
+> Yes. SCPs can restrict the root user of **member accounts** in an AWS Organization (but not the management/master account root).
+
+---
+
+### IAM-16: Common Beginner Mistakes
+
+| Mistake | Consequence | Fix |
+| :--- | :--- | :--- |
+| Using Root account for daily work | Root compromise = total account loss | Create IAM admin user for daily tasks |
+| Attaching `AdministratorAccess` to Lambda | Lambda can do anything in your account | Grant only the specific permissions Lambda needs |
+| Hardcoding access keys in application code | Keys exposed in code repositories | Use IAM Roles |
+| Creating access keys for Root account | Unrestricted API access forever | Never create root access keys |
+| Sharing IAM users between team members | No audit trail | One IAM user per person |
+| Not enabling MFA | Password-only = easily compromised | Enable Virtual MFA for all console users |
+| Using `"Resource": "*"` everywhere | Grants permission on ALL resources | Scope to specific ARNs |
+| Not rotating access keys | Stale keys remain valid indefinitely | Rotate every 90 days |
+
+---
+
+### IAM-17: Real-World Production Examples
+
+**Example 1: Multi-Account DevOps Setup**
+```
+AWS Organization
++-- Management Account (Root org management only)
++-- Security Account (CloudTrail, Config, GuardDuty logging)
++-- Dev Account
+|   +-- Developer IAM Users (via IAM Identity Center)
+|   +-- Application IAM Roles (EC2, Lambda, ECS)
++-- Staging Account
+|   +-- CI/CD Cross-Account Role (assumed by Jenkins in Dev)
++-- Production Account
+    +-- Read-Only Role (on-call engineers during incidents)
+    +-- Application IAM Roles (ECS Task Roles, Lambda Execution Roles)
+```
+
+**Example 2: Zero-Trust CI/CD Pipeline**
+```
+GitHub Actions --> OIDC Federation --> STS AssumeRoleWithWebIdentity
+--> Deploys to S3 (staging) with path-restricted role
+--> After approval gate, assumes prod-deploy role
+--> All actions logged in CloudTrail
+```
+
+**Example 3: Microservices Permission Isolation**
+```
+OrderService Lambda --> IAM Role: orders-lambda-role
+  --> DynamoDB: orders-table (PutItem, GetItem, Query only)
+  --> SQS: payment-queue (SendMessage only)
+  --> CloudWatch Logs
+
+PaymentService Lambda --> IAM Role: payment-lambda-role
+  --> DynamoDB: payments-table (PutItem, GetItem only)
+  --> Secrets Manager: payment-api-key (GetSecretValue only)
+  --> SNS: notifications-topic (Publish only)
+```
+
+---
+
+### IAM-18: Enterprise Best Practices
+
+| Practice | Implementation |
+| :--- | :--- |
+| **No root access keys** | Enforce via SCP: deny `iam:CreateAccessKey` for root |
+| **MFA everywhere** | IAM Identity Center with MFA enforcement |
+| **Least privilege** | Use IAM Access Advisor to remove unused permissions quarterly |
+| **No long-term keys for services** | All services use IAM Roles |
+| **Key rotation** | Automated via Lambda + EventBridge on 90-day schedule |
+| **Centralized logging** | CloudTrail in all accounts, aggregated to security account S3 |
+| **Access Analyzer** | Enabled in every account; findings trigger PagerDuty |
+| **Permission boundaries** | Applied to all developer-created roles |
+| **SCPs as guardrails** | Deny region restrictions, deny disable CloudTrail |
+| **Regular audits** | Weekly credential report, monthly Access Advisor review |
+
 ---
 
 ## TOPIC 7: VPC — VIRTUAL PRIVATE CLOUD
@@ -1223,6 +2709,794 @@ flowchart LR
 * Connection draining allows active requests to complete gracefully before an instance is terminated during scale-in.
 * Sticky sessions tie a user to a specific instance, which can cause uneven load distribution.
 
+
+
+---
+
+## LOAD BALANCER & AUTO SCALING — COMPREHENSIVE DEEP DIVE
+
+### Why Do We Need a Load Balancer?
+
+Without a load balancer, your entire application runs on a **single server**. This creates serious problems in production:
+
+```mermaid
+flowchart TD
+    subgraph SingleServer["Single Server Architecture (NO Load Balancer)"]
+        Users["1000 Concurrent Users"] -->|All requests hit one server| Server["Single EC2 Instance\nhandling ALL traffic"]
+        Server --> Problems["Problems:\n1. Overloaded CPU & Memory\n2. Slow/delayed responses\n3. Server crash possible\n4. Single Point of Failure\n5. Zero High Availability"]
+    end
+
+    classDef problem fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef server fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef user fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+
+    class Problems problem;
+    class Server server;
+    class Users user;
+```
+
+**Problems with a Single Server:**
+
+| Problem | Impact |
+| :--- | :--- |
+| **One server handles all requests** | CPU, memory, and network bandwidth exhausted quickly |
+| **Increased burden on the server** | Response times degrade as requests queue up |
+| **Server slows down** | Client requests time out, leading to poor user experience |
+| **Server can crash** | Application becomes completely unavailable |
+| **Single Point of Failure (SPOF)** | One hardware/software failure brings the entire app down |
+
+**Solution: Deploy on Multiple Servers + Load Balancer**
+
+```mermaid
+flowchart TD
+    subgraph Solved["Multi-Server Architecture WITH Load Balancer"]
+        Users2["1000 Concurrent Users"] --> LB["Load Balancer\n(Traffic Distributor)"]
+        LB -->|Round Robin| S1["EC2 Instance 1\n~333 requests"]
+        LB -->|Round Robin| S2["EC2 Instance 2\n~333 requests"]
+        LB -->|Round Robin| S3["EC2 Instance 3\n~334 requests"]
+        S1 & S2 & S3 --> Benefits["Benefits:\n1. Distributed load\n2. Fast performance\n3. High Availability\n4. No SPOF\n5. Auto failover"]
+    end
+
+    classDef benefit fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef lb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef server fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef user fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+
+    class Benefits benefit;
+    class LB lb;
+    class S1,S2,S3 server;
+    class Users2 user;
+```
+
+**Benefits of Load Balancer:**
+
+| Benefit | Explanation |
+| :--- | :--- |
+| **Distributed Load** | Traffic is spread evenly across all servers (Round Robin by default) |
+| **Reduced Burden** | Each server handles only a fraction of total requests |
+| **Fast Performance** | No single server is overwhelmed — faster response times |
+| **High Availability** | If one server fails, the LB routes traffic to remaining healthy servers |
+| **No Single Point of Failure** | Multiple servers ensure the app stays up even if instances crash |
+| **Health Checks** | LB continuously monitors servers and removes unhealthy ones automatically |
+| **SSL Termination** | LB handles HTTPS decryption, reducing CPU load on app servers |
+
+---
+
+### Round Robin Distribution — How It Works
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U1 as User Request 1
+    actor U2 as User Request 2
+    actor U3 as User Request 3
+    actor U4 as User Request 4
+    participant LB as Load Balancer
+    participant S1 as Server 1
+    participant S2 as Server 2
+    participant S3 as Server 3
+
+    U1->>LB: HTTP GET /
+    LB->>S1: Forward to Server 1 (Round 1)
+    S1-->>U1: 200 OK
+
+    U2->>LB: HTTP GET /
+    LB->>S2: Forward to Server 2 (Round 2)
+    S2-->>U2: 200 OK
+
+    U3->>LB: HTTP GET /
+    LB->>S3: Forward to Server 3 (Round 3)
+    S3-->>U3: 200 OK
+
+    U4->>LB: HTTP GET /
+    LB->>S1: Forward to Server 1 (Round 4 - cycles back)
+    S1-->>U4: 200 OK
+```
+
+> [!NOTE]
+> **Round Robin** means requests are distributed to servers in order: Server 1 → Server 2 → Server 3 → Server 1 → ... ALB also supports **Least Outstanding Requests (LOR)** which routes to the server with fewest active connections.
+
+---
+
+## LB-1: Application Load Balancer (ALB)
+
+### What is ALB?
+
+Application Load Balancer (ALB) operates at **OSI Layer 7 (Application Layer)** and makes routing decisions based on the **content of the HTTP/HTTPS request** — including URL path, hostname, headers, query parameters, and HTTP methods.
+
+```mermaid
+flowchart TD
+    Internet["Internet Users"] --> ALB
+
+    subgraph ALB_Node["Application Load Balancer (Layer 7)"]
+        Listener["HTTPS Listener :443\n(SSL Termination here)"]
+        Rules["Routing Rules Engine\n(Inspects URL, Host, Headers)"]
+    end
+
+    subgraph TargetGroups["Target Groups"]
+        TG1["Target Group 1\nSpring Boot API Servers\n/api/*"]
+        TG2["Target Group 2\nAdmin Portal Servers\n/admin/*"]
+        TG3["Target Group 3\nStatic Assets\n/static/*"]
+        TG4["Target Group 4\nv2 API (Canary 10%)\n/api/v2/*"]
+    end
+
+    subgraph Servers["EC2 Instances / ECS / Lambda"]
+        EC2_1["EC2: api-server-1"]
+        EC2_2["EC2: api-server-2"]
+        EC2_3["EC2: admin-portal"]
+        S3_Node["S3 Bucket / CloudFront"]
+        EC2_4["EC2: api-v2-server"]
+    end
+
+    Internet --> Listener
+    Listener --> Rules
+    Rules -->|"/api/*"| TG1
+    Rules -->|"/admin/*"| TG2
+    Rules -->|"/static/*"| TG3
+    Rules -->|"10% canary"| TG4
+    TG1 --> EC2_1 & EC2_2
+    TG2 --> EC2_3
+    TG3 --> S3_Node
+    TG4 --> EC2_4
+
+    classDef lb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef tg fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef server fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef internet fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class Listener,Rules lb;
+    class TG1,TG2,TG3,TG4 tg;
+    class EC2_1,EC2_2,EC2_3,S3_Node,EC2_4 server;
+    class Internet internet;
+```
+
+### ALB Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| **OSI Layer** | Layer 7 (Application Layer) |
+| **Protocols** | HTTP, HTTPS, gRPC, WebSocket |
+| **Routing Types** | Path-based, Host-based, Header-based, Method-based, Query string |
+| **SSL Termination** | Decrypts HTTPS at the ALB — app servers receive plain HTTP |
+| **Sticky Sessions** | Routes same user to same server via cookie |
+| **Health Checks** | HTTP/HTTPS health check endpoint (e.g., `/actuator/health`) |
+| **Authentication** | Native OIDC/Cognito integration for user authentication |
+| **WAF Integration** | Attach AWS WAF to filter malicious HTTP traffic |
+| **Lambda Target** | Can route HTTP requests directly to Lambda functions |
+
+### ALB Routing Rules — Deep Dive
+
+```mermaid
+flowchart LR
+    Client["Client Request\nGET /api/users\nHost: app.example.com"] --> Listener["ALB Listener :443"]
+
+    Listener --> Rule1{"Rule 1:\nHost = app.example.com\nAND Path = /api/*?"}
+    Rule1 -->|YES| TG_API["Target Group: API Servers\n(EC2 t3.medium x3)"]
+
+    Listener --> Rule2{"Rule 2:\nHost = admin.example.com?"}
+    Rule2 -->|YES| TG_Admin["Target Group: Admin Portal\n(EC2 t3.small x1)"]
+
+    Listener --> Rule3{"Rule 3:\nPath = /static/*?"}
+    Rule3 -->|YES| TG_S3["Target Group: S3/CloudFront"]
+
+    Listener --> Default["Default Rule:\n(No match)"]
+    Default --> TG_404["Target Group: Error Page\n(returns 404)"]
+
+    classDef rule fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef tg fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef lb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+
+    class Client,Listener lb;
+    class Rule1,Rule2,Rule3,Default rule;
+    class TG_API,TG_Admin,TG_S3,TG_404 tg;
+```
+
+### ALB Hands-On Lab (from Class Reference)
+
+**Step 1: Create EC2 VM-1 with User Data**
+```bash
+#!/bin/bash
+sudo yum install httpd -y
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 1 </h1></html>" > index.html
+service httpd start
+```
+
+**Step 2: Create EC2 VM-2 with User Data**
+```bash
+#!/bin/bash
+sudo yum install httpd -y
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 2 </h1></html>" > index.html
+service httpd start
+```
+
+**Step 3: Create Target Group**
+- Navigate: EC2 Console → Target Groups → Create Target Group
+- Target type: **Instances**
+- Protocol: **HTTP**, Port: **80**
+- Health check path: `/` (or `/index.html`)
+- Register both EC2 instances as targets
+
+**Step 4: Create Application Load Balancer**
+- Navigate: EC2 Console → Load Balancers → Create Load Balancer → **Application Load Balancer**
+- Scheme: **Internet-facing**
+- Listeners: **HTTP:80**
+- Availability Zones: Select at least **2 AZs**
+- Security Group: Allow inbound port 80
+- Target Group: Select the one created in Step 3
+
+**Step 5: Verify Round Robin**
+
+Access the ALB DNS name in your browser multiple times (or use curl in a loop):
+```bash
+# Loop to see round-robin in action
+for i in {1..6}; do
+    curl http://<ALB-DNS-Name>/
+    echo ""
+done
+
+# Expected output (alternates between servers):
+# <html><h1> Telusko Learning App - 1 </h1></html>
+# <html><h1> Telusko Learning App - 2 </h1></html>
+# <html><h1> Telusko Learning App - 1 </h1></html>
+# <html><h1> Telusko Learning App - 2 </h1></html>
+```
+
+> [!TIP]
+> The ALB DNS name looks like: `my-alb-1234567890.ap-south-1.elb.amazonaws.com`. You can find it in the EC2 Console → Load Balancers → Description tab.
+
+### ALB Real-World Use Cases
+
+| Use Case | How ALB Helps |
+| :--- | :--- |
+| **Microservices routing** | `/orders/*` → Order Service, `/payments/*` → Payment Service, `/users/*` → User Service |
+| **Blue-Green deployment** | Route 100% traffic to Blue TG, switch to Green TG after successful deploy |
+| **Canary release** | Route 95% to v1 TG, 5% to v2 TG using weighted routing |
+| **A/B testing** | Route users with `X-Experiment: B` header to variant target group |
+| **Multi-tenant SaaS** | `company1.saas.com` → Company1 TG, `company2.saas.com` → Company2 TG |
+| **API Gateway alternative** | Route `/api/*` to Spring Boot ECS, `/admin/*` to React admin on EC2 |
+
+### ALB Interview Questions
+
+**Q1: What is the difference between ALB and NLB?**
+> **A:** ALB operates at Layer 7 (HTTP/HTTPS) and can make routing decisions based on URL path, hostname, headers, and query parameters. NLB operates at Layer 4 (TCP/UDP) and routes based on IP and port only — it cannot inspect HTTP content. ALB is for web applications; NLB is for high-performance, low-latency, non-HTTP workloads.
+
+**Q2: What is path-based routing in ALB?**
+> **A:** ALB inspects the URL path of every incoming HTTP request and routes it to a different target group based on defined rules. Example: `/api/*` → API servers (EC2), `/admin/*` → Admin portal (EC2), `/static/*` → S3/CloudFront. This allows a single ALB to front-end an entire microservices architecture.
+
+**Q3: What is SSL termination and why is it done at the ALB?**
+> **A:** SSL termination means the ALB decrypts the incoming HTTPS connection and communicates with backend servers over plain HTTP. This offloads the CPU-intensive encryption/decryption work from application servers to the ALB, which is optimized for this task. The ACM (AWS Certificate Manager) certificate is attached to the ALB listener.
+
+**Q4: What is a Target Group?**
+> **A:** A Target Group is a logical group of targets (EC2 instances, IP addresses, Lambda functions, or ECS tasks) that the ALB routes traffic to. Each target group has a health check configuration. An ALB listener rule routes requests to a specific target group. One target group can be shared across multiple ALB rules.
+
+---
+
+## LB-2: Network Load Balancer (NLB)
+
+### What is NLB?
+
+Network Load Balancer operates at **OSI Layer 4 (Transport Layer)** and routes traffic based on **TCP/UDP port and IP address** — without inspecting the application-layer content (HTTP headers, URLs, etc.).
+
+```mermaid
+flowchart TD
+    subgraph NLB_Arch["Network Load Balancer Architecture"]
+        Clients["Clients\n(Gaming, IoT, Streaming)"] --> NLB_Node
+
+        subgraph NLB_Node["NLB (Layer 4 - Transport)"]
+            EIP["Static Elastic IP\n(one per AZ - never changes)"]
+            Routing["Routes by: IP + Port only\nNo HTTP header inspection\nNo URL path routing"]
+        end
+
+        NLB_Node -->|TCP :8080| TG_A["Target Group A\nJava WebSocket Servers"]
+        NLB_Node -->|UDP :5000| TG_B["Target Group B\nGame State Servers"]
+        NLB_Node -->|TCP :9090| TG_C["Target Group C\nMetrics/Telemetry Servers"]
+    end
+
+    classDef nlb fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef tg fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef client fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class EIP,Routing nlb;
+    class TG_A,TG_B,TG_C tg;
+    class Clients client;
+```
+
+### NLB Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| **OSI Layer** | Layer 4 (Transport Layer) |
+| **Protocols** | TCP, UDP, TLS |
+| **Static IP** | Each NLB gets one **static Elastic IP per AZ** — IP never changes |
+| **Latency** | Ultra-low latency (microseconds vs milliseconds for ALB) |
+| **Throughput** | Handles **millions of requests per second** |
+| **Preserves Source IP** | Passes client's real IP to backend servers (ALB uses X-Forwarded-For header) |
+| **No HTTP Inspection** | Cannot route based on URL, host, or headers |
+| **Cross-Zone LB** | Optional (free with NLB; has cost with ALB disabled) |
+
+### NLB vs ALB — When to Use Which?
+
+| Scenario | Use ALB | Use NLB |
+| :--- | :---: | :---: |
+| Spring Boot REST API | YES | |
+| Real-time multiplayer gaming | | YES |
+| Video streaming (UDP) | | YES |
+| Microservices routing by URL | YES | |
+| IoT device data ingestion (MQTT over TCP) | | YES |
+| WebSocket for chat app (HTTP Upgrade) | YES | |
+| Financial trading systems (ultra low latency) | | YES |
+| Static IP requirement (for whitelisting) | | YES |
+| AWS WAF integration needed | YES | |
+
+### NLB Real-World Use Cases
+
+| Use Case | Why NLB? |
+| :--- | :--- |
+| **Online Gaming (PUBG/Fortnite)** | Millions of UDP packets per second, sub-millisecond latency required |
+| **Stock Trading Platform** | TCP-based FIX protocol, ultra-low latency is critical for order execution |
+| **Video Streaming Server** | UDP media streams (RTP/RTSP) cannot be routed by ALB |
+| **VoIP / SIP Traffic** | UDP-based voice protocol, NLB preserves packet timing |
+| **Industrial IoT (MQTT)** | TCP-based MQTT protocol on port 1883 |
+| **Kubernetes Ingress** | NLB as a Kubernetes Service type=LoadBalancer for high-throughput APIs |
+| **Partner IP Whitelisting** | NLB provides a static IP — partners whitelist this IP in their firewalls |
+
+---
+
+## LB-3: Gateway Load Balancer (GWLB)
+
+### What is GWLB?
+
+Gateway Load Balancer is a specialized AWS load balancer designed to **route traffic through third-party security appliances** (like firewalls, Intrusion Detection Systems, and Deep Packet Inspection tools) before the traffic reaches your application.
+
+### How GWLB Works (Step-by-Step)
+
+```mermaid
+flowchart TD
+    Internet["Internet Traffic\n(Potentially malicious packets)"] -->|Step 1: Traffic enters VPC| GWLB
+
+    subgraph GWLB["Gateway Load Balancer (GWLB)"]
+        GE["GWLB Endpoint\n(in your App VPC)"]
+        GLB["GWLB Service\n(in Security VPC)"]
+    end
+
+    subgraph SecurityVPC["Security VPC (Firewall Tier)"]
+        FW1["Firewall Appliance 1\n(e.g., Palo Alto, Fortinet, Check Point)"]
+        FW2["Firewall Appliance 2\n(HA failover)"]
+        FW3["Firewall Appliance 3\n(scale out)"]
+    end
+
+    subgraph AppVPC["Application VPC (Your App)"]
+        App1["App Server 1"]
+        App2["App Server 2"]
+    end
+
+    Internet --> GE
+    GE -->|Step 2: Send to firewall for inspection| GLB
+    GLB --> FW1 & FW2 & FW3
+    FW1 -->|Step 3: Inspect packets| Decision{"Packet Safe?"}
+    Decision -->|YES - Step 4: Forward to app| App1 & App2
+    Decision -->|NO - Step 5: Drop packet| Blocked["BLOCKED\nMalicious Traffic"]
+
+    classDef gwlb fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef fw fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef app fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef internet fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef blocked fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class GE,GLB gwlb;
+    class FW1,FW2,FW3 fw;
+    class App1,App2 app;
+    class Internet internet;
+    class Blocked blocked;
+    class Decision gwlb;
+```
+
+### GWLB Real-World Use Cases
+
+| Use Case | Why GWLB? |
+| :--- | :--- |
+| **Enterprise Security Compliance** | PCI-DSS / HIPAA mandates all traffic passes through an approved firewall appliance |
+| **Financial Institutions** | Route banking app traffic through Palo Alto firewall for DPI before reaching app servers |
+| **Government Portals** | GWLB + Check Point firewall cluster for all inbound citizen service traffic |
+| **Telecom Networks** | Deep packet inspection (DPI) for lawful intercept compliance |
+| **Multi-tenant SaaS** | Centralized security inspection for traffic from all tenants |
+
+---
+
+## LB-4: Classic Load Balancer (CLB) — Legacy
+
+### What is CLB?
+
+Classic Load Balancer is the **original AWS load balancer** (launched in 2009). It supports both Layer 4 (TCP) and Layer 7 (HTTP/HTTPS) but in a limited, basic manner compared to ALB and NLB.
+
+> [!WARNING]
+> **Classic Load Balancer is deprecated and should NOT be used for new deployments.** AWS recommends migrating all CLB workloads to ALB (for HTTP/HTTPS) or NLB (for TCP/UDP). CLB is shown here for reference only — it may appear in legacy system interview discussions.
+
+| Feature | Classic LB | Application LB | Network LB |
+| :--- | :--- | :--- | :--- |
+| **OSI Layer** | Layer 4 + 7 (basic) | Layer 7 only | Layer 4 only |
+| **Path routing** | NO | YES | NO |
+| **Host routing** | NO | YES | NO |
+| **WebSocket** | NO | YES | YES |
+| **Static IP** | NO | NO | YES |
+| **gRPC** | NO | YES | NO |
+| **Status** | DEPRECATED | CURRENT | CURRENT |
+
+---
+
+## LB-5: Load Balancer Comparison Summary
+
+```mermaid
+flowchart LR
+    Request["Incoming Request"] --> Q1{"What type of\ntraffic is it?"}
+
+    Q1 -->|"HTTP/HTTPS\nREST API\nWebSocket"| ALB_Box["Application Load Balancer\nOSI Layer 7\nUse for: Web apps, APIs,\nMicroservices, Spring Boot"]
+
+    Q1 -->|"TCP/UDP\nHigh throughput\nLow latency\nStatic IP needed"| NLB_Box["Network Load Balancer\nOSI Layer 4\nUse for: Gaming, IoT,\nStreaming, Trading"]
+
+    Q1 -->|"All IP traffic\nNeeds security\nappliance inspection"| GWLB_Box["Gateway Load Balancer\nOSI Layer 3+4\nUse for: Firewalls, IDS/IPS,\nCompliance security"]
+
+    Q1 -->|"Legacy app\non CLB already"| CLB_Box["Classic Load Balancer\nDEPRECATED\nMigrate to ALB or NLB"]
+
+    classDef alb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef nlb fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef gwlb fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef clb fill:#374151,stroke:#9CA3AF,color:#FFFFFF,stroke-width:2px;
+    classDef question fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+
+    class ALB_Box alb;
+    class NLB_Box nlb;
+    class GWLB_Box gwlb;
+    class CLB_Box clb;
+    class Request,Q1 question;
+```
+
+| Property | ALB | NLB | GWLB | CLB |
+| :--- | :---: | :---: | :---: | :---: |
+| **OSI Layer** | 7 | 4 | 3+4 | 4+7 |
+| **Protocols** | HTTP, HTTPS, gRPC | TCP, UDP, TLS | All IP | HTTP, TCP |
+| **Path Routing** | YES | NO | NO | NO |
+| **Host Routing** | YES | NO | NO | NO |
+| **Static IP** | NO | YES | NO | NO |
+| **Latency** | Low | Ultra-low | Medium | Low |
+| **Use Case** | Web Apps, APIs | High-perf, Gaming | Security Inspection | Legacy (avoid) |
+| **WAF Support** | YES | NO | NO | NO |
+| **Lambda Target** | YES | NO | NO | NO |
+| **SSL Termination** | YES | YES (TLS) | NO | YES |
+
+---
+
+## LB-6: Target Groups — Deep Dive
+
+### What is a Target Group?
+
+A Target Group is a **logical collection of servers/endpoints** that the Load Balancer routes traffic to. The Load Balancer does NOT talk to servers directly — it always goes through a Target Group.
+
+```mermaid
+flowchart TD
+    ALB_LB["Application Load Balancer"]
+
+    subgraph TG_Concept["Target Group Concept"]
+        TG["Target Group\n(logical grouping)"]
+        HC["Health Check Config\nPath: /actuator/health\nInterval: 30s\nThreshold: 2 successes"]
+        LBAlgo["Load Balancing Algorithm\nRound Robin or\nLeast Outstanding Requests"]
+    end
+
+    subgraph Targets["Registered Targets"]
+        EC2_A["EC2 i-abc123\n(Healthy)"]
+        EC2_B["EC2 i-def456\n(Healthy)"]
+        EC2_C["EC2 i-ghi789\n(Unhealthy - excluded)"]
+    end
+
+    ALB_LB -->|Routes to| TG
+    TG --> HC & LBAlgo
+    TG -->|Sends traffic only to healthy| EC2_A & EC2_B
+    TG -.->|EXCLUDED - failed health check| EC2_C
+
+    classDef lb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef tg fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef healthy fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef unhealthy fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class ALB_LB lb;
+    class TG,HC,LBAlgo tg;
+    class EC2_A,EC2_B healthy;
+    class EC2_C unhealthy;
+```
+
+### Target Types
+
+| Target Type | What It Routes To | Use Case |
+| :--- | :--- | :--- |
+| **Instance** | EC2 instances by instance ID | Traditional EC2 deployments |
+| **IP** | Any IP address (private) | Containers with dynamic IPs, on-premises servers |
+| **Lambda** | AWS Lambda function | Serverless HTTP endpoints (ALB only) |
+| **ALB** | Another Application Load Balancer | GWLB chaining, nested routing |
+
+### Health Checks — How They Work
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant LB as Load Balancer
+    participant TG as Target Group
+    participant S1 as Server 1 (Healthy)
+    participant S2 as Server 2 (Unhealthy)
+
+    loop Every 30 seconds (Health Check Interval)
+        LB->>S1: GET /actuator/health HTTP/1.1
+        S1-->>LB: 200 OK {"status":"UP"}
+        LB->>TG: Mark Server 1: HEALTHY
+
+        LB->>S2: GET /actuator/health HTTP/1.1
+        S2-->>LB: 503 Service Unavailable (or timeout)
+        LB->>TG: Mark Server 2: UNHEALTHY (1/2 failures)
+
+        LB->>S2: GET /actuator/health HTTP/1.1
+        S2-->>LB: 503 Service Unavailable
+        LB->>TG: Mark Server 2: UNHEALTHY (2/2 - DEREGISTERED)
+    end
+
+    Note over LB,TG: Server 2 removed from rotation
+    Note over LB,S1: ALL traffic now goes to Server 1 only
+```
+
+---
+
+## LB-7: Auto Scaling Group (ASG) — Complete Guide
+
+### Why Auto Scaling?
+
+During events like **Big Billion Day, IPL ticket sales, or flash sales**, traffic is completely unpredictable. Manual scaling is too slow — by the time you manually launch instances, users are already experiencing failures.
+
+```mermaid
+flowchart TD
+    subgraph NoASG["WITHOUT Auto Scaling"]
+        NormalTraffic["Normal: 100 users → 2 instances OK"]
+        SpikTraffic["Spike: 10,000 users → 2 instances CRASH"]
+        ManualAction["Manual intervention:\n30 mins to launch new instances\nApp already down!"]
+
+        NormalTraffic --> SpikTraffic --> ManualAction
+    end
+
+    subgraph WithASG["WITH Auto Scaling Group"]
+        LowTraffic["Low Traffic: 2 instances running\n(saves cost)"]
+        HighTraffic["Traffic spike detected\n(CPU > 70%)"]
+        AutoScale["ASG Auto-launches\n5 more instances\nin 2-3 minutes!"]
+        ScaleDown["Traffic drops\nASG terminates\nextra instances\n(saves cost)"]
+
+        LowTraffic --> HighTraffic --> AutoScale --> ScaleDown --> LowTraffic
+    end
+
+    classDef bad fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef good fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class NormalTraffic,SpikTraffic,ManualAction bad;
+    class LowTraffic,HighTraffic,AutoScale,ScaleDown good;
+```
+
+### ASG Core Concepts
+
+| Concept | Description |
+| :--- | :--- |
+| **Minimum Capacity** | Minimum number of instances to always keep running (e.g., `Min = 2`) |
+| **Desired Capacity** | The target number of instances ASG tries to maintain (e.g., `Desired = 3`) |
+| **Maximum Capacity** | The maximum number of instances ASG can ever scale to (e.g., `Max = 10`) |
+| **Launch Template** | Blueprint for new EC2 instances (AMI, instance type, key pair, SG, user data) |
+| **Scaling Policy** | Rules that trigger scale-out or scale-in (CPU %, request count, schedule) |
+| **Health Check** | ASG replaces any instance that fails EC2 or ELB health checks |
+| **Cooldown Period** | Time ASG waits after a scaling activity before triggering another (default: 300s) |
+
+### ASG with ALB — Complete Architecture
+
+```mermaid
+flowchart TB
+    Internet["Internet Users"] --> ALB_ASG["Application Load Balancer\n(internet-facing, public subnets)"]
+
+    subgraph ASG_Group["Auto Scaling Group (Min:2, Desired:3, Max:10)"]
+        subgraph AZ1["AZ ap-south-1a (Private Subnet)"]
+            EC2_A1["EC2 Instance\n(running App v1)"]
+            EC2_A2["EC2 Instance\n(running App v1)"]
+        end
+        subgraph AZ2["AZ ap-south-1b (Private Subnet)"]
+            EC2_B1["EC2 Instance\n(running App v1)"]
+        end
+        subgraph AZ3["AZ ap-south-1c (Private Subnet)"]
+            EC2_C1["EC2 Instance\n(auto-launched on spike)"]
+        end
+    end
+
+    CloudWatch["CloudWatch Alarm\nCPU > 70% for 2 periods"]
+    ScalingPolicy["ASG Scaling Policy\nTarget Tracking: CPU at 60%"]
+
+    ALB_ASG -->|Health check + Route| EC2_A1 & EC2_A2 & EC2_B1
+    CloudWatch -->|Trigger| ScalingPolicy
+    ScalingPolicy -->|Scale Out: Launch new instance| EC2_C1
+    EC2_A1 & EC2_A2 & EC2_B1 & EC2_C1 -->|DB queries| RDS["RDS (Multi-AZ)"]
+
+    classDef alb fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef asg fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef cw fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef rds fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef internet fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class ALB_ASG alb;
+    class EC2_A1,EC2_A2,EC2_B1,EC2_C1 asg;
+    class CloudWatch,ScalingPolicy cw;
+    class RDS rds;
+    class Internet internet;
+```
+
+### Scaling Policy Types
+
+| Policy Type | How It Works | Best For |
+| :--- | :--- | :--- |
+| **Target Tracking** | Maintains a target metric (e.g., CPU at 60%) — ASG automatically adds/removes instances | Most scenarios — simplest and smartest |
+| **Step Scaling** | Adds/removes N instances based on metric threshold brackets | Custom scaling curves |
+| **Simple Scaling** | Adds/removes N instances on a single alarm, then waits for cooldown | Basic setups |
+| **Scheduled Scaling** | Scale to specific counts at specific times | Predictable patterns (e.g., scale up every Friday 9 AM) |
+| **Predictive Scaling** | Uses ML to forecast traffic and pre-scales | When historical patterns exist |
+
+### Scaling Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant CW as CloudWatch
+    participant ASG as Auto Scaling Group
+    participant LT as Launch Template
+    participant EC2_New as New EC2 Instance
+    participant TG as Target Group (ALB)
+
+    Note over CW,ASG: Scale-Out Event (Traffic Spike)
+    CW->>ASG: Alarm: CPU > 70% for 2 consecutive periods
+    ASG->>LT: Read Launch Template (AMI, type, SG, user data)
+    ASG->>EC2_New: Launch new EC2 instance
+    EC2_New->>EC2_New: Run User Data script (install app, start service)
+    EC2_New->>TG: Register with Target Group
+    TG->>EC2_New: Health check: GET /actuator/health
+    EC2_New-->>TG: 200 OK (instance healthy)
+    TG->>EC2_New: Begin routing production traffic
+
+    Note over CW,ASG: Scale-In Event (Traffic Drops)
+    CW->>ASG: Alarm: CPU < 30% for 10 consecutive periods
+    ASG->>TG: Deregister instance (connection draining begins)
+    TG->>EC2_New: Stop sending NEW requests (finish in-flight)
+    Note over TG,EC2_New: Wait deregistration delay (300s default)
+    ASG->>EC2_New: Terminate instance
+```
+
+### ASG Benefits in Detail
+
+| Benefit | Explanation | Real-world Example |
+| :--- | :--- | :--- |
+| **Fault Tolerance** | If an instance crashes or fails a health check, ASG automatically launches a replacement | Server OOM crash at 3 AM → ASG launches replacement in 2 mins without human intervention |
+| **Cost Management** | Scale down at night / weekends → run only 2 instances instead of 10 → save ~80% compute cost | Staging environment scales to 0 instances overnight (scheduled scaling) |
+| **High Availability** | Distributes instances across multiple AZs — if one AZ fails, others serve traffic | `ap-south-1a` goes down → ALB routes to `ap-south-1b` instances automatically |
+| **Elasticity** | Handles unpredictable traffic spikes automatically | Big Billion Day: scales from 3 to 47 instances in minutes |
+
+---
+
+## LB-8: ALB + ASG + Target Group — Complete Production Setup
+
+```mermaid
+flowchart TD
+    subgraph Public["Public Tier (Internet-Facing)"]
+        Internet_Users["Internet Users\n(Browsers, Mobile Apps)"]
+        ALB_Prod["Application Load Balancer\nHTTPS :443\nPath rules + WAF"]
+    end
+
+    subgraph Private["Private Tier (App Servers)"]
+        ASG_Prod["Auto Scaling Group\nMin:2 | Desired:4 | Max:20\nLaunch Template: app-lt-v3"]
+
+        subgraph AZ_A["AZ ap-south-1a"]
+            I1["EC2 i-aaa1\nApp v3.2.1"]
+            I2["EC2 i-aaa2\nApp v3.2.1"]
+        end
+        subgraph AZ_B["AZ ap-south-1b"]
+            I3["EC2 i-bbb1\nApp v3.2.1"]
+            I4["EC2 i-bbb2\nApp v3.2.1"]
+        end
+    end
+
+    subgraph Data["Data Tier (Databases)"]
+        RDS_Primary["RDS MySQL Primary\n(AZ ap-south-1a)"]
+        RDS_Standby["RDS MySQL Standby\n(AZ ap-south-1b)"]
+        Elasticache["ElastiCache Redis\n(Session Store)"]
+    end
+
+    subgraph Monitoring["Monitoring & Automation"]
+        CW_ASG["CloudWatch\nAlarm: CPU > 65%"]
+        Policy["ASG Scaling Policy\n(Target Tracking)"]
+    end
+
+    Internet_Users --> ALB_Prod
+    ALB_Prod -->|Health check pass| I1 & I2 & I3 & I4
+    I1 & I2 & I3 & I4 --> RDS_Primary & Elasticache
+    RDS_Primary -->|Sync replication| RDS_Standby
+    CW_ASG -->|Trigger| Policy
+    Policy -->|Scale out/in| ASG_Prod
+
+    classDef public fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef private fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef data fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef monitor fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+
+    class Internet_Users,ALB_Prod public;
+    class I1,I2,I3,I4,ASG_Prod private;
+    class RDS_Primary,RDS_Standby,Elasticache data;
+    class CW_ASG,Policy monitor;
+```
+
+---
+
+## LB-9: Common Load Balancer & ASG Interview Questions
+
+**Q1: Why do we need a Load Balancer?**
+> **A:** Without a load balancer, all traffic hits a single server causing overload, slow responses, crashes, and zero high availability. A load balancer distributes incoming requests across multiple servers in round-robin (or other algorithms), reducing burden per server, improving response times, and ensuring if one server crashes, traffic automatically routes to healthy servers.
+
+**Q2: What is the difference between ALB, NLB, and GWLB?**
+> **A:** ALB (Layer 7) routes based on HTTP content (URL path, hostname, headers) — ideal for web apps and microservices. NLB (Layer 4) routes by IP/port only with ultra-low latency — ideal for gaming, IoT, trading. GWLB routes all IP traffic through third-party security appliances (firewalls) for inspection before reaching the app — used in compliance-heavy environments.
+
+**Q3: What is a Target Group and how does it relate to ALB?**
+> **A:** A Target Group is a logical collection of servers (EC2 instances, IPs, Lambda) that ALB routes traffic to. ALB listener rules map URL patterns to target groups. Each target group independently tracks health checks. One ALB can route to multiple target groups (one per microservice). Auto Scaling Groups register/deregister instances in target groups automatically.
+
+**Q4: How does Auto Scaling work during a Big Billion Day sale?**
+> **A:** Before the sale, ASG is pre-configured with Min=5, Desired=5, Max=50. CloudWatch alarms are set to trigger scale-out when CPU > 60%. As traffic grows, CloudWatch triggers the ASG scaling policy, which launches new EC2 instances from the Launch Template. Instances run the startup script (install app, start service), pass health checks, and the ALB starts routing traffic to them — all automatically within 2-3 minutes. After the sale, scale-in removes excess instances saving cost.
+
+**Q5: What is Connection Draining (Deregistration Delay)?**
+> **A:** When ASG removes an instance (scale-in or replacement), the ALB doesn't immediately terminate it. Instead, it stops routing NEW requests to that instance but allows existing in-flight requests to complete within the deregistration delay window (default: 300 seconds). After that, the instance is safely terminated. This prevents active user sessions from being abruptly dropped.
+
+**Q6: What is the difference between Horizontal and Vertical Scaling?**
+> **A:** Vertical Scaling means upgrading the same server to a bigger instance type (e.g., t3.micro → m5.xlarge) — limited by maximum instance size and requires downtime. Horizontal Scaling means adding more servers of the same size — unlimited scale, no downtime, and is what ASG implements. AWS best practice is always horizontal scaling + ALB.
+
+**Q7: How does ALB health check work with Spring Boot?**
+> **A:** Configure the ALB target group health check to hit `/actuator/health` (Spring Boot Actuator endpoint). The endpoint returns `{"status":"UP"}` with HTTP 200. ALB checks this endpoint every 30 seconds (configurable). If an instance fails the check 2 consecutive times, ALB marks it unhealthy and stops sending traffic. Once it passes 2 consecutive checks, it's marked healthy again.
+
+**Q8: What happens if all instances in an ASG fail health checks?**
+> **A:** If all instances are unhealthy, the ASG will continuously attempt to replace them by launching new instances from the Launch Template. The ALB will return 503 (No healthy targets) to users during this period. You should investigate the root cause (bad AMI, app crash, DB connection failure) via CloudWatch logs and EC2 system logs.
+
+---
+
+## LB-10: Best Practices
+
+| Area | Best Practice |
+| :--- | :--- |
+| **Security** | Always use HTTPS (port 443) on ALB; terminate SSL at ALB; redirect HTTP to HTTPS |
+| **Health Checks** | Use application-level health checks (`/actuator/health`) not just TCP ping |
+| **Stickiness** | Avoid sticky sessions; use Redis/ElastiCache for session state instead |
+| **Availability** | Always configure ALB across **minimum 2 AZs** for high availability |
+| **ASG Sizing** | Set Min ≥ 2 (ensures no SPOF), Desired = current normal load, Max = peak capacity |
+| **Launch Template** | Always use Launch Templates (not Launch Configurations — deprecated) |
+| **Scaling Policy** | Use Target Tracking Scaling (CPU at 60-70%) as the primary policy |
+| **Cooldown Period** | Set cooldown to at least equal to instance boot + app startup time |
+| **Cross-Zone LB** | Enable cross-zone load balancing to prevent uneven distribution |
+| **Access Logs** | Enable ALB access logs to S3 for audit, debugging, and analytics |
+| **WAF** | Attach AWS WAF to ALB to protect against SQL injection, XSS, and DDoS |
+
+---
 ---
 
 ## TOPIC 9: RDS — RELATIONAL DATABASE SERVICE
@@ -1321,6 +3595,1036 @@ SELECT * FROM employee;
 * RDS Proxy manages connection pooling, preventing serverless functions from overwhelming the database connection limit.
 * Enable Performance Insights and slow query logging to identify database bottlenecks.
 
+
+
+---
+
+## RDS COMPREHENSIVE DEEP DIVE
+
+### Why Do We Need a Database?
+
+A database is software that **stores data permanently** — even after the application restarts or the server shuts down.
+
+**Types of Databases:**
+
+| Type | Structure | Examples | Use Case |
+| :--- | :--- | :--- | :--- |
+| **Relational (RDBMS)** | Tables → Rows & Columns (structured) | MySQL, PostgreSQL, Oracle, SQL Server, Aurora | Banking, e-commerce, ERP, HR systems |
+| **NoSQL** | Documents, Key-Value, Graph (flexible schema) | MongoDB, Cassandra, DynamoDB, Redis | Social media, real-time analytics, IoT |
+
+Every application needs a database — whether relational or NoSQL — to persist user data, transactions, logs, and configuration.
+
+---
+
+### Problems with On-Premises (On-Prem) Databases
+
+Before cloud databases, every company managed their own database servers. This was painful:
+
+```mermaid
+flowchart TD
+    subgraph OnPrem["On-Premises Database Challenges"]
+        License["Purchase DB Server License\n(Oracle = $25,000+ per core/year)"]
+        Install["Install DB Server Software\n(DBA expertise required)"]
+        Network["Configure Network\n(VLANs, firewalls, latency tuning)"]
+        Security["Manage Security\n(patches, encryption, audits)"]
+        Backup["Handle Backups\n(manual scripts, tape drives)"]
+        Admin["24/7 Administration\n(monitoring, tuning, on-call)"]
+        Hardware["Buy Physical Hardware\n(servers, SAN storage, rack space)"]
+        HA["Build High Availability\n(clustering, replication, failover)"]
+    end
+
+    Hardware --> Install --> License --> Network --> Security --> Backup --> Admin --> HA
+    HA --> Problem["Result: High Cost + High Complexity\n+ Slow Setup + 24/7 DBA Team Required"]
+
+    classDef prob fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+
+    class Problem prob;
+    class License,Install,Network,Security,Backup,Admin,Hardware,HA step;
+```
+
+**On-Prem Database Limitations:**
+
+| Challenge | Impact |
+| :--- | :--- |
+| **Purchase DB License** | Oracle DB license can cost $25,000+ per CPU core per year |
+| **Install Database Software** | Requires certified DBAs — days of setup work |
+| **Network Configuration** | Complex VLAN, firewall, and latency tuning |
+| **Security Management** | Patches, encryption setup, audit logging — constant overhead |
+| **Backup Management** | Manual backup scripts, tape drives, offsite storage |
+| **Administration** | 24/7 monitoring, query tuning, on-call DBA teams |
+| **Hardware Procurement** | Buying servers takes weeks — cannot scale quickly |
+| **High Availability** | Building HA clustering requires duplicate hardware investment |
+
+---
+
+### What is AWS RDS?
+
+**Amazon RDS (Relational Database Service)** is a **fully managed** cloud database service that handles all the operational burden above so you can focus on your application.
+
+```mermaid
+flowchart LR
+    subgraph Without["Without RDS (On-Premises)"]
+        Dev1["Developer spends time on:\nDB installation\nPatching\nBackups\nHA setup\nMonitoring"]
+    end
+
+    subgraph With["With AWS RDS (Fully Managed)"]
+        Dev2["Developer focuses on:\nSchema design\nQuery optimization\nApplication logic"]
+        AWS_RDS["AWS RDS Handles:\nProvisioning\nOS patching\nAutomated backups\nMulti-AZ HA\nMonitoring\nStorage scaling"]
+    end
+
+    classDef bad fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef good fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef aws fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+
+    class Dev1 bad;
+    class Dev2 good;
+    class AWS_RDS aws;
+```
+
+**RDS Key Characteristics:**
+
+| Property | Details |
+| :--- | :--- |
+| **Fully Managed** | AWS handles provisioning, patching, backups, monitoring |
+| **Pay As You Go** | Pay only for instance hours + storage used |
+| **Multi-Engine** | Supports MySQL, PostgreSQL, Oracle, SQL Server, MariaDB, Aurora |
+| **High Availability** | Multi-AZ with automatic failover |
+| **Read Scalability** | Read Replicas for horizontal read scaling |
+| **Automated Backups** | Daily snapshots + transaction logs (point-in-time recovery) |
+| **Security** | VPC isolation, security groups, KMS encryption, SSL/TLS |
+| **Monitoring** | CloudWatch metrics + Performance Insights built-in |
+
+---
+
+## RDS-1: Supported Database Engines
+
+```mermaid
+flowchart TD
+    RDS_Engine["Amazon RDS\nSupported Engines"]
+
+    RDS_Engine --> Aurora["Amazon Aurora\n(AWS Cloud-native)\nMySQL + PostgreSQL compatible\n5x faster than MySQL\n3x faster than PostgreSQL\nStorage auto-scales to 128 TB\n6-way replication across 3 AZs"]
+
+    RDS_Engine --> MySQL_DB["MySQL\nMost popular open-source RDBMS\nFree tier eligible\nVersion: 8.0, 5.7"]
+
+    RDS_Engine --> Postgres["PostgreSQL\nAdvanced open-source RDBMS\nBest for complex queries\nVersion: 15, 14, 13"]
+
+    RDS_Engine --> Oracle_DB["Oracle Database\nEnterprise-grade\nBYOL or License Included\nVersion: 19c, 21c"]
+
+    RDS_Engine --> MSSQL["Microsoft SQL Server\nWindows-native enterprise DB\nExpress, Web, Standard, Enterprise editions"]
+
+    RDS_Engine --> MariaDB["MariaDB\nMySQL fork - open source\nDrop-in MySQL replacement"]
+
+    classDef rds fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef aurora fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef engine fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+
+    class RDS_Engine rds;
+    class Aurora aurora;
+    class MySQL_DB,Postgres,Oracle_DB,MSSQL,MariaDB engine;
+```
+
+| Engine | Best For | Free Tier? | Max Storage |
+| :--- | :--- | :---: | :--- |
+| **Amazon Aurora MySQL** | High-performance cloud-native apps | No | 128 TB (auto-scales) |
+| **Amazon Aurora PostgreSQL** | Complex analytics + cloud-native | No | 128 TB (auto-scales) |
+| **MySQL 8.0** | Web apps, Spring Boot, WordPress | YES (db.t3.micro) | 64 TB |
+| **PostgreSQL 15** | Advanced queries, GIS, JSON | YES (db.t3.micro) | 64 TB |
+| **Oracle 19c** | Enterprise legacy apps, SAP | No | 64 TB |
+| **SQL Server** | .NET apps, Windows workloads | No | 16 TB |
+| **MariaDB** | MySQL-compatible open-source | YES (db.t3.micro) | 64 TB |
+
+---
+
+## RDS-2: RDS Architecture Overview
+
+```mermaid
+flowchart TB
+    subgraph Internet_Clients["Client Applications"]
+        App["Spring Boot App\n(EC2 / ECS / Lambda)"]
+        DBA["DBA Tools\n(MySQL Workbench, DBeaver)"]
+        Reports["Reporting Tool\n(Tableau, Grafana)"]
+    end
+
+    subgraph VPC["VPC (Private Network)"]
+        subgraph PublicSubnet["Public Subnet"]
+            Bastion["Bastion Host\n(SSH jump server for DBA access)"]
+        end
+
+        subgraph PrivateSubnet_A["Private Subnet - AZ ap-south-1a"]
+            RDS_Primary["RDS Primary Instance\n(Accepts all reads & writes)\ndb.m5.large - MySQL 8.0"]
+        end
+
+        subgraph PrivateSubnet_B["Private Subnet - AZ ap-south-1b"]
+            RDS_Standby["RDS Standby Instance\n(Multi-AZ passive standby)\nSynchronous replication"]
+        end
+
+        subgraph PrivateSubnet_C["Private Subnet - AZ ap-south-1a/b"]
+            ReadReplica["RDS Read Replica\n(Read-only queries)\nAsynchronous replication"]
+        end
+
+        SG_RDS["Security Group (RDS)\nInbound: TCP 3306 from App SG only"]
+        RDS_Proxy_Node["RDS Proxy\n(Connection Pooling)\nfor Lambda & high-concurrency apps"]
+    end
+
+    S3_Backup["S3 (Automated Backups)\nPoint-in-time recovery\nRetention: 7 days"]
+    CW_RDS["CloudWatch\nPerformance Insights\nSlow Query Logs"]
+
+    App --> RDS_Proxy_Node --> SG_RDS --> RDS_Primary
+    DBA --> Bastion --> SG_RDS --> RDS_Primary
+    Reports --> ReadReplica
+    RDS_Primary -->|Sync replication| RDS_Standby
+    RDS_Primary -->|Async replication| ReadReplica
+    RDS_Primary -->|Automated backups| S3_Backup
+    RDS_Primary --> CW_RDS
+
+    classDef client fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef primary fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef standby fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef replica fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef infra fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef monitor fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+
+    class App,DBA,Reports client;
+    class RDS_Primary,RDS_Proxy_Node primary;
+    class RDS_Standby standby;
+    class ReadReplica replica;
+    class Bastion,SG_RDS infra;
+    class S3_Backup,CW_RDS monitor;
+```
+
+---
+
+## RDS-3: Multi-AZ — High Availability
+
+### What is RDS Multi-AZ?
+
+Multi-AZ deploys a **synchronous standby replica** of your database in a different Availability Zone. This provides automatic failover — if the primary instance fails, AWS automatically switches to the standby.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as Spring Boot Application
+    participant DNS as RDS Endpoint (DNS)
+    participant Primary as RDS Primary (AZ-1a)
+    participant Standby as RDS Standby (AZ-1b)
+    participant CW as CloudWatch
+
+    Note over App,Standby: Normal Operation
+    App->>DNS: Resolve DB endpoint
+    DNS-->>App: Points to Primary (AZ-1a)
+    App->>Primary: INSERT / UPDATE / SELECT
+    Primary->>Standby: Synchronous replication (every write)
+    Standby-->>Primary: ACK (write confirmed)
+    Primary-->>App: Write confirmed
+
+    Note over Primary,Standby: Failure Event!
+    Primary--xApp: Primary instance fails (hardware/AZ outage)
+    CW->>DNS: Detect failure via health check
+    DNS->>Standby: Update DNS to point to Standby (AZ-1b)
+    Note over DNS: Failover takes 60-120 seconds
+    App->>DNS: Resolve DB endpoint again
+    DNS-->>App: Now points to Standby (promoted to Primary)
+    App->>Standby: Normal operations resume
+    Note over App: Application reconnects - NO code changes needed
+```
+
+**Multi-AZ Key Points:**
+
+| Property | Details |
+| :--- | :--- |
+| **Replication Type** | Synchronous — every write to primary is instantly replicated to standby |
+| **Standby Status** | PASSIVE — cannot accept reads or writes (not a read replica) |
+| **Failover Time** | 60–120 seconds (DNS TTL update) |
+| **DNS Change** | Same endpoint URL — application reconnects automatically |
+| **Use Case** | Disaster Recovery / High Availability (not for scaling reads) |
+| **Cost** | ~2x the cost of single-AZ (you pay for two instances) |
+| **Zero Data Loss** | Synchronous replication means no data loss on failover |
+
+> [!IMPORTANT]
+> Multi-AZ is for **availability**, not **performance**. The standby instance does NOT serve any traffic during normal operation. To scale reads, use **Read Replicas** instead.
+
+---
+
+## RDS-4: Read Replicas — Scalability
+
+### What are Read Replicas?
+
+Read Replicas are **asynchronous copies** of the primary database that can serve **read-only** SQL queries (SELECT statements). They scale read throughput horizontally.
+
+```mermaid
+flowchart TD
+    subgraph Writes["Write Traffic (INSERT/UPDATE/DELETE)"]
+        AppWrite["Spring Boot App\n(Write Requests)"]
+    end
+
+    subgraph PrimaryDB["Primary RDS Instance"]
+        Primary["RDS Primary\n(All writes go here)"]
+    end
+
+    subgraph ReadLayer["Read Scaling Layer (Asynchronous Replicas)"]
+        RR1["Read Replica 1\n(ap-south-1b)\nReporting queries"]
+        RR2["Read Replica 2\n(ap-south-1c)\nSearch queries"]
+        RR3["Read Replica 3\n(us-east-1)\nCross-region DR"]
+    end
+
+    subgraph ReadApps["Read-Only Consumers"]
+        Dashboard["Analytics Dashboard"]
+        Search["Search Service"]
+        Reports["Report Generator"]
+    end
+
+    AppWrite -->|"Write: INSERT/UPDATE"| Primary
+    Primary -->|"Async replication\n(slight lag)"| RR1 & RR2 & RR3
+    RR1 --> Dashboard
+    RR2 --> Search
+    RR3 --> Reports
+
+    classDef write fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef primary fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef replica fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef reader fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+
+    class AppWrite write;
+    class Primary primary;
+    class RR1,RR2,RR3 replica;
+    class Dashboard,Search,Reports reader;
+```
+
+**Read Replica Key Points:**
+
+| Property | Details |
+| :--- | :--- |
+| **Replication Type** | Asynchronous — slight replication lag possible (milliseconds to seconds) |
+| **Status** | ACTIVE — accepts SELECT queries |
+| **Max Replicas** | Up to 15 read replicas (MySQL/PostgreSQL) |
+| **Promotion** | A read replica can be manually promoted to a standalone primary |
+| **Cross-Region** | Read replicas can be in a different AWS region |
+| **Use Case** | Offload read-heavy queries, analytics, reporting, search |
+| **Endpoint** | Separate read endpoint — app must explicitly route reads there |
+
+---
+
+## RDS-5: Multi-AZ vs Read Replicas — Side-by-Side
+
+```mermaid
+flowchart LR
+    subgraph MultiAZ["Multi-AZ Deployment"]
+        P1["Primary (AZ-a)\nAll reads + writes"]
+        S1["Standby (AZ-b)\nNO traffic (passive)"]
+        P1 -->|"Synchronous\n(zero lag)"| S1
+    end
+
+    subgraph ReadReplica["Read Replica Setup"]
+        P2["Primary (AZ-a)\nAll writes"]
+        RR_A["Read Replica (AZ-b)\nRead-only traffic"]
+        RR_B["Read Replica (AZ-c)\nRead-only traffic"]
+        P2 -->|"Asynchronous\n(slight lag)"| RR_A & RR_B
+    end
+
+    classDef primary fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef standby fill:#374151,stroke:#9CA3AF,color:#FFFFFF,stroke-width:2px;
+    classDef replica fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class P1,P2 primary;
+    class S1 standby;
+    class RR_A,RR_B replica;
+```
+
+| Feature | Multi-AZ | Read Replica |
+| :--- | :--- | :--- |
+| **Primary Goal** | High Availability / Disaster Recovery | Read Scalability |
+| **Replication Type** | Synchronous (zero lag) | Asynchronous (slight lag) |
+| **Standby/Replica accepts queries?** | NO (passive standby) | YES (SELECT only) |
+| **Failover** | Automatic (60-120s DNS switch) | Manual promotion required |
+| **Number of copies** | 1 standby only | Up to 15 read replicas |
+| **Cross-region?** | NO (same region, different AZ) | YES (cross-region replicas) |
+| **Use for performance?** | NO | YES |
+| **Use for DR?** | YES | YES (if promoted) |
+| **Extra cost** | ~2x (always running standby) | Pay per replica instance |
+
+> [!TIP]
+> **Interview Answer:** Multi-AZ = High Availability (automatic failover). Read Replica = Read Scalability (manual promotion needed). Production systems use **both together** — Multi-AZ for HA, Read Replicas for performance.
+
+---
+
+## RDS-6: RDS Lab Setup — Step by Step (From Class Reference)
+
+### Creating a MySQL RDS Instance
+
+```mermaid
+flowchart TD
+    A["Step 1: Open AWS Console\nNavigate: RDS → Databases → Create database"] --> B["Step 2: Choose Creation Method\nStandard Create (full options visible)"]
+    B --> C["Step 3: Select Engine\nMySQL 8.0"]
+    C --> D["Step 4: Choose Template\nFree Tier (for learning)"]
+    D --> E["Step 5: Configure Instance\nDB Instance: teluskodb\nMaster Username: admin\nMaster Password: yourpassword"]
+    E --> F["Step 6: Instance Config\nClass: db.t3.micro (Free Tier)\nStorage: 20 GB gp2"]
+    F --> G["Step 7: Connectivity\nVPC: Default VPC\nPublic Access: YES (learning only!)\nSecurity Group: Create new"]
+    G --> H["Step 8: Database Options\nInitial DB Name: teluskodatabase"]
+    H --> I["Step 9: Create Database\nWait 5-10 mins for provisioning"]
+    I --> J["Step 10: Get Connection Details\nEndpoint: teluskodb.xxxxx.ap-south-1.rds.amazonaws.com\nPort: 3306"]
+
+    classDef step fill:#1E293B,stroke:#38BDF8,color:#F8FAFC,stroke-width:2px;
+    classDef final fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+
+    class A,B,C,D,E,F,G,H,I step;
+    class J final;
+```
+
+### RDS Configuration Parameters Explained
+
+| Parameter | Value Used | Explanation |
+| :--- | :--- | :--- |
+| **Creation Method** | Standard Create | Exposes all configuration options (vs Easy Create which uses defaults) |
+| **Engine Type** | MySQL | Most widely used open-source RDBMS, free tier eligible |
+| **Template** | Free Tier | Locks to `db.t3.micro`, disables Multi-AZ, enables 20 GB free storage |
+| **DB Instance Identifier** | `teluskodb` | The name of the RDS instance (NOT the database name) |
+| **Master Username** | `admin` | The root-level database user AWS creates |
+| **Public Access** | YES | Allows connection from outside the VPC (use ONLY for learning, NEVER in production) |
+| **Initial DB Name** | `teluskodatabase` | The first schema/database created inside the MySQL server |
+
+> [!CAUTION]
+> **Public Access: YES** is only for learning in isolation. In production, ALWAYS set Public Access to **NO** and connect to RDS from within the same VPC using private subnets only.
+
+---
+
+### Connecting with MySQL Workbench
+
+**Prerequisites:**
+1. Get **RDS Endpoint** from AWS Console → RDS → Databases → `teluskodb` → Connectivity & security tab
+2. Enable port `3306` in the **Security Group** inbound rules for the RDS instance
+
+```mermaid
+flowchart LR
+    Workbench["MySQL Workbench\n(Your local machine)"]
+    Internet["Internet"]
+    SG["Security Group\nInbound: TCP 3306\nfrom 0.0.0.0/0 (learning only)"]
+    RDS_Mysql["RDS MySQL Instance\nteluskodb.xxxxx.rds.amazonaws.com:3306"]
+
+    Workbench -->|TCP 3306| Internet --> SG --> RDS_Mysql
+
+    classDef client fill:#581C87,stroke:#A855F7,color:#FFFFFF,stroke-width:2px;
+    classDef sg fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+    classDef rds fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+
+    class Workbench,Internet client;
+    class SG sg;
+    class RDS_Mysql rds;
+```
+
+**MySQL Workbench Connection Details:**
+```
+Hostname  : teluskodb.xxxxxxxxxxxxxxx.ap-south-1.rds.amazonaws.com
+Port      : 3306
+Username  : admin
+Password  : <your RDS master password>
+Schema    : teluskodatabase (optional at connection time)
+```
+
+---
+
+### Validate RDS with Sample SQL (From Class)
+
+```sql
+-- Switch to the database
+USE teluskodatabase;
+
+-- Create employee table
+CREATE TABLE employee (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    salary DECIMAL(10,2)
+);
+
+-- Insert sample data (Navin, Sana, Amit from class)
+INSERT INTO employee (id, name, salary)
+VALUES (1, 'Navin', 55000.00),
+       (2, 'Sana', 60000.50),
+       (3, 'Amit', 48000.25);
+
+-- Verify the data
+SELECT * FROM employee;
+
+-- Additional sample queries
+SELECT name, salary FROM employee WHERE salary > 50000;
+SELECT COUNT(*) AS total_employees FROM employee;
+SELECT AVG(salary) AS average_salary FROM employee;
+```
+
+**Expected Output of `SELECT * FROM employee`:**
+```
++----+-------+----------+
+| id | name  | salary   |
++----+-------+----------+
+|  1 | Navin | 55000.00 |
+|  2 | Sana  | 60000.50 |
+|  3 | Amit  | 48000.25 |
++----+-------+----------+
+3 rows in set (0.05 sec)
+```
+
+---
+
+## RDS-7: Security Group Setup for RDS
+
+```mermaid
+flowchart TD
+    subgraph Learning["Learning Environment (Public Access)"]
+        LocalPC["Local Developer PC\nMySQL Workbench"]
+        SG_Learn["RDS Security Group\nInbound: TCP 3306 from 0.0.0.0/0\n(ONLY for learning - not production!)"]
+        RDS_Learn["RDS MySQL Instance\nPublic Access: YES"]
+
+        LocalPC --> SG_Learn --> RDS_Learn
+    end
+
+    subgraph Production["Production Environment (Private Access)"]
+        AppServer["EC2 / ECS App Server\nSecurity Group: app-sg"]
+        SG_Prod["RDS Security Group\nInbound: TCP 3306 from app-sg ONLY\n(No public internet access)"]
+        RDS_Prod["RDS MySQL Instance\nPublic Access: NO\nPrivate Subnet Only"]
+        Bastion_Prod["Bastion Host\n(for DBA access only via SSH tunnel)"]
+
+        AppServer --> SG_Prod --> RDS_Prod
+        Bastion_Prod -.->|SSH tunnel :3306| RDS_Prod
+    end
+
+    classDef learning fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef prod fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef danger fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class LocalPC,SG_Learn,RDS_Learn learning;
+    class AppServer,SG_Prod,RDS_Prod,Bastion_Prod prod;
+```
+
+**Setting Up Security Group for RDS:**
+
+```bash
+# CLI: Allow your IP to connect to RDS on port 3306 (learning only)
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-xxxxxxxxxx \
+  --protocol tcp \
+  --port 3306 \
+  --cidr <YOUR-PUBLIC-IP>/32
+
+# Production: Allow only the app server security group
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-rds-xxxx \
+  --protocol tcp \
+  --port 3306 \
+  --source-group sg-app-xxxx
+```
+
+---
+
+## RDS-8: RDS Automated Backups & Snapshots
+
+```mermaid
+flowchart TD
+    RDS_Primary_BK["RDS Primary Instance"]
+
+    subgraph AutoBackup["Automated Backups (AWS Managed)"]
+        Daily["Daily Snapshot\n(during backup window: 3-4 AM)"]
+        TransLog["Transaction Logs\n(every 5 minutes)"]
+        PITR["Point-in-Time Recovery\nRestore to any second within\nretention period (1-35 days)"]
+    end
+
+    subgraph Manual["Manual Snapshots (User Managed)"]
+        ManualSnap["Manual DB Snapshot\n(taken before major changes)"]
+        ManualRetain["Kept INDEFINITELY\n(until manually deleted)"]
+        CrossRegion["Can be copied\nto another region"]
+    end
+
+    RDS_Primary_BK --> Daily & TransLog --> PITR
+    RDS_Primary_BK --> ManualSnap --> ManualRetain & CrossRegion
+
+    classDef rds fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef auto fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef manual fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+
+    class RDS_Primary_BK rds;
+    class Daily,TransLog,PITR auto;
+    class ManualSnap,ManualRetain,CrossRegion manual;
+```
+
+| Backup Type | Triggered By | Retention | Use Case |
+| :--- | :--- | :--- | :--- |
+| **Automated Backup** | AWS (daily during backup window) | 1–35 days (configurable) | Point-in-time recovery |
+| **Manual Snapshot** | You (on-demand) | Indefinitely (until deleted) | Before major deploys, compliance |
+| **Transaction Logs** | Continuous (every 5 min) | Same as backup retention | PITR to exact second |
+
+```bash
+# Create a manual snapshot before a major deployment
+aws rds create-db-snapshot \
+  --db-instance-identifier teluskodb \
+  --db-snapshot-identifier teluskodb-before-v2-deploy
+
+# Restore from snapshot (creates new RDS instance)
+aws rds restore-db-instance-from-db-snapshot \
+  --db-instance-identifier teluskodb-restored \
+  --db-snapshot-identifier teluskodb-before-v2-deploy
+
+# List all snapshots
+aws rds describe-db-snapshots \
+  --db-instance-identifier teluskodb
+```
+
+> [!TIP]
+> Always take a **manual snapshot before any major deployment** or schema migration. Automated backups exist, but a manual snapshot before a specific event gives you a clean restore point tied to that exact moment.
+
+---
+
+## RDS-9: Amazon Aurora — Cloud-Native Database
+
+Amazon Aurora is AWS's own cloud-native database engine, compatible with MySQL and PostgreSQL but significantly more powerful.
+
+```mermaid
+flowchart TD
+    subgraph AuroraArch["Amazon Aurora Architecture"]
+        subgraph Compute["Compute Layer (Instances)"]
+            AuroraPrimary["Aurora Primary Writer\n(reads + writes)"]
+            AuroraR1["Aurora Reader 1\n(reads only)"]
+            AuroraR2["Aurora Reader 2\n(reads only)"]
+        end
+
+        subgraph Storage["Aurora Storage Layer (Auto-scales)"]
+            Seg1["Storage Segment\nAZ-1a Copy 1"]
+            Seg2["Storage Segment\nAZ-1a Copy 2"]
+            Seg3["Storage Segment\nAZ-1b Copy 1"]
+            Seg4["Storage Segment\nAZ-1b Copy 2"]
+            Seg5["Storage Segment\nAZ-1c Copy 1"]
+            Seg6["Storage Segment\nAZ-1c Copy 2"]
+            Note1["6 copies across 3 AZs\nAuto-scales: 10 GB to 128 TB\n11 nines durability"]
+        end
+    end
+
+    AuroraPrimary & AuroraR1 & AuroraR2 --> Seg1 & Seg2 & Seg3 & Seg4 & Seg5 & Seg6
+
+    classDef writer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef reader fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef storage fill:#0369A1,stroke:#0EA5E9,color:#FFFFFF,stroke-width:2px;
+    classDef note fill:#374151,stroke:#9CA3AF,color:#FFFFFF,stroke-width:2px;
+
+    class AuroraPrimary writer;
+    class AuroraR1,AuroraR2 reader;
+    class Seg1,Seg2,Seg3,Seg4,Seg5,Seg6 storage;
+    class Note1 note;
+```
+
+**Aurora vs Standard RDS MySQL:**
+
+| Feature | RDS MySQL | Amazon Aurora MySQL |
+| :--- | :--- | :--- |
+| **Performance** | 1x baseline | **5x faster** than standard MySQL |
+| **Storage** | Manual sizing up to 64 TB | Auto-scales 10 GB → **128 TB** |
+| **Replication** | 1 standby (Multi-AZ) | **6 copies** across 3 AZs automatically |
+| **Read Replicas** | Up to 5 | Up to **15 Aurora Read Replicas** |
+| **Failover Time** | 60–120 seconds | **Under 30 seconds** |
+| **Durability** | 99.99% (Multi-AZ) | **99.999999999%** (11 nines) |
+| **Serverless** | Not available | **Aurora Serverless v2** (auto-scales compute) |
+| **Cost** | Lower | ~20% higher (worth it for production) |
+
+---
+
+## RDS-10: RDS Proxy — Connection Pooling
+
+### The Problem: Lambda + RDS Connection Exhaustion
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Lambda1 as Lambda Instance 1
+    participant Lambda2 as Lambda Instance 2
+    participant LambdaN as Lambda Instance N (1000s)
+    participant RDS_Proxy_Sq as RDS Proxy
+    participant RDS_DB as RDS MySQL (max 1000 connections)
+
+    Note over Lambda1,RDS_DB: WITHOUT RDS Proxy (Problem)
+    Lambda1->>RDS_DB: Open DB connection
+    Lambda2->>RDS_DB: Open DB connection
+    LambdaN->>RDS_DB: Open DB connection
+    RDS_DB-->>LambdaN: Too many connections! ERROR
+
+    Note over Lambda1,RDS_DB: WITH RDS Proxy (Solution)
+    Lambda1->>RDS_Proxy_Sq: Open connection to Proxy
+    Lambda2->>RDS_Proxy_Sq: Open connection to Proxy
+    LambdaN->>RDS_Proxy_Sq: Open connection to Proxy
+    Note over RDS_Proxy_Sq: Proxy maintains a small pool\nof real DB connections (e.g., 50)
+    RDS_Proxy_Sq->>RDS_DB: Reuse pooled connections (50 max)
+    RDS_DB-->>RDS_Proxy_Sq: Responses (no connection exhaustion)
+    RDS_Proxy_Sq-->>Lambda1: Response
+    RDS_Proxy_Sq-->>Lambda2: Response
+```
+
+**When to Use RDS Proxy:**
+
+| Scenario | Without Proxy | With Proxy |
+| :--- | :--- | :--- |
+| 1000 Lambda concurrent invocations | 1000 DB connections (exhaustion!) | ~50 pooled connections (safe) |
+| ECS service with 200 containers | 200 connections | ~20 pooled connections |
+| Connection spike after auto-scale | Connection storm crashes DB | Proxy absorbs the spike |
+| Failover during Multi-AZ event | App must reconnect (60-120s) | Proxy handles reconnection (~30s) |
+
+---
+
+## RDS-11: Spring Boot Integration with RDS
+
+### application.yml — Production Configuration
+
+```yaml
+spring:
+  datasource:
+    # RDS endpoint from AWS Console → RDS → Databases → Connectivity tab
+    url: jdbc:mysql://teluskodb.xxxxxxxx.ap-south-1.rds.amazonaws.com:3306/teluskodatabase?useSSL=true&requireSSL=true&serverTimezone=UTC
+    username: ${DB_USERNAME}       # From AWS Secrets Manager or environment variable
+    password: ${DB_PASSWORD}       # From AWS Secrets Manager or environment variable
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10        # Max connections per instance
+      minimum-idle: 2              # Keep 2 connections warm
+      idle-timeout: 300000         # 5 minutes idle before closing
+      connection-timeout: 20000    # 20s timeout to get a connection from pool
+      max-lifetime: 1800000        # 30 min max connection lifetime
+
+  jpa:
+    hibernate:
+      ddl-auto: validate           # Production: NEVER use create or create-drop
+    show-sql: false                # Performance: disable SQL logging in production
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        jdbc:
+          batch_size: 25           # Batch inserts for performance
+        order_inserts: true
+        order_updates: true
+
+```
+
+### pom.xml Dependencies
+
+```xml
+<!-- MySQL JDBC Driver -->
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+<!-- Spring Data JPA -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jpa</artifactId>
+</dependency>
+
+<!-- Spring Boot Actuator for health checks -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+### Entity + Repository + Service (Full Example)
+
+```java
+// 1. Entity (maps to RDS table)
+@Entity
+@Table(name = "employee")
+public class Employee {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(nullable = false, length = 100)
+    private String name;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal salary;
+
+    // constructors, getters, setters
+}
+
+// 2. Repository (Spring Data JPA)
+@Repository
+public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
+    List<Employee> findBySalaryGreaterThan(BigDecimal salary);
+
+    @Query("SELECT e FROM Employee e WHERE e.name = :name")
+    Optional<Employee> findByName(@Param("name") String name);
+}
+
+// 3. Service (business logic)
+@Service
+@Transactional
+public class EmployeeService {
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
+
+    public Employee createEmployee(Employee employee) {
+        return employeeRepository.save(employee);    // INSERT INTO employee
+    }
+
+    @Transactional(readOnly = true)  // Routes to Read Replica if configured
+    public List<Employee> getHighEarners(BigDecimal threshold) {
+        return employeeRepository.findBySalaryGreaterThan(threshold);
+    }
+}
+```
+
+---
+
+## RDS-12: RDS CLI Commands
+
+```bash
+# ─────────────────────────────────────
+# INSTANCE MANAGEMENT
+# ─────────────────────────────────────
+
+# List all RDS instances
+aws rds describe-db-instances \
+  --query 'DBInstances[*].[DBInstanceIdentifier,DBInstanceStatus,Endpoint.Address]' \
+  --output table
+
+# Create MySQL RDS instance (CLI equivalent of console lab)
+aws rds create-db-instance \
+  --db-instance-identifier teluskodb \
+  --db-instance-class db.t3.micro \
+  --engine mysql \
+  --engine-version 8.0 \
+  --master-username admin \
+  --master-user-password YourPassword123! \
+  --allocated-storage 20 \
+  --db-name teluskodatabase \
+  --publicly-accessible \
+  --no-multi-az \
+  --backup-retention-period 7
+
+# Get RDS endpoint (to connect from app or workbench)
+aws rds describe-db-instances \
+  --db-instance-identifier teluskodb \
+  --query 'DBInstances[0].Endpoint.Address' \
+  --output text
+
+# ─────────────────────────────────────
+# SCALING
+# ─────────────────────────────────────
+
+# Vertically scale (upgrade instance type)
+aws rds modify-db-instance \
+  --db-instance-identifier teluskodb \
+  --db-instance-class db.m5.large \
+  --apply-immediately
+
+# Create a read replica
+aws rds create-db-instance-read-replica \
+  --db-instance-identifier teluskodb-read-replica-1 \
+  --source-db-instance-identifier teluskodb \
+  --db-instance-class db.t3.micro
+
+# ─────────────────────────────────────
+# BACKUPS & SNAPSHOTS
+# ─────────────────────────────────────
+
+# Create manual snapshot
+aws rds create-db-snapshot \
+  --db-instance-identifier teluskodb \
+  --db-snapshot-identifier teluskodb-snapshot-before-migration
+
+# Restore from snapshot
+aws rds restore-db-instance-from-db-snapshot \
+  --db-instance-identifier teluskodb-restored \
+  --db-snapshot-identifier teluskodb-snapshot-before-migration
+
+# ─────────────────────────────────────
+# ENABLE MULTI-AZ
+# ─────────────────────────────────────
+
+# Enable Multi-AZ on existing instance
+aws rds modify-db-instance \
+  --db-instance-identifier teluskodb \
+  --multi-az \
+  --apply-immediately
+
+# ─────────────────────────────────────
+# MONITORING
+# ─────────────────────────────────────
+
+# Get CPU utilization from CloudWatch
+aws cloudwatch get-metric-statistics \
+  --namespace AWS/RDS \
+  --metric-name CPUUtilization \
+  --dimensions Name=DBInstanceIdentifier,Value=teluskodb \
+  --start-time 2024-01-01T00:00:00Z \
+  --end-time 2024-01-01T23:59:59Z \
+  --period 3600 \
+  --statistics Average \
+  --output table
+```
+
+---
+
+## RDS-13: RDS Monitoring & Performance
+
+```mermaid
+flowchart TD
+    RDS_Mon["RDS Instance"] --> CW_Metrics
+
+    subgraph CW_Metrics["CloudWatch Metrics (Key Ones to Watch)"]
+        CPU_RDS["CPUUtilization\nAlert if > 80% for 5 mins"]
+        FreeStorage["FreeStorageSpace\nAlert if < 2 GB"]
+        DBConns["DatabaseConnections\nAlert if near max_connections limit"]
+        ReadLatency["ReadLatency\nAlert if > 100ms"]
+        WriteLatency["WriteLatency\nAlert if > 100ms"]
+        ReplicaLag["ReplicaLag\nAlert if Read Replica lag > 60s"]
+    end
+
+    subgraph PI["Performance Insights"]
+        TopSQL["Top SQL Queries\n(by CPU / wait time)"]
+        TopWaits["Top Wait Events\n(io/table/lock waits)"]
+        TopUsers["Top Users\n(who is using the most DB resources)"]
+    end
+
+    subgraph SlowQuery["Slow Query Log (via Parameter Group)"]
+        SlowLog["slow_query_log = 1\nlong_query_time = 1\n(log queries > 1 second)"]
+        CW_Logs["Export to CloudWatch Logs\nfor querying and alerting"]
+    end
+
+    CW_Metrics --> Alarms["CloudWatch Alarms\n→ SNS notification\n→ PagerDuty alert"]
+    PI --> Optimize["Query Optimization\n(add index, rewrite query)"]
+    SlowQuery --> CW_Logs --> Optimize
+
+    classDef rds fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef monitor fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef action fill:#065F46,stroke:#10B981,color:#FFFFFF,stroke-width:2px;
+    classDef alert fill:#7C2D12,stroke:#EA580C,color:#FFFFFF,stroke-width:2px;
+
+    class RDS_Mon rds;
+    class CPU_RDS,FreeStorage,DBConns,ReadLatency,WriteLatency,ReplicaLag,TopSQL,TopWaits,TopUsers,SlowLog,CW_Logs monitor;
+    class Optimize action;
+    class Alarms alert;
+```
+
+---
+
+## RDS-14: RDS Security Best Practices
+
+| Layer | Practice | Implementation |
+| :--- | :--- | :--- |
+| **Network** | Never expose RDS publicly in production | `PubliclyAccessible: false`, private subnets only |
+| **Network** | Restrict Security Group to app server SG only | Allow TCP 3306 from app-sg, deny 0.0.0.0/0 |
+| **Encryption** | Encrypt database at rest | Enable KMS encryption at creation (cannot enable later) |
+| **Encryption** | Encrypt in transit | `useSSL=true` in JDBC URL |
+| **Credentials** | Never hardcode DB password in code | Use AWS Secrets Manager with automatic rotation |
+| **Access** | Use IAM DB Authentication | Passwordless login using IAM token (MySQL/PostgreSQL) |
+| **Audit** | Enable CloudTrail for RDS API calls | Track who created/deleted/modified RDS instances |
+| **Backup** | Enable automated backups | Retention 7+ days, backup window during off-peak hours |
+| **Updates** | Enable auto minor version upgrade | `AutoMinorVersionUpgrade: true` |
+
+### Secrets Manager for RDS Credentials
+
+```java
+// Retrieve RDS credentials from Secrets Manager (no hardcoded passwords)
+@Configuration
+public class DatabaseConfig {
+
+    @Value("${aws.secretsmanager.secret-name}")
+    private String secretName;
+
+    @Bean
+    public DataSource dataSource() {
+        SecretsManagerClient client = SecretsManagerClient.builder()
+            .region(Region.AP_SOUTH_1)
+            .build();
+
+        GetSecretValueRequest request = GetSecretValueRequest.builder()
+            .secretId(secretName)
+            .build();
+
+        String secretJson = client.getSecretValue(request).secretString();
+        // Parse JSON: {"username":"admin","password":"xxx","host":"...","port":3306}
+        // Build HikariDataSource from parsed values
+        return buildDataSource(secretJson);
+    }
+}
+```
+
+---
+
+## RDS-15: RDS Interview Questions
+
+**Q1: What is the difference between RDS and installing MySQL on an EC2 instance?**
+> **A:** On EC2 MySQL, you manage everything — OS patches, MySQL upgrades, backups, HA setup, storage scaling, security patches — requiring dedicated DBA expertise. AWS RDS is **fully managed** — AWS handles all of that automatically. You only manage: schema design, query optimization, and application configuration. RDS provides Multi-AZ HA, automated backups, Performance Insights, and Read Replicas out of the box.
+
+**Q2: What is Multi-AZ in RDS and what problem does it solve?**
+> **A:** Multi-AZ deploys a **synchronous standby replica** in a different AZ. Every write to the primary is instantly replicated to the standby. If the primary fails (hardware fault, AZ outage, OS crash), AWS automatically fails over to the standby by updating the DNS record — same endpoint, no code changes. Failover takes 60-120 seconds. Solves: **Single Point of Failure** and provides **near-zero RPO (Recovery Point Objective)** since replication is synchronous.
+
+**Q3: What is the difference between Multi-AZ and Read Replicas?**
+> **A:** Multi-AZ = **High Availability** — standby is passive, synchronous replication, automatic failover. Read Replicas = **Read Scalability** — active, asynchronous replication, accepts SELECT queries, manual promotion. Production systems use both: Multi-AZ on the primary for HA, plus Read Replicas to offload report/analytics queries.
+
+**Q4: Why is `PubliclyAccessible: YES` dangerous for production RDS?**
+> **A:** Public access means the RDS instance gets a public IP and is reachable from the internet. Even with a security group, this increases the attack surface (brute-force, credential stuffing, port scanning). Production RDS should be in a **private subnet** with `PubliclyAccessible: false` — accessible only from within the VPC. DBAs connect via bastion host or AWS Systems Manager Session Manager.
+
+**Q5: What is RDS Proxy and when do you use it?**
+> **A:** RDS Proxy is a connection pooler that sits between your application and RDS. It maintains a small pool of real DB connections and multiplexes thousands of application connections through them. Use it when: Lambda functions create too many short-lived DB connections (connection exhaustion), or when you need faster failover (Proxy handles reconnection in ~30s vs 60-120s for Multi-AZ).
+
+**Q6: How do you optimize a slow database query on RDS?**
+> **A:** (1) Enable **RDS Performance Insights** to identify the top SQL statements by CPU/wait time. (2) Enable **Slow Query Log** (via parameter group: `slow_query_log=1, long_query_time=1`). (3) Run `EXPLAIN` on the slow query to identify missing indexes or full table scans. (4) Add appropriate indexes. (5) If read-heavy, route to **Read Replicas**. (6) Upgrade storage to `io2` if the bottleneck is IOPS.
+
+**Q7: What is Amazon Aurora and how is it different from RDS MySQL?**
+> **A:** Aurora is AWS's cloud-native MySQL/PostgreSQL-compatible engine. Key differences: 5x faster than MySQL, stores 6 copies across 3 AZs automatically (vs 2 for Multi-AZ), auto-scales storage from 10 GB to 128 TB without manual intervention, supports up to 15 read replicas (vs 5 for MySQL), failover in under 30 seconds (vs 60-120s for standard RDS). Best for high-throughput production workloads.
+
+**Q8: How do you connect a Spring Boot application to RDS securely?**
+> **A:** (1) RDS in a **private subnet**, `PubliclyAccessible: false`. (2) Security Group allows TCP 3306 from EC2/ECS security group only. (3) JDBC URL with `useSSL=true`. (4) Credentials from **AWS Secrets Manager** (not hardcoded). (5) EC2/ECS has an **IAM Role** allowing `secretsmanager:GetSecretValue`. (6) HikariCP connection pool configured in `application.yml` with appropriate pool size and timeouts.
+
+---
+
+## RDS-16: Common Beginner Mistakes
+
+| Mistake | Consequence | Fix |
+| :--- | :--- | :--- |
+| `PubliclyAccessible: true` in production | DB exposed to internet attacks | Private subnet + Security Group restriction |
+| Hardcoded DB password in `application.yml` | Password leaked in Git | Use AWS Secrets Manager or env vars |
+| `ddl-auto: create` in production | Drops and recreates all tables on startup! | Use `validate` or `none` in production |
+| No automated backups | Data loss on failure with no recovery | Enable backups with 7-35 day retention |
+| Single AZ for production DB | SPOF — DB down = app down | Enable Multi-AZ for all production databases |
+| No connection pool tuning | Connection exhaustion under load | Configure HikariCP pool size appropriately |
+| Not monitoring Free Storage | DB storage fills up → crash | CloudWatch alarm: FreeStorageSpace < 2 GB |
+| Opening port 3306 to `0.0.0.0/0` | Internet can attempt to connect to DB | Allow only from specific security groups |
+| Using root/admin user in app | Full DB privileges if credentials leaked | Create app-specific DB user with minimal privileges |
+| No Read Replica for analytics queries | Analytics queries slow down production DB | Route report/dashboard queries to Read Replicas |
+
+---
+
+## RDS-17: Real-World Production Example
+
+**E-Commerce Platform — RDS Architecture:**
+```
+Production Setup:
+├── RDS Aurora MySQL (Writer)
+│   ├── Multi-AZ: Enabled (auto-failover)
+│   ├── Instance: db.r5.2xlarge (8 vCPU, 64 GB RAM)
+│   ├── Storage: Auto-scaling 100 GB → 128 TB
+│   └── Backup: 35-day retention, daily 3-5 AM
+│
+├── Aurora Read Replicas (2x db.r5.large)
+│   ├── Replica-1: Product catalog reads, Search
+│   └── Replica-2: Order history reports, Analytics
+│
+├── RDS Proxy (for Lambda integration)
+│   ├── Manages 5000 Lambda → 100 pooled connections
+│   └── Handles failover reconnection automatically
+│
+├── Security
+│   ├── Private subnet (no public access)
+│   ├── Credentials in Secrets Manager (auto-rotated every 30 days)
+│   ├── KMS encryption at rest
+│   └── SSL/TLS in transit
+│
+└── Monitoring
+    ├── Performance Insights: ON
+    ├── Slow Query Log: CloudWatch Logs
+    └── CloudWatch Alarms: CPU > 80%, Free Storage < 5 GB, Replica Lag > 30s
+```
+
+---
 ---
 
 ## TOPIC 10: AWS LAMBDA — SERVERLESS COMPUTING
