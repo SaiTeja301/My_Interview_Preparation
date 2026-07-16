@@ -1,5 +1,5 @@
 # ENTERPRISE ANGULAR PROJECT: COMPLETE ANALYSIS & INTERVIEW GUIDE
-> *Project: AdminPortal UI - Enterprise Application · Analysis Date: March 2, 2026 · Level: Beginner to Expert | Interview Focused*
+> *Project: OdaAdmin UI - Nationwide Insurance Enterprise Application · Analysis Date: March 2, 2026 · Level: Beginner to Expert | Interview Focused*
 
 ## TABLE OF CONTENTS
 
@@ -68,7 +68,7 @@ Why Angular for Enterprise Applications:
 6. Enterprise Features: Security, i18n, accessibility
 
 REAL-WORLD EXAMPLE FROM YOUR PROJECT:
-The AdminPortal application uses Angular 19 with standalone components pattern,
+The OdaAdmin application uses Angular 19 with standalone components pattern,
 demonstrating modern enterprise Angular architecture:
 
 // From: src/app/app.ts
@@ -138,10 +138,10 @@ YOUR PROJECT BOOTSTRAP (src/main.ts):
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
-import DesignSystem from '@example-ds/core';
+import Bolt from '@nationwide-bolt/bundle-core';
 
 // Initialize Bolt Design System first, then bootstrap Angular
-DesignSystem.initialize().then(() => {
+Bolt.initialize().then(() => {
 bootstrapApplication(App, appConfig).catch((err) =>
 console.error(err),
 );
@@ -167,7 +167,7 @@ ensuring UI components are ready when Angular renders.
 │  7. Guard Passes → Feature Component Loads                               │
 │  8. Component → Service Call → HTTP Request                              │
 │  9. HttpClient → Interceptor → Add Headers (Auth Token, Client ID)       │
-│  10. Interceptor → Backend API (API Gateway)                          │
+│  10. Interceptor → Backend API (Apigee Gateway)                          │
 │  11. Backend → Response → Observable Stream                              │
 │  12. Observable → map/tap/catchError → Transformed Data                  │
 │  13. Component → subscribe() → Update Signals/State                      │
@@ -178,7 +178,7 @@ ensuring UI components are ready when Angular renders.
 REAL EXAMPLE FROM YOUR PROJECT:
 
 Step 1-3: Bootstrap (main.ts)
-DesignSystem.initialize().then(() => {
+Bolt.initialize().then(() => {
 bootstrapApplication(App, appConfig)
 });
 
@@ -206,13 +206,13 @@ ngOnInit(): void {
 
 Step 7-10: HTTP Call with Interceptor
 // Service call
-this.agencyService.searchByAgents(criteria.sourceAgentNumber, criteria.targetAgentNumber)
+this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumber)
 
 // Interceptor adds headers
 headers = headers
 .set('Authorization', 'Bearer ' + access_token)
 .set('client_id', environment.clientId)
-.set('X-Correlation-ID', messageId);
+.set('X-NW-Message-ID', messageId);
 
 Step 11-14: Response Handling
 .subscribe({
@@ -245,10 +245,10 @@ src/
 │   │   └── utils/               # Utility functions
 │   │
 │   ├── features/                # Feature modules (lazy loaded)
-│   │   ├── agent-discrepancies/
-│   │   ├── audit-routing/
+│   │   ├── agency-discrepancies/
+│   │   ├── premium-audit-routing/
 │   │   ├── agency-accounting-routing/
-│   │   ├── contract-conversion/
+│   │   ├── ovr2b-conversion/
 │   │   └── user-info-error/
 │   │
 │   ├── layout/                  # Layout components
@@ -286,8 +286,8 @@ core/
 ├── services/
 │   ├── auth.service.ts          # Authentication wrapper
 │   ├── user-access.service.ts   # User permissions management
-│   ├── agent-discrepancy.service.ts
-│   ├── audit-routing.service.ts
+│   ├── agency-discrepancy.service.ts
+│   ├── premium-audit-routing.service.ts
 │   └── loading.service.ts
 └── strategies/
     └── custom-route-reuse.strategy.ts
@@ -295,11 +295,11 @@ core/
 ```
 REAL EXAMPLE - api-endpoints.enum.ts:
 export enum ApiEndpoints {
-EXAMPLE_USER_INFO = '/api/users',
-EXAMPLE_VALIDATION_CREATE = '/api/validations',
-EXAMPLE_VALIDATION_SEARCH = '/api/validations/search',
-EXAMPLE_AUDIT_SEARCH = '/api/audits/search',
-EXAMPLE_ACCOUNTING_SEARCH = '/api/accounting/search',
+USER_ACCESS = '/get-user-infos/',
+WINS_VALIDATION_CREATE = '/wins-validations',
+WINS_VALIDATION_SEARCH = '/wins-validations/search',
+PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
+AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
 }
 
 export class ApiUrlBuilder {
@@ -307,8 +307,8 @@ export class ApiUrlBuilder {
     return `${environment.apiEndPointUrl}${endpoint}`;
   }
 
-  static buildSearchUrl(sourceAgent: string, targetAgent: string): string {
-    const baseUrl = this.buildUrl(ApiEndpoints.EXAMPLE_VALIDATION_SEARCH);
+  static buildSearchUrl(ovAgent: string, winsAgent: string): string {
+    const baseUrl = this.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
     // Build query parameters...
   }
 }
@@ -331,27 +331,27 @@ shared/
 ├── components/
 │   └── loading-spinner.component.ts  # Reusable loading indicator
 ├── models/
-│   ├── agent-discrepancy.model.ts   # Interface definitions
-│   ├── audit-routing.model.ts
-│   └── contract-conversion.model.ts
+│   ├── agency-discrepancy.model.ts   # Interface definitions
+│   ├── premium-audit-routing.model.ts
+│   └── ovr2b-conversion.model.ts
 ├── services/
 │   └── confirm-dialog.service.ts     # UI utility service
 └── utils/
-    └── design-system.utils.ts                 # Bolt Design System utilities
+    └── bolt.utils.ts                 # Bolt Design System utilities
 
 ```
-REAL EXAMPLE - agent-discrepancy.model.ts:
-export interface AgentDiscrepancy {
+REAL EXAMPLE - agency-discrepancy.model.ts:
+export interface AgencyDiscrepancy {
 id?: number;
-sourceAgentNumber: string;
-targetAgentNumber: string;
+ovAgentNumber: string;
+winsAgentNumber: string;
 createdDate?: Date;
 lastModified?: Date;
 }
 
 export interface SearchCriteria {
-sourceAgentNumber?: string;
-targetAgentNumber?: string;
+ovAgentNumber?: string;
+winsAgentNumber?: string;
 }
 
 export interface ApiResponse<T> {
@@ -376,27 +376,27 @@ Each feature is self-contained with its own components, templates, and styles.
 YOUR PROJECT'S FEATURES:
 features/
 ```text
-├── agent-discrepancies/
+├── agency-discrepancies/
 │   └── components/
-│       ├── agent-discrepancies.component.ts
-│       ├── agent-discrepancies.component.html
-│       └── agent-discrepancies.component.css
-├── audit-routing/
+│       ├── agency-discrepancies.component.ts
+│       ├── agency-discrepancies.component.html
+│       └── agency-discrepancies.component.css
+├── premium-audit-routing/
 │   ├── components/
 │   └── edit/
-│       └── edit-audit-routing.component.ts
+│       └── edit-premium-audit-routing.component.ts
 ├── agency-accounting-routing/
 │   ├── components/
 │   └── edit/
-└── contract-conversion/
+└── ovr2b-conversion/
     └── components/
 
 ```
 LAZY LOADING EXAMPLE (app.routes.ts):
 {
-path: 'agent-discrepancies',
-loadComponent: () => import('./features/agent-discrepancies/components/agent-discrepancies.component')
-.then(m => m.AgentDiscrepanciesComponent),
+path: 'agency-discrepancies',
+loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
+.then(m => m.AgencyDiscrepanciesComponent),
 canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
 data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 }
@@ -496,24 +496,24 @@ reducing initial bundle size and improving startup time.
 YOUR PROJECT'S LAZY LOADING:
 // app.routes.ts
 export const routes: Routes = [
-{ path: '', redirectTo: '/agent-discrepancies', pathMatch: 'full' },
+{ path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
   // Lazy-loaded components
   {
-    path: 'agent-discrepancies',
-    loadComponent: () => import('./features/agent-discrepancies/components/agent-discrepancies.component')
-      .then(m => m.AgentDiscrepanciesComponent),
+    path: 'agency-discrepancies',
+    loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
+      .then(m => m.AgencyDiscrepanciesComponent),
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
   },
   {
-    path: 'audit-routing',
-    loadComponent: () => import('./features/audit-routing/components/audit-routing.component')
-      .then(m => m.AuditRoutingComponent),
+    path: 'premium-audit-routing',
+    loadComponent: () => import('./features/premium-audit-routing/components/premium-audit-routing.component')
+      .then(m => m.PremiumAuditRoutingComponent),
   },
 ];
 
 HOW IT WORKS:
-1. User navigates to '/agent-discrepancies'
+1. User navigates to '/agency-discrepancies'
 2. Router triggers dynamic import()
 3. Webpack creates separate chunk
 4. Browser downloads chunk
@@ -536,24 +536,24 @@ It consists of:
 • CSS styles (presentation)
 • Metadata decorator (@Component)
 
-ANATOMY OF YOUR COMPONENT (AgentDiscrepanciesComponent):
+ANATOMY OF YOUR COMPONENT (AgencyDiscrepanciesComponent):
 @Component({
-selector: 'app-agent-discrepancies',     // HTML tag name
+selector: 'app-agency-discrepancies',     // HTML tag name
 standalone: true,                          // No module required
 imports: [CommonModule, ReactiveFormsModule],  // Dependencies
-templateUrl: "./agent-discrepancies.component.html",
-styleUrls: ['./agent-discrepancies.component.css'],
+templateUrl: "./agency-discrepancies.component.html",
+styleUrls: ['./agency-discrepancies.component.css'],
 schemas: [CUSTOM_ELEMENTS_SCHEMA]  // Allow Bolt web components
 })
-export class AgentDiscrepanciesComponent implements OnInit, OnDestroy {
+export class AgencyDiscrepanciesComponent implements OnInit, OnDestroy {
   // Properties
   searchForm!: FormGroup;
-  searchResults = signal<AgentDiscrepancy[]>([]);
+  searchResults = signal<AgencyDiscrepancy[]>([]);
   loading = signal<boolean>(false);
 
   // Dependency Injection
   constructor(
-    private agencyService: AgentDiscrepancyService,
+    private agencyService: AgencyDiscrepancyService,
     private loadingService: LoadingService,
     private router: Router,
   ) { }
@@ -583,19 +583,19 @@ export class AgentDiscrepanciesComponent implements OnInit, OnDestroy {
 YOUR PROJECT EXAMPLES:
 
 ngOnInit() - Initialization Logic:
-// From: agent-discrepancies.component.ts
+// From: agency-discrepancies.component.ts
 ngOnInit(): void {
   // Create form
   this.searchForm = new FormGroup({
-    sourceAgentNumber: new FormControl(''),
-    targetAgentNumber: new FormControl('')
+    ovAgentNumber: new FormControl(''),
+    winsAgentNumber: new FormControl('')
   });
 
   // Subscribe to navigation events
   this.navigationSubscription = this.router.events.pipe(
     filter(event => event instanceof NavigationEnd)
   ).subscribe((event: NavigationEnd) => {
-    if (event.url.includes('/agent-discrepancies') && !this.isDeleting) {
+    if (event.url.includes('/agency-discrepancies') && !this.isDeleting) {
       this.clearMessages();
       this.resetPagination();
     }
@@ -603,7 +603,7 @@ ngOnInit(): void {
 }
 
 ngOnDestroy() - Cleanup Logic:
-// From: agent-discrepancies.component.ts
+// From: agency-discrepancies.component.ts
 ngOnDestroy(): void {
   // CRITICAL: Prevent memory leaks
   if (this.navigationSubscription) {
@@ -611,10 +611,10 @@ ngOnDestroy(): void {
   }
 }
 
-ngOnDestroy() - From edit-audit-routing.component.ts:
+ngOnDestroy() - From edit-premium-audit-routing.component.ts:
 ngOnDestroy() {
   // Restore default browser title
-  document.title = 'AdminPortal';
+  document.title = 'ODAdmin';
 }
 
 4.3 COMPONENT COMMUNICATION PATTERNS
@@ -622,14 +622,14 @@ ngOnDestroy() {
 #### 1. Parent to Child: @Input()
 
 // Child component
-@Input() record: AuditRouting | null = null;
+@Input() record: PremiumAuditRouting | null = null;
 
 // Parent template
 <app-edit [record]="selectedRecord"></app-edit>
 
 2. Child to Parent: @Output()
-// From: edit-audit-routing.component.ts
-@Output() update = new EventEmitter<AuditRouting>();
+// From: edit-premium-audit-routing.component.ts
+@Output() update = new EventEmitter<PremiumAuditRouting>();
 @Output() cancel = new EventEmitter<void>();
 
 // Emit event
@@ -650,8 +650,8 @@ this.loadingService.loading$.subscribe(loading => this.loading.set(loading));
 
 #### Your project extensively uses Signals - a new reactive primitive:
 
-// From: agent-discrepancies.component.ts
-searchResults = signal<AgentDiscrepancy[]>([]);
+// From: agency-discrepancies.component.ts
+searchResults = signal<AgencyDiscrepancy[]>([]);
 message = signal<string>('');
 messageType = signal<'success' | 'error' | ''>('');
 currentPage = signal<number>(1);
@@ -693,10 +693,10 @@ core/services/
 ```text
 ├── auth.service.ts              # Authentication wrapper
 ├── user-access.service.ts       # Permission management
-├── agent-discrepancy.service.ts
-├── audit-routing.service.ts
+├── agency-discrepancy.service.ts
+├── premium-audit-routing.service.ts
 ├── agency-accounting-routing.service.ts
-├── contract-conversion.service.ts
+├── ovr2b-conversion.service.ts
 └── loading.service.ts
 
 ```
@@ -722,26 +722,26 @@ export class LoadingService {
 }
 
 ADVANCED SERVICE PATTERN:
-// From: agent-discrepancy.service.ts
+// From: agency-discrepancy.service.ts
 @Injectable({
 providedIn: 'root'
 })
-export class AgentDiscrepancyService {
-  private readonly apiUrl = ApiUrlBuilder.buildUrl(ApiEndpoints.EXAMPLE_VALIDATION_SEARCH);
+export class AgencyDiscrepancyService {
+  private readonly apiUrl = ApiUrlBuilder.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
 
   constructor(private http: HttpClient) { }
 
-  search(criteria: SearchCriteria): Observable<ApiResponse<AgentDiscrepancy[]>> {
+  search(criteria: SearchCriteria): Observable<ApiResponse<AgencyDiscrepancy[]>> {
     // Validation
-    if (sourceEmpty && targetEmpty) {
+    if (ovEmpty && winsEmpty) {
       return throwError(() => new Error('OV Agent or Wins Agent Must be entered.'));
     }
 
     // HTTP call
-    return this.http.get<AgentDiscrepancy[]>(searchUrl, {
+    return this.http.get<AgencyDiscrepancy[]>(searchUrl, {
       headers: { 'Accept': 'application/json' }
     }).pipe(
-      map((data: AgentDiscrepancy[]) => ({
+      map((data: AgencyDiscrepancy[]) => ({
         data: data,
         success: true,
         message: `Found ${data.length} record(s)`
@@ -768,7 +768,7 @@ TWO INJECTION STYLES IN YOUR PROJECT:
 
 Constructor Injection (Traditional):
 constructor(
-  private agencyService: AgentDiscrepancyService,
+  private agencyService: AgencyDiscrepancyService,
   private loadingService: LoadingService,
   private router: Router,
 ) { }
@@ -816,8 +816,8 @@ withInterceptors([authInterceptor(), apiInterceptor])
 
 #### GET Request:
 
-// From: agent-discrepancy.service.ts
-this.http.get<AgentDiscrepancy[]>(searchUrl, {
+// From: agency-discrepancy.service.ts
+this.http.get<AgencyDiscrepancy[]>(searchUrl, {
 headers: {
 'Accept': 'application/json',
 'Content-Type': 'application/json'
@@ -830,8 +830,8 @@ catchError(error => { /* handle */ })
 );
 
 POST Request:
-// From: agent-discrepancy.service.ts
-createValidation(request: ValidationRequest): Observable<ValidationResponse> {
+// From: agency-discrepancy.service.ts
+createWinsValidation(request: WinsValidationRequest): Observable<WinsValidationResponse> {
   const createUrl = ApiUrlBuilder.getCreateUrl();
   return this.http.post<any>(createUrl, request, {
     headers: {
@@ -844,12 +844,12 @@ createValidation(request: ValidationRequest): Observable<ValidationResponse> {
       message: 'Record created successfully',
       data: response
     })),
-    catchError(error => this.handleValidationError(error, request))
+    catchError(error => this.handleWinsValidationError(error, request))
   );
 }
 
 PUT Request:
-updateRecord(record: AuditRouting): Observable<any> {
+updateRecord(record: PremiumAuditRouting): Observable<any> {
   const url = `${this.apiUrl}/${record.id}`;
   return this.http.put(url, record).pipe(
     catchError(this.handleError)
@@ -869,7 +869,7 @@ deleteRecord(id: number): Observable<any> {
 ### YOUR PROJECT'S API FLOW:
 
 ```text
-Component → Service → HttpClient → Interceptor → API Gateway → Backend
+Component → Service → HttpClient → Interceptor → Apigee Gateway → Backend
                                       ↓
 
 ```
@@ -888,11 +888,11 @@ export class ApiUrlBuilder {
     return `${this.baseApiUrl}${endpoint}`;
   }
 
-  static buildSearchUrl(sourceAgent: string, targetAgent: string): string {
-    const baseUrl = this.buildUrl(ApiEndpoints.EXAMPLE_VALIDATION_SEARCH);
+  static buildSearchUrl(ovAgent: string, winsAgent: string): string {
+    const baseUrl = this.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
     const params = new URLSearchParams();
-    if (sourceAgent) params.append('enterpriseviewAgentNumber', sourceAgent);
-    if (targetAgent) params.append('targetAgentNumber', targetAgent);
+    if (ovAgent) params.append('omniviewAgentNumber', ovAgent);
+    if (winsAgent) params.append('winsAgentNumber', winsAgent);
     return `${baseUrl}?${params.toString()}`;
   }
 }
@@ -917,7 +917,7 @@ KEY CONCEPTS:
 #### Creating Observable:
 
 // From HTTP call
-this.http.get<AgentDiscrepancy[]>(url)  // Returns Observable
+this.http.get<AgencyDiscrepancy[]>(url)  // Returns Observable
 
 // From BehaviorSubject
 private loadingSubject = new BehaviorSubject<boolean>(false);
@@ -1030,7 +1030,7 @@ take(1)  // Auto-completes after first value
 
 3. Use Signals Instead of Subscriptions:
 // Signals don't require manual cleanup
-searchResults = signal<AgentDiscrepancy[]>([]);
+searchResults = signal<AgencyDiscrepancy[]>([]);
 this.searchResults.set(results);
 
 ## PART 8: HTTP INTERCEPTORS DEEP EXPLANATION
@@ -1059,7 +1059,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const oidcSecurityService = inject(OidcSecurityService);
 
   // Only intercept ODA Admin API calls
-  if (req.url.includes('ExampleAdmin') || req.url.includes('AdminPortal')) {
+  if (req.url.includes('ess-odadmin') || req.url.includes(' ')) {
 
     return oidcSecurityService.getAccessToken().pipe(
       catchError((tokenError) => {
@@ -1083,7 +1083,7 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
               .set('Content-Type', 'application/json')
               .set('Accept', 'application/json')
               .set('client_id', environment.clientId)
-              .set('X-Correlation-ID', messageId)
+              .set('X-NW-Message-ID', messageId)
               .set('X-User-Id', userId || 'Not set');
 
             if (access_token) {
@@ -1116,14 +1116,14 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
 │   5. Add headers:                   │
 │      - Authorization: Bearer token  │
 │      - client_id                    │
-│      - X-Correlation-ID              │
+│      - X-NW-Message-ID              │
 │      - X-User-Id                    │
 │   6. Clone request with headers     │
 └─────────────────────────────────────┘
      ↓
 
 ```
-Backend API (API Gateway)
+Backend API (Apigee Gateway)
      ↓
 HTTP Response
      ↓
@@ -1152,9 +1152,9 @@ and reverse order for responses.
 
 9.2 SERVICE-LEVEL ERROR HANDLING
 
-#### // From: agent-discrepancy.service.ts
+#### // From: agency-discrepancy.service.ts
 
-private handleSearchError(error: HttpErrorResponse, sourceAgentNumber: string, targetAgentNumber: string) {
+private handleSearchError(error: HttpErrorResponse, ovAgentNumber: string, winsAgentNumber: string) {
   let errorMessage = '';
 
   if (error.status === 0) {
@@ -1162,13 +1162,13 @@ private handleSearchError(error: HttpErrorResponse, sourceAgentNumber: string, t
     errorMessage = 'Network error: Unable to connect to the server.';
   } else if (error.status === 404) {
     // Not found
-    errorMessage = this.generateNotFoundMessage(sourceAgentNumber, targetAgentNumber);
+    errorMessage = this.generateNotFoundMessage(ovAgentNumber, winsAgentNumber);
   } else if (error.status === 400) {
     // Bad request
-    errorMessage = this.generateNotFoundMessage(sourceAgentNumber, targetAgentNumber);
+    errorMessage = this.generateNotFoundMessage(ovAgentNumber, winsAgentNumber);
   } else {
     // Other errors
-    errorMessage = this.generateNotFoundMessage(sourceAgentNumber, targetAgentNumber);
+    errorMessage = this.generateNotFoundMessage(ovAgentNumber, winsAgentNumber);
   }
 
   console.error('Search API Error:', error);
@@ -1177,9 +1177,9 @@ private handleSearchError(error: HttpErrorResponse, sourceAgentNumber: string, t
 
 9.3 COMPONENT-LEVEL ERROR HANDLING
 
-#### // From: agent-discrepancies.component.ts
+#### // From: agency-discrepancies.component.ts
 
-this.agencyService.searchByAgents(criteria.sourceAgentNumber, criteria.targetAgentNumber)
+this.agencyService.searchByAgents(criteria.ovAgentNumber, criteria.winsAgentNumber)
 .subscribe({
   next: (response) => {
     // Success handling
@@ -1197,15 +1197,15 @@ this.agencyService.searchByAgents(criteria.sourceAgentNumber, criteria.targetAge
 
 9.4 VALIDATION ERROR HANDLING
 
-#### // From: agent-discrepancies.component.ts
+#### // From: agency-discrepancies.component.ts
 
 private performSearch(criteria: SearchCriteria): void {
   // Client-side validation
-| const sourceEmpty = !criteria.sourceAgentNumber |  | criteria.sourceAgentNumber.trim() === ''; |
+| const ovEmpty = !criteria.ovAgentNumber |  | criteria.ovAgentNumber.trim() === ''; |
 | --- | --- | --- |
-| const targetEmpty = !criteria.targetAgentNumber |  | criteria.targetAgentNumber.trim() === ''; |
+| const winsEmpty = !criteria.winsAgentNumber |  | criteria.winsAgentNumber.trim() === ''; |
 
-  if (sourceEmpty && targetEmpty) {
+  if (ovEmpty && winsEmpty) {
     this.errors.set(['OV Agent or Wins Agent Must be entered.']);
     return;  // Stop execution, don't call API
   }
@@ -1259,18 +1259,18 @@ catchError(error => {
 
 YOUR PROJECT'S MODELS:
 
-// From: agent-discrepancy.model.ts
-export interface AgentDiscrepancy {
+// From: agency-discrepancy.model.ts
+export interface AgencyDiscrepancy {
 id?: number;              // Optional - might not exist for new records
-sourceAgentNumber: string;    // Required
-targetAgentNumber: string;  // Required
+ovAgentNumber: string;    // Required
+winsAgentNumber: string;  // Required
 createdDate?: Date;       // Optional
 lastModified?: Date;      // Optional
 }
 
 export interface SearchCriteria {
-sourceAgentNumber?: string;
-targetAgentNumber?: string;
+ovAgentNumber?: string;
+winsAgentNumber?: string;
 }
 
 export interface PaginatedResponse<T> {
@@ -1292,7 +1292,7 @@ errors?: string[];
 
 GENERIC INTERFACES:
 ApiResponse<T> can hold any data type:
-ApiResponse<AgentDiscrepancy[]>  // Array of discrepancies
+ApiResponse<AgencyDiscrepancy[]>  // Array of discrepancies
 ApiResponse<string>               // Single string
 ApiResponse<void>                 // No data
 
@@ -1308,51 +1308,51 @@ YOUR PROJECT'S ENUMS:
 
 // From: api-endpoints.enum.ts
 export enum ApiEndpoints {
-EXAMPLE_USER_INFO = '/api/users',
-EXAMPLE_VALIDATION_CREATE = '/api/validations',
-EXAMPLE_VALIDATION_SEARCH = '/api/validations/search',
-EXAMPLE_VALIDATION_LIST = '/api/validations',
-EXAMPLE_AUDIT_SEARCH = '/api/audits/search',
-EXAMPLE_ACCOUNTING_SEARCH = '/api/accounting/search',
+USER_ACCESS = '/get-user-infos/',
+WINS_VALIDATION_CREATE = '/wins-validations',
+WINS_VALIDATION_SEARCH = '/wins-validations/search',
+WINS_VALIDATION_LIST = '/wins-validations',
+PREMIUM_AUDIT_SEARCH = '/premium-audit-routings/search',
+AGENCY_ACCOUNTING_SEARCH = '/agency-acct-routings/search',
 }
 
 // From: user-access.service.ts
 export enum ScreenCode {
 AGENCY_DISCREPANCIES = 100,
-EXAMPLE_CONTRACT_CONVERSION = 200,
-EXAMPLE_AUDIT_ROUTING = 300,
-EXAMPLE_ACCOUNTING_ROUTING = 400
+OVR2B_CONVERSION = 200,
+PREMIUM_AUDIT_ROUTING = 300,
+AGENCY_ACCOUNTING_ROUTING = 400
 }
 
 USAGE:
 // Instead of magic string
-const url = '/api/validations/search';
+const url = '/wins-validations/search';
 
 // Use enum
-const url = ApiUrlBuilder.buildUrl(ApiEndpoints.EXAMPLE_VALIDATION_SEARCH);
+const url = ApiUrlBuilder.buildUrl(ApiEndpoints.WINS_VALIDATION_SEARCH);
 
 // In route data
 data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 
-10.3 CONSTANTS (design-system.utils.ts)
+10.3 CONSTANTS (bolt.utils.ts)
 
-#### export const DesignSystemClasses = {
+#### export const BoltClasses = {
 
   // Button Classes
-  BUTTON_PRIMARY: 'c-ds-button c-ds-button--primary',
-  BUTTON_SECONDARY: 'c-ds-button c-ds-button--secondary',
-  BUTTON_SUCCESS: 'c-ds-button c-ds-button--success',
+  BUTTON_PRIMARY: 'c-bolt-button c-bolt-button--primary',
+  BUTTON_SECONDARY: 'c-bolt-button c-bolt-button--secondary',
+  BUTTON_SUCCESS: 'c-bolt-button c-bolt-button--success',
 
   // Message Classes
-  MESSAGE_SUCCESS: 'c-ds-banner c-ds-banner--success',
-  MESSAGE_ERROR: 'c-ds-banner c-ds-banner--error',
+  MESSAGE_SUCCESS: 'c-bolt-banner c-bolt-banner--success',
+  MESSAGE_ERROR: 'c-bolt-banner c-bolt-banner--error',
 
   // Table Classes
-  TABLE: 'c-ds-table',
-  TABLE_HEADER: 'c-ds-table__header',
+  TABLE: 'c-bolt-table',
+  TABLE_HEADER: 'c-bolt-table__header',
 };
 
-export const DesignSystemColors = {
+export const BoltColors = {
 PRIMARY: 'primary',
 SECONDARY: 'secondary',
 SUCCESS: 'success',
@@ -1361,11 +1361,11 @@ ERROR: 'error',
 
 USAGE IN COMPONENTS:
 // Component
-readonly DesignSystemClasses = DesignSystemClasses;
-readonly getButtonClass = getButtonClass;
+readonly BoltClasses = BoltClasses;
+readonly getBoltButtonClass = getBoltButtonClass;
 
 // Template
-[class]="DesignSystemClasses.BUTTON_PRIMARY"
+[class]="BoltClasses.BUTTON_PRIMARY"
 
 ## PART 11: ANGULAR ROUTING DEEP EXPLANATION
 
@@ -1376,7 +1376,7 @@ readonly getButtonClass = getButtonClass;
 // From: app.routes.ts
 export const routes: Routes = [
   // Default redirect
-  { path: '', redirectTo: '/agent-discrepancies', pathMatch: 'full' },
+  { path: '', redirectTo: '/agency-discrepancies', pathMatch: 'full' },
 
   // Authentication routes (eager loaded)
   {
@@ -1392,31 +1392,31 @@ export const routes: Routes = [
 
   // Protected routes (lazy loaded with guards)
   {
-    path: 'agent-discrepancies',
-    loadComponent: () => import('./features/agent-discrepancies/components/agent-discrepancies.component')
-      .then(m => m.AgentDiscrepanciesComponent),
+    path: 'agency-discrepancies',
+    loadComponent: () => import('./features/agency-discrepancies/components/agency-discrepancies.component')
+      .then(m => m.AgencyDiscrepanciesComponent),
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
     data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
   },
 
   // Route with parameter
   {
-    path: 'audit-routing/edit/:id',
-    loadComponent: () => import('./features/audit-routing/edit/edit-audit-routing.component')
-      .then(m => m.EditAuditRoutingComponent),
+    path: 'premium-audit-routing/edit/:id',
+    loadComponent: () => import('./features/premium-audit-routing/edit/edit-premium-audit-routing.component')
+      .then(m => m.EditPremiumAuditRoutingComponent),
     canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard],
-    data: { screenCode: ScreenCode.EXAMPLE_AUDIT_ROUTING }
+    data: { screenCode: ScreenCode.PREMIUM_AUDIT_ROUTING }
   },
 
   // Wildcard (catch-all)
-  { path: '**', redirectTo: '/agent-discrepancies' }
+  { path: '**', redirectTo: '/agency-discrepancies' }
 ];
 
 11.2 ROUTE PARAMETERS
 
 ### READING ROUTE PARAMETERS:
 
-// From: edit-audit-routing.component.ts
+// From: edit-premium-audit-routing.component.ts
 constructor(private route: ActivatedRoute) { }
 
 ngOnInit() {
@@ -1430,13 +1430,13 @@ ngOnInit() {
 
 #### // Simple navigation
 
-this.router.navigate(['/agent-discrepancies']);
+this.router.navigate(['/agency-discrepancies']);
 
 // Navigation with route parameters
-this.router.navigate(['/audit-routing/edit', record.id]);
+this.router.navigate(['/premium-audit-routing/edit', record.id]);
 
 // Navigation with state (passing data)
-this.router.navigate(['/audit-routing/edit', record.id], {
+this.router.navigate(['/premium-audit-routing/edit', record.id], {
 state: { premiumAuditRouting: record }
 });
 
@@ -1462,16 +1462,16 @@ canActivate: [AutoLoginPartialRoutesGuard, screenAccessGuard]
 
 ### FORM CREATION:
 
-// From: agent-discrepancies.component.ts
+// From: agency-discrepancies.component.ts
 ngOnInit(): void {
   this.searchForm = new FormGroup({
-    sourceAgentNumber: new FormControl(''),
-    targetAgentNumber: new FormControl('')
+    ovAgentNumber: new FormControl(''),
+    winsAgentNumber: new FormControl('')
   });
 }
 
 WITH FormBuilder:
-// From: edit-audit-routing.component.ts
+// From: edit-premium-audit-routing.component.ts
 constructor(private fb: FormBuilder) {
   this.editForm = this.fb.group({
     id: [null],
@@ -1491,7 +1491,7 @@ Validators.maxLength(5)   // Max 5 characters
 ]]
 
 CUSTOM VALIDATION IN COMPONENT:
-// From: edit-audit-routing.component.ts
+// From: edit-premium-audit-routing.component.ts
 async confirmAndUpdate() {
   // Validate Agent Number length
   const agntNbr = this.editForm.value.agntNbr?.trim();
@@ -1521,7 +1521,7 @@ async confirmAndUpdate() {
 const formValue = this.searchForm.value;
 
 // Get specific control value
-const sourceAgent = this.searchForm.get('sourceAgentNumber')?.value;
+const ovAgent = this.searchForm.get('ovAgentNumber')?.value;
 
 // Patch values (update some fields)
 this.editForm.patchValue({
@@ -1660,9 +1660,9 @@ export class AuthService {
 
 export enum ScreenCode {
 AGENCY_DISCREPANCIES = 100,
-EXAMPLE_CONTRACT_CONVERSION = 200,
-EXAMPLE_AUDIT_ROUTING = 300,
-EXAMPLE_ACCOUNTING_ROUTING = 400
+OVR2B_CONVERSION = 200,
+PREMIUM_AUDIT_ROUTING = 300,
+AGENCY_ACCOUNTING_ROUTING = 400
 }
 
 @Injectable({ providedIn: 'root' })
@@ -1771,7 +1771,7 @@ export const screenAccessGuard: CanActivateFn = (route, state) => {
 
 #### {
 
-path: 'agent-discrepancies',
+path: 'agency-discrepancies',
 loadComponent: () => import(...),
 canActivate: [
 AutoLoginPartialRoutesGuard,  // First: Check authentication
@@ -1789,10 +1789,10 @@ data: { screenCode: ScreenCode.AGENCY_DISCREPANCIES }
 function getEnvironment(): Env {
   const env: Env = {
     production: true,
-    apiEndPointUrl: 'https://api.example.com/v1',
-    clientId: '<YOUR_CLIENT_ID>',
-    authority: 'https://login.example.com/<tenant>',
-    appName: 'Portal View Administration',
+    apiEndPointUrl: 'https://api-int.nwie.net/operations-support/ess-odadmin-proxy/v1',
+    clientId: '9ObfOZ5G2lkvXxyLa9iFqW6GruCwnf8M',
+    authority: 'https://api.identity.nwie.net/...',
+    appName: 'OmniView Data Administration',
     api: {
       timeout: 10000,
       retryAttempts: 3
@@ -1802,14 +1802,14 @@ function getEnvironment(): Env {
   if (typeof window !== 'undefined') {
     if (window.location.hostname.includes('dev')) {
       env.production = false;
-      env.apiEndPointUrl = 'https://api-dev.example.com/v1';
-      env.clientId = '<YOUR_CLIENT_ID_DEV>';
+      env.apiEndPointUrl = 'https://api-int-dev.nwie.net/.../v1';
+      env.clientId = '8tAgb1vydHsjrUZiTDEJIMinrATShsQm';
     } else if (window.location.hostname.includes('pt')) {
       env.production = false;
-      env.apiEndPointUrl = 'https://api-test.example.com/v1';
+      env.apiEndPointUrl = 'https://api-int-test.nwie.net/.../v1';
     } else if (window.location.hostname.includes('localhost')) {
       env.production = false;
-      env.apiEndPointUrl = 'https://api-test.example.com/v1';
+      env.apiEndPointUrl = 'https://api-int-test.nwie.net/.../v1';
     }
   }
 
@@ -1865,7 +1865,7 @@ HOW ZONELESS WORKS:
 
 #### // Create signal
 
-searchResults = signal<AgentDiscrepancy[]>([]);
+searchResults = signal<AgencyDiscrepancy[]>([]);
 
 // Update signal (triggers change detection)
 this.searchResults.set(results);
@@ -1902,9 +1902,9 @@ console.log('Results changed:', this.searchResults());
 ### YOUR PROJECT IMPLEMENTATION:
 
 {
-path: 'agent-discrepancies',
+path: 'agency-discrepancies',
 loadComponent: () => import('./features/...')
-.then(m => m.AgentDiscrepanciesComponent)
+.then(m => m.AgencyDiscrepanciesComponent)
 }
 
 IMPACT:
@@ -1931,7 +1931,7 @@ BENEFITS:
 WITH trackBy (only re-renders changed items):
 <tr *ngFor="let item of items; trackBy: trackByFn">
 
-trackByFn(index: number, item: AgentDiscrepancy): number {
+trackByFn(index: number, item: AgencyDiscrepancy): number {
   return item.id;
 }
 
@@ -1939,13 +1939,13 @@ trackByFn(index: number, item: AgentDiscrepancy): number {
 
 #### OBSERVABLES (More overhead):
 
-private results$ = new BehaviorSubject<AgentDiscrepancy[]>([]);
+private results$ = new BehaviorSubject<AgencyDiscrepancy[]>([]);
 
 // Subscribe everywhere
 this.results$.subscribe(results => this.displayResults = results);
 
 SIGNALS (More efficient):
-results = signal<AgentDiscrepancy[]>([]);
+results = signal<AgencyDiscrepancy[]>([]);
 
 // Direct access
 const displayResults = this.results();
@@ -2195,7 +2195,7 @@ Q23: How do you secure an Angular application?
 ## END OF ANALYSIS DOCUMENT
 
 This document was generated as a comprehensive guide for understanding
-enterprise Angular architecture using the AdminPortal UI project as a
+enterprise Angular architecture using the OdaAdmin UI project as a
 real-world example. All code samples are from actual production code.
 
 For interview preparation, focus on:
