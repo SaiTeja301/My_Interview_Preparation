@@ -1,5 +1,5 @@
 # SPRING BOOT ENTERPRISE BACKEND ARCHITECTURE
-> *COMPLETE ANALYSIS FROM BEGINNER TO EXPERT · Interview Preparation Guide · # Based on: ess-odadmin-service Enterprise Project · Spring Boot Version: 3.5.7 | Java Version: 21*
+> *COMPLETE ANALYSIS FROM BEGINNER TO EXPERT · Interview Preparation Guide · # Based on: example-admin-service Enterprise Project · Spring Boot Version: 3.5.7 | Java Version: 21*
 
 ## TABLE OF CONTENTS
 
@@ -88,9 +88,9 @@ KEY FEATURES:
 
 YOUR PROJECT EXAMPLE:
 @SpringBootApplication
-public class EssOdadminServiceApplication {
+public class ExampleAdminServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(EssOdadminServiceApplication.class, args);
+        SpringApplication.run(ExampleAdminServiceApplication.class, args);
     }
 }
 
@@ -149,7 +149,7 @@ YOUR PROJECT USES:
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    CONTROLLER LAYER                              │
-│    (AgencyAcctRoutingController, R2BContractAgentController)    │
+│    (AccountingRoutingController, ContractAgentController)    │
 │         @RestController - Handles HTTP requests                  │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ DTO Objects
@@ -159,7 +159,7 @@ YOUR PROJECT USES:
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                     SERVICE LAYER                                │
-│   (AgencyAcctRoutingServiceImpl, R2BContractAgentServiceImpl)   │
+│   (AccountingRoutingServiceImpl, ContractAgentServiceImpl)   │
 │        @Service - Business Logic & Transaction Management        │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ Entity Objects
@@ -169,7 +169,7 @@ YOUR PROJECT USES:
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │                    REPOSITORY LAYER                              │
-│     (AgencyAcctRoutingRepo, ApplicationUsersRepo)               │
+│     (AccountingRoutingRepo, ApplicationUsersRepo)               │
 │       @Repository - Database Operations via JPA                  │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │ SQL Queries
@@ -198,7 +198,7 @@ MICROSERVICES ARCHITECTURE:
 - Each service has own database
 - Services communicate via REST/messaging
 - Independent deployment and scaling
-- Your project (ess-odadmin-service) is a microservice
+- Your project (example-admin-service) is a microservice
 
 YOUR PROJECT AS MICROSERVICE:
 - Independent deployable service
@@ -212,7 +212,7 @@ YOUR PROJECT AS MICROSERVICE:
 ## DETAILED REQUEST FLOW:
 
 1. CLIENT REQUEST
-   └─► HTTP POST /agency-acct-routings
+   └─► HTTP POST /api/accounting
        Headers: X-User-Id: "john123"
        Body: {"agntNbr": "12345", "entpsId": "E001", "userId": "john123"}
 
@@ -233,17 +233,17 @@ YOUR PROJECT AS MICROSERVICE:
 4. DISPATCHER SERVLET
 ```text
    └─► Routes request to appropriate controller
-   └─► Calls AgencyAcctRoutingController
+   └─► Calls AccountingRoutingController
 
 ```
-5. CONTROLLER (AgencyAcctRoutingController.java)
+5. CONTROLLER (AccountingRoutingController.java)
 ```text
    └─► @PostMapping receives request
-   └─► Deserializes JSON to AgencyAcctRoutingDTO
+   └─► Deserializes JSON to AccountingRoutingDTO
    └─► Calls service layer
 
 ```
-6. SERVICE (AgencyAcctRoutingServiceImpl.java)
+6. SERVICE (AccountingRoutingServiceImpl.java)
 ```text
    └─► Validates business rules
    └─► Checks if user exists
@@ -252,7 +252,7 @@ YOUR PROJECT AS MICROSERVICE:
    └─► Calls repository
 
 ```
-7. REPOSITORY (AgencyAcctRoutingRepo.java)
+7. REPOSITORY (AccountingRoutingRepo.java)
 ```text
    └─► JpaRepository handles database operations
    └─► Hibernate generates SQL
@@ -278,49 +278,49 @@ YOUR PROJECT AS MICROSERVICE:
 
 YOUR PROJECT STRUCTURE:
 
-## src/main/java/com/nw/odAdmin_service/
+## src/main/java/com/nw/AdminPortal_service/
 
 ```text
 ├── Controller/              # REST API endpoints
-│   ├── AgencyAcctRoutingController.java
+│   ├── AccountingRoutingController.java
 │   ├── GlobalExceptionHandler.java
-│   ├── PremiumAuditRoutingController.java
-│   ├── R2BContractAgentController.java
-│   └── WinsValidationController.java
+│   ├── AuditRoutingController.java
+│   ├── ContractAgentController.java
+│   └── ValidationController.java
 │
 ├── service/                 # Service interfaces
-│   ├── AgencyAcctRoutingService.java
-│   ├── PremiumAuditRoutingService.java
-│   ├── R2BContractAgentService.java
+│   ├── AccountingRoutingService.java
+│   ├── AuditRoutingService.java
+│   ├── ContractAgentService.java
 │   ├── UserService.java
-│   └── WinsValidationService.java
+│   └── ValidationService.java
 │
 ├── ServiceImpl/             # Service implementations
-│   ├── AgencyAcctRoutingServiceImpl.java
-│   ├── PremiumAuditRoutingServiceImpl.java
-│   ├── R2BContractAgentServiceImpl.java
-│   └── WinsValidationServiceImpl.java
+│   ├── AccountingRoutingServiceImpl.java
+│   ├── AuditRoutingServiceImpl.java
+│   ├── ContractAgentServiceImpl.java
+│   └── ValidationServiceImpl.java
 │
 ├── Repositories/            # Data access layer
-│   ├── AgencyAcctRoutingRepo.java
+│   ├── AccountingRoutingRepo.java
 │   ├── ApplicationUsersRepo.java
-│   ├── PremiumAuditRoutingRepo.java
-│   ├── R2BContractAgentRepo.java
+│   ├── AuditRoutingRepo.java
+│   ├── ContractAgentRepo.java
 │   ├── UsersRepo.java
-│   └── WinsValidationRepo.java
+│   └── ValidationRepo.java
 │
 ├── Entities/                # JPA entities
-│   ├── AgencyAcctRouting.java
+│   ├── AccountingRouting.java
 │   ├── ApplicationUsers.java
-│   ├── PremiumAuditRouting.java
-│   ├── R2BContractAgent.java
-│   └── WinsValidation.java
+│   ├── AuditRouting.java
+│   ├── ContractAgent.java
+│   └── Validation.java
 │
 ├── model/                   # DTOs
-│   ├── AgencyAcctRoutingDTO.java
+│   ├── AccountingRoutingDTO.java
 │   ├── ApplicationUsersDTO.java
 │   ├── ErrorResponseDTO.java
-│   └── R2BContractAgentDTO.java
+│   └── ContractAgentDTO.java
 │
 ├── Configuration/           # Bean configurations
 │   ├── CorsFilter.java
@@ -331,7 +331,7 @@ YOUR PROJECT STRUCTURE:
 │   └── UserFilter.java
 │
 ├── exception/               # Custom exceptions
-│   ├── AgencyAcctRoutingException.java
+│   ├── AccountingRoutingException.java
 │   ├── AlreadyExistException.java
 │   ├── NotFoundException.java
 │   └── UnauthorizedException.java
@@ -339,7 +339,7 @@ YOUR PROJECT STRUCTURE:
 ├── constants/               # Application constants
 │   └── ExceptionConstants.java
 │
-└── EssOdadminServiceApplication.java  # Main class
+└── ExampleAdminServiceApplication.java  # Main class
 
 ```
 src/main/resources/
@@ -400,9 +400,9 @@ REAL-TIME USAGE: Error messages, config values
 ## YOUR CODE:
 
 @SpringBootApplication
-public class EssOdadminServiceApplication {
+public class ExampleAdminServiceApplication {
     public static void main(String[] args) {
-        SpringApplication.run(EssOdadminServiceApplication.class, args);
+        SpringApplication.run(ExampleAdminServiceApplication.class, args);
     }
 }
 
@@ -492,26 +492,26 @@ STEP 9: Application Ready
 ```text
 ├── Scans current package and sub-packages
 ├── Detects @Component, @Service, @Repository, @Controller
-└── In your case: scans com.nw.odAdmin_service and below
+└── In your case: scans com.nw.AdminPortal_service and below
 
 ```
 3.3 COMPONENT SCANNING PROCESS
 
 ## SCANNING ORDER:
 
-1. Base package: com.nw.odAdmin_service
+1. Base package: com.nw.AdminPortal_service
 2. Sub-packages scanned:
-- com.nw.odAdmin_service.Controller
-- com.nw.odAdmin_service.service
-- com.nw.odAdmin_service.ServiceImpl
-- com.nw.odAdmin_service.Repositories
-- com.nw.odAdmin_service.Configuration
-- com.nw.odAdmin_service.filter
+- com.nw.AdminPortal_service.Controller
+- com.nw.AdminPortal_service.service
+- com.nw.AdminPortal_service.ServiceImpl
+- com.nw.AdminPortal_service.Repositories
+- com.nw.AdminPortal_service.Configuration
+- com.nw.AdminPortal_service.filter
 
 COMPONENTS FOUND IN YOUR PROJECT:
-- @RestController: AgencyAcctRoutingController, R2BContractAgentController
-- @Service: AgencyAcctRoutingServiceImpl, UserService
-- @Repository: AgencyAcctRoutingRepo, ApplicationUsersRepo
+- @RestController: AccountingRoutingController, ContractAgentController
+- @Service: AccountingRoutingServiceImpl, UserService
+- @Repository: AccountingRoutingRepo, ApplicationUsersRepo
 - @Configuration: SecurityConfig, ModelMapperConfig
 - @Component: UserFilter, CorsFilter
 
@@ -581,8 +581,8 @@ COMPONENTS FOUND IN YOUR PROJECT:
 
 YOUR PROJECT EXAMPLE:
 @RestController
-@RequestMapping("/agency-acct-routings")
-public class AgencyAcctRoutingController {
+@RequestMapping("/api/accounting")
+public class AccountingRoutingController {
     // All methods return JSON directly
 }
 
@@ -597,25 +597,25 @@ public class AgencyAcctRoutingController {
 
 YOUR PROJECT MAPPINGS:
 
-AgencyAcctRoutingController:
+AccountingRoutingController:
 ```text
-├── POST   /agency-acct-routings          → saveAgencyAcctRouting()
-├── PUT    /agency-acct-routings          → updateAgencyAcctRouting()
-├── GET    /agency-acct-routings/search   → retrieveAgencyAcctRouting()
-├── GET    /agency-acct-routings          → retrieveAllAgencyAcctRouting()
-└── DELETE /agency-acct-routings/{id}     → deleteAllAgencyAcctRoutingDetails()
+├── POST   /api/accounting          → saveAccountingRouting()
+├── PUT    /api/accounting          → updateAccountingRouting()
+├── GET    /api/accounting/search   → retrieveAccountingRouting()
+├── GET    /api/accounting          → retrieveAllAccountingRouting()
+└── DELETE /api/accounting/{id}     → deleteAllAccountingRoutingDetails()
 
 ```
 4.3 CONTROLLER METHOD ANALYSIS
 
-## EXAMPLE - YOUR saveAgencyAcctRouting METHOD:
+## EXAMPLE - YOUR saveAccountingRouting METHOD:
 
 @PostMapping
-public ResponseEntity<AgencyAcctRoutingDTO> saveAgencyAcctRouting(
-    @RequestBody AgencyAcctRoutingDTO agencyAcctRoutingDTO)
-    throws AgencyAcctRoutingException {
+public ResponseEntity<AccountingRoutingDTO> saveAccountingRouting(
+    @RequestBody AccountingRoutingDTO agencyAcctRoutingDTO)
+    throws AccountingRoutingException {
 
-    AgencyAcctRoutingDTO result = agencyAcctRoutingService
+    AccountingRoutingDTO result = agencyAcctRoutingService
         .saveAgentAcctRouting(agencyAcctRoutingDTO);
 
     if(result.getStatus().equals("NOT_FOUND"))
@@ -631,7 +631,7 @@ ANNOTATION BREAKDOWN:
 @PostMapping
 ```text
 ├── Maps to HTTP POST method
-├── URL: /agency-acct-routings (from class-level @RequestMapping)
+├── URL: /api/accounting (from class-level @RequestMapping)
 └── Typically used for creating new resources
 
 ```
@@ -655,7 +655,7 @@ ResponseEntity<T>
 
 Example: @DeleteMapping("/{id}")
 public void delete(@PathVariable Long id)
-URL: /agency-acct-routings/123 → id = 123
+URL: /api/accounting/123 → id = 123
 
 @RequestParam - Extract query parameters
 Example: @GetMapping("/search")
@@ -664,7 +664,7 @@ URL: /search?agntNbr=12345 → agntNbr = "12345"
 
 YOUR EXAMPLE:
 @GetMapping("/search")
-public ResponseEntity<List<AgencyAcctRoutingDTO>> retrieveAgencyAcctRouting(
+public ResponseEntity<List<AccountingRoutingDTO>> retrieveAccountingRouting(
 @RequestParam(value="agntNbr", required=false) String agntNbr,
 @RequestParam(value="entpsId", required=false) String entpsId,
 @RequestParam(value="userId", required=false) String userId)
@@ -756,15 +756,15 @@ INTERNAL WORKING:
 
 5.3 YOUR SERVICE INTERFACE
 
-## public interface AgencyAcctRoutingService {
+## public interface AccountingRoutingService {
 
-AgencyAcctRoutingDTO saveAgentAcctRouting(AgencyAcctRoutingDTO dto)
-        throws AgencyAcctRoutingException;
-    List<AgencyAcctRoutingDTO> retrieveAgencyAcctRouting(
+AccountingRoutingDTO saveAgentAcctRouting(AccountingRoutingDTO dto)
+        throws AccountingRoutingException;
+    List<AccountingRoutingDTO> retrieveAccountingRouting(
         String agntNbr, String entpsId, String userId)
-        throws AgencyAcctRoutingException;
-    List<AgencyAcctRoutingDTO> retrieveAllAgencyAcctRouting();
-    void deleteAllAgencyAcctRoutingDetails(List<Long> ids);
+        throws AccountingRoutingException;
+    List<AccountingRoutingDTO> retrieveAllAccountingRouting();
+    void deleteAllAccountingRoutingDetails(List<Long> ids);
 }
 
 PURPOSE:
@@ -776,18 +776,18 @@ PURPOSE:
 
 ## @Service
 
-public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
+public class AccountingRoutingServiceImpl implements AccountingRoutingService {
 
     @Autowired
-    private AgencyAcctRoutingRepo agencyAcctRoutingRepo;
+    private AccountingRoutingRepo agencyAcctRoutingRepo;
     @Autowired
     private UsersRepo usersRepo;
     @Autowired
     private ModelMapper mapper;
 
     @Override
-    public AgencyAcctRoutingDTO saveAgentAcctRouting(
-        AgencyAcctRoutingDTO agencyAcctRoutingDTO) throws AgencyAcctRoutingException {
+    public AccountingRoutingDTO saveAgentAcctRouting(
+        AccountingRoutingDTO agencyAcctRoutingDTO) throws AccountingRoutingException {
 
         // BUSINESS RULE 1: Validate user exists
         boolean existsUserId = usersRepo.existsByUserId(
@@ -795,7 +795,7 @@ public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
 
         if (existsUserId) {
             // BUSINESS RULE 2: Check for duplicates
-            List<AgencyAcctRouting> list = agencyAcctRoutingRepo
+            List<AccountingRouting> list = agencyAcctRoutingRepo
                 .findByAgntNbrAndEntpsId(
                     agencyAcctRoutingDTO.getAgntNbr(),
                     agencyAcctRoutingDTO.getEntpsId());
@@ -807,15 +807,15 @@ public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
             }
 
             // CONVERSION: DTO → Entity
-            AgencyAcctRouting entity = mapper.map(
-                agencyAcctRoutingDTO, AgencyAcctRouting.class);
+            AccountingRouting entity = mapper.map(
+                agencyAcctRoutingDTO, AccountingRouting.class);
 
             // DATABASE OPERATION
-            AgencyAcctRouting saved = agencyAcctRoutingRepo.save(entity);
+            AccountingRouting saved = agencyAcctRoutingRepo.save(entity);
 
             // CONVERSION: Entity → DTO
-            AgencyAcctRoutingDTO response = mapper.map(
-                saved, AgencyAcctRoutingDTO.class);
+            AccountingRoutingDTO response = mapper.map(
+                saved, AccountingRoutingDTO.class);
             response.setStatus("CREATED");
             return response;
         } else {
@@ -833,7 +833,7 @@ public class AgencyAcctRoutingServiceImpl implements AgencyAcctRoutingService {
 YOUR EXAMPLE:
 @Override
 @Transactional
-public void deleteAllAgencyAcctRoutingDetails(List<Long> ids) {
+public void deleteAllAccountingRoutingDetails(List<Long> ids) {
     for(Long id : ids) {
         agencyAcctRoutingRepo.deleteById(id);
     }
@@ -870,21 +870,21 @@ SPRING DATA JPA:
 
 6.2 YOUR REPOSITORY EXAMPLE
 
-## public interface AgencyAcctRoutingRepo
+## public interface AccountingRoutingRepo
 
-extends JpaRepository<AgencyAcctRouting, Long> {
+extends JpaRepository<AccountingRouting, Long> {
 
     // Spring Data JPA generates queries from method names
-    List<AgencyAcctRouting> findByAgntNbrAndEntpsIdAndUserId(
+    List<AccountingRouting> findByAgntNbrAndEntpsIdAndUserId(
         String agntNbr, String entpsId, String userId);
-    List<AgencyAcctRouting> findByAgntNbrAndEntpsId(
+    List<AccountingRouting> findByAgntNbrAndEntpsId(
         String agntNbr, String entpsId);
-    List<AgencyAcctRouting> findByAgntNbr(String agntNbr);
+    List<AccountingRouting> findByAgntNbr(String agntNbr);
     boolean existsByUserId(String userId);
 
     // Custom JPQL queries
-    @Query("SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr LIKE :agntNbr")
-    List<AgencyAcctRouting> findByAgntNbrLike(@Param("agntNbr") String agntNbr);
+    @Query("SELECT a FROM AccountingRouting a WHERE a.agntNbr LIKE :agntNbr")
+    List<AccountingRouting> findByAgntNbrLike(@Param("agntNbr") String agntNbr);
 }
 
 6.3 JPAREPOSITORY INTERNAL WORKING
@@ -913,15 +913,15 @@ INTERNAL WORKING:
 ## Method Name → Generated Query:
 
 findByAgntNbr(String agntNbr)
-└─► SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr = ?1
+└─► SELECT a FROM AccountingRouting a WHERE a.agntNbr = ?1
 
 findByAgntNbrAndEntpsId(String agntNbr, String entpsId)
-└─► SELECT a FROM AgencyAcctRouting a
+└─► SELECT a FROM AccountingRouting a
     WHERE a.agntNbr = ?1 AND a.entpsId = ?2
 
 existsByUserId(String userId)
 └─► SELECT CASE WHEN COUNT(a) > 0 THEN true ELSE false END
-    FROM AgencyAcctRouting a WHERE a.userId = ?1
+    FROM AccountingRouting a WHERE a.userId = ?1
 
 KEYWORDS:
 - findBy: Query starter
@@ -935,8 +935,8 @@ KEYWORDS:
 
 ## When method naming isn't enough, use @Query:
 
-@Query("SELECT a FROM AgencyAcctRouting a WHERE a.agntNbr LIKE :agntNbr")
-List<AgencyAcctRouting> findByAgntNbrLike(@Param("agntNbr") String agntNbr);
+@Query("SELECT a FROM AccountingRouting a WHERE a.agntNbr LIKE :agntNbr")
+List<AccountingRouting> findByAgntNbrLike(@Param("agntNbr") String agntNbr);
 
 TYPES:
 - JPQL: Object-oriented query language
@@ -955,7 +955,7 @@ TYPES:
 YOUR ENTITY EXAMPLE:
 @Entity
 @Table(name = "AGENCY_ACCT_ROUTING")
-public class AgencyAcctRouting implements Serializable {
+public class AccountingRouting implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE,
@@ -1023,7 +1023,7 @@ public class AgencyAcctRouting implements Serializable {
 ## SAVE OPERATION FLOW:
 
 1. Entity created in Java
-AgencyAcctRouting entity = new AgencyAcctRouting();
+AccountingRouting entity = new AccountingRouting();
 
 2. EntityManager.persist(entity) called
    └─► Hibernate manages entity
@@ -1070,7 +1070,7 @@ PURPOSE:
 
 8.2 ENTITY VS DTO COMPARISON
 
-## ENTITY (AgencyAcctRouting):
+## ENTITY (AccountingRouting):
 
 ```text
 ├── Maps to database table
@@ -1080,7 +1080,7 @@ PURPOSE:
 └── Contains database-specific logic
 
 ```
-DTO (AgencyAcctRoutingDTO):
+DTO (AccountingRoutingDTO):
 ```text
 ├── Plain Java object (POJO)
 ├── No JPA annotations
@@ -1090,7 +1090,7 @@ DTO (AgencyAcctRoutingDTO):
 
 ```
 YOUR DTO EXAMPLE:
-public class AgencyAcctRoutingDTO {
+public class AccountingRoutingDTO {
     private Long id;
     private String agntNbr;
     private String entpsId;
@@ -1134,15 +1134,15 @@ public class ModelMapperConfig {
 
 USAGE IN SERVICE:
 // DTO to Entity
-AgencyAcctRouting entity = mapper.map(dto, AgencyAcctRouting.class);
+AccountingRouting entity = mapper.map(dto, AccountingRouting.class);
 
 // Entity to DTO
-AgencyAcctRoutingDTO dto = mapper.map(entity, AgencyAcctRoutingDTO.class);
+AccountingRoutingDTO dto = mapper.map(entity, AccountingRoutingDTO.class);
 
 // List conversion
-List<AgencyAcctRoutingDTO> dtoList = mapper.map(
+List<AccountingRoutingDTO> dtoList = mapper.map(
 entityList,
-    new TypeToken<List<AgencyAcctRoutingDTO>>(){}.getType()
+    new TypeToken<List<AccountingRoutingDTO>>(){}.getType()
 );
 
 ## PART 9: JWT AUTHENTICATION DEEP EXPLANATION
@@ -1554,7 +1554,7 @@ public DTO getByUser(@PathVariable String userId) {
 
 exception/
 ```text
-├── AgencyAcctRoutingException.java   # Business exception
+├── AccountingRoutingException.java   # Business exception
 ├── AlreadyExistException.java        # Duplicate resource
 ├── NotFoundException.java            # Resource not found
 ├── UnauthorizedException.java        # Authentication failed
@@ -1568,10 +1568,10 @@ Controller/
 
 ## // Base business exception
 
-public class AgencyAcctRoutingException extends Exception {
+public class AccountingRoutingException extends Exception {
     private String message;
 
-    public AgencyAcctRoutingException(String message) {
+    public AccountingRoutingException(String message) {
         this.message = message;
     }
 }
@@ -1782,9 +1782,9 @@ public class SecurityConfig {
 
 ## # Oracle Database Configuration
 
-spring.datasource.url=${OMNIVIEW_DB_URL}
-spring.datasource.username=${OMNIVIEW_DB_USR}
-spring.datasource.password=${SECRET_OMNIVIEW_DB_SEC}
+spring.datasource.url=${ENTERPRISEVIEW_DB_URL}
+spring.datasource.username=${ENTERPRISEVIEW_DB_USR}
+spring.datasource.password=${SECRET_ENTERPRISEVIEW_DB_SEC}
 spring.datasource.driver-class-name=oracle.jdbc.OracleDriver
 
 # Hibernate Configuration
@@ -1901,7 +1901,7 @@ COMPLETE FLOW DIAGRAM:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              CLIENT                                          │
-│     POST /agency-acct-routings                                              │
+│     POST /api/accounting                                              │
 │     Headers: X-User-Id: john123                                             │
 │     Body: {"agntNbr":"12345", "entpsId":"E001", "userId":"john123"}        │
 └───────────────────────────────────────┬─────────────────────────────────────┘
@@ -1951,7 +1951,7 @@ COMPLETE FLOW DIAGRAM:
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                      DISPATCHER SERVLET                                      │
 │     - Receives authenticated request                                         │
-│     - HandlerMapping finds: AgencyAcctRoutingController.saveAgencyAcctRouting│
+│     - HandlerMapping finds: AccountingRoutingController.saveAccountingRouting│
 │     - HandlerAdapter prepares to invoke                                      │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 5. Route to Controller
@@ -1961,8 +1961,8 @@ COMPLETE FLOW DIAGRAM:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                ARGUMENT RESOLVER                                             │
-│     - @RequestBody: Jackson deserializes JSON to AgencyAcctRoutingDTO        │
-│     - Creates: AgencyAcctRoutingDTO{agntNbr="12345", entpsId="E001"...}     │
+│     - @RequestBody: Jackson deserializes JSON to AccountingRoutingDTO        │
+│     - Creates: AccountingRoutingDTO{agntNbr="12345", entpsId="E001"...}     │
 └───────────────────────────────────────┬─────────────────────────────────────┘
                                         │ 6. DTO Created
 
@@ -1972,7 +1972,7 @@ COMPLETE FLOW DIAGRAM:
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │           AGENCY ACCT ROUTING CONTROLLER                                     │
 │     @PostMapping                                                             │
-│     saveAgencyAcctRouting(AgencyAcctRoutingDTO dto) {                       │
+│     saveAccountingRouting(AccountingRoutingDTO dto) {                       │
 │         return agencyAcctRoutingService.saveAgentAcctRouting(dto);          │
 │     }                                                                        │
 └───────────────────────────────────────┬─────────────────────────────────────┘
@@ -1995,16 +1995,16 @@ COMPLETE FLOW DIAGRAM:
 │                WHERE AGNT_NBR = '12345' AND ENTPS_ID = 'E001'               │
 │                                                                              │
 │     // Step 3: Convert DTO to Entity                                         │
-│     AgencyAcctRouting entity = mapper.map(dto, AgencyAcctRouting.class);    │
+│     AccountingRouting entity = mapper.map(dto, AccountingRouting.class);    │
 │                                                                              │
 │     // Step 4: Save entity                                                   │
-│     AgencyAcctRouting saved = repo.save(entity);                            │
+│     AccountingRouting saved = repo.save(entity);                            │
 │     └─► Query: SELECT SEQ_AGENCY_ACCT_ROUTING.NEXTVAL FROM DUAL             │
 │     └─► Query: INSERT INTO AGENCY_ACCT_ROUTING (ID, AGNT_NBR, ENTPS_ID...)  │
 │                VALUES (1, '12345', 'E001', 'john123')                        │
 │                                                                              │
 │     // Step 5: Convert Entity to DTO                                         │
-│     AgencyAcctRoutingDTO response = mapper.map(saved, DTO.class);           │
+│     AccountingRoutingDTO response = mapper.map(saved, DTO.class);           │
 │     response.setStatus("CREATED");                                           │
 │     return response;                                                         │
 └───────────────────────────────────────┬─────────────────────────────────────┘
@@ -2015,7 +2015,7 @@ COMPLETE FLOW DIAGRAM:
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │           CONTROLLER (continued)                                             │
-│     AgencyAcctRoutingDTO result = service.saveAgentAcctRouting(dto);        │
+│     AccountingRoutingDTO result = service.saveAgentAcctRouting(dto);        │
 │     if(result.getStatus().equals("CREATED"))                                 │
 │         return new ResponseEntity<>(result, HttpStatus.CREATED);             │
 └───────────────────────────────────────┬─────────────────────────────────────┘
@@ -2047,7 +2047,7 @@ COMPLETE FLOW DIAGRAM:
 │         "entpsId": "E001",                                                   │
 │         "userId": "john123",                                                 │
 │         "status": "CREATED",                                                 │
-│         "message": "AgencyAcctRouting number is Created"                     │
+│         "message": "AccountingRouting number is Created"                     │
 │     }                                                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 
@@ -2062,17 +2062,17 @@ Dependency Injection (DI) is a design pattern where objects receive their
 dependencies from external sources rather than creating them internally.
 
 WITHOUT DI:
-public class AgencyAcctRoutingServiceImpl {
+public class AccountingRoutingServiceImpl {
     // Tight coupling - creates own dependency
-    private AgencyAcctRoutingRepo repo = new AgencyAcctRoutingRepo();
+    private AccountingRoutingRepo repo = new AccountingRoutingRepo();
 }
 
 WITH DI:
 @Service
-public class AgencyAcctRoutingServiceImpl {
+public class AccountingRoutingServiceImpl {
     // Loose coupling - receives dependency
     @Autowired
-    private AgencyAcctRoutingRepo repo;
+    private AccountingRoutingRepo repo;
 }
 
 17.2 IOC CONTAINER
@@ -2096,14 +2096,14 @@ YOUR PROJECT'S APPLICATIONCONTEXT:
 ## 1. CONSTRUCTOR INJECTION (Recommended):
 
 @Service
-public class AgencyAcctRoutingServiceImpl {
+public class AccountingRoutingServiceImpl {
 
-    private final AgencyAcctRoutingRepo repo;
+    private final AccountingRoutingRepo repo;
     private final ModelMapper mapper;
 
     // Spring injects dependencies via constructor
-    public AgencyAcctRoutingServiceImpl(
-        AgencyAcctRoutingRepo repo,
+    public AccountingRoutingServiceImpl(
+        AccountingRoutingRepo repo,
         ModelMapper mapper) {
         this.repo = repo;
         this.mapper = mapper;
@@ -2112,10 +2112,10 @@ public class AgencyAcctRoutingServiceImpl {
 
 2. FIELD INJECTION:
 @Service
-public class AgencyAcctRoutingServiceImpl {
+public class AccountingRoutingServiceImpl {
 
     @Autowired
-    private AgencyAcctRoutingRepo repo;
+    private AccountingRoutingRepo repo;
 
     @Autowired
     private ModelMapper mapper;
@@ -2123,12 +2123,12 @@ public class AgencyAcctRoutingServiceImpl {
 
 3. SETTER INJECTION:
 @Service
-public class AgencyAcctRoutingServiceImpl {
+public class AccountingRoutingServiceImpl {
 
-    private AgencyAcctRoutingRepo repo;
+    private AccountingRoutingRepo repo;
 
     @Autowired
-    public void setRepo(AgencyAcctRoutingRepo repo) {
+    public void setRepo(AccountingRoutingRepo repo) {
         this.repo = repo;
     }
 }
@@ -2266,7 +2266,7 @@ SecurityAutoConfiguration:
 
 ## URL TO METHOD MAPPING:
 
-1. HTTP Request: POST /agency-acct-routings
+1. HTTP Request: POST /api/accounting
 
 2. RequestMappingHandlerMapping:
 ```text
@@ -2276,9 +2276,9 @@ SecurityAutoConfiguration:
 ```
 3. Mapping lookup:
 ```text
-   └─► Pattern: /agency-acct-routings
+   └─► Pattern: /api/accounting
    └─► HTTP Method: POST
-   └─► Match: AgencyAcctRoutingController.saveAgencyAcctRouting()
+   └─► Match: AccountingRoutingController.saveAccountingRouting()
 
 ```
 4. HandlerExecutionChain:
@@ -2358,8 +2358,8 @@ BENEFITS:
 3. Use pagination for large result sets
 4. Avoid N+1 queries with JOIN FETCH
 
-@Query("SELECT a FROM AgencyAcctRouting a JOIN FETCH a.user")
-List<AgencyAcctRouting> findAllWithUsers();
+@Query("SELECT a FROM AccountingRouting a JOIN FETCH a.user")
+List<AccountingRouting> findAllWithUsers();
 
 ## PART 20: ENTERPRISE BEST PRACTICES
 
@@ -2566,7 +2566,7 @@ Q24: API returning different results for same request. How to debug?
 ## END OF ANALYSIS DOCUMENT
 
 This document was generated for interview preparation based on the
-ess-odadmin-service enterprise Spring Boot project.
+example-admin-service enterprise Spring Boot project.
 
 Key Technologies Used:
 - Spring Boot 3.5.7

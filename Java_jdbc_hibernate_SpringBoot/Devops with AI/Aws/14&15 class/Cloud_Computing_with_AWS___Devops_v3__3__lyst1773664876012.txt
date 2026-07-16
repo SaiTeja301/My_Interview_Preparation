@@ -1,0 +1,1010 @@
+Cloud Computing with AWS ==> Devops v3 course -> Telusko)
+=========================================================
+Instructor : Hyder Abbas
+
+Day 0 ==> 28th Feb (Sat)
+========================== 
+
+AWS Services :
+
+In AWS we have 200+ services 
+
+-> Why Cloud and What is Cloud Computing
+-> Cloud Providers
+-> AWS Introduction and Services Overview
+-> Regions & AZ's
+-> EC2 ( Elastic Compute Cloud) -> To Create Virtual Machines ( Hourly )
+-> EBS (Elastic Block Store + volumes + Snapshots) --> Hard Disc, SSD
+-> Load Balancer : To distribute Load
+-> Autoscaling : Adjusting the capacity by based on the demand
+-> S3 : Unlimited Storage
+-> RDS : Relational Database service
+-> EFS : Shared File system ( Elastic file system )
+-> IAM : Identity & Access Management
+-> VPC : Virtual Private Cloud ( Networking )
+-> Cloud Formation : Infrastructure as a code ---> Terraform
+-> AWS CLI : AWS Command Line Interface
+-> Elastic Beanstalk : Platform as a service
+-> AWS Lambdas : Serverless computing
+-> EKS : K8S cluster ( Elastic Kubernetes Service )
+-> Route 53: Domain mapping
+-> Cloud Watch 
+-> SNS : Simple notification Service
+-> Billing Overview
+
+Infrastructure 
+---------------
+--> The resources required to run our project / company ( Machines , networks, storage, database, monitoring ......)
+
+--> We can maintain infrastructure in 2 ways 
+1) On-prem infrastructure
+2) Cloud Infrastructure
+
+On-prem infrastructure
+======================
+
+--> On-Prem infra --> Purchasing and maintaining all resources by our own
+--> Challenges and limitations of On-prem infrastructure
+    -> Lot of Cost
+    -> Scalability
+    -> Security Issue
+    -> Availability
+    -> Network issue
+
+--> To Overcome the problems of on prem infra most of the companies prefer Cloud Infrastructure
+
+
+Cloud Computing 
+===================
+
+--> Delivering IT resources over internet on-demand basis with "Pay AS You Go model" is referred as Cloud Computing.
+
+   Advantages 
+----------------
+-> Pay as you go
+-> Security
+-> Backup 
+-> Scalability
+-> Availability
+--
+--
+
+Cloud Providers
+===============
+AWS --> Amazon
+Azure --> Microsoft
+GCP --> Google
+Oracle
+Ali Baba
+Salesforce
+--
+--
+--
+
+Cloud Service Models
+====================
+1) IAAS : Infrastructure as a service
+
+2) PAAS : Platform as a service
+
+3) SAAS : Software as a service
+
+Cloud Service Models
+====================
+1) IAAS : Infrastructure as a service
+
+2) PAAS : Platform as a service
+
+3) SAAS : Software as a service
+
+IAAS : Infrastructure as a service
+----------------------------------
+--> Provider will provide infrastructure 
+    ex: Machines(servers), storage, network
+--> We need to take care of platform and application
+
+Your Responsibility: Operating systems, applications, data, runtime, middleware.
+
+PAAS : Platform as a service
+----------------------------
+--> Provider will provider ready made platform to run our app ( Provider will take care of infrastructure and platform )
+ex: AWS Elastic beanstalk
+
+The provider handles the underlying infrastructure and the software environment (operating systems, middleware, databases, web servers). You just focus on your code.
+
+Your Responsibility: Your application code, data, and configuration.
+
+
+SAAS : Software as a service
+-----------------------------
+--> Application + Infrastructure + Platform all will be maintained by provider
+--> Provider will give their application to run our business
+
+ex: Zoom , Dropbox, Google Drive ........
+
+
+AWS Cloud --> Amazon Webservices
+=========
+
+AWS Providing Cloud Services from 2006 
+
+AWS Works on "Pay As You Go" model
+
+The AWS Cloud spans 123 Availability Zones within 39 Geographic Regions, with announced plans for 7 more Availability Zones and 2 more AWS Regions in the Kingdom of Saudi Arabia, and Chile.
+
+AWS global infrastructure is the most secure, reliable, and extensive cloud, providing diverse infrastructure solutions for running your applications anywhere.
+
+01 March (Sun)
+EC2 (Elastic Compute Cloud)
+===========================
+
+-> Elastic Compute Cloud -> Most demanded service in AWS
+
+-> Used to Create Virtual Machines/Servers/VM in AWS Cloud
+
+==> EC2 Instance ==> Server / VM / Computer (laptop)
+
+==> It's a paid service --> Hourly Billing
+
+    11:15 AM --> 11:30 AM ==> 15 mins --> Billed for 1 hour
+    09:15 AM --> 09:20 AM ==> 5 mins --> Billed for 1 hour
+    09:15 AM --> 10:10 AM ==> 55 mins --> Billed for 1 hour
+
+==> EC2 Instance minimum billing period is 1 hour
+
+-> AWS provides t2.micro/t3.micro (6 months) of free ec2 instance to encourage learners and free tier account will get free credits as and when they practice any of the asked services by AWS
+
+-> EC2 VM also have storage with EBS ( Ec2 Linux VM -> 8GB ( default ) , EC2 Windows VM -> 30 GB ( default ) EBS max -> 16 TB )
+
+-> We use AMI(Amazon Machine Image) which represents Configuration required for machine 
+
+  Windows AMI
+  Ubuntu AMI
+  RedHat AMI
+  Amazon Linux AMI
+
+-> To Secure access to EC2 VM we use Key-Pair (.pem) 
+    
+   -> One Key-Pair ( .pem ) can be used for multiple ec2-instances
+
+-> We use Security Group to allow incoming and outgoing traffic ( In bound rules and Out Bound rules )
+   
+   -> One Security Group ( SG ) can be used for multiple instances
+
+EC2 VM creation
+===============
+
+--> Create Key Pair( pem file ) 
+   public key   ( aws will keep it )
+   private key ( we get this )
+
+--> Create  a Security Group and update inbound rules based on requirement
+    
+    HTTP :22
+    HTTPS : 443
+    SSH : 22
+	..
+	..
+
+Note : We can create new key pair and Security Group at the time of instance creation also.
+
+--> Create EC2 Instance / Server / VM
+
+    -> Give a name VM
+    -> SELECT AMI
+    -> Instance Type
+    -> Select Key-pair ( choose existing one or create a new )
+    -> Select Security Group ( choose existing one or create a new )
+    -> Select EBS storage ( keep it default )
+    -> Launch Instance 
+
+Types of IP's in AWS 
+======================
+
+1) private ip 
+2) public ip 
+3) elastic ip
+
+-> private IP -> Fixed Ip -> It is used for internal Communication (within VPC).
+
+-> public IP -> Dynamic IP -> It is used to connect with EC2 VM from outside. When we restart our VM the public IP gets changed.
+
+Dynamic Public IP --> 3.109.213.248    13.235.79.233
+
+Fixed private IP --> 172.31.7.164   172.31.7.164
+
+-> If we want fixed public IP -> Elastic IP -> ( Elastic IP s are paid ) --> Charges would be applied and bills would be generated
+
+Elastic IP Practical's
+=======================
+65.0.78.209  65.0.78.209  --> Same IP irrespective of how many times we restart VM
+
+--> Allocate Elastic IP ( Getting IP from AWS )  ( Elastic IP Section under EC2)
+
+--> Action --> Associate Elastic IP with EC2 VM/Instance
+
+--> Restart VM and Check public IP ( You will notice its same )
+
+--> De-Associated Elastic IP
+
+--> Release Elastic IP to AWS
+
+
+7th March(Saturday)
+====================
+EBS --> Elastic Block Store
+===========================
+
+--> It is a block level storage device ( HDD / SSD )
+
+--> EBS will be attached with EC2 Instance
+
+--> EBS provides both Primary and Secondary storage for EC2 Instances
+
+--> EBS has 2 types of Volumes ( Storage )
+  
+    -> Root Volume
+    -> Additional Volume
+
+=> Root Volume is a default storage which comes whenever we launch a EC2 instance/machine
+
+-> Root Volume is mandatory to have and if we remove root volume from EC2 instance then we cannot start or use the instance/VM
+
+-> Additional Volumes are optional ( we can add or remove any time )
+
+-> For Linux VM, we get around 8 GB as default volume size ( root volume )
+
+-> For windows VM, we get around 30 GB as default volume size ( root volume )
+
+-> EBS Volumes can have upto 16 TB
+
+-> One EC2 VM can have multiple EBS Volumes
+
+-> One EBS Volume can be attached to one EC2 VM at a time not multiple
+
+-> EBS Volumes are specific to Availability Zone
+     
+                 Mumbai ( ap-south-1)
+                 ap-south-1a
+                 ap-south-1b
+                 ap-south-1c
+-> If our EC2 Instance is in ap-south-1a then our EBS volume must also be there in ap-south-1a zone 
+
+
+EBS Volume Types
+==================
+1) General Purpose ( Min: 1 GiB, Max: 16384 GiB )
+
+2) Provisioned IOPS ( Min: 4 GiB, Max: 16384 GiB )
+
+3) COLD HDD ( Min: 125 GiB, Max: 16384 GiB )
+
+4) Throughput optimized ( Min: 125 GiB, Max: 16384 GiB )
+
+5) Magnetic ( Min: 1 GiB, Max: 1024 GiB )
+
+Practical
+===========
+
+
+$ lsblk
+
+$ sudo mkfs -t ext4 /dev/nvme1n1
+
+$ sudo mkdir /alien
+
+$ sudo mount /dev/nvme1n1 /alien
+
+$ cd /alien
+
+$ sudo touch terraform.txt
+$ sudo touch aws.txt
+
+--> Detach additional volume from EC2 Instance(VM)
+
+--> Created a new EC2 VM 
+
+--> Attached the same Additional volume into the new VM created
+
+--> Check the files available
+ 
+    $ lsblk
+    $ mkdir /alien
+    $ sudo mount /dev/nvme1n1 /alien
+    $ cd telusko
+    $ ls -l
+
+
+Note : Once Done with Practice, Detach the additional volumes and delete the volume as shown in the live class.
+
+Snapshots
+============
+
+--> Snapshots are used for volumes backup
+
+--> Snapshots are regional specific ( Volumes are zone specific )
+
+--> From volume we can create snapshot and from snapshot we can create a volume
+  
+
+	Volume --> Snapshot --> Volume
+
+--> Snapshots cannot be attached to any VM ( EC2 instance ) directly  however Volumes could be attached to a VM ( EC2 Instance )
+
+Copy the data from 1a zone VM to 1b zone VM
+=============================================
+--> Create a Snapshot from 1a zone vm volume
+
+--> From that snapshot create a volume in 1b zone
+
+--> Attach the created 1b volume to 1b VM(EC2 instance)
+
+
+
+Website/WebApp
+==============
+
+--> Collection of web pages ( html pages )
+
+--> static websites <--> dynamic website
+
+--> static website will give same response for every user ( user page for all users )
+
+--> dynamic website will give response specific to user or diff response for diff users
+   ex: gmail, telusko, facebook ........
+
+--> To Host Any website or webapp we must have webservers 
+
+---------------------------------------------------
+Host a static website using httpd server
+-------------------------------------------------
+
+--> Webserver is a tool/software which is used to host/run websites
+
+--> We can use 'httpd' as a webserver in our Linux VM
+
+
+$ sudo yum install httpd --> Install httpd webserver
+ 
+$ sudo service httpd start --> start httpd webserver
+
+
+--> httpd webserver runs on 80 port number
+--> To access our website we need to enable 80 port number in security group ( watch live class recording to see how to do it )
+
+--> Navigate to web content directory
+
+$ cd /var/www/html
+
+$ pwd
+/var/www/html
+
+--> Create index.html file within this web directory
+$ sudo vi index.html  (Use ai tool and generate static website content of your own choice)
+<h1> Telusko devOps Learning </h1>
+
+--> We can access our website using Linux vm public ip
+
+user-data in EC2 VM
+====================
+
+--> It is used to execute shell script/commands while launching EC2 Instance ( VM )
+
+--> User data will execute only once
+
+--> Create an EC2 VM with following user data 
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 1 </h1></html>" > index.html
+service httpd start
+
+--> After the VM is launched access the website using public ip in the web browser
+
+also follow live class recordings for the demo
+
+==============================================
+IAM (Identity and Access Management)
+==============================================
+Two ways access the aws cloud account
+1-> Root Account --> Powerful account with all the access and no restriction
+2 -> IAM account 
+
+--> It is used to manage users, groups, policies and roles
+
+--> IAM is a free service 
+
+--> Root account owner can access everything in AWS without any restrictions 
+    (It is highly recommended to enable high security by enabling Multifactor Authentication MFA for root user account)
+
+As a part of a team or a project you will be getting IAM account credentials with specific access 
+
+
+IAM Policies --> Permissions 
+=============================
+
+What actions are allowed or denied on which aws resources and under what condition
+
+Resource-specific: Permissions are almost always tied to specific AWS resources (e.g., a particular S3 bucket, an EC2 instance, a DynamoDB table).
+
+No inherent identity: A policy on its own does nothing. It's just a set of rules. It needs to be attached to an identity or a resource to take effect.
+
+IAM User
+========
+
+A person or application that needs to access AWS.
+
+Has a username and password / access keys.
+
+Can log in to the AWS Management Console or use CLI/API.
+
+Example: “haider” is an IAM user who can start EC2 instances.
+
+IAM Group
+===========
+
+A collection of IAM users.
+
+Helps you assign permissions to many users at once.
+
+Example:
+
+Group name: Developers
+
+Attached policy: AmazonEC2FullAccess
+
+→ Every user in that group gets EC2 full access
+
+IAM Role
+========
+
+A temporary identity with specific permissions.
+
+No username or password. Instead, AWS services or users assume the role.
+
+Used for giving temporary access or allowing AWS services to talk to each other.
+
+Example:
+
+An EC2 instance assumes a role that allows it to read data from an S3 bucket.
+
+
+Load Balancers and Auto Scaling group
+=====================================
+
+Load Balancer
+=============
+
+--> When we deploy our app into a single server then we might/may face the following issues/challenges
+
+    -> One Server trying to handle all requests coming to app 
+    -> Increased Burden on the server
+    -> Server may slow down leading delayed responses to the clients
+    -> Server can crash too
+    -> Single Point of Failure
+
+--> To Avoid the above issues, we shall deploy our app into multiple servers and implement the concept of load balancer
+
+--> Load Balancer is used to distribute load to multiple servers in round robin technique
+
+--> The following benefits could be noticed with Load balancer
+   
+    -> Our App will run on Multiple Servers
+    -> Load will be distributed into multiple servers
+    -> Burden will eventually reduced on servers
+    -> Fast Performance 
+    -> High Availability of our app 
+
+-> In AWS there are 4 types of Load Balancers
+
+   -> Application Load Balancer ( http & https )
+   -> Network Load Balancer
+   -> Gateway Load Balancer
+   -> Classic Load Balancer ( Legacy / outdated )
+
+8th March (Sunday)
+===================
+
+Application Load Balancer ( http & https )
+===========================================
+
+--> Create EC2 VM 1 with below following user data
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 1 </h1></html>" > index.html
+service httpd start
+
+--> Create EC2 VM 2 
+
+#! /bin/bash
+
+sudo yum install httpd -y
+
+cd /var/www/html
+echo "<html><h1> Telusko Learning App - 2 </h1></html>" > index.html
+service httpd start
+
+--> Add these 2 webservers into one Target Group
+(follow live class instructions)
+
+--> Create a Application Load Balancer with Target Group (ALB)
+(follow live class instructions)
+
+==> Access Load balancer DNS in browser (You will notice the requests to our servers getting distributed in round robin technique)
+
+
+Application Load Balancer (ALB)
+===================================
+Works at OSI Layer 7
+(Application Layer)
+
+Makes routing decision based on url, headers, host, etc
+Example : Routes /api/* to one target group and /admin/* to another ..
+
+
+Network Load Balancer (ALB)
+============================
+
+Works at OSI Layer 4 (Transport layer)
+
+Ideal for real-time applications, gaming,......
+
+handles TCP, UDP and TLS traffic with very high performance and low latency
+
+
+Gateway Load Balancer
+======================
+
+ It is an AWS load balancer that distributes traffic to security appliances like firewalls for inspection before forwarding it to application servers.
+
+What GWLB does
+
+1️⃣ Traffic comes from internet
+2️⃣ GWLB sends traffic to firewall appliances
+3️⃣ Firewall inspects packets
+4️⃣ If safe → forwarded to application
+5️⃣ If malicious → blocked
+
+Practical of Autoscaling , LoadBalancer and Target group
+
+
+Why Auto Scaling?
+====================
+
+During events like Big Billion Day Sale, traffic is unpredictable.
+
+You can't manually scale fast enough.
+
+Auto Scaling helps by:
+======================
+
+Increasing instances when traffic goes up
+
+Decreasing instances when traffic goes down
+
+✅ Benefits of Auto Scaling:
+==================================
+Fault Tolerance
+
+If an instance fails, another is launched automatically.
+
+Cost Management
+
+Only run the number of servers needed, saving money during low traffic.
+
+High Availability
+
+Keeps your application running smoothly under heavy load.
+
+
+Note : Follow live class instructions for the demonstration of ASG, LBR and TG
+
+
+AWS RDS
+=======
+
+
+Database
+=========
+==> Its a tool/s/w which store data permanently
+
+==> We have relational databases ( tables --> rows and columns ) and no sql dbs ( mongo db, cassandra ( documents )
+       
+RDBMS --> oracle , SQLServer, Postgres, MySQL.........
+
+==> Every app will use database
+
+Limitations / Challenges with on_prem Database
+==============================================
+
+-> Purchase DB server License (Cost)
+
+-> Install Database server s/w 
+-> Network 
+-> Security 
+-> Backup 
+-> Administration
+
+---------------------------------------------------------------------
+
+==> To overcome the above problems we can go Cloud Providers Database
+
+==> AWS RDS is a database service from AWS which stands for Relational Database Service in AWS Cloud
+
+==> RDS is a fully managed service in AWS --> works based on "pay as you go " model
+
+RDS Lab task
+============
+
+==> Create MySQL database using RDS 
+
+==> Creation method : Standard create
+    Engine type: MySQL
+    Template: Free tier
+    db instance name identifier : teluskodb
+    public access : yes (since we are trying to access the db from outside vpc) Usually it will not be public
+    initial db name : teluskodatabase
+
+Once database is created get connected to it using MySQL workbench
+
+DB End point --> DB user name --> DB port number --> DB password
+
+==> Enable MYSQL port number 3306 in security group inbound rules which is being used in RDS
+
+==> Test the RDS by getting connected to it using workbench
+
+==> Execute some sample query to make sure its functional/working 
+
+use teluskodatabase;
+CREATE TABLE employee (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    salary DECIMAL(10,2)
+);
+INSERT INTO employee (id, name, salary)
+VALUES (1, 'Navin', 55000.00),
+       (2, 'Sana', 60000.50),
+       (3, 'Amit', 48000.25);
+
+
+14th March (Saturday)
+=============================
+VPC (Virtual Private Cloud)
+=============================
+
+Network and Security
+
+==> With he help of VPC we can protect our resources in AWS Cloud
+==> VPC provides flexible secured network to main and manage our resources in AWS Cloud
+
+VPC
+Subnet( Public and Private)
+CIDR Block (IP ranges)
+Route Tables
+Internet Gateway
+Nat gateway
+Security Groups ( Rules I/O) to allowed ==> Resource Level
+NACL --> subnet level ==> Rules to allow and deny
+VPC Peering
+
+==> In VPC, Users can define their own IP Addresses range, subnets, route table, network gateway. It provides control over network configuration such as setting up policies, firewall rules, network traffic rules and so on...
+
+====
+IPs
+====
+Public IP
+Private IP
+Static IP (Elastic IPS)
+
+==> There are several types of IP's(Internet protocol) address used in a computer/machine network
+
+=====
+IPV4
+=====
+-> 4 sets of numbers
+-> 192.168.1.0
+-> 32 bits
+-> Uses Dotted decimal notation
+
+IPV6
+=======
+-> PV6
+=======
+--> 128 bits 
+--> 8 sets of four hexadecimal digits
+--> Uses hexadecimal notation with colons 
+--> 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+
+Supports 340 undecillion addresses
+
+IPv6 is the replacement for the exhausted IPv4 addressing scheme. It was designed primarily to solve the address space problem while introducing several other efficiencies and security benefits.
+
+==================
+VPC Sizing ==>  Process of allocating IPs
+
+==> Sizing will be calculated in 2 power --> IPv4
+
+IPv4 -> 32 bits
+
+172.31.0.0/20 --> 2 pow (32-20) --> 2 power 12 --> 4096 --> these many ips could be allocated in that subnet
+
+
+10.0.0.0/31  --> 2 pow (32-31) --> 2 pow (1) --> 2 
+
+172.31.16.0/20 --> 2 pow ( 32-20) --> 2 pow (12) --> 4096
+
+10.0.2.0/28  --> 2 pow(32-28) --> 2 pow (4) -->  16
+
+Note : AWS won't support /29 to /32)
+
+2 pow 16 is 65536
+
+/ 16 to /28 is supported by AWS
+
+==> CIDR block size must be between /16 and /28  --> 10.0.1.0/28 --> 2 pow (32-28) --> 2 pow 4 --> 2*2*2*2--> 16
+   --> 10.2.1.0/16 --> 2 pow (32-16) 2 pow (16) --> 2*2*2*.......(16 times) ==> 65536
+
+
+
+15th March (Sunday)
+===================
+
+VPC Practical
+=============
+
+VPC practical's
+================
+==> Create a VPC
+
+    --> CIDR block --> 10.0.0.0/16
+    --> Select No IPV6 CIDR block
+
+    --> Rest all keep it default
+    --> clock create VPC
+
+==> One Route Table will be created for VPC by default ( rename it to telusko-private-rt)
+
+
+==> Create subnets ( 2 subnets )
+ 
+--> a) create subnet -1 
+    b) name it to telusko-public-sn
+    c) CIDR Block : 10.0.0.0/24 --> 256 ips
+
+--> a) create subnet -2 
+    b) name it to telusko-private-sn
+    c) CIDR Block : 10.0.1.0/24 --> 256 ips
+
+==> Create one more Route table and name it as ( telusko-public-rt)
+
+==> After Route tables are ready --> edit --> attach subnet association
+telusko-private-rt--> private-telusko-sn
+telusko-public-rt --> public-telusko-sn
+
+==> Created new Internet Gateway
+
+==> Attach IGW to public route table created --> telusko-public-rt --> routes and add new route --> internet gateway and select the iGW we created 0.0.0.0/0
+
+==> Create ec2 instance with our own vpc and public subnet 
+==> create ec2 instance with our own vpc and private subnet 
+
+( Also refer to live class recordings )
+test it
+
+Note : We should be able to connect to public subnets VM through SSH connection and once connected we can also cheeck outgoing traffic through ping www.google.com ( cntrl + c ) to stop ping 
+We should also see that same process when we try for EC2 vm in private subnet we will not be able to connect
+
+
+Procedure to connect EC2 vm of public subnet to EC2 VM of private subnet
+-------------------------------------------------------------------------
+-> upload pem file into public sn ec2 vm
+-> after uploading provide permission to access pem file
+$ chmod 400 <pem file >
+-> make ssh connection from public sn ec2 vm to private sn ec2 vm 
+$ ssh -i "pem-filename" ec2-user@private-ip
+
+-> After getting connected to private sn ec2 vm try to ping www.google.com , you will not be able to ping or connect as outgoing traffic is not allowed
+
+NAT Gateway must be used in order to allow internet outgoing traffic from private sn machine
+
+VPC with NAT Gateway practical's
+===============================
+Create a NAT gateway in public subnet
+
+Add NAT gateway in private  subnet route table
+
+After adding NAT gateway to private sn route table we could able to see that from ec2 vm of private subnet we could able to aceess the internet outgoing traffic 
+
+Note : To Avoid bills delete NAT gateway and elastic ip after practice
+
+VPC Peering to enable communication between two VPCs ( it could be same account or diff account )
+=====================================================
+( Refer to live class recordings  and board work )
+--> left navigation panel under vpc --> Peering Connections
+
+VPC (Requester) --> telusko-vpc
+VPC (Accepter) --> default-vpc
+
+==> Now you would see this status pending acceptance
+==> Go to VPC Peering --> Click on Actions --> Accept Request
+==> Make entries in Route Tables
+==> Navigate to Route Tables , edit routes in default vpc rt
+(local + all traffic with IGW + telusko-vpc ip range)
+==> Navigate to route table of telusko-vpc and edit the routes
+(local + all traffic with IGW + telusko-vpc ip range)
+==> Edit the security groups of VMs in both default vpc and telusko-vpc
+SSH - 22 - all
+All Traffic
+
+
+Security Groups
+==================
+--> Acts like a firewall to secure our resources
+--> Security group contains inbound rules (incoming traffic) and outbound rules (outgoing traffic)
+--> One SG we can add 50 rules
+--> We cannot configure deny rules explicitly in security group
+--> Security group is applicable at resource level and manually we have to add security group to a resource
+--> We can create a security group and use same SG for multiple resources
+
+
+==========
+NACL
+==========
+NACL ( Network Access Control List )
+
+--> Acts like a firewall for our subnets in VPC
+--> It's applicable at subnet level
+--> NACL is applicable for all resources which are part of a subnet
+--> in NACL we can configure allow and deny rules 
+--> One NACL could be used for multiple subnets
+--> One subnet can have only one NACL
+--> NACL acts as first level of defense for incoming traffic and SG acts like first level of defense for outgoing traffic
+
+
+Cloud Watch and SNS
+====================
+
+--> Amazon Cloud watch is a monitoring and observability service which allows users to collect metrics and monitor logs ,and sets alarm and soon ..
+
+--> It supports most of the AWS Services for monitoring purpose
+
+Cloud watch and SNS practical task
+===================================
+
+==> Create SNS Topic with Email Notification (Standard Create)
+
+==> Configure Email Subscription in SNS Topic (Confirm Subscription received in email)
+
+==> Select EC2 Instance -> Action -> Monitor and trouble Shoot -> Manager Cloud Watch Alarms -> Create cloud watch  Alarm
+    
+  Alarm Notification : Select SNS Topic which we have created
+  Alarm Thresh Hold : Avg CPU >= 2%
+
+==>  Connect to EC2 instance
+
+==> Increase load on the EC2 instance using "stress" software
+
+  $ sudo yum install stress -y
+  $ sudo stress --cpu 8 -v --timeout 60s
+
+==>  Execute stress command 3 to 4 times or any other commands to increate load on server...  
+
+==> Observe the behaviour of Cloud Watch / Alarm / SNS  
+    (We should get Email Notification)
+
+When Alarm got triggered, its status will be changed to 'In Alarm'
+
+==>  We can Monitor our Alarm history (how many times it got triggered)
+
+
+AWS S3 (Simple Storage Service)
+================================
+-> S3 is a storage service in AWS which supports unlimited storage where we can store any amount of data from anywhere
+
+-> S3 supports Object based storage ( files )
+
+-> We can upload or download objects ( file) at  any given point of time using S3
+
+-> In S3, we create buckets to store the data  
+
+( note : Every bucket should have unique name  --> name which has not been used across globe )
+
+-> When we create a bucket an end-point url will be generated to access bucket and using this url we can upload object into bucket every object gets its own end-point url
+
+-> We can create multiple buckets in S3
+
+-> S3 is global service where in buckets are regional specific
+
+
+-> S3 is a storage service in AWS which supports unlimited storage and works on Object based storage ( audio, file, video file, image, pdf, text....)
+
+-> Every object in S3 is stored in a bucket. To upload files and folders to S3, you'll need to create a bucket where the objects will be stored
+
+-> Bucket names must be 3 to 63 characters and unique within the global namespace. Bucket names must also begin and end with a letter or number. Valid characters are a-z, 0-9, periods (.), and hyphens (-). 
+
+-> It's a pay as you go model
+
+Static Website Hosting with S3
+--------------------------------
+( Refer live class recordings to see it practical )
+
+S3 buckets could be used to host a static website however these days it's recommended to use AWS amplify to do the same
+
+--> The website which gives same response for all the users of an app can be referred as static website
+
+--> The website which gives response to a user is referred as Dynamic website
+
+-> Create S3 bucket with unique name  -> Upload website files and folders into bucket and give public read access
+-> Enable Static website hosting ( in the bucket properties section) index doc: index.html
+-> It will generate end-point url for our website after enabling static website hosting
+
+Versioning 
+===============
+--> Versioning is a means of keeping multiple variants of an object in the same bucket. You can use versioning to preserve, retrieve, and restore every version of every object stored in your Amazon S3 bucket. With versioning, you can easily recover from both unintended user actions and application failures.
+
+--> By default versioning is disabled for S3 bucket 
+  ( Whenever we add new same file again in bucket it will replace or override the old one and if you don't want to replace old object with new from bucket then we can go with Versioning )
+
+however we can enable in properties --> Bucket Versioning --> enable
+    ( Once Versioning is enabled then we cannot disable but we can suspend it )
+
+Transfer acceleration
+==========================
+Use an accelerated endpoint for faster data transfers
+( Used to speed up data transfer process in S3 bucket)
+
+Object Lock
+===========
+
+==> Store objects using a write-once-read-many (WORM) model to help you prevent objects from being deleted or overwritten for a fixed amount of time or indefinitely.
+ 
+==> Object Lock works only in versioned buckets.
+
+
+Elastic Beanstalk
+=================
+
+1) Infrastructure as a Service ==> IaaS (ex: EC2, RDS, S3, VPC ..)
+
+2) Platform as a Service ==> PaaS ( ex: Elastic Beanstalk)
+
+3) Software as a Service ==> SaaS ( ex: Google meet, Zoom meeting ...)
+
+
+Platform as a Service ==> PaaS ( ex: Elastic Beanstalk)
+========================================================
+
+==> It provides Platform as a Service and takes care of End to end webapp management service 
+    (Python, Java, JS ,Net, PHP ...)
+
+==> AWS will provide the platform to run our application
+
+Note : If we go with Elastic beanstalk we are responsible only for code deployment and rest of the infrastructure & other parts will be taken care by PaaS (Elastic beanstalk)
+
+==> Amazon Elastic Beanstalk is an easy-to-use service for deploying and scaling web applications and services developed with Java, .NET, PHP, Node.js, Python, Ruby, Go, and Docker on familiar servers such as Apache, Nginx, Passenger, and IIS.
+
+==> There is no specific fix price for elastic beanstalk 
+
+==> There's no additional charge for Elastic Beanstalk. You pay for Amazon Web Services resources that we create to store and run your web application, like Amazon S3 buckets and Amazon EC2 instances.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
