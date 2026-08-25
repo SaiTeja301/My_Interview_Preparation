@@ -31,6 +31,11 @@
 8. [Load Balancer & Auto Scaling](#topic-8-load-balancer--auto-scaling)
 9. [RDS — Relational Database Service](#topic-9-rds--relational-database-service)
 10. [AWS Lambda — Serverless Computing](#topic-10-aws-lambda--serverless-computing)
+    - 10.1 — Serverless Architecture & Pay-As-You-Go Model
+    - 10.2 — Event-Driven Triggers & Data Flow
+    - 10.3 — Workload Suitability: Batch, Image Processing, ML Inference
+    - 10.4 — Java Cold Starts, SnapStart & Provisioned Concurrency
+    - 10.5 — Step-by-Step Hands-On (Console & CLI Invocation)
 11. [ECS & EKS — Container Orchestration](#topic-11-ecs--eks--container-orchestration)
 12. [CloudWatch — Monitoring & Logging (Deep Dive)](#topic-12-cloudwatch--monitoring--logging)
     - 12.1 — What Is CloudWatch and Why Does It Exist?
@@ -47,7 +52,14 @@
 13. [SNS & SQS — Messaging Services](#topic-13-sns--sqs--messaging-services)
 14. [Route 53 — DNS & Domain Management](#topic-14-route-53--dns--domain-management)
 15. [CloudFormation & Terraform — Infrastructure as Code](#topic-15-cloudformation--terraform--infrastructure-as-code)
-16. [CI/CD Pipeline — Jenkins, GitHub Actions, Harness](#topic-16-cicd-pipeline--jenkins-github-actions-harness)
+    - 15.1 — Declarative IaC Philosophy
+    - 15.2 — Step-by-Step CloudFormation Console Walkthrough
+    - 15.3 — Complete EC2 Web Server YAML Template & Verification
+    - 15.4 — CloudFormation vs Terraform & Drift Detection
+16. [CI/CD Pipeline — Jenkins, GitHub Actions, AWS Native](#topic-16-cicd-pipeline--jenkins-github-actions-harness)
+    - 16.1 — DevSecOps Pipeline Stages
+    - 16.2 — GitHub Actions & Multi-Stage Docker Build
+    - 16.3 — Hands-On Project: Static WebApp CI/CD (GitHub ➔ CodeBuild ➔ S3 ➔ CloudFront ➔ Route 53)
 17. [Docker — Containerization for Java Developers](#topic-17-docker--container-ization-for-java-developers)
 18. [Kubernetes — Container Orchestration](#topic-18-kubernetes--container-orchestration)
 19. [Security — SonarQube, Twistlock, Contrast Security](#topic-19-security--sonarqube-twistlock-contrast)
@@ -60,6 +72,11 @@
 26. [EFS — Elastic File System](#topic-26-efs--elastic-file-system)
 27. [Elastic Beanstalk — Platform as a Service](#topic-27-elastic-beanstalk--platform-as-a-service)
 28. [AWS CLI — Command Line Interface](#topic-28-aws-cli--command-line-interface)
+    - 28.1 — Download & Installation (Windows MSI, Linux, macOS)
+    - 28.2 — Step-by-Step `aws configure` Live Class Walkthrough
+    - 28.3 — Amazon S3 Bucket CLI Commands (`ls`, `mb`, `rb`, `sync`, `cp`)
+    - 28.4 — Amazon EC2 CLI Commands (`describe-instances`, `start`, `stop`, `terminate`)
+    - 28.5 — Named Profiles & IAM STS Authentication
 29. [Static Website Hosting on EC2](#topic-29-static-website-hosting-on-ec2)
 30. [Troubleshooting Quick Reference](#troubleshooting-quick-reference-1)
 
@@ -5658,54 +5675,122 @@ Production Setup:
 ### 1. Concept Explanation
 
 #### Beginner
-AWS Lambda is a serverless, event-driven compute service. You upload your application code as a function, and AWS runs and scales it automatically in response to triggers. You pay only for the compute time consumed per millisecond of execution.
+**Serverless Computing** is a cloud execution model where you build and run applications **without thinking about servers**. 
 
-Key Characteristics:
-* No servers to configure, patch, or maintain.
-* Automatically scales from 0 to thousands of concurrent executions.
-* Maximum runtime duration is 15 minutes per execution.
+* **AWS Manages the Infrastructure:** AWS takes complete care of server provisioning, capacity planning, operating system patching, hardware maintenance, and auto-scaling.
+* **Run Code Without Thinking About Servers:** You only provide your business logic as independent functions.
+* **Pay-As-You-Go Billing:** You pay **only for the compute time that you consume** (billed in 1 millisecond increments). There is **zero charge when your code is not running** ($0 idle cost).
+* **Single Programming Language:** Each Lambda function is configured to execute using a specific runtime/language (e.g., Java, Python, Node.js, Go, C#/.NET, Ruby, or custom Docker container runtimes).
+
+```
+Traditional Server (EC2)         vs.         Serverless (AWS Lambda)
+────────────────────────                    ──────────────────────────
+• Pay 24/7 even when idle                   • Pay ONLY when code executes (per ms)
+• You manage OS & patches                   • AWS manages OS, patches & runtimes
+• Manual/ASG scaling (minutes)              • Auto-scales instantly (sub-seconds)
+• Bound by instance CPU/RAM                 • Independent function-level scaling
+```
 
 #### Intermediate
-##### Common Lambda Triggers
-* **API Gateway / ALB:** Routes HTTP requests to run serverless REST APIs.
-* **Amazon S3:** Triggers processing functions when files are uploaded (e.g., generating image thumbnails).
-* **Amazon SQS / Kinesis:** Polls queues and processes incoming messages asynchronously.
-* **Amazon EventBridge (CloudWatch Events):** Runs functions on a cron-like schedule.
-
-##### Java Cold Start Problem
-When a Lambda function is triggered after being idle, AWS must provision a container, initialize the JVM runtime, and load your code. For Java applications, this "cold start" can take 2–10 seconds.
-* **Mitigations:**
-  1. **Provisioned Concurrency:** Pre-warms a set number of containers to eliminate cold start latency.
-  2. **AWS Lambda SnapStart:** Takes a snapshot of the initialized JVM memory cache and resumes from it on subsequent triggers, reducing cold starts to sub-second levels.
-  3. **GraalVM Native Compilation:** Compile Java code into a native binary to reduce memory footprint and startup times.
-
-#### Advanced
-##### Lambda Concurrency Models
-* **Account Limit:** AWS enforces a default soft limit of 1,000 concurrent executions per region.
-* **Reserved Concurrency:** Restricts the maximum concurrency of a specific function, preventing it from consuming the entire account limit and throttling other functions.
-
-##### Serverless Microservice Design
-A standard serverless API architecture using API Gateway, Lambda, and database layers:
+##### Event-Driven Architecture
+AWS Lambda is fundamentally designed for **Event-Driven Architecture**, where functions execute automatically in response to events generated by external triggers or AWS services:
 
 ```mermaid
-flowchart LR
-    Client((Client)) --> APIGW["API Gateway"]
-    APIGW -->|"GET /claims"| Lambda["AWS Lambda (ClaimService)"]
-    Lambda -->|"Pool Connections"| Proxy["RDS Proxy"]
-    Proxy --> DB[("RDS Database")]
+flowchart TD
+    subgraph SOURCES ["⚡ Event Sources / Triggers"]
+        S3["📦 Amazon S3\n(File Upload / ObjectCreated)"]
+        APIGW["🌐 API Gateway\n(HTTP/REST Client Request)"]
+        SQS["📬 Amazon SQS\n(New Queue Message)"]
+        SNS["📢 Amazon SNS\n(Topic Notification)"]
+        DDB["🗄️ DynamoDB Streams\n(Table Insert/Update/Delete)"]
+        EVENT["⏰ Amazon EventBridge\n(Scheduled Cron / Event Rule)"]
+    end
 
-    classDef layer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
-    classDef db fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
-    classDef client fill:#7C2D12,stroke:#FDBA74,color:#FFFFFF,stroke-width:2px;
+    subgraph LAMBDA ["⚡ AWS Lambda Compute (Serverless)"]
+        FUNC["⚙️ Function Execution\n• Java / Python / Node.js\n• Max 15 mins timeout\n• Auto-scales 0 to 10,000+"]
+    end
 
-    class Client client;
-    class APIGW,Lambda,Proxy layer;
-    class DB db;
+    subgraph TARGETS ["🎯 Downstream Destinations"]
+        RDS[("🗄️ RDS / Aurora DB")]
+        S3OUT["📦 S3 Output Bucket\n(Processed files / Thumbnails)"]
+        SNSOUT["📢 Amazon SNS / SES\n(Email / SMS Alerts)"]
+        LOGS["📊 CloudWatch Logs & Metrics"]
+    end
+
+    S3 -->|"S3:ObjectCreated"| FUNC
+    APIGW -->|"HTTP Request"| FUNC
+    SQS -->|"Poll Messages"| FUNC
+    SNS -->|"Push Notification"| FUNC
+    DDB -->|"Stream Record"| FUNC
+    EVENT -->|"Cron Schedule"| FUNC
+
+    FUNC -->|"Read / Write Data"| RDS
+    FUNC -->|"Save Processed Output"| S3OUT
+    FUNC -->|"Send Notifications"| SNSOUT
+    FUNC -->|"Stream Execution Logs"| LOGS
+
+    classDef src fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef lmb fill:#D97706,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+    classDef tgt fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+
+    class S3,APIGW,SQS,SNS,DDB,EVENT src;
+    class FUNC lmb;
+    class RDS,S3OUT,SNSOUT,LOGS tgt;
 ```
+
+##### Primary Workload Suitability
+Lambda is optimal for short-span, stateless tasks and bursty workloads:
+* **Batch Processing:** Processing scheduled payrolls, daily transactional rollups, or nightly reporting jobs.
+* **Image & Video Processing:** Automatically compressing, resizing thumbnails, and generating watermarks as soon as users upload media to an S3 bucket.
+* **Machine Learning (ML) Inference:** Running lightweight ML model predictions (e.g., sentiment analysis, fraud detection, image classification) on incoming request payloads.
+* **Real-time ETL Pipelines:** Transforming streaming records from Kinesis or DynamoDB before loading into Redshift or OpenSearch.
+* **Webhooks & APIs:** Handling external callbacks from payment gateways (Stripe/PayPal) or CRM systems.
+
+##### Real-World Use Case: Automated S3 Image Thumbnail Generation
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 👤 End User
+    participant S3Raw as 📦 S3 Raw Bucket<br/>(user-uploads)
+    participant Lambda as ⚡ AWS Lambda<br/>(ImageResizerFn)
+    participant S3Thumb as 📦 S3 Thumbnails<br/>(thumbnails-cache)
+    participant DDB as 🗄️ DynamoDB<br/>(ImageMetadataTable)
+
+    User->>S3Raw: Upload original high-res image (photo.jpg)
+    activate S3Raw
+    S3Raw-->>Lambda: Trigger s3:ObjectCreated:Put event notification
+    deactivate S3Raw
+    activate Lambda
+    Note over Lambda: Download image -> Resize to 150x150 -> Generate thumbnail
+    Lambda->>S3Thumb: Store resized thumbnail (photo_thumb.jpg)
+    Lambda->>DDB: Save metadata (Image ID, S3 URL, Dimensions, Timestamp)
+    Lambda-->>Lambda: Execution complete (Billed for ~240ms)
+    deactivate Lambda
+```
+
+##### Java Cold Start Problem & Optimizations
+When a Lambda function is triggered after being idle, AWS provisions a microVM (Firecracker), starts the JVM runtime, and loads class definitions. For Java applications, this "cold start" can introduce a 2–10 second delay.
+
+* **Mitigation Strategies:**
+  1. **AWS Lambda SnapStart:** Initializes the JVM during function deployment, takes a snapshot of the initialized memory state, caches it, and resumes execution from the snapshot in sub-second time (~200ms).
+  2. **Provisioned Concurrency:** Pre-warms a dedicated pool of execution environments so invocations always hit running JVMs with 0 cold start latency.
+  3. **GraalVM Native Images:** Compiles Java applications into standalone native binaries, drastically shrinking startup time (<50ms) and memory usage.
+
+#### Advanced
+##### Execution Limits & Concurrency Management
+* **Timeout:** Configurable from 1 second up to a hard maximum of **15 minutes** (900 seconds). For tasks taking >15 minutes, use AWS ECS/Fargate, AWS Batch, or AWS Step Functions.
+* **Memory Allocation:** 128 MB to 10,240 MB (10 GB). CPU and network capacity scale proportionally with configured memory.
+* **Ephemeral `/tmp` Storage:** 512 MB up to 10,240 MB (10 GB).
+* **Regional Concurrency Limit:** Default soft limit of 1,000 concurrent executions per region.
+* **Reserved Concurrency:** Guarantees a dedicated concurrency capacity for critical functions and acts as a ceiling to prevent runaway functions from consuming the entire account quota.
+* **Database Connection Pooling (RDS Proxy):** Because Lambda scales rapidly to thousands of containers, direct database connections can exhaust MySQL/PostgreSQL connection pools. Place **AWS RDS Proxy** between Lambda and RDS to pool and share connections efficiently.
+
+---
 
 ### 2. Spring Boot Lambda Handler Code Example
 
-To run a Spring Boot application within a Lambda container, use the **AWS Serverless Java Container** library to bridge HTTP requests:
+To run a Spring Boot application within a Lambda container, use the **AWS Serverless Java Container** library:
 
 ```java
 package com.company.handler;
@@ -5743,24 +5828,98 @@ public class StreamLambdaHandler implements RequestStreamHandler {
 }
 ```
 
-### 3. Interview Questions & Answers
+---
+
+### 3. Step-by-Step Hands-On: Creating & Testing a Lambda Function
+
+#### Method 1: Via AWS Management Console
+1. **Navigate to AWS Lambda:** In the AWS Management Console search bar, type `Lambda` and select **AWS Lambda**.
+2. **Create Function:** Click **Create function** -> Select **Author from scratch**.
+3. **Configure Function:**
+   * **Function name:** `telusko-demo-function`
+   * **Runtime:** Select `Python 3.11` or `Java 17 (Corretto)`
+   * **Architecture:** `x86_64` or `arm64` (Graviton2 - cheaper)
+   * **Execution role:** Select *Create a new role with basic Lambda permissions* (AWS automatically creates an IAM role with CloudWatch logging permissions).
+4. **Click Create function**.
+5. **Add Code:** In the **Code source** editor:
+   ```python
+   import json
+
+   def lambda_handler(event, context):
+       print("Event received:", json.dumps(event))
+       return {
+           'statusCode': 200,
+           'body': json.dumps({'message': 'Hello from Serverless Lambda!', 'status': 'SUCCESS'})
+       }
+   ```
+6. **Deploy:** Click **Deploy** to save changes.
+7. **Test:** Click **Test** -> Create a new test event (e.g. Name: `TestPayload`) -> Click **Test** -> View the execution result and logs in the execution tab!
+
+#### Method 2: Via AWS CLI
+```bash
+# Create IAM execution role for Lambda
+aws iam create-role \
+  --role-name lambda-basic-role \
+  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+
+# Attach basic execution policy (allows writing CloudWatch logs)
+aws iam attach-role-policy \
+  --role-name lambda-basic-role \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+# Zip your code
+zip function.zip index.py
+
+# Create Lambda function
+aws lambda create-function \
+  --function-name telusko-cli-function \
+  --runtime python3.11 \
+  --role arn:aws:iam::123456789012:role/lambda-basic-role \
+  --handler index.lambda_handler \
+  --zip-file fileb://function.zip
+
+# Invoke the Lambda function via CLI
+aws lambda invoke \
+  --function-name telusko-cli-function \
+  --payload '{"key": "value"}' \
+  response.json
+
+cat response.json
+```
+
+---
+
+### 4. Interview Questions & Answers
+
+#### Q: What is Serverless Computing, and what are its core advantages?
+**A:** Serverless Computing means executing applications without managing, provisioning, or patching servers. The cloud provider (AWS) manages infrastructure scaling, high availability, and runtime maintenance. Key benefits include:
+1. **Zero Server Maintenance:** No operating system updates, patching, or security hardening of physical instances.
+2. **True Pay-As-You-Go:** Charged strictly per millisecond of code execution; $0 cost when idle.
+3. **Instant Elasticity:** Auto-scales from 0 to thousands of concurrent requests automatically.
 
 #### Q: When would you choose Lambda over EC2?
 **A:** 
 | Feature | AWS Lambda | AWS EC2 |
 | :--- | :--- | :--- |
-| **Scaling** | Instantly scales based on event frequency | Scales via ASG policies (minutes) |
-| **State** | Stateless only | Stateful or Stateless |
-| **Cost Model** | Pay per millisecond of execution | Pay per hour for running instances |
-| **Runtime Limit** | Maximum 15 minutes per request | No limit |
-| **Operational Effort** | None (serverless) | High (patching, OS maintenance) |
+| **Scaling** | Instantly scales based on event frequency (sub-second) | Scales via ASG policies (takes minutes to launch instances) |
+| **State** | Strictly stateless | Stateful or Stateless |
+| **Cost Model** | Pay per millisecond of execution | Pay per hour/second for running virtual instances |
+| **Runtime Limit** | Maximum 15 minutes per request | No runtime limit |
+| **Operational Effort** | Zero (fully serverless) | High (OS patching, monitoring, security updates) |
 
-Use **Lambda** for short-lived tasks, event processing, S3 triggers, and APIs with variable traffic. Use **EC2** for long-running processes, web sockets, and applications requiring local state.
+Use **Lambda** for short-lived tasks, event-driven processing, S3 upload hooks, lightweight ML inference, and APIs with bursty traffic. Use **EC2** for long-running processes (>15 min), applications requiring heavy local state/file system caching, and web-socket servers.
 
-### 4. Key Takeaways
-* AWS Lambda is stateless, event-driven, and scales automatically.
-* Use Provisioned Concurrency or SnapStart to mitigate JVM cold start latency in production Java applications.
-* Set Reserved Concurrency to prevent a single function from exhausting the account's regional concurrency limit.
+#### Q: How do you solve the database connection exhaustion problem with Lambda?
+**A:** Since Lambda scales horizontally by spawning new microVM containers for concurrent requests, hundreds of simultaneous invocations can quickly exhaust the database's max connection pool (e.g. MySQL `max_connections`). The solution is to use **AWS RDS Proxy**, which maintains a persistent pool of shared database connections and multiplexes Lambda requests efficiently.
+
+---
+
+### 5. Key Takeaways
+* **AWS Lambda** runs code without thinking about servers, automatically scales, and charges only for execution time.
+* Designed for **Event-Driven Architecture** triggered by S3, API Gateway, SQS, SNS, DynamoDB Streams, and EventBridge.
+* Ideal for **Batch Processing, Image/Media processing, ML inference, and lightweight APIs**.
+* Max execution duration is **15 minutes**; use SnapStart or Provisioned Concurrency to eliminate Java JVM cold starts.
+* Use **RDS Proxy** to prevent Lambda concurrency from overwhelming relational databases.
 
 ---
 
@@ -6653,79 +6812,218 @@ Common DNS Record Types:
 ### 1. Concept Explanation
 
 #### Beginner
-Infrastructure as Code (IaC) allows you to define, provision, and version your cloud resources using configuration files, eliminating manual configuration in the AWS Console.
+**Infrastructure as Code (IaC)** allows you to define, provision, manage, and version your cloud infrastructure resources using declarative configuration files (YAML, JSON, or HCL) rather than manually configuring them through the AWS Web Console.
 
-Core Benefits:
-* **Reproducibility:** Recreate dev, test, and prod environments consistently.
-* **Audit Trail:** Track infrastructure changes using Git version control history.
-* **Automation:** Integrate infrastructure provisioning directly into your CI/CD pipelines.
+* **AWS CloudFormation:** Provides a common language to describe and provision all the infrastructure resources in your environment in a safe, repeatable, and automated way.
+* **HashiCorp Terraform:** An open-source, cloud-agnostic IaC tool using HashiCorp Configuration Language (HCL).
+
+```
+Manual Console Clicking          vs.         Infrastructure as Code (CloudFormation)
+────────────────────────                    ─────────────────────────────────────────
+• Error-prone & slow                        • Automated, instant & repeatable
+• Hard to replicate across Dev/Prod         • Identical environments via 1 template
+• Zero change tracking                      • Version-controlled in Git
+• Difficult to delete cleanly               • 1-Click stack deletion cleans everything
+```
 
 #### Intermediate
-##### CloudFormation vs. Terraform
-* **AWS CloudFormation:** An AWS-native service that uses YAML or JSON templates. State is managed automatically by AWS.
-* **HashiCorp Terraform:** An open-source, cloud-agnostic tool using HashiCorp Configuration Language (HCL). State is managed via a state file (`.tfstate`) that you must store and lock securely.
+##### Step-by-Step CloudFormation Console Walkthrough
+The standard workflow to create infrastructure using an existing template:
 
-##### Configuration Comparison Example
-Here is how you define an EC2 security group in both CloudFormation and Terraform:
+1. **Open AWS Console:** Search for and open **CloudFormation**.
+2. **Initiate Stack Creation:** Click **Create stack** -> Select **With new resources (standard)**.
+3. **Specify Template:**
+   * Prerequisite: Select **Template is ready**.
+   * Specify template: Select **Upload a template file**.
+   * Click **Choose file** and upload your YAML or JSON template (e.g. `ec2-web-stack.yaml`).
+   * Click **Next**.
+4. **Specify Stack Details:**
+   * **Stack name:** Enter a recognizable name (e.g., `telusko-ec2-stack`).
+   * **Parameters:** Enter parameters defined in the template (e.g., Instance Type: `t3.micro`, Key Pair Name).
+   * Click **Next**.
+5. **Configure Stack Options:**
+   * **Tags:** Add Key-Value tags (e.g., `Environment = Production`, `Project = Telusko`).
+   * **Permissions:** Optional IAM Execution Role (CloudFormation assumes this role; if blank, uses your logged-in credentials).
+   * **Rollback configuration:** Rollback on failure is enabled by default to prevent dangling half-created resources.
+   * Click **Next**.
+6. **Review and Submit:**
+   * Review all configurations.
+   * If the template creates IAM roles, check the acknowledgment box: *"I acknowledge that AWS CloudFormation might create IAM resources"*.
+   * Click **Submit / Create stack**.
+7. **Monitor Stack Events:**
+   * Watch the **Events** tab update in real-time:
+     `CREATE_IN_PROGRESS` ➔ `Resource creation events` ➔ `CREATE_COMPLETE`.
+8. **Verify on EC2 Dashboard:**
+   * Navigate to the **EC2 Dashboard** -> Click **Instances**.
+   * Verify that the newly provisioned EC2 instance is created, running, and has the Security Group attached.
+   * Grab the public IP and test the bootstrapped web service in your browser!
 
-###### CloudFormation (YAML)
+```mermaid
+flowchart TD
+    subgraph AUTHOR ["1. Author Template"]
+        CODE["📄 template.yaml\n(Defines EC2, SG, S3, IAM)"]
+    end
+
+    subgraph CFN ["2. CloudFormation Service Engine"]
+        UPLOAD["📤 Upload Template\n(CloudFormation Create Stack)"]
+        PARSE["🔍 Validate & Parse Syntax"]
+        ENGINE["⚙️ CloudFormation Engine\n(Calculates Resource Dependencies)"]
+    end
+
+    subgraph PROVISION ["3. AWS Resource Provisioning"]
+        VPC["🌐 VPC & Subnets"]
+        SG["🛡️ Security Group"]
+        EC2["🖥️ EC2 Web Instance\n(Runs UserData script)"]
+    end
+
+    subgraph VERIFY ["4. Verification"]
+        DASH["🖥️ EC2 Console Dashboard\n(Verify Instance Running)"]
+        BROWSER["🌐 Browser\n(http://EC2-Public-IP)"]
+    end
+
+    CODE --> UPLOAD
+    UPLOAD --> PARSE
+    PARSE --> ENGINE
+    ENGINE -->|"1. Create"| VPC
+    ENGINE -->|"2. Create"| SG
+    ENGINE -->|"3. Launch"| EC2
+    EC2 -.->|"Check Status"| DASH
+    EC2 -.->|"Serve HTTP:80"| BROWSER
+
+    classDef src fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef cfn fill:#D97706,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+    classDef res fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef vrf fill:#1E293B,stroke:#94A3B8,color:#FFFFFF,stroke-width:2px;
+
+    class CODE src;
+    class UPLOAD,PARSE,ENGINE cfn;
+    class VPC,SG,EC2 res;
+    class DASH,BROWSER vrf;
+```
+
+---
+
+### 2. Complete CloudFormation YAML Template Example
+
+Below is a complete, production-ready template that provisions an **EC2 Web Server** with an attached **Security Group** and automated **UserData bootstrapping**:
+
 ```yaml
 AWSTemplateFormatVersion: '2010-09-09'
-Description: App Security Group Stack
+Description: 'CloudFormation Template - Provisions EC2 Apache Web Server with Security Group'
+
+Parameters:
+  InstanceTypeParam:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t2.micro
+      - t3.micro
+      - t3.small
+    Description: Enter instance type for the Web Server.
+
+  KeyNameParam:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Select an existing EC2 KeyPair for SSH access.
+
 Resources:
-  AppSecurityGroup:
+  # 1. Security Group allowing HTTP (80) and SSH (22)
+  WebServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow inbound application traffic
+      GroupDescription: Allow inbound HTTP and SSH traffic
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: Telusko-WebServer-SG
+
+  # 2. EC2 Instance running Amazon Linux 2023 with Apache
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceTypeParam
+      KeyName: !Ref KeyNameParam
+      ImageId: ami-0c101f26f147fa7fd # Amazon Linux 2023 AMI in us-east-1
+      SecurityGroupIds:
+        - !GetAtt WebServerSecurityGroup.GroupId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          echo "<h1>Welcome to Telusko CloudFormation Deployed Web App</h1>" > /var/www/html/index.html
+      Tags:
+        - Key: Name
+          Value: Telusko-CloudFormation-WebServer
+
+Outputs:
+  InstanceId:
+    Description: The Instance ID of the provisioned Web Server
+    Value: !Ref WebServerInstance
+
+  PublicDNS:
+    Description: Public DNS URL to access the deployed web page
+    Value: !Sub 'http://${WebServerInstance.PublicDnsName}'
+
+  PublicIP:
+    Description: Public IPv4 Address of the Web Server
+    Value: !GetAtt WebServerInstance.PublicIp
 ```
 
-###### Terraform (HCL)
-```hcl
-resource "aws_security_group" "app_sg" {
-  name        = "app-security-group"
-  description = "Allow inbound application traffic"
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-```
+---
 
 #### Advanced
-##### Terraform State Management
-In a team environment, you must store your Terraform state file in a central backend (like an S3 bucket) and enable state locking using a DynamoDB table to prevent concurrent executions from corrupting the state file:
-```hcl
-terraform {
-  backend "s3" {
-    bucket         = "company-terraform-states"
-    key            = "prod/policy-service/terraform.tfstate"
-    region         = "ap-south-1"
-    dynamodb_table = "terraform-state-lock"
-    encrypt        = true
-  }
-}
-```
+##### CloudFormation vs. Terraform Deep Dive
 
-### 2. Interview Questions & Answers
+| Feature | AWS CloudFormation | HashiCorp Terraform |
+| :--- | :--- | :--- |
+| **Provider Support** | AWS only (Native) | Multi-Cloud (AWS, Azure, GCP, Kubernetes) |
+| **Language** | Declarative YAML / JSON | HashiCorp Configuration Language (HCL) |
+| **State Management** | Automatic (AWS internally tracks stack state) | State file (`.tfstate`) managed by user (stored in S3 + DynamoDB) |
+| **Rollback on Error** | Automatic out-of-the-box (`ROLLBACK_COMPLETE`) | Manual intervention required (`terraform plan / apply`) |
+| **Drift Detection** | Native AWS Drift Detection | `terraform plan` / `terraform refresh` |
+| **Cost** | Free (pay only for provisioned resources) | Free open-source CLI / Paid Terraform Cloud |
 
-#### Q: How does CloudFormation handle failures during stack updates?
-**A:** If a stack update fails halfway, CloudFormation automatically rolls back all changes, destroying any newly created resources and restoring the infrastructure to its last-known stable configuration (rolling back to `ROLLBACK_COMPLETE`).
+##### CloudFormation Stack Lifecycle States
+* `CREATE_IN_PROGRESS`: Resources are currently being provisioned.
+* `CREATE_COMPLETE`: All resources provisioned successfully.
+* `ROLLBACK_IN_PROGRESS`: A resource creation failed; CloudFormation is tearing down all created resources to restore clean state.
+* `ROLLBACK_COMPLETE`: All resources cleaned up after a failed stack deployment.
+* `UPDATE_IN_PROGRESS`: Template changes are currently being applied to an existing stack.
+* `UPDATE_ROLLBACK_COMPLETE`: Update failed and stack was reverted to its previous stable state.
 
-#### Q: What is configuration drift, and how do you resolve it?
-**A:** Configuration drift occurs when resources are modified manually (e.g. in the console) outside of the IaC code. In CloudFormation, you can detect drift using the Drift Detection feature. In Terraform, running `terraform plan` compares the code against the actual cloud state and highlights discrepancies. To resolve drift, update the IaC code to match the manual changes, or apply the IaC template to overwrite them.
+---
 
-### 3. Key Takeaways
-* CloudFormation is AWS-native; Terraform is cloud-agnostic and uses HCL.
-* Use a remote backend (like S3) with locking (DynamoDB) to run Terraform safely in a team environment.
-* IaC prevents configuration drift and ensures consistent environment deployments.
+### 3. Interview Questions & Answers
+
+#### Q: What is AWS CloudFormation, and how does it prevent resource misconfigurations?
+**A:** AWS CloudFormation is an Infrastructure as Code (IaC) service that provisions cloud resources from declarative YAML/JSON templates. It prevents misconfigurations by:
+1. **Automating Dependency Resolution:** CloudFormation knows the exact order in which resources must be built (e.g. VPC ➔ Subnet ➔ Security Group ➔ EC2).
+2. **Automatic Rollbacks:** If any single resource fails to deploy, CloudFormation automatically rolls back all changes to avoid leaving dangling, orphaned, or unmonitored resources.
+3. **Change Sets:** Allows you to preview exactly what resources will be created, modified, or destroyed **before** executing changes.
+
+#### Q: How do you detect and fix Configuration Drift in CloudFormation?
+**A:** **Drift Detection** compares the current live state of provisioned AWS resources with the state defined in the CloudFormation template:
+1. In CloudFormation Console, select your stack -> Click **Stack actions** -> **Detect drift**.
+2. If resources were manually changed in the console (e.g. someone opened port 22 to `0.0.0.0/0` manually), CloudFormation flags the stack status as `DRIFTED` and highlights the modified attributes.
+3. To resolve drift, you can update your CloudFormation template to match the desired state or manually revert the out-of-band changes.
+
+---
+
+### 4. Key Takeaways
+* **CloudFormation** provides a repeatable, version-controlled mechanism to provision AWS infrastructure.
+* Follow the **Create Stack -> Upload Template -> Review -> Verify in EC2 Dashboard** console workflow.
+* Always check the **Events** tab to monitor progress and diagnose provisioning errors.
+* CloudFormation guarantees atomic rollbacks: if one resource fails, the entire stack safely rolls back.
 
 ---
 
@@ -6745,11 +7043,94 @@ A standard DevSecOps pipeline consists of the following steps:
 3. **Unit Tests:** Executes tests and generates code coverage reports (e.g., JaCoCo target > 80%).
 4. **Static Code Analysis:** SonarQube scans code for quality gates, security vulnerabilities, and code smells.
 5. **Interactive Security Testing:** Contrast Security agent scans the running JVM during tests.
-6. **Containerization:** Docker builds a multi-stage image.
+6. **Containerization:** Docker builds a multi-stage image with layered JARs.
 7. **Container Vulnerability Scan:** Twistlock/Trivy scans the image layers for CVEs.
 8. **Publish:** Push the Docker image to a private registry (like Harbor or Amazon ECR).
-9. **Deployment:** Harness or ArgoCD deploys the image to a Kubernetes cluster.
-10. **Validation:** Executes smoke tests and monitors application logs for errors.
+9. **Deployment:** Harness or ArgoCD deploys the image to a Kubernetes / EKS cluster.
+10. **Continuous Verification (CV):** Harness analyzes CloudWatch/Prometheus metrics and executes automatic rollback if anomalies occur.
+
+---
+
+##### Maven Build Tool Architecture for Cloud & DevOps
+Enterprise Spring Boot applications require robust dependency governance and clean build artifacts:
+
+1. **Bill of Materials (BOM) Pattern in `<dependencyManagement>`:**
+   Instead of specifying hardcoded `<version>` tags for every AWS or Spring dependency (which causes version mismatches and runtime `NoSuchMethodError` crashes), import the official BOM:
+   ```xml
+   <dependencyManagement>
+       <dependencies>
+           <!-- AWS Java SDK v2 BOM -->
+           <dependency>
+               <groupId>software.amazon.awssdk</groupId>
+               <artifactId>bom</artifactId>
+               <version>2.26.15</version>
+               <type>pom</type>
+               <scope>import</scope>
+           </dependency>
+           <!-- Spring Boot Dependencies BOM -->
+           <dependency>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-dependencies</artifactId>
+               <version>3.2.5</version>
+               <type>pom</type>
+               <scope>import</scope>
+           </dependency>
+       </dependencies>
+   </dependencyManagement>
+   ```
+
+2. **Dependency Exclusions & Clean JAR Packaging:**
+   Exclude compile-only dependencies (like Lombok) and embedded logging conflicts from the final target JAR:
+   ```xml
+   <build>
+       <plugins>
+           <plugin>
+               <groupId>org.springframework.boot</groupId>
+               <artifactId>spring-boot-maven-plugin</artifactId>
+               <configuration>
+                   <excludes>
+                       <exclude>
+                           <groupId>org.projectlombok</groupId>
+                           <artifactId>lombok</artifactId>
+                       </exclude>
+                   </excludes>
+                   <layers>
+                       <enabled>true</enabled>
+                   </layers>
+               </configuration>
+           </plugin>
+       </plugins>
+   </build>
+   ```
+
+3. **Maven Environment Profiles (`dev`, `stage`, `prod`):**
+   ```xml
+   <profiles>
+       <profile>
+           <id>dev</id>
+           <activation><activeByDefault>true</activeByDefault></activation>
+           <properties><spring.profiles.active>dev</spring.profiles.active></properties>
+       </profile>
+       <profile>
+           <id>prod</id>
+           <properties><spring.profiles.active>prod</spring.profiles.active></properties>
+       </profile>
+   </profiles>
+   ```
+
+---
+
+##### Harness vs. Jenkins vs. GitHub Actions Comparison
+
+| Feature | Harness CD | GitHub Actions | Jenkins | AWS CodePipeline |
+| :--- | :--- | :--- | :--- | :--- |
+| **Type** | Enterprise CD Platform | CI/CD Engine | Self-Hosted CI/CD Engine | AWS-Native Managed Service |
+| **Continuous Verification** | Native AI/ML Verification (CloudWatch/Prometheus) | Custom scripts | Custom plugins | Basic CloudWatch Alarms |
+| **Automated Rollback** | Out-of-the-box on metric regression | Manual script trigger | Custom pipeline logic | Native CloudWatch rollback |
+| **Secrets Management** | Built-in encrypted secrets vault | GitHub Secrets | Credentials Plugin | AWS Secrets Manager / KMS |
+| **Deployment Modes** | Canary, Blue-Green, Rolling | Scripted workflows | Scripted Groovy pipelines | CodeDeploy deployment configs |
+
+---
 
 ### 2. Spring Boot Pipeline & Dockerfile Examples
 
@@ -6859,48 +7240,249 @@ HEALTHCHECK --interval=30s --timeout=3s \
 ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
 ```
 
-### 3. Architecture Flow Diagram
+### 4. Comprehensive AWS CI/CD Hands-on Project: Automated Static Website Deployment
+
+> **Project Goal:** Build a fully automated, production-ready Serverless CI/CD pipeline on AWS that fetches code from GitHub, executes automated builds using AWS CodeBuild, and deploys the production web application directly to an Amazon S3 Static Website Hosting bucket, secured with IAM and distributed via CloudFront & Route 53.
+
+* **GitHub Repository:** [`https://github.com/Haider7214/telusko-webapp.git`](https://github.com/Haider7214/telusko-webapp.git)
+* **Architecture Flow:** `GitHub (Source) ➔ AWS CodePipeline (Orchestrator) ➔ AWS CodeBuild (Build & Package) ➔ Amazon S3 (Deploy Target) ➔ CloudFront CDN & Route 53 (DNS telusko.com)`
 
 ```mermaid
 flowchart TD
-    Dev["Developer Git Push"] -->|"Trigger Pipeline"| GH["GitHub Actions Runner"]
-    
-    subgraph CI ["Continuous Integration (CI)"]
-        GH --> Maven["Maven Build & Test"]
-        Maven --> Sonar["SonarQube Quality Scan"]
-        Sonar --> Contrast["Contrast JVM IAST Security"]
-    end
-    
-    subgraph CD ["Continuous Deployment (CD)"]
-        Contrast --> DockerBuild["Multi-Stage Docker Build"]
-        DockerBuild --> Twistlock["Twistlock Image Vulnerability Scan"]
-        Twistlock -->|Passes Scan| PushHarbor["Push Image to Harbor Registry"]
-        PushHarbor --> Harness["Harness Deploy Engine"]
-        Harness --> EKS["Deploy to EKS (K8s)"]
-        EKS --> SmokeTest["Execute Smoke & Health Checks"]
+    subgraph SCM ["1. Source Control Management"]
+        DEV["👨‍💻 Developer Push\n(git push origin main)"]
+        GH["🐙 GitHub Repository\n(Haider7214/telusko-webapp)"]
+        CONN["🔗 AWS CodeStar Connection\n(telusko-aws)"]
     end
 
-    Twistlock -->|Vulnerabilities Found| Fail["Block Deployment & Notify Dev"]
+    subgraph PIPELINE ["2. AWS CodePipeline (telusko-aws-pipeline)"]
+        SRC_STAGE["📥 Source Stage\n(GitHub V2 Webhook Trigger)"]
+        BLD_STAGE["⚙️ Build Stage\n(AWS CodeBuild Project)"]
+        DPL_STAGE["🚀 Deploy Stage\n(Amazon S3 Provider)"]
+    end
 
-    classDef layer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
-    classDef client fill:#7C2D12,stroke:#FDBA74,color:#FFFFFF,stroke-width:2px;
-    classDef mgmt fill:#581C87,stroke:#D8B4FE,color:#FFFFFF,stroke-width:2px;
-    classDef db fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    subgraph BUILD ["3. AWS CodeBuild (telusko-demoapp)"]
+        ENV["🐧 Amazon Linux Environment\n(buildspec.yml execution)"]
+        IAM_ROLE["🛡️ CodeBuild IAM Service Role\n(CloudFrontFullAccess, S3 Access)"]
+        ARTIFACT["📦 Output Artifact (.zip)"]
+    end
 
-    class Dev client;
-    class GH,Maven,Sonar,Contrast,DockerBuild,Twistlock,PushHarbor,Harness,EKS,SmokeTest mgmt;
-    class Fail db;
+    subgraph DEPLOY ["4. Deployment & Hosting"]
+        S3["🪣 S3 Bucket (telusko-miniproject)\n• Static Website Hosting Enabled\n• Extract file before deploy"]
+        CFN["⚡ Amazon CloudFront (CDN)\n(Global Edge Caching & HTTPS)"]
+        R53["🌐 Amazon Route 53\n(DNS Mapping: telusko.com -> IP/CloudFront)"]
+    end
+
+    DEV -->|"git push"| GH
+    GH -->|"Webhook via Connection"| CONN
+    CONN --> SRC_STAGE
+    SRC_STAGE --> BLD_STAGE
+    BLD_STAGE --> ENV
+    IAM_ROLE -.->|"Grants Permissions"| ENV
+    ENV --> ARTIFACT
+    ARTIFACT --> DPL_STAGE
+    DPL_STAGE -->|"Extract & Deploy index.html"| S3
+    S3 -->|"Origin Content"| CFN
+    CFN -->|"Route DNS"| R53
+    R53 -->|"Public Traffic"| USERS(("👥 Internet Users"))
+
+    classDef scm fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef pipe fill:#D97706,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+    classDef bld fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef dep fill:#1E293B,stroke:#94A3B8,color:#FFFFFF,stroke-width:2px;
+
+    class DEV,GH,CONN scm;
+    class SRC_STAGE,BLD_STAGE,DPL_STAGE pipe;
+    class ENV,IAM_ROLE,ARTIFACT bld;
+    class S3,CFN,R53,USERS dep;
 ```
 
-### 4. Interview Questions & Answers
+---
 
-#### Q: How do you handle failed security scans in the deployment pipeline?
-**A:** If a vulnerability scanner (like Twistlock or Trivy) detects critical vulnerabilities exceeding the defined threshold (e.g., CVSS score >= 8), the pipeline is configured to fail immediately with exit code 1. This blocks the push to the container registry and prevents deployment to production. Developers are notified of the failed step with a report listing the vulnerable dependency, allowing them to patch it and retrigger the pipeline.
+#### Step-by-Step Practical Implementation Guide
 
-### 5. Key Takeaways
-* Use multi-stage Docker builds to reduce image size and improve security.
-* Integrate static code analysis (SonarQube) and security scanners (Trivy/Twistlock) to catch vulnerabilities early.
-* Set up automated rollbacks in your CD tool (like Harness) triggered by health check failures.
+##### Step 1: Create & Configure S3 Bucket for Static Website Hosting
+1. Navigate to the **Amazon S3 Console** -> Click **Create bucket**.
+2. **Bucket Configuration:**
+   * **Bucket type:** General purpose
+   * **Bucket name:** `telusko-miniproject` (must be globally unique, e.g., `telusko-miniproject-2026`)
+   * **Object Ownership:** Select **ACLs enabled** (required when objects need explicit public read ACLs).
+   * **Block Public Access settings:**
+     * **Uncheck** *Block all public access*.
+     * **Check** *I acknowledge that the current settings might result in this bucket and the objects within becoming public*.
+   * Click **Create bucket**.
+3. **Enable Static Website Hosting:**
+   * Click the newly created bucket (`telusko-miniproject`) -> Go to the **Properties** tab.
+   * Scroll down to the **Static website hosting** section -> Click **Edit**.
+   * Select **Enable**.
+   * **Hosting type:** Select *Host a static website*.
+   * **Index document:** Enter `index.html`.
+   * **Error document:** Enter `error.html` (or `index.html`).
+   * Click **Save changes**.
+   * Note the generated **Bucket website endpoint URL** (e.g., `http://telusko-miniproject.s3-website-us-east-1.amazonaws.com`).
+4. **Attach Public Read Bucket Policy:**
+   * Go to the **Permissions** tab -> Under **Bucket policy**, click **Edit**.
+   * Paste the following JSON policy (ensures anyone on the internet can read the static website assets):
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::telusko-miniproject/*"
+        }
+    ]
+}
+```
+   * Click **Save changes**.
+
+---
+
+##### Step 2: Configure AWS CodeBuild Project
+AWS CodeBuild compiles source code, runs unit tests, and produces deployable artifacts.
+
+1. Navigate to **AWS CodeBuild** -> Click **Build projects** -> Click **Create build project**.
+2. **Project Configuration:**
+   * **Project name:** `telusko-demoapp`
+3. **Source 1 - Primary:**
+   * **Source provider:** Select **GitHub**.
+   * **GitHub Connection Setup:**
+     * Under **Settings** -> **Connections** -> Click **Create connection**.
+     * Select **GitHub** -> **Connection name:** `telusko-aws`.
+     * Click **Connect to GitHub** -> Authorize AWS Connector app -> Select your repositories -> Click **Connect**.
+   * **Repository:** Select *Public repository* or *Repository in my GitHub account*.
+   * **Repository URL:** `https://github.com/Haider7214/telusko-webapp.git`
+   * **Primary source webhook events:**
+     * Check **Rebuild every time a code change is pushed to this repository** (Event type: `PUSH`).
+4. **Environment Configuration:**
+   * **Environment image:** Managed image
+   * **Operating system:** **Amazon Linux**
+   * **Runtime(s):** Standard
+   * **Image:** `aws/codebuild/amazonlinux2-x86_64-standard:5.0` (latest)
+   * **Environment type:** Linux
+   * **Service role:** Select **New service role** (e.g. `codebuild-telusko-demoapp-service-role`).
+5. **Buildspec File Configuration:**
+   * Select **Use a buildspec file**.
+   * **Buildspec name:** `buildspec.yml` (located in the root of the repository).
+6. Click **Create build project**.
+7. **Attach Required IAM Permissions to Service Role:**
+   * Go to **IAM Console** -> **Roles** -> Search for `codebuild-telusko-demoapp-service-role`.
+   * Click **Add permissions** -> **Attach policies**.
+   * Attach **`CloudFrontFullAccess`** (for invalidating CloudFront caches) and ensure **`AmazonS3FullAccess`** is granted.
+
+###### Example `buildspec.yml` in the Repository Root:
+```yaml
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "==> Phase 1: Installing Dependencies..."
+  pre_build:
+    commands:
+      - echo "==> Phase 2: Pre-build validation & Linting..."
+  build:
+    commands:
+      - echo "==> Phase 3: Building and preparing static assets on `date`..."
+  post_build:
+    commands:
+      - echo "==> Phase 4: Build completed successfully!"
+      # Optional: Invalidate CloudFront cache if CloudFront is attached
+      # - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DIST_ID --paths "/*"
+
+artifacts:
+  files:
+    - '**/*'
+  discard-paths: no
+```
+
+---
+
+##### Step 3: Configure AWS CodePipeline
+AWS CodePipeline orchestrates the continuous delivery flow from GitHub checkout to S3 deployment.
+
+1. Navigate to **AWS CodePipeline** -> Click **Create pipeline**.
+2. **Step 1: Choose Pipeline Settings:**
+   * **Pipeline name:** `telusko-aws-pipeline`
+   * **Pipeline type:** V2 / Queued execution
+   * **Service role:** Select **New service role** (AWS creates a dedicated IAM role for CodePipeline).
+   * Click **Next**.
+3. **Step 2: Add Source Stage:**
+   * **Source provider:** Select **GitHub (Version 2)**.
+   * **Connection:** Select the `telusko-aws` connection created in Step 2.
+   * **Repository name:** Select `Haider7214/telusko-webapp`.
+   * **Branch name:** `main`.
+   * **Trigger:** Check *Start the pipeline on source code change*.
+   * **Output artifact format:** Select *CodePipeline default*.
+   * Click **Next**.
+4. **Step 3: Add Build Stage:**
+   * **Build provider:** Select **AWS CodeBuild**.
+   * **Region:** Your current region (e.g. `us-east-1`).
+   * **Project name:** Select `telusko-demoapp`.
+   * **Build type:** Single build.
+   * Click **Next**.
+5. **Step 4: Add Deploy Stage:**
+   * **Deploy provider:** Select **Amazon S3**.
+   * **Region:** Your current region.
+   * **Bucket:** Select `telusko-miniproject`.
+   * **Extract file before deploy:** **CHECK THIS BOX** (Critical: This unzips the build artifact so that `index.html` and assets sit in the bucket root instead of as a zipped archive).
+   * Click **Next**.
+6. **Step 5: Review:**
+   * Review all stages: **Source (GitHub) ➔ Build (CodeBuild) ➔ Deploy (Amazon S3)**.
+   * Click **Create pipeline**.
+
+---
+
+##### Step 4: Verification & Live Testing
+1. **Initial Run:** CodePipeline automatically runs immediately after creation.
+2. **Monitor Execution:**
+   * **Source:** Turns green (`Succeeded`) after pulling latest commit from GitHub `main`.
+   * **Build:** Turns green (`Succeeded`) after running `buildspec.yml` in Amazon Linux container.
+   * **Deploy:** Turns green (`Succeeded`) after extracting and copying files to `s3://telusko-miniproject`.
+3. **Verify Website in Browser:**
+   * Open the **Bucket website endpoint URL** (`http://telusko-miniproject.s3-website-us-east-1.amazonaws.com`).
+   * Verify the web application renders correctly.
+4. **Test Real-Time CI/CD Automation:**
+   * Make a change in `index.html` (e.g. change header to `"Telusko Web App v2 - Automated Deployment"`).
+   * Commit and push changes to GitHub: `git push origin main`.
+   * Observe CodePipeline trigger automatically within 5 seconds, execute build, and deploy to S3.
+   * Refresh your browser to see the updated website live!
+
+---
+
+##### Step 5: Advanced Production Enhancements (CloudFront & Route 53)
+* **Amazon CloudFront:** Attach a CloudFront CDN distribution to cache static files globally across 450+ edge locations and provide **HTTPS (SSL/TLS)** via AWS Certificate Manager (ACM).
+* **Amazon Route 53:** Map a custom domain (e.g. `telusko.com` or `app.telusko.com`) to the CloudFront distribution using an **Alias A Record** (`telusko.com ➔ CloudFront Distribution Endpoint`).
+* **Container Workloads Comparison:** For microservices requiring Docker containers, CodePipeline routes deployments to **Amazon EKS / K8s** via Helm/ArgoCD or **AWS ECS/Fargate**.
+
+---
+
+### 5. Interview Questions & Answers
+
+#### Q: Why is "Extract file before deploy" critical when deploying to S3 in CodePipeline?
+**A:** CodeBuild packages output artifacts as a compressed `.zip` archive. If you do not check "Extract file before deploy", CodePipeline will upload the single `.zip` file into S3 rather than extracting the individual `index.html`, CSS, and JS files. The S3 static website hosting engine looks for `index.html` at the bucket root and will return an HTTP 404/403 error if the files remain archived inside a zip file.
+
+#### Q: How do you secure an S3 static website so that users can ONLY access it through CloudFront (not directly via S3 URL)?
+**A:** 
+1. Use **CloudFront Origin Access Control (OAC)**.
+2. In S3, block all direct public access.
+3. Update the S3 Bucket Policy to allow `s3:GetObject` ONLY when the request's `aws:SourceArn` matches the specific CloudFront Distribution ARN.
+
+#### Q: What is the purpose of `buildspec.yml` in AWS CodeBuild?
+**A:** `buildspec.yml` is a YAML configuration file containing commands and settings that CodeBuild uses to run a build. It defines the runtime versions, lifecycle phases (`install`, `pre_build`, `build`, `post_build`), environment variables, and the final `artifacts` to export to downstream pipeline stages.
+
+---
+
+### 6. Key Takeaways
+* **AWS CodePipeline** orchestrates automated delivery pipelines across Source, Build, Test, and Deploy phases.
+* **AWS CodeBuild** provides serverless, scalable build runners executing commands defined in `buildspec.yml`.
+* **S3 Static Website Hosting** provides a cost-effective, serverless hosting solution for Single Page Applications (React, Angular, Vue, static HTML/JS).
+* Always check **Extract file before deploy** in CodePipeline S3 deploy stage.
+* Attach **CloudFront and Route 53** in production for SSL termination, global caching, and custom domain routing.
 
 ---
 
@@ -6914,11 +7496,11 @@ Docker packages your application, along with its specific dependencies, librarie
 Core Concepts:
 * **Image:** A read-only template containing the application code and its dependencies (similar to a Java class blueprint).
 * **Container:** A running instance of an image (similar to a Java object instance).
-* **Registry:** A repository where Docker images are stored and shared (e.g., Docker Hub, Harbor, Amazon ECR).
+* **Registry:** A repository where Docker images are stored and shared (e.g., Harbor, Amazon ECR, Docker Hub).
 
 #### Intermediate
-##### Docker Compose
-Docker Compose allows you to define and manage multi-container applications (like an API server running alongside database and caching containers) using a single YAML file:
+##### Docker Compose for Multi-Container Environments
+Docker Compose allows you to define and manage multi-container applications (like a Spring Boot API server running alongside PostgreSQL and Redis containers) using a single YAML file:
 
 ```yaml
 version: '3.8'
@@ -6933,6 +7515,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/policydb
+      - JAVA_TOOL_OPTIONS=-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
     depends_on:
       postgres-db:
         condition: service_healthy
@@ -6964,81 +7547,217 @@ volumes:
   pgdata:
 ```
 
+---
+
 #### Advanced
-##### Image Optimization Strategies
-* **Use JRE instead of JDK:** Run production containers using a lightweight JRE image (like `eclipse-temurin:17-jre-alpine` at ~100 MB) instead of a full JDK image (which can exceed 400 MB).
-* **Leverage Layer Caching:** Order the commands in your `Dockerfile` so that rarely changed elements (like dependency downloads) are run before frequently changed elements (like application code compilation).
-* **Minimize Layers:** Combine multiple `RUN` commands using `&&` and backslashes to reduce the total number of layers in the final image.
+##### 1. JVM Container-Aware Memory Tuning (`-XX:+UseContainerSupport` & `-XX:MaxRAMPercentage`)
 
-### 2. Java Developer Dockerfile Reference
+> [!WARNING]
+> **The Classic Java Container Crash (Exit Code 137 - OOMKilled):**
+> In legacy Java (Java 8 < u191), the JVM was unaware of Docker/cgroups resource limits. It read `/proc/meminfo` from the host OS. If your container was limited to 1 GB RAM on a 64 GB host, the JVM defaulted its max heap to 25% of the host (16 GB). When the heap grew past 1 GB, the Linux kernel OOM Killer immediately terminated the container with **`Exit Code 137`**.
 
-#### Basic Dockerfile (Legacy/Reference)
-```dockerfile
-FROM openjdk:17-slim
-WORKDIR /app
-COPY target/policy-service-1.0.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar", "-Xms512m", "-Xmx1024m", "--spring.profiles.active=prod"]
+###### Modern JVM Container Flags (Java 11, 17, 21):
+* **`-XX:+UseContainerSupport`**: (Enabled by default in Java 10+). Enables the JVM to recognize and respect cgroups CPU and Memory quotas assigned to the container.
+* **`-XX:MaxRAMPercentage=75.0`**: Dynamically calculates the Maximum Heap Size (`-Xmx`) as **75% of the container's allocated memory limit**.
+  * If container memory limit is **1024 MB**, JVM sets `-Xmx` to **~768 MB**.
+  * The remaining **25% (256 MB)** is preserved for non-heap memory: **Metaspace, Direct ByteBuffers (Netty/NIO), Thread Stacks (`-Xss`), Garbage Collector overhead, and JIT Compiler Caches**.
+* **`-XX:InitialRAMPercentage=50.0`**: Dynamically sets the Initial Heap Size (`-Xms`) on container startup to prevent aggressive garbage collection during boot.
+* **`-XX:MinRAMPercentage=50.0`**: Sets minimum heap size for systems with small memory footprints (<250 MB).
+
+```bash
+# Recommended Production Entrypoint / Environment Variable:
+JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
 ```
+
+```
+┌───────────────────────────────────────────────────────────┐
+│ Container Memory Limit (e.g., 1024 MB assigned by K8s/ECS)│
+├─────────────────────────────┬─────────────────────────────┤
+│ Max Heap (-Xmx): 75% (~768MB)│ Non-Heap: 25% (~256MB)      │
+│ • Eden, Survivor, Tenured   │ • Metaspace                 │
+│ • Application Object Data   │ • Thread Stacks (-Xss1m)    │
+│                             │ • Direct Memory (Netty/NIO) │
+│                             │ • GC Buffers & JIT Cache    │
+└─────────────────────────────┴─────────────────────────────┘
+```
+
+##### 2. Container Security: Non-Root Execution
+By default, Docker containers run as the `root` user (UID 0). If an attacker breaches the container via a vulnerability (e.g. Log4Shell / RCE), they inherit root privileges on the container and potentially the host node.
+
+* **Spring Boot Best Practice:** Create a dedicated unprivileged user (`USER spring`) inside the container:
+  ```dockerfile
+  RUN addgroup -S spring && adduser -S spring -G spring
+  USER spring
+  ```
+* **Node.js / Client Best Practice:** Use built-in unprivileged user:
+  ```dockerfile
+  USER nodejs
+  ```
+
+##### 3. Native Docker `HEALTHCHECK` Integration
+Docker's native `HEALTHCHECK` command periodically probes the application container. If probes fail, Docker marks the container status as `unhealthy`, enabling container orchestrators (ECS / Rancher / Kubernetes) to restart or route traffic away from the instance:
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+```
+
+* `--interval=30s`: Probe execution frequency.
+* `--timeout=3s`: Maximum time allowed for the health endpoint to respond.
+* `--start-period=40s`: Grace period during container startup before health failures count against retry limits (prevents false positives during Spring Boot initialization).
+* `--retries=3`: Number of consecutive failures before marking the container `unhealthy`.
+
+---
+
+### 2. Production Multi-Stage Dockerfile with Spring Boot Layering
+
+This production Dockerfile implements multi-stage builds, Spring Boot layered JAR extraction, non-root user execution, and container-aware JVM tuning:
+
+```dockerfile
+# ==========================================
+# Stage 1: Build & Compile (JDK 17)
+# ==========================================
+FROM maven:3.9-eclipse-temurin-17 AS builder
+WORKDIR /build
+
+# Cache dependencies layer
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+
+# Compile and package application
+COPY src ./src
+RUN mvn clean package -DskipTests
+
+# ==========================================
+# Stage 2: Spring Boot Layer Extraction
+# ==========================================
+FROM eclipse-temurin:17-jre AS extractor
+WORKDIR /build
+COPY --from=builder /build/target/*.jar app.jar
+# Extract Spring Boot layers (dependencies, snapshot-dependencies, loader, application)
+RUN java -Djarmode=layertools -jar app.jar extract
+
+# ==========================================
+# Stage 3: Minimal Production Image (Alpine JRE)
+# ==========================================
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+# Security: Create non-root user and group
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
+# Copy Spring Boot layers in order of least-frequently to most-frequently changed
+COPY --from=extractor /build/dependencies/ ./
+COPY --from=extractor /build/spring-boot-loader/ ./
+COPY --from=extractor /build/snapshot-dependencies/ ./
+COPY --from=extractor /build/application/ ./
+
+# Container-aware JVM configuration environment variable
+ENV JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
+
+# Expose HTTP application port
+EXPOSE 8080
+
+# Health check integration
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1
+
+# Launch using Spring Boot's modular layer launcher
+ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+```
+
+---
 
 ### 3. Architecture Diagram
 
 ```mermaid
-flowchart LR
-    subgraph DevMachine ["Developer Machine"]
-        DF["Dockerfile"] -->|"docker build"| Img["Docker Image"]
-    end
-    
-    Img -->|"docker push"| Reg["Registry (ECR / Harbor)"]
-    Reg -->|"docker pull"| Target["Production Server"]
-    
-    subgraph Prod ["Docker Host Runtime"]
-        Target -->|"docker run"| C1["policy-service Container"]
-        Target -->|"docker run"| C2["postgres Container"]
-        C1 <-->|"Bridge Network"| C2
+flowchart TD
+    subgraph STAGE1 ["Stage 1: Maven Builder (JDK 17)"]
+        POM["pom.xml"] --> GO_OFFLINE["mvn dependency:go-offline"]
+        SRC["Java Source Files"] --> PKG["mvn package"]
+        PKG --> FATJAR["app.jar (Fat JAR ~80 MB)"]
     end
 
-    classDef layer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
-    classDef db fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    subgraph STAGE2 ["Stage 2: Layer Extraction"]
+        FATJAR --> EXTRACT["java -Djarmode=layertools -jar app.jar extract"]
+        EXTRACT --> L1["1. dependencies/ (Third-party JARs ~60MB)"]
+        EXTRACT --> L2["2. spring-boot-loader/ (~300KB)"]
+        EXTRACT --> L3["3. snapshot-dependencies/ (~1MB)"]
+        EXTRACT --> L4["4. application/ (Your Compiled Code ~2MB)"]
+    end
 
-    class DF,Img,Reg,Target,C1 layer;
-    class C2 db;
+    subgraph STAGE3 ["Stage 3: Production Alpine JRE (~120 MB Total)"]
+        L1 --> DOCKER_LAYERS["Cached Layer 1 (Infrequently changed)"]
+        L2 --> DOCKER_LAYERS
+        L3 --> DOCKER_LAYERS
+        L4 --> DOCKER_APP["Rebuilt Layer 4 (Fast sub-second build)"]
+        NONROOT["👤 USER spring:spring"] --> FINAL_IMG["🚀 Production Secure Container"]
+        DOCKER_LAYERS & DOCKER_APP --> FINAL_IMG
+    end
+
+    classDef s1 fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef s2 fill:#D97706,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
+    classDef s3 fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+
+    class POM,GO_OFFLINE,SRC,PKG,FATJAR s1;
+    class EXTRACT,L1,L2,L3,L4 s2;
+    class DOCKER_LAYERS,DOCKER_APP,NONROOT,FINAL_IMG s3;
 ```
-
-### 4. Interview Questions & Answers
-
-#### Q: How do you pass database credentials to a container securely?
-**A:** Do not hardcode credentials in the `Dockerfile` or the image. Instead, inject them at runtime using environment variables (e.g. `docker run -e DB_PASSWORD=secret my-image`), or integrate them with a secrets manager (such as AWS Secrets Manager or Kubernetes Secrets) to inject them directly into the container's memory environment.
-
-#### Q: How do you troubleshoot a container that crashes immediately after starting?
-**A:** 
-1. Run `docker ps -a` to view the exit code of the stopped container.
-2. Run `docker logs <container-id>` to check the application's startup logs and stack traces.
-3. Use `docker inspect <container-id>` to check environment variables and command configurations.
-4. If needed, run the container overriding the entrypoint to launch a shell for debugging: `docker run -it --entrypoint sh <image-name>`.
-
-### 5. Key Takeaways
-* Containers isolate application runtimes, ensuring consistent execution across environments.
-* Use multi-stage builds and JRE-specific base images to keep production images small and secure.
-* Use Docker Compose to orchestrate multi-container development and testing environments locally.
 
 ---
 
-## TOPIC 18: KUBERNETES — CONTAINER ORCHESTRATION
+### 4. Interview Questions & Answers
+
+#### Q: Why should you avoid hardcoding `-Xmx1024m` inside a Docker container?
+**A:** Hardcoding `-Xmx1024m` makes the application inflexible to changes in infrastructure provisioning. If Kubernetes scales the container memory limit up to 4 GB or down to 512 MB, a hardcoded `-Xmx1024m` will either waste allocated memory or trigger an immediate OS `OOMKilled` crash (Exit Code 137). Using `-XX:MaxRAMPercentage=75.0` allows the JVM to scale dynamically based on the exact memory quota allocated by the container runtime.
+
+#### Q: How does Spring Boot Layered JAR extraction optimize Docker build times?
+**A:** Traditional fat JAR builds copy the entire 80MB JAR into a single Docker layer, invalidating Docker's layer cache on every one-line code change. Layered JARs (`-Djarmode=layertools extract`) separate the application into 4 distinct layers: `dependencies/`, `spring-boot-loader/`, `snapshot-dependencies/`, and `application/`. Because third-party dependencies rarely change, Docker reuses cached layers for the 60MB dependencies and only recompiles and transfers the lightweight ~2MB `application/` layer, reducing build and push times from minutes to seconds.
+
+#### Q: Why should containers run as a non-root user?
+**A:** By default, containers run as `root` (UID 0). If a vulnerability inside the application (such as remote code execution or path traversal) is exploited, the attacker has root privileges inside the container, increasing the risk of escaping the container and compromising the host system. Creating and switching to `USER spring` enforces the principle of least privilege.
+
+---
+
+### 5. Key Takeaways
+* Always use `-XX:+UseContainerSupport` and `-XX:MaxRAMPercentage=75.0` for containerized Java workloads.
+* Reserve ~25% container RAM for non-heap usage (Metaspace, Thread stacks, Netty direct memory).
+* Implement multi-stage builds with Spring Boot layered JARs to minimize image sizes and maximize layer caching.
+* Run containers as non-root users (`USER spring`) and integrate native `HEALTHCHECK` instructions.
+
+---
+
+## TOPIC 18: KUBERNETES & RANCHER — CONTAINER ORCHESTRATION
 
 ### 1. Concept Explanation
 
 #### Beginner
-Kubernetes (K8s) is an open-source platform designed to automate deploying, scaling, and managing containerized applications across a cluster of host nodes.
+**Kubernetes (K8s)** is an open-source container orchestration platform that automates deploying, scaling, managing, and healing containerized applications across clusters of host nodes.
 
-Core Objects:
-* **Pod:** The smallest deployable unit in Kubernetes, hosting one or more containers sharing a network and storage configuration. Pods are ephemeral.
-* **Deployment:** Defines the desired state for your application fleet, managing pod replication, rolling updates, and rollbacks.
-* **Service:** Provides a stable network IP address and DNS endpoint to route traffic to a dynamic group of pods.
-* **ConfigMap / Secret:** Externalizes configuration parameters and sensitive credentials, injecting them into pods without rebuilding container images.
+**SUSE Rancher** is an enterprise-grade **Multi-Cluster Kubernetes Management Platform** that provides a unified graphical dashboard, centralized RBAC, security auditing, and simplified lifecycle management across multiple Kubernetes clusters (e.g. AWS EKS, Azure AKS, Google GKE, or on-premises bare-metal).
+
+```
+Single Cluster (Raw kubectl)        vs.         Enterprise Multi-Cluster (Rancher + K8s)
+────────────────────────────                    ────────────────────────────────────────
+• CLI-only management                           • Visual GUI Dashboard & Centralized UI
+• Complex RBAC per cluster                      • Single Sign-On (SSO / Active Directory)
+• Manual Helm releases                          • Built-in Application & Helm Catalogs
+• Fragmented monitoring                         • Multi-cluster monitoring, alerts & logs
+```
+
+##### Core Kubernetes Objects:
+* **Pod:** The smallest deployable unit in Kubernetes, hosting one or more tightly coupled containers sharing network IP and storage volumes. Pods are ephemeral.
+* **Deployment:** Declaratively defines the desired state (e.g., replica count, rolling update strategy, container images) and manages replica sets.
+* **Service:** Provides a stable, permanent internal IP address and DNS name (`policy-service.production.svc.cluster.local`) to load balance traffic across dynamic pods.
+* **ConfigMap / Secret:** Externalizes configuration properties and sensitive credentials (API keys, database passwords), injecting them into pods as environment variables or volume mounts without image rebuilds.
+* **Horizontal Pod Autoscaler (HPA):** Automatically scales the number of pod replicas up or down based on observed CPU/memory utilization or custom application metrics.
+
+---
 
 #### Intermediate
-##### Spring Boot Kubernetes Deployment Configuration (`deployment.yaml`)
+##### 1. Spring Boot Deployment Manifest with Probes & Secrets (`deployment.yaml`)
+
 ```yaml
 apiVersion: apps/v1
 kind: Deployment
@@ -7052,8 +7771,8 @@ spec:
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
+      maxSurge: 1          # Max 1 pod above desired count during updates
+      maxUnavailable: 0    # 0 pods down during updates (Zero-Downtime)
   selector:
     matchLabels:
       app: policy-service
@@ -7065,8 +7784,10 @@ spec:
       containers:
         - name: policy-service
           image: harbor.company.com/apps/policy-service:v2
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+          # JVM Container Resource Requests and Limits
           resources:
             requests:
               cpu: "250m"
@@ -7074,108 +7795,281 @@ spec:
             limits:
               cpu: "500m"
               memory: "1Gi"
+          # Environment Variables & Secret Injections
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0"
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_USERNAME
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_PASSWORD
+          # Readiness Probe: Is the container ready to receive HTTP traffic?
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
-            initialDelaySeconds: 20
+            initialDelaySeconds: 25
             periodSeconds: 10
+            failureThreshold: 3
+          # Liveness Probe: Is the JVM healthy or deadlocked?
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
-            initialDelaySeconds: 40
+            initialDelaySeconds: 45
             periodSeconds: 20
+            failureThreshold: 3
 ```
-
-#### Advanced
-##### Kubernetes Architecture
-Kubernetes splits responsibilities between the **Control Plane** (orchestration management) and **Worker Nodes** (hosting execution workloads):
-
-```mermaid
-flowchart TD
-    subgraph ControlPlane ["Control Plane (AWS EKS Managed)"]
-        API["API Server"]
-        etcd[(etcd State Store)]
-        Sched["Scheduler"]
-        CM["Controller Manager"]
-        
-        API <--> etcd
-        API <--> Sched
-        API <--> CM
-    end
-
-    subgraph Workers ["Worker Nodes"]
-        subgraph Node1 ["EC2 Node 1"]
-            Kubelet1["kubelet"]
-            Proxy1["kube-proxy"]
-            PodA["Pod A: policy-service"]
-        end
-        subgraph Node2 ["EC2 Node 2"]
-            Kubelet2["kubelet"]
-            Proxy2["kube-proxy"]
-            PodB["Pod B: policy-service"]
-        end
-    end
-
-    API <--> Kubelet1 & Kubelet2
-    ALB["AWS Load Balancer"] --> Proxy1 & Proxy2
-    Proxy1 --> PodA
-    Proxy2 --> PodB
-
-    classDef layer fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
-    classDef db fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
-    classDef mgmt fill:#581C87,stroke:#D8B4FE,color:#FFFFFF,stroke-width:2px;
-
-    class API,Sched,CM,Kubelet1,Kubelet2,Proxy1,Proxy2,ALB mgmt;
-    class etcd db;
-    class PodA,PodB layer;
-```
-
-### 2. Interview Questions & Answers
-
-#### Q: What is the difference between a Liveness Probe and a Readiness Probe?
-**A:** 
-* **Readiness Probes** check if a pod is ready to accept incoming network traffic. If the readiness probe fails, Kubernetes stops routing traffic to the pod via the Service, but leaves the pod running.
-* **Liveness Probes** check if the application inside the pod is still running healthily. If the liveness probe fails (indicating a deadlock or crash), Kubernetes terminates the pod and launches a new one.
-
-#### Q: How do you troubleshoot a pod stuck in `CrashLoopBackOff`?
-**A:** 
-1. Run `kubectl get pods` to identify the crashing pod.
-2. Run `kubectl describe pod <pod-name>` to check the events history for OOM (Out Of Memory) flags or exit codes.
-3. Check the application logs using `kubectl logs <pod-name>`.
-4. If the pod crashed immediately, inspect the logs of the previous crashed instance: `kubectl logs <pod-name> --previous`.
-5. Check if dependency configurations, database URLs, or secret values are missing or misconfigured in the deployment file.
-
-### 3. Key Takeaways
-* Pods are ephemeral; use Services to provide stable network entry points.
-* Set resource requests and limits to ensure fair sharing of compute capacity across the cluster.
-* Use readiness and liveness probes to monitor application health and prevent routing traffic to unhealthy containers.
 
 ---
 
-## TOPIC 19: SECURITY — SONARQUBE, TWISTLOCK, CONTRAST
+##### 2. Horizontal Pod Autoscaler (HPA) Configuration (`hpa.yaml`)
+The Horizontal Pod Autoscaler automatically queries the Kubernetes **Metrics Server** every 15 seconds to scale replicas dynamically during traffic surges:
+
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: policy-service-hpa
+  namespace: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: policy-service-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70  # Scale out when average CPU exceeds 70%
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80  # Scale out when average Memory exceeds 80%
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300 # Prevent thrashing / flapping on scale down
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 60
+```
+
+---
+
+#### Advanced
+##### 3. SUSE Rancher Enterprise Management Architecture
+In large enterprise environments, operations teams deploy **Rancher** to manage fleets of Kubernetes clusters across multiple AWS regions and accounts:
+
+```mermaid
+flowchart TD
+    subgraph RANCHER ["🎛️ SUSE Rancher Central Management Plane"]
+        GUI["🖥️ Rancher Web Dashboard\n(Cluster Explorer, Pod Logs, Terminal)"]
+        RBAC["🔐 Centralized RBAC & SSO\n(Okta / Active Directory)"]
+        HELM["📦 Enterprise Helm Catalog"]
+    end
+
+    subgraph CLUSTERS ["☁️ Managed Kubernetes Clusters"]
+        subgraph EKS_PROD ["AWS EKS Cluster (Prod - ap-south-1)"]
+            INGRESS1["AWS Load Balancer Controller"]
+            HPA1["Horizontal Pod Autoscaler"]
+            PODS1["Spring Boot Pods (3..10 Replicas)"]
+            SECRETS1["K8s Secrets (db-credentials)"]
+        end
+        subgraph EKS_DEV ["AWS EKS Cluster (Dev - us-east-1)"]
+            PODS2["Dev Microservice Pods"]
+        end
+    end
+
+    GUI <--> RBAC
+    GUI -->|"Deploy & Manage"| HELM
+    RANCHER -->|"Cluster Agent (mTLS)"| EKS_PROD
+    RANCHER -->|"Cluster Agent (mTLS)"| EKS_DEV
+
+    INGRESS1 --> PODS1
+    HPA1 -.->|"Scale Replicas"| PODS1
+    SECRETS1 -.->|"Inject Env Vars"| PODS1
+
+    classDef rnc fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef cls fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+    classDef pod fill:#1E293B,stroke:#94A3B8,color:#FFFFFF,stroke-width:2px;
+
+    class GUI,RBAC,HELM rnc;
+    class INGRESS1,HPA1,SECRETS1 cls;
+    class PODS1,PODS2 pod;
+```
+
+##### 4. Zero-Downtime Rolling Update Sequence Mechanics
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as 👨‍💻 CI/CD (Harness / GitHub Actions)
+    participant K8s as ⚙️ K8s Deployment Controller
+    participant Svc as 🌐 K8s Service (ClusterIP)
+    participant PodOld as 📦 Old Pod v1
+    participant PodNew as 📦 New Pod v2
+
+    Admin->>K8s: kubectl set image deployment/... policy-service=v2
+    activate K8s
+    K8s->>PodNew: 1. Launch New Pod v2 (Status: Pending -> Running)
+    Note over PodNew: Spring Boot initializes context (~25s)
+    loop Readiness Probe
+        K8s->>PodNew: GET /actuator/health/readiness
+        PodNew-->>K8s: 200 OK (Application Ready)
+    end
+    K8s->>Svc: 2. Add New Pod v2 to Service Endpoints
+    activate Svc
+    Svc-->>PodNew: Route new incoming client traffic
+    K8s->>Svc: 3. Remove Old Pod v1 from Service Endpoints
+    deactivate Svc
+    K8s->>PodOld: 4. Send SIGTERM (Graceful shutdown period 30s)
+    Note over PodOld: Complete in-flight HTTP requests
+    K8s->>PodOld: 5. Send SIGKILL & Terminate Old Pod v1
+    deactivate K8s
+```
+
+---
+
+### 2. Interview Questions & Answers
+
+#### Q: How do you achieve Zero Downtime Deployments with Spring Boot on Kubernetes?
+**A:** Zero downtime is achieved through three key mechanisms:
+1. **RollingUpdate Strategy:** Configure `maxSurge: 1` and `maxUnavailable: 0` so new pods are fully created and tested before any old pods are taken down.
+2. **Readiness Probes:** Point the probe to Spring Boot Actuator's `/actuator/health/readiness`. Kubernetes will **not route traffic** to the new pod until the Spring context, database pools, and caches are fully initialized and returning HTTP 200.
+3. **Graceful Shutdown:** Configure `server.shutdown=graceful` in `application.yml` with `terminationGracePeriodSeconds: 30` in the pod spec. When an old pod receives `SIGTERM`, it stops accepting new requests and finishes in-flight requests before exiting.
+
+#### Q: What is SUSE Rancher, and why do enterprise teams use it over raw `kubectl`?
+**A:** SUSE Rancher is an enterprise multi-cluster Kubernetes management platform. While `kubectl` is sufficient for managing a single cluster from the CLI, enterprise organizations operate multiple clusters across regions (Dev, QA, Stage, Prod on EKS/GKE). Rancher provides:
+* A centralized GUI to view pod health, metrics, resource quotas, and stream logs without SSH/kubectl access.
+* Centralized enterprise authentication (SSO / Active Directory / Okta) mapped to granular K8s RBAC roles.
+* Unified multi-cluster security auditing and automated cluster provisioning.
+
+#### Q: What is the difference between Kubernetes Secrets and ConfigMaps?
+**A:**
+* **ConfigMaps** store non-sensitive configuration parameters (e.g., `SPRING_PROFILES_ACTIVE=prod`, log levels, endpoints) as plain text.
+* **Secrets** store sensitive information (e.g., `DB_PASSWORD`, API keys, certificates) encoded in Base64 (or encrypted at rest via AWS KMS / HashiCorp Vault integration). Both are mounted into pods as environment variables or volume files.
+
+---
+
+### 3. Key Takeaways
+* **SUSE Rancher** simplifies multi-cluster Kubernetes operations with visual management, centralized RBAC, and log streaming.
+* Always define **readiness and liveness probes** pointing to Spring Boot Actuator endpoints (`/actuator/health/*`).
+* Configure **`maxUnavailable: 0`** to guarantee zero dropped requests during rolling updates.
+* Use **Horizontal Pod Autoscaling (HPA)** targeting CPU/Memory to handle sudden transaction spikes automatically.
+* Inject sensitive database credentials from **Kubernetes Secrets** using `secretKeyRef`.
+
+---
+
+## TOPIC 19: SECURITY — SECRETS MANAGER, SONARQUBE, TWISTLOCK, CONTRAST
 
 ### 1. Concept Explanation
 
 #### Beginner
-Integrating security tooling directly into the CI/CD pipeline (known as **Shift Left Security**) allows you to detect code quality issues and vulnerabilities before the code is deployed.
+Integrating security tooling directly into the CI/CD pipeline and cloud architecture (known as **Shift Left Security** and **Zero Trust Architecture**) detects code quality issues, prevents credential leaks, and blocks container vulnerabilities before reaching production.
 
-Core Tooling:
+Core Security Pillars:
+* **AWS Secrets Manager:** Secure, managed storage for database passwords, third-party API keys (OpenAI, AWS Bedrock, Stripe), and OAuth tokens with automated lifecycle rotation.
 * **SonarQube (SAST):** Performs static application security testing, scanning source code without executing it to detect bugs, code smells, duplicate code, and potential vulnerabilities.
 * **Twistlock / Prisma Cloud (SCA & Container Security):** Scans built container images for known vulnerabilities in OS packages, libraries, and runtime dependencies.
 * **Contrast Security (IAST/RASP):** Performs interactive application security testing using a security agent running inside the JVM. It monitors execution flows during tests to detect runtime vulnerabilities (like SQL injection or data exposure).
 
+---
+
 #### Intermediate
-##### SonarQube Quality Gates
+##### 1. AWS Secrets Manager for Enterprise Spring Boot
+Never store plaintext database credentials or API keys in `application.yml`, environment files, or Git repositories.
+
+###### Spring Boot Native Cloud Integration (`application.yml`):
+```yaml
+spring:
+  config:
+    import: "aws-secretsmanager:/secrets/prod/policy-service"
+  datasource:
+    url: jdbc:postgresql://${db-host}:5432/${db-name}
+    username: ${db-username}
+    password: ${db-password}
+```
+
+###### AWS Java SDK v2 Secrets Manager Client Implementation:
+```java
+package com.company.security;
+
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
+import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.stereotype.Service;
+
+@Service
+public class SecretsService {
+
+    private final SecretsManagerClient secretsClient;
+    private final ObjectMapper objectMapper;
+
+    public SecretsService() {
+        this.secretsClient = SecretsManagerClient.builder()
+                .region(Region.AP_SOUTH_1)
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    public String getApiKey(String secretName, String keyName) {
+        GetSecretValueRequest request = GetSecretValueRequest.builder()
+                .secretId(secretName)
+                .build();
+
+        GetSecretValueResponse response = secretsClient.getSecretValue(request);
+        String secretString = response.secretString();
+
+        try {
+            JsonNode rootNode = objectMapper.readTree(secretString);
+            return rootNode.path(keyName).asText();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to parse secret: " + secretName, e);
+        }
+    }
+}
+```
+
+##### 2. Secrets Manager vs. SSM Parameter Store
+
+| Feature | AWS Secrets Manager | AWS Systems Manager (SSM) Parameter Store |
+| :--- | :--- | :--- |
+| **Primary Purpose** | Sensitive credentials, API keys, DB passwords | Application configurations, feature flags |
+| **Automatic Rotation** | Built-in native rotation via AWS Lambda | Manual scripting required |
+| **Cross-Account Sharing** | Native resource-based policy support | Requires RAM (Resource Access Manager) |
+| **Cost** | $0.40/secret/month + $0.05 per 10,000 API calls | Standard: Free tier; Advanced: $0.05/parameter |
+| **Client Caching** | Critical (use in-memory cache to reduce API costs)| Standard caching |
+
+##### 3. SonarQube Quality Gates
 To prevent bad code from merging, define a quality gate that must pass in the CI pipeline:
-* Code coverage must be greater than or equal to 80%.
+* Code coverage must be greater than or equal to 80% (measured via JaCoCo).
 * Zero new critical or blocker bugs allowed.
 * Code duplication rate must be below 3%.
-* Security rating must be 'A'.
+* Security rating must be 'A' (Zero OWASP Top 10 vulnerabilities).
+
+---
 
 #### Advanced
 ##### SAST vs. DAST vs. IAST
+
 | Feature | SAST (SonarQube) | DAST (OWASP ZAP) | IAST (Contrast Security) |
 | :--- | :--- | :--- | :--- |
 | **Method** | Scans source code | Attacks running application externally | Monitors runtime JVM execution internally |
@@ -7185,30 +8079,50 @@ To prevent bad code from merging, define a quality gate that must pass in the CI
 
 ```mermaid
 flowchart LR
-    subgraph Pipeline ["CI/CD Pipeline Flow"]
-        Code["Source Code"] -->|SAST Scan| Build["Build JAR"]
-        Build -->|IAST Agent active| Test["Run Integration Tests"]
-        Test -->|DAST Scan| Deploy["Production Deploy"]
+    subgraph SCM ["1. Code & Build"]
+        Code["Source Code"] -->|SAST Scan (SonarQube)| Build["Build Multi-Stage Image"]
+    end
+
+    subgraph SEC ["2. Pipeline Security Scanning"]
+        Build -->|Container Scan (Twistlock/Trivy)| ScanPass{"No Critical CVEs?"}
+        ScanPass -->|Yes| Push["Push to Harbor Registry"]
+        ScanPass -->|No| Block["🚫 Fail Pipeline"]
+    end
+
+    subgraph RUN ["3. Runtime & Secrets"]
+        Push --> Deploy["Deploy to EKS / Rancher"]
+        Deploy -->|IAST Agent (Contrast)| Test["Run Integration Tests"]
+        Deploy -.->|Fetch Credentials| SM[("🔐 AWS Secrets Manager")]
     end
 
     classDef blueNode fill:#1E88E5,stroke:#93C5FD,color:#FFFFFF,stroke-width:2px;
     classDef greenNode fill:#43A047,stroke:#A7F3D0,color:#FFFFFF,stroke-width:2px;
     classDef redNode fill:#E53935,stroke:#FCA5A5,color:#FFFFFF,stroke-width:2px;
+    classDef secNode fill:#D97706,stroke:#FDE68A,color:#FFFFFF,stroke-width:2px;
 
     class Code,Build blueNode;
-    class Test greenNode;
-    class Deploy redNode;
+    class Test,Push,Deploy greenNode;
+    class Block redNode;
+    class ScanPass,SM secNode;
 ```
 
+---
+
 ### 2. Interview Questions & Answers
+
+#### Q: How do you handle AWS Secrets Manager API costs and latency in high-throughput Spring Boot applications?
+**A:** Calling `GetSecretValue` on every incoming HTTP request introduces network latency (~50–100ms) and inflates AWS costs ($0.05 per 10,000 API calls). Best practice is to use the **AWS Secrets Manager Java Caching Library** (or Spring Cloud AWS caching) with an in-memory cache and a Time-To-Live (TTL, e.g. 1 hour). The application retrieves secrets once from AWS, caches them in memory, and periodically refreshes them in the background, minimizing latency to <1ms and eliminating redundant API charges.
 
 #### Q: How does Contrast Security (IAST) differ from traditional static analysis (SAST)?
 **A:** Static analysis (SAST) scans code line-by-line without executing it, checking for syntax patterns that suggest vulnerabilities, which can result in false positives. Contrast Security (IAST) runs inside the JVM using bytecode instrumentation. It monitors data flows in real-time during integration tests, confirming if a vulnerable code path is actually executed and exploitable, resulting in much higher accuracy.
 
+---
+
 ### 3. Key Takeaways
-* Static analysis (SAST) runs early on source code files; Dynamic analysis (DAST) tests running applications; Interactive analysis (IAST) uses agent instrumentation inside the runtime.
-* Enforce automated quality gates in the build pipeline to reject code that fails quality or coverage targets.
-* Twistlock image scanning blocks deployments of container images containing critical CVEs.
+* Never hardcode secrets; use **AWS Secrets Manager** with client-side caching and automated Lambda rotation.
+* Enforce automated **SonarQube Quality Gates** (Code Coverage >= 80%, zero critical bugs).
+* Scan container layers for CVEs with **Twistlock / Trivy** before pushing to Harbor.
+* Use **Contrast Security (IAST)** to detect runtime vulnerabilities directly inside the JVM execution flow.
 
 ---
 
@@ -7875,77 +8789,226 @@ Deploy on **Elastic Beanstalk** for simple web applications to minimize infrastr
 ### 1. Concept Explanation
 
 #### Beginner
-The AWS Command Line Interface (CLI) is an open-source tool that allows you to manage and automate AWS services directly from your terminal using commands, bypassing the AWS Console.
+The **AWS Command Line Interface (AWS CLI)** is an open-source unified tool that enables developers and DevOps engineers to manage, automate, and control all AWS cloud services directly from a local terminal or automation scripts.
 
-Configuring the CLI:
-`aws configure`
-This command prompts you to input your Access Key ID, Secret Access Key, Default Region (e.g. `ap-south-1`), and default output format (`json`).
+Every action performed in the AWS Web Console corresponds to an underlying HTTPS REST API call. The AWS CLI allows you to execute these exact same API calls directly from your command line.
+
+##### Official Downloads & Documentation Links
+* **Official Installation Guide:** [`https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html`](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+* **Windows Installer (.msi):** [`https://awscli.amazonaws.com/AWSCLIV2.msi`](https://awscli.amazonaws.com/AWSCLIV2.msi)
+* **EC2 CLI Service Reference:** [`https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-instances.html`](https://docs.aws.amazon.com/cli/latest/userguide/cli-services-ec2-instances.html)
+
+##### Installation Quick Reference
+```powershell
+# Windows (PowerShell installation via MSI installer)
+msiexec.exe /i https://awscli.amazonaws.com/AWSCLIV2.msi /qn
+
+# macOS (Terminal)
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+sudo installer -pkg AWSCLIV2.pkg -target /
+
+# Linux (Amazon Linux / Ubuntu / RHEL)
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# Verify Installation
+aws --version
+# Output: aws-cli/2.15.x Python/3.11.x Windows/10 or Linux/x86_64
+```
+
+---
 
 #### Intermediate
-##### Essential CLI Commands
-* **EC2:**
-```bash
-# List all running EC2 instances
-aws ec2 describe-instances --filters "Name=instance-state-name,Values=running"
+##### Step-by-Step Live Class Configuration (`aws configure`)
+To authenticate your CLI with your AWS account, run the interactive setup command:
 
-# Start a stopped instance
+```bash
+aws configure
+```
+
+You will be prompted to enter four key configuration values:
+
+```
+> aws configure
+AWS Access Key ID [None]: AKIAR47ATEXAMPLEKEY
+AWS Secret Access Key [None]: TrJLIVaEXAMPLESECRETKEY789
+Default region name [None]: us-east-1
+Default output format [None]: table
+```
+
+##### Detailed Breakdown of Configuration Prompts:
+
+| Prompt | Meaning | Example Value | Description |
+| :--- | :--- | :--- | :--- |
+| **AWS Access Key ID** | Public identifier for your IAM user | `AKIAR47ATEXAMPLEKEY` | Generated from IAM Console ➔ Users ➔ Security credentials ➔ Create access key. |
+| **AWS Secret Access Key** | Private secret password for your IAM user | `TrJLIVaEXAMPLESECRETKEY789` | Only shown once upon creation. Used to cryptographically sign every API request. |
+| **Default region name** | AWS region your commands target by default | `us-east-1` (N. Virginia) or `ap-south-1` (Mumbai) | Eliminates having to pass `--region <name>` on every single command. |
+| **Default output format** | Format in which CLI returns responses | `table`, `json`, `text`, or `yaml` | `table` produces human-readable ASCII tables; `json` is ideal for programmatic scripting. |
+
+##### Underlying File System Storage
+`aws configure` stores these parameters locally in two plaintext files inside your home directory (`~/.aws` or `C:\Users\<username>\.aws`):
+
+* **`~/.aws/credentials`** (Stores sensitive access keys):
+  ```ini
+  [default]
+  aws_access_key_id = AKIAR47ATEXAMPLEKEY
+  aws_secret_access_key = TrJLIVaEXAMPLESECRETKEY789
+  ```
+* **`~/.aws/config`** (Stores non-sensitive settings):
+  ```ini
+  [default]
+  region = us-east-1
+  output = table
+  ```
+
+---
+
+##### AWS CLI Architecture & Request Signing Flow
+
+```mermaid
+flowchart LR
+    subgraph CLIENT ["🖥️ Local Machine / Terminal"]
+        CMD["⌨️ aws s3 ls / aws ec2 describe-instances"]
+        CREDS["🔑 ~/.aws/credentials & ~/.aws/config"]
+        SIGN["🔒 SigV4 Request Signer\n(Calculates HMAC-SHA256 Signature)"]
+    end
+
+    subgraph AWS ["☁️ AWS Cloud Regional Endpoints"]
+        EP["🌐 AWS Service REST API\n(https://ec2.us-east-1.amazonaws.com)"]
+        AUTH["🛡️ IAM Authentication & Policy Evaluator"]
+        SRV["⚙️ Target Service (EC2 / S3 / RDS / VPC)"]
+    end
+
+    CMD --> CREDS
+    CREDS --> SIGN
+    SIGN -->|"HTTPS POST (SigV4 Signed Headers)"| EP
+    EP --> AUTH
+    AUTH -->|"Authorized"| SRV
+    SRV -->|"JSON / Table Response"| CMD
+
+    classDef cli fill:#4F46E5,stroke:#C7D2FE,color:#FFFFFF,stroke-width:2px;
+    classDef aws fill:#0F766E,stroke:#99F6E4,color:#FFFFFF,stroke-width:2px;
+
+    class CMD,CREDS,SIGN cli;
+    class EP,AUTH,SRV aws;
+```
+
+---
+
+### 2. Comprehensive CLI Command Reference (Hands-On Examples)
+
+#### 2.1 Amazon S3 Bucket Management
+```bash
+# 1. Display / List all S3 buckets in your AWS account
+aws s3 ls
+
+# 2. Create a new S3 bucket (mb = make bucket)
+aws s3 mb s3://telusko5544
+
+# 3. List contents of a specific bucket
+aws s3 ls s3://telusko5544/
+
+# 4. Upload / Copy a file to the S3 bucket
+aws s3 cp index.html s3://telusko5544/
+
+# 5. Download a file from S3 to local directory
+aws s3 cp s3://telusko5544/index.html ./downloaded_index.html
+
+# 6. Sync an entire local build folder to S3 (deleting files removed locally)
+aws s3 sync ./build s3://telusko5544/ --delete
+
+# 7. Delete a specific file from S3
+aws s3 rm s3://telusko5544/index.html
+
+# 8. Delete an empty S3 bucket (rb = remove bucket)
+aws s3 rb s3://telusko5544
+
+# 9. Force delete a non-empty bucket (deletes all objects + bucket recursively)
+aws s3 rb s3://telusko5544 --force
+```
+
+---
+
+#### 2.2 Amazon EC2 Management
+```bash
+# 1. List all EC2 instances in your configured region
+aws ec2 describe-instances
+
+# 2. List all instances in formatted Table view
+aws ec2 describe-instances --output table
+
+# 3. Filter only RUNNING instances and display clean table columns using JMESPath
+aws ec2 describe-instances \
+  --filters "Name=instance-state-name,Values=running" \
+  --query 'Reservations[*].Instances[*].[InstanceId, InstanceType, State.Name, PublicIpAddress, PrivateIpAddress]' \
+  --output table
+
+# 4. Start a stopped EC2 instance
 aws ec2 start-instances --instance-ids i-0123456789abcdef0
-```
-* **S3:**
-```bash
-# Upload a file to a bucket
-aws s3 cp document.pdf s3://company-reports-bucket/reports/
 
-# Sync a local directory to a bucket
-aws s3 sync ./build s3://static-assets-bucket/ --delete
+# 5. Stop a running EC2 instance
+aws ec2 stop-instances --instance-ids i-0123456789abcdef0
+
+# 6. Reboot an EC2 instance
+aws ec2 reboot-instances --instance-ids i-0123456789abcdef0
+
+# 7. Terminate an EC2 instance permanently
+aws ec2 terminate-instances --instance-ids i-0123456789abcdef0
 ```
-* **IAM:**
-```bash
-# List all IAM users
-aws iam list-users
-```
-* **RDS:**
-```bash
-# Create a manual database snapshot
-aws rds create-db-snapshot --db-instance-identifier prod-db --db-snapshot-identifier prod-db-backup-2026
-```
+
+---
 
 #### Advanced
-##### Named Profiles
-To manage multiple AWS accounts (e.g., development and production), configure **Named Profiles**:
+##### 2.3 Named Profiles (Managing Multiple AWS Accounts)
+DevOps engineers frequently switch between Development, Staging, and Production AWS accounts:
+
 ```bash
-# Configure profiles
+# Configure named profiles
 aws configure --profile dev-account
 aws configure --profile prod-account
 
-# Execute commands using a specific profile
+# Execute commands against a specific account profile
 aws s3 ls --profile prod-account
+aws ec2 describe-instances --profile dev-account --output table
 
-# Or set the profile for the current terminal session
-export AWS_PROFILE=prod-account
+# Set the active profile for your current terminal session
+export AWS_PROFILE=prod-account        # Linux / macOS
+$env:AWS_PROFILE="prod-account"        # Windows PowerShell
 ```
 
-##### Output Querying (JMESPath)
-Filter JSON output directly in the CLI using the `--query` parameter:
+##### 2.4 AWS STS & Temporary Credentials (AssumeRole)
+Instead of storing permanent root or admin keys, enterprise scripts assume an IAM Role:
 ```bash
-# Retrieve only the InstanceId, State, and Public IP of EC2 instances in a table format
-aws ec2 describe-instances \
-  --query 'Reservations[*].Instances[*].[InstanceId, State.Name, PublicIpAddress]' \
-  --output table
+# Assume an IAM Role and receive temporary STS credentials (1-hour expiry)
+aws sts assume-role \
+  --role-arn "arn:aws:iam::123456789012:role/DevOpsAdminRole" \
+  --role-session-name "DevOpsCliSession"
 ```
 
-### 2. Interview Questions & Answers
+---
 
-#### Q: How do you authorize the AWS CLI inside a CI/CD runner securely?
-**A:** Avoid using permanent IAM User access keys in your CI/CD runner. Instead, configure **OIDC (OpenID Connect)** federation. The runner requests a temporary token from AWS IAM by assuming a designated role (e.g., `GitHubActionsWorkflowRole`) for the duration of the deployment step.
+### 3. Interview Questions & Answers
 
-#### Q: What is the `--dry-run` flag in the AWS CLI?
-**A:** The `--dry-run` flag checks whether you have the necessary permissions to execute a command without actually performing the action. It is useful for validating IAM policies before running potentially disruptive operations. If you have the required permissions, the command returns a `DryRunOperation` error.
+#### Q: How does the AWS CLI authenticate requests to AWS APIs?
+**A:** The AWS CLI uses the **AWS Signature Version 4 (SigV4)** signing process. It reads the `aws_access_key_id` and `aws_secret_access_key` from `~/.aws/credentials` (or environment variables `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`), hashes the HTTP request parameters (headers, body, URI, timestamp) using HMAC-SHA256, and attaches the resulting signature in the HTTP `Authorization` header. AWS verifies the signature against its own cryptographic calculations before processing the request.
 
-### 3. Key Takeaways
-* AWS CLI enables command-line management and scripting of AWS resources.
-* Use Named Profiles to switch between different AWS accounts and environments.
-* Use the `--query` parameter to parse and filter JSON outputs from AWS CLI commands.
+#### Q: What is the difference between `aws s3 cp` and `aws s3 sync`?
+**A:** 
+* `aws s3 cp`: Copies individual files or recursive folders unconditionally, overwriting any existing files at the destination.
+* `aws s3 sync`: Compares the source and destination directories based on file size and last modified timestamp, copying **only new or modified files**. With the `--delete` flag, it also deletes files from the destination that no longer exist in the source directory.
+
+#### Q: How do you format AWS CLI output for shell scripting vs. terminal display?
+**A:** Use `--output json` or `--output text` when parsing results in bash/Python automation scripts (combined with `jq` or `--query`), and use `--output table` when viewing human-readable tabular summaries directly in the terminal.
+
+---
+
+### 4. Key Takeaways
+* Install AWS CLI v2 via MSI on Windows or curl/pkg on Linux/macOS.
+* Run `aws configure` to set Access Key, Secret Key, Region (`us-east-1`), and Output Format (`table`/`json`).
+* S3 operations: `aws s3 ls` (list), `aws s3 mb` (create), `aws s3 rb` (delete), `aws s3 sync` (synchronize).
+* EC2 operations: `aws ec2 describe-instances` (list), `start-instances`, `stop-instances`, `terminate-instances`.
+* Use Named Profiles (`--profile`) to securely switch across Dev and Prod AWS accounts.
 
 ---
 
